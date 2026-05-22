@@ -1,837 +1,827 @@
 # MAAIS HOD View - Atomic Design System Rebuild
 ## Ground-Up Reconstruction Plan for Head of Department Interface
 
-This document details the complete atomic design system for rebuilding the HOD (Head of Department) view from the ground up, based on functional requirements, gap analysis, and authoritative architecture.
+```mermaid
+graph TD
+    A[/* Architecture */] --> B[/* Atomic Design / */]
+    B --> C[/* Pages / */]
+    B --> D[/* Organisms / */]
+    B --> E[/* Molecules / */]
+    B --> F[/* Atoms / */]
+    B --> G[/* System / */]
+```
 
 ---
 
 ## I. PAGES (Top-Level Views)
 
+```mermaid
+graph LR
+    subgraph Pages[Navigable Pages]
+        direction TB
+        P1[HOD Dashboard<br/>/hod]
+        P2[Audit & Oversight<br/>/hod/audit]
+        P3[Intervention Mgmt<br/>/hod/interventions]
+        P4[Grade Review<br/>/hod/review]
+        P5[Lock & Export<br/>/hod/lock-export]
+        P6[HOD Settings<br/>/hod/settings]
+        P7[Support Center<br/>/hod/support]
+        P8[Teacher Mgmt<br/>/hod/teachers]
+        P9[Analytics<br/>/hod/analytics]
+    end
+```
+
+---
+
 ### 1. HOD Dashboard (`/hod`)
-**Purpose**: Central command center providing real-time oversight of all departmental activities
-**Key Metrics**: Audit log count, intervention clusters, unresolved alerts, locked terms, teacher submission progress
 
-**Layout**:
-- Header with role-aware navigation and quick actions
-- 5-column KPI cards grid (Audit Items, Alert Clusters, Unresolved, Locked Terms, At-Risk Students)
-- Teacher Submission Progress section with at-risk highlighting
-- Audit Trail feed (Phase 8.1: red border + badge on short justifications)
-- Intervention Alerts panel (Phase 9.2: clustered by student, severity-sorted)
-
-**Data Sources**: Real-time API integration for audit logs, intervention alerts, teacher submissions, locked terms
-**Workflow**: Single-glance monitoring → drill-down into specific audit items or alerts → initiate corrective actions
+```mermaid
+graph TD
+    subgraph HODDashboard[HOD Dashboard]
+        direction LR
+        A[Header<br/>Nav + Quick Actions] --> B[KPI Grid]
+        A --> C[Teacher Submission Progress]
+        A --> D[Audit Trail]
+        A --> E[Intervention Alerts]
+        
+        B --> B1[Audit Items]
+        B --> B2[Alert Clusters]
+        B --> B3[Unresolved]
+        B --> B4[Locked Terms]
+        B --> B5[At-Risk Students]
+    end
+```
 
 ---
 
 ### 2. Audit & Oversight Center (`/hod/audit`)
-**Purpose**: Comprehensive audit trail review with advanced filtering and justification quality control
-**Key Features**: Multi-criteria filtering, justification quality flags, export capabilities, new Archbishop-2.2 compliance
 
-**Layout**:
-- Filter toolbar (status: all/RESOLVED/FLAGGED/LOCKED, action type, date range, teacher)
-- Paginated audit log list (PageSize: 50)
-- Expandable log entries showing old→new value deltas, justification preview
-- Bulk actions for status changes, export
-
-**Data Sources**: `GET /api/hod/audit-logs` with query params for filtering
-**Workflow**: Filter → Review → Flag if short justification (<10 chars) → Add HOD comment → Export
+```mermaid
+graph TD
+    subgraph Audit[Audit Page]
+        direction TB
+        A[Filter Toolbar] --> B[Status: All/RESOLVED/FLAGGED/LOCKED]
+        A --> C[Action Type]
+        A --> D[Date Range]
+        A --> E[Teacher]
+        
+        B --> F[Paginated Audit List]
+        C --> F
+        D --> F
+        E --> F
+        
+        F --> G[Expandable Entry]
+        G --> H[JustificationQualityIndicator<br/>HOD-AR-2.2]
+        G --> I[Old → New Delta]
+        G --> J[HODCommentInput]
+    end
+```
 
 ---
 
 ### 3. Intervention Management Hub (`/hod/interventions`)
-**Purpose**: Centralized management of student performance alerts and counseling follow-ups
-**Key Features**: Student-keyed clustering, severity-based sorting, counseling action documentation
 
-**Layout**:
-- Severity filter tabs (ALL / HIGH / MEDIUM / LOW / RESOLVED)
-- Alert cluster cards (student-grouped, unresolved first)
-- Expandable counseling note composer per cluster
-- Resolution workflow with timestamp tracking
-
-**Data Sources**: `GET /api/hod/intervention-alerts`, `addAlertNote()` context action
-**Workflow**: Review cluster → Add counseling note (Phase 9.1) → Mark resolved → Monitor outcomes
+```mermaid
+graph TD
+    subgraph Intervention[Intervention Page]
+        direction TB
+        A[Filter Tabs<br/>ALL/HIGH/MEDIUM/LOW/RESOLVED] --> B[Alert Cluster Cards]
+        
+        B --> C[Student Card<br/>Unresolved First]
+        B --> D[Expand Counseling Note<br/>Phase 9.1]
+        B --> E[Mark Resolved Button]
+    end
+```
 
 ---
 
 ### 4. Grade Review & Approval (`/hod/review`)
-**Purpose**: Individual student result review with HOD commenting and grade revision control
-**Key Features**: Student-centric view, HOD remark field, grade comparison, rejection workflow
 
-**Layout**:
-- Student selector (search + filter by class/performance)
-- Full grading sheet with HOD remark column (HOD-AR-3.1)
-- Grade comparison view (current vs previous term)
-- Action bar: Approve, Reject with reason, Request Revision
-
-**Data Sources**: `GET /api/hod/records/:id`, `updateHODComment()`, `rejectGradeRevision()`
-**Workflow**: Select student → Review marks → Add HOD comment → Approve or Reject → Teacher notified
+```mermaid
+graph TD
+    subgraph Review[Grade Review]
+        direction TB
+        A[Student Selector<br/>Search + Filter] --> B[Full GradingSheet]
+        
+        B --> C[HOD Remark Column<br/>HOD-AR-3.1]
+        B --> D[Grade Comparison View<br/>Current vs Previous<br/>HOD-AR-3.3]
+        B --> E[Action Bar]
+        
+        E --> E1[Approve]
+        E --> E2[Reject + Reason]
+        E --> E3[Request Revision]
+        
+        E2 --> F[Teacher Notified]
+    end
+```
 
 ---
 
 ### 5. Final Lock & Export (`/hod/lock-export`)
-**Purpose**: Department-wide grading finalization and WAEC-compliant export management
-**Key Features**: Lock validation, export compliance check, WAEC STP format generation
 
-**Layout**:
-- Lock status per class/term with progress indicators
-- "Final Lock" button with validation (HOD-AR-4.1)
-- WAEC Export Validator (HOD-AR-4.3) - checks 100% lock status, format compliance
-- Export format selector (CSV/PDF/Broadsheet)
-- Error reporting with remediation steps
-
-**Data Sources**: `lockDepartmentMatrix()`, `exportWAECCSVDownload()`, `getArchivedDepartmentData()`
-**Workflow**: Check lock readiness → Validate all marks complete → Apply final lock → Generate WAEC export
+```mermaid
+graph TD
+    subgraph LockExport[Lock & Export]
+        direction TB
+        A[Lock Status Display<br/>per class/term] --> B[Final Lock Button<br/>HOD-AR-4.1]
+        
+        B --> C{Validation}
+        C -->|Pass| D[Apply Lock]
+        C -->|Fail| E[Show Errors]
+        
+        D --> F[WAEC Export Validator<br/>HOD-AR-4.3]
+        F --> G{Ready?}
+        G -->|Yes| H[Export Enabled]
+        G -->|No| I[Error + Remediation]
+        
+        H --> J[Format Selector<br/>CSV/PDF/Broadsheet]
+    end
+```
 
 ---
 
 ### 6. HOD Settings (`/hod/settings`)
-**Purpose**: Department configuration and personal account management
-**Key Features**: MFA enrollment, notification channels, session management, department settings
 
-**Layout**:
-- Tabbed interface: Profile, Security, Notifications, Department, Sessions
-- MFA QR code enrollment + TOTP verification
-- Contact channel preferences (email, SMS, WhatsApp)
-- Active session management with revoke capability
-
-**Data Sources**: `getHODSettings()`, `updateHODSettings()`, `mfaEnroll()`, `mfaVerify()`, `getActiveSessions()`
-**Workflow**: Configure preferences → Enable MFA → Review active sessions → Save settings
+```mermaid
+graph TD
+    subgraph Settings[Settings]
+        direction LR
+        A[Tabbed Interface] --> A1[Profile]
+        A --> A2[Security]
+        A --> A3[Notifications]
+        A --> A4[Department]
+        A --> A5[Sessions]
+        
+        A2 --> A2a[MFA QR Enroll]
+        A2a --> A2b[TOTP Verify]
+        
+        A3 --> A3a[Contact Channels<br/>Email/SMS/WhatsApp]
+        
+        A5 --> A5a[Active Sessions]
+        A5a --> A5b[Revoke Button]
+    end
+```
 
 ---
 
 ### 7. Support Center (`/hod/support`)
-**Purpose**: Access ticket tracking and system health monitoring
-**Key Features**: Ticket creation/editing, SLA monitoring, escalation workflow, system health dashboard
 
-**Layout**:
-- Support Tickets Kanban (OPEN/PENDING/CLOSED columns)
-- System Health metrics (uptime, CPU, memory, services)
-- Create/Edit ticket modal with priority/severity
-- Escalation button with reason capture
-
-**Data Sources**: `getSupportTickets()`, `getSystemHealth()`, `createTicket()`, `escalateTicket()`, `getEscalatedIssues()`
-**Workflow**: View tickets → Monitor system health → Create/escalate ticket → Track resolution
+```mermaid
+graph TD
+    subgraph Support[Support Center]
+        direction LR
+        A[Ticket Kanban<br/>OPEN→IN_PROGRESS→PENDING→CLOSED] --> B[Ticket Actions<br/>Create/Update/Escalate]
+        
+        C[System Health Dashboard] --> C1[Uptime]
+        C --> C2[CPU/Memory/Disk]
+        C --> C3[Service Status]
+    end
+```
 
 ---
 
 ### 8. Teacher Management (`/hod/teachers`)
-**Purpose**: Department staff oversight and administrative functions
-**Key Features**: Teacher list with search, password reset, impersonation console, view-as mode
 
-**Layout**:
-- Searchable teacher table (name, email, subjects, status)
-- Password reset panel (generate temp password / custom)
-- "View As Teacher" button (HOD-AR-1.3) with audit trail
-- Active impersonations panel with stop button
-
-**Data Sources**: `getDepartmentTeachers()`, `resetTeacherPassword()`, `impersonateTeacher()`, `stopImpersonation()`
-**Workflow**: Select teacher → View details → Reset password if needed → Initiate "View As" for troubleshooting
+```mermaid
+graph TD
+    subgraph Teachers[Teacher Management]
+        direction LR
+        A[Searchable Teacher Table] --> B[Teacher Actions]
+        
+        B --> C[Password Reset]
+        B --> D[View As Teacher<br/>HOD-AR-1.3]
+        
+        D --> E[Impersonation Console]
+        E --> F[Session Timer]
+        E --> G[Stop Button]
+        E --> H[Audit Log]
+        
+        B --> I[Active Sessions Panel]
+    end
+```
 
 ---
 
 ### 9. Analytics & Reporting (`/hod/analytics`)
-**Purpose**: Data-driven insights for departmental improvement (HOD-AR-3.3)
-**Key Features**: Performance trends, subject correlations, longitudinal tracking, promotion recommendations
 
-**Layout**:
-- Grade Comparison View (current vs previous term with delta chart)
-- Longitudinal Academic Journey tracking (student trend visualization)
-- GPA/CGPA calculation table
-- Subject correlation matrix (performance relationships)
-- Promotion Recommendations panel (PROMOTE/CONDITIONAL/RETAIN)
-
-**Data Sources**: `getGradeComparison()`, `getArchivedDepartmentData()`, `getPromotionRecommendations()`
-**Workflow**: Select term range → View trends → Export analysis → Inform department strategy
+```mermaid
+graph TD
+    subgraph Analytics[Analytics]
+        direction LR
+        A[Grade Comparison View<br/>HOD-AR-3.3] --> B[Delta Chart]
+        C[Longitudinal Tracking] --> D[Student Trends]
+        E[GPA/CGPA Table] --> F[Aggregated Metrics]
+        G[Subject Correlation] --> H[Performance Matrix]
+        I[Promotion Recommendations] --> J[PROMOTE/CONDITIONAL/RETAIN]
+    end
+```
 
 ---
 
-## II. ORGANISMS (Complex UI Components)
+## II. ATOMIC DESIGN HIERARCHY DIAGRAM
+
+```mermaid
+flowchart BT
+    subgraph Atoms[/* ATOMS */]
+        direction TB
+        A1[Typography]
+        A2[Layout]
+        A3[Forms]
+        A4[Feedback]
+        A5[Navigation]
+        A6[Indicators]
+        A7[Colors]
+        A8[Spacing]
+    end
+
+    subgraph Molecules[/* MOLECULES */]
+        direction TB
+        M1[StatusBadge]
+        M2[JustificationQualityIndicator]
+        M3[SubmissionProgressSparkline]
+        M4[AlertSeverityChip]
+        M5[HODCommentInput]
+        M6[DateRangeFilter]
+        M7[MultiSelectSubjectFilter]
+        M8[ExportFormatSelector]
+        M9[ActionButtonGroup]
+        M10[LoadingSpinner]
+        M11[EmptyState]
+        M12[ConfirmationDialog]
+    end
+
+    subgraph Organisms[/* ORGANISMS */]
+        direction TB
+        O1[AuditLogTimeline]
+        O2[InterventionAlertCluster]
+        O3[TeacherSubmissionMatrix]
+        O4[GradeComparisonView]
+        O5[WAECExportValidator]
+        O6[HODCommentThread]
+        O7[SupportTicketKanban]
+        O8[TeacherImpersonationConsole]
+        O9[SystemHealthMonitor]
+    end
+
+    subgraph Templates[/* TEMPLATES */]
+        direction TB
+        T1[Dashboard]
+        T2[Table/List]
+        T3[Form]
+        T4[Detail View]
+    end
+
+    subgraph Pages_comp[/* PAGES */]
+        direction TB
+        P1[HOD Dashboard]
+        P2[Audit]
+        P3[Interventions]
+        P4[Grade Review]
+        P5[Lock & Export]
+        P6[Settings]
+        P7[Support]
+        P8[Teachers]
+        P9[Analytics]
+    end
+
+    Atoms --> Molecules
+    Molecules --> Organisms
+    Organisms --> Templates
+    Templates --> Pages_comp
+```
+
+---
+
+## III. ORGANISMS (Detailed)
 
 ### 1. AuditLogTimeline
-**Purpose**: Display chronological audit trail with filtering, expansion, and actions
-**Composition**: StatusBadge × N, JustificationQualityIndicator × N, ActionButtonGroup, DateRangeFilter
-**Key Properties**:
-- `auditLogs`: Array<{id, action, target, userId, timestamp, oldValue, newValue, justification, status}>
-- `onFlag`: (logId) => void
-- `onComment`: (logId, comment) => void
-- `onExport`: (logIds) => void
-**Variants**: Compact (dashboard), Expanded (full audit page)
+
+```mermaid
+graph TD
+    subgraph AuditLogTimeline
+        direction LR
+        A[DateRangeFilter] --> B[StatusBadge Group]
+        B --> C[Audit Log List]
+        C --> D[Expandable Entry]
+        D --> E[JustificationQualityIndicator]
+        D --> F[Old → New Delta]
+        D --> G[HODCommentInput]
+        C --> H[ActionButtonGroup<br/>Flag / Export]
+    end
+```
 
 ---
 
 ### 2. InterventionAlertCluster
-**Purpose**: Grouped intervention alerts by student with severity sorting and resolution workflow
-**Composition**: AlertSeverityChip × N, CounselingNoteComposer, ResolutionButton, StudentInfoCard
-**Key Properties**:
-- `cluster`: { studentId, studentName, items: Array<{id, severity, reason, subject, resolved, timestamp}> }
-- `onAddNote`: (alertId, note) => void
-- `onResolve`: (alertId) => void
-- `onDrillDown`: (studentId) => void
-**Variants**: Compact (dashboard), Expanded (management hub)
+
+```mermaid
+graph TD
+    subgraph InterventionAlertCluster
+        direction LR
+        A[Filter Tabs] --> B[Alert Cluster Cards]
+        B --> C[Student Card]
+        C --> D[AlertSeverityChip × N]
+        C --> E[Subject Info]
+        C --> F[Counseling Note Composer]
+        C --> G[Mark Resolved]
+    end
+```
 
 ---
 
 ### 3. TeacherSubmissionMatrix
-**Purpose**: Row-per-teacher submission tracking with progress visualization
-**Composition**: SubmissionProgressSparkline × N, TeacherInfoCard, StatusBadge, RefreshButton
-**Key Properties**:
-- `teachers`: Array<{ teacherId, teacherName, subjects: number, graded: number, total: number, pct: number }>
-- `onRefresh`: () => void
-- `onDrillDown`: (teacherId) => void
-**Variants**: Summary (dashboard), Full (official view)
+
+```mermaid
+graph TD
+    subgraph TeacherSubmissionMatrix
+        direction LR
+        A[Teacher List Header] --> B[Teacher Row × N]
+        B --> C[TeacherInfoCard]
+        B --> D[SubmissionProgressSparkline]
+        B --> E[StatusBadge]
+        B --> F[DrillDown Link]
+        G[RefreshButton] --> A
+    end
+```
 
 ---
 
-### 4. GradeComparisonView
-**Purpose**: Side-by-side comparison of current vs previous term grades with delta visualization
-**Composition**: ComparisonTable, DeltaIndicator × N, TermSelector, ExportButton
-**Key Properties**:
-- `subjectId`: string
-- `termA`: string (previous)
-- `termB`: string (current)
-- `comparisonData`: Array<{ studentId, name, markA, markB, delta, gradeA, gradeB }>
-**Variants**: Table (detailed), Chart (visual delta)
-
----
-
-### 5. WAECExportValidator
-**Purpose**: Pre-export validation ensuring compliance with WAEC STP specifications
-**Composition**: ValidationChecklist × N, ErrorList, ProgressIndicator, ExportButton
-**Key Properties**:
-- `classId`: string
-- `termId`: string
-- `onValidate`: () => ValidationResult
-- `onExport`: (format) => void
-**Validation Rules**:
-- All marks entered (100% completion)
-- No missing behavioral observations
-- All justifications ≥10 characters
-- Term is locked
----
-
-### 6. HODCommentThread
-**Purpose**: Bidirectional feedback exchange between HOD and teacher with threading
-**Composition**: CommentBubble × N, TimeAgoLabel × N, HODAvatar, TeacherAvatar, ReplyInput
-**Key Properties**:
-- `recordId`: string
-- `comments`: Array<{ id, authorRole, authorName, text, timestamp, isHod }>
-- `onAddComment`: (text) => void
-- `hodName`: string
-**Variants**: Inline (sidebar), Modal (detailed thread)
-
----
-
-### 7. SupportTicketKanban
-**Purpose**: Drag-and-drop ticket workflow with status columns and SLA tracking
-**Composition**: TicketCard × N, ColumnHeader × N, CreateTicketButton, SLAIndicator
-**Key Properties**:
-- `tickets`: Array<{ id, subject, description, status, priority, createdAt, assignedTo }>
-- `onCreate`: (ticket) => void
-- `onUpdate`: (ticketId, patch) => void
-- `onEscalate`: (ticketId, reason) => void
-**Columns**: OPEN → IN PROGRESS → PENDING → CLOSED
-
----
-
-### 8. TeacherImpersonationConsole
-**Purpose**: Secure "View As" functionality with audit trail and session controls
-**Composition**: TeacherSelector, ImpersonateButton, SessionTimer, StopButton, AuditLog
-**Key Properties**:
-- `teachers`: Array<{ id, name, email, subjects }>
-- `activeSession`: { teacherId, teacherName, startedAt, reason } | null
-- `onImpersonate`: (teacherId, reason) => void
-- `onStop`: () => void
-**Variants**: Modal (confirmation), Inline (teacher list)
-
----
-
-### 9. SystemHealthMonitor
-**Purpose**: Real-time system metrics display with service status
-**Composition**: MetricCard × N, ServiceStatusList × N, LastUpdatedLabel, RefreshButton
-**Key Properties**:
-- `health`: { status, uptime, cpu, memory, disk, services: Array<{name, status}> }
-- `refreshInterval`: number (ms)
-- `onRefresh`: () => void
-**Variants**: Dashboard widget, Full-page diagnostics
-
----
-
-## III. MOLECULES (Reusable UI Components)
+## IV. MOLECULES (Detailed)
 
 ### 1. StatusBadge
-```jsx
-<StatusBadge status="RESOLVED" variant="colored" size="sm" />
+
+```mermaid
+graph LR
+    R[RESOLVED] -->|emerald-50/text-emerald-700| R1[✅ RESOLVED]
+    F[FLAGGED] -->|amber-50/text-amber-700| F1[⚠️ FLAGGED]
+    L[LOCKED] -->|blue-50/text-blue-700| L1[🔒 LOCKED]
+    D[DRAFT] -->|slate-100/text-slate-600| D1[📝 DRAFT]
 ```
-**Purpose**: Display status with color coding (RESOLVED=emerald, FLAGGED=amber, LOCKED=blue, DRAFT=slate)
-**Props**: `status`, `variant` (colored|minimal), `size` (sm|md|lg), `className`
-**Accessibility**: `aria-label` with status text, color-independent meaning
 
 ---
 
 ### 2. JustificationQualityIndicator
-```jsx
-<JustificationQualityIndicator text="Fixed typo" threshold={10} />
+
+```mermaid
+graph LR
+    T[text input] --> L{length ≥ 10?}
+    L -->|Yes| N[✅ Gray Checkmark]
+    L -->|No| W[🔴 HOD-AR-2.2<br/>SHORT BADGE]
 ```
-**Purpose**: Visual indicator for Archbishop-2.2 compliance (<10 chars triggers warning)
-**Props**: `text`, `threshold` (default: 10), `showWarning` (boolean)
-**Visual States**:
-- Normal (≥10 chars) → Gray checkmark
-- Short (<10 chars) → Red octagon + "HOD-AR-2.2 Short" badge
 
 ---
 
 ### 3. SubmissionProgressSparkline
-```jsx
-<SubmissionProgressSparkline graded={75} total={100} threshold={80} />
+
+```mermaid
+graph LR
+    P[graded/total] --> C{Calculate Pct}
+    C -->|≥95%| E[🟢 emerald Excellent]
+    C -->|80-94%| A[🟡 amber On Track]
+    C -->|<80%| R[🔴 red ⚠ At-Risk]
 ```
-**Purpose**: Compact progress visualization for submission tracking
-**Props**: `graded`, `total`, `threshold` (at-risk threshold, default: 80%), `showLabel`
-**Visual States**:
-- ≥95% → Emerald fill
-- 80-94% → Amber fill  
-- <80% → Red fill + "⚠ At-Risk" label
 
 ---
 
 ### 4. AlertSeverityChip
-```jsx
-<AlertSeverityChip severity="HIGH" onClick={handleClick} />
+
+```mermaid
+graph LR
+    direction TB
+    A[HIGH severity] -->|rose palette| A1[🔴 HIGH]
+    B[MEDIUM severity] -->|amber palette| B1[🟡 MEDIUM]
+    C[LOW severity] -->|blue palette| C1[🔵 LOW]
 ```
-**Purpose**: Color-coded severity indicator with optional interaction
-**Props**: `severity` (HIGH|MEDIUM|LOW), `size`, `onClick`, `className`
-**Color Mapping**:
-- HIGH → Rose/red palette
-- MEDIUM → Amber/orange palette
-- LOW → Blue/slate palette
 
 ---
 
 ### 5. HODCommentInput
-```jsx
-<HODCommentInput 
-  value={comment} 
-  onChange={setComment} 
-  onSubmit={handleSubmit}
-  maxLength={500}
-  showCharCount
-/>
+
+```mermaid
+graph LR
+    direction TB
+    A[Textarea] --> B{Char Count Check}
+    B -->|valid| C[Submit Button Enabled]
+    B -->|invalid| D[Submit Button Disabled]
+    E[maxLength=500] --> B
+    F[showCharCount] --> G[50/500]
 ```
-**Purpose**: Text input for HOD remarks with character limit and submit action
-**Props**: `value`, `onChange`, `onSubmit`, `maxLength`, `showCharCount`, `placeholder`
-**Features**: Character counter, submit button, clear button, validation feedback
 
 ---
 
 ### 6. DateRangeFilter
-```jsx
-<DateRangeFilter 
-  value={range} 
-  onChange={setRange} 
-  presets={['Today', 'Week', 'Month', 'Term']}
-  allowCustom
-/>
-```
-**Purpose**: Date range selection with preset options and custom picker
-**Props**: `value`, `onChange`, `presets`, `allowCustom`, `format`
-**Variants**: Inline (compact), Dropdown (expanded), Modal (custom range)
 
----
-
-### 7. MultiSelectSubjectFilter
-```jsx
-<MultiSelectSubjectFilter 
-  subjects={subjectList}
-  selected={selectedSubjects}
-  onChange={setSelectedSubjects}
-  showCounts
-/>
-```
-**Purpose**: Multi-select checkbox group for filtering by subject
-**Props**: `subjects`, `selected`, `onChange`, `showCounts` (shows student count per subject)
-**Features**: Search/filter subjects, select all/clear all, counts per subject
-
----
-
-### 8. ExportFormatSelector
-```jsx
-<ExportFormatSelector 
-  formats={['CSV', 'PDF', 'Broadsheet']}
-  selected={selectedFormat}
-  onChange={setSelectedFormat}
-  disabled={!canExport}
-/>
-```
-**Purpose**: Radio button group for export format selection with validation state
-**Props**: `formats`, `selected`, `onChange`, `disabled`, `validationStatus`
-**Validation**: Disabled until validation passes, shows error reason when disabled
-
----
-
-### 9. ActionButtonGroup
-```jsx
-<ActionButtonGroup 
-  actions={[
-    { label: 'Approve', variant: 'primary', onClick: handleApprove },
-    { label: 'Reject', variant: 'danger', onClick: handleReject },
-    { label: 'Flag', variant: 'secondary', onClick: handleFlag }
-  ]}
-  loading={isSubmitting}
-/>
-```
-**Purpose**: Grouped action buttons with consistent styling and loading states
-**Props**: `actions` (array of button configs), `loading`, `align` (left|center|right)
-**Button Variants**: primary, secondary, danger, ghost
-
----
-
-### 10. LoadingSpinner
-```jsx
-<LoadingSpinner size="md" label="Loading audit logs..." />
-```
-**Purpose**: Accessible loading indicator with optional label
-**Props**: `size` (sm|md|lg), `label`, `centered`, `overlay`
-**Features**: `aria-busy`, screen reader support, optional backdrop
-
----
-
-### 11. EmptyState
-```jsx
-<EmptyState 
-  icon={ClipboardList}
-  title="No audit logs found"
-  description="Audit entries will appear here once adjustments are made"
-  action={{ label: 'Refresh', onClick: handleRefresh }}
-/>
-```
-**Purpose**: Consistent empty state display with optional action
-**Props**: `icon`, `title`, `description`, `action`, `illustration` (optional)
-**Use Cases**: Audit log empty, no alerts, no tickets, no results
-
----
-
-### 12. ConfirmationDialog
-```jsx
-<ConfirmationDialog 
-  isOpen={showDialog}
-  title="Lock Department Grades?"
-  message="This will prevent all teachers from making further edits. Are you sure?"
-  confirmLabel="Lock Now"
-  cancelLabel="Cancel"
-  onConfirm={handleLock}
-  onCancel={handleClose}
-  variant="danger"
-/>
-```
-**Purpose**: Confirmation dialog with destructive action styling
-**Props**: `isOpen`, `title`, `message`, `confirmLabel`, `cancelLabel`, `onConfirm`, `onCancel`, `variant`
-
----
-
-## IV. ATOMS (Basic Building Blocks)
-
-### Typography Atoms
-```
-<H1>HOD Dashboard</H1>
-<H2>Audit Trail</H2>
-<H3>Intervention Alerts</H3>
-<Body>Regular text content</Body>
-<Label>Form field label</Label>
-<Caption>Helper text or timestamp</Caption>
-<Tiny>Very small contextual text</Tiny>
-```
-**Design Tokens**: Font sizes, weights, line heights from design system
-
----
-
-### Layout Atoms
-```
-<Container maxWidth="7xl" padding="lg">...</Container>
-<Grid cols={3} gap={4}>...</Grid>
-<Flex gap={4} align="center">...</Flex>
-<Stack gap={3}>...</Stack>
-<Divider orientation="horizontal|vertical" />
-<Spacer size={4} />
-```
-**Responsive**: Breakpoints at 375px, 768px, 1024px, 1440px
-
----
-
-### Form Atoms
-```
-<Input 
-  type="text|email|password|number" 
-  value={value} 
-  onChange={handler}
-  placeholder=""
-  error={errorMessage}
-  disabled={isDisabled}
-/>
-<Textarea 
-  rows={4} 
-  value={value} 
-  onChange={handler}
-  maxLength={500}
-/>
-<Select 
-  options={[{ value, label }]} 
-  value={value} 
-  onChange={handler}
-/>
-<Checkbox 
-  checked={isChecked} 
-  onChange={handler}
-  label="Label text"
-/>
-<Toggle 
-  checked={isOn} 
-  onChange={handler}
-  label="Feature label"
-/>
-```
-**Validation**: Inline error display, helper text, disabled states
-
----
-
-### Feedback Atoms
-```
-<Toast type="success|error|warning|info" message="..." duration={4000} />
-<Tooltip content="Helpful tip" position="top|right|bottom|left" />
-<Badge count={5} max={99} />
-<ProgressBar value={65} max={100} color="emerald|amber|rose" />
-<Alert type="info|warning|error|success" message="..." dismissible />
-```
-**Accessibility**: `aria-live` regions for toasts, focus management
-
----
-
-### Navigation Atoms
-```
-<Breadcrumb items={[{ label: 'HOD', href: '/hod' }, { label: 'Audit' }]} />
-<TabList tabs={[{ id, label, icon, count }]} activeId={activeTab} onChange={setActive} />
-<Pagination total={100} pageSize={10} currentPage={1} onChange={setPage} />
-<Button variant="primary|secondary|ghost|danger" size="sm|md|lg" loading={isLoading} disabled={isDisabled}>
-  <Icon name={iconName} />
-  Button Label
-</Button>
-<Link href="/path" external={false}>Link Text</Link>
-```
-**Button Hierarchy**: Primary (emerald-900), Secondary (white with border), Ghost (transparent), Danger (rose-600)
-
----
-
-### Indicator Atoms
-```
-<StatusDot status="online|offline|busy|away" />
-<Spinner size="sm|md|lg" />
-<Skeleton width={100} height={24} borderRadius={4} />
-<Avatar src={url} name="Name" size={32|48|64} />
-<Icon name={iconName} size={16|20|24} color="currentColor" />
-```
-**Skeleton Loading**: Pulse animation, matches content dimensions
-
----
-
-### Color Atoms
-**Semantic Palette**:
-```
-Primary:   #015D34 (emerald-900), #10B981 (emerald-500), #D1E9E0 (emerald-100)
-Secondary: #64748B (slate-500), #E2E8F0 (slate-200)
-Success:   #059669 (emerald-600), #ECFDF5 (emerald-50)
-Warning:   #D97706 (amber-600), #FFFBEB (amber-50)
-Error:     #DC2626 (rose-600), #FEF2F2 (rose-50)
-Info:      #3B82F6 (blue-600), #EFF6FF (blue-50)
-```
-**Text Colors**: Gray-900 (headings), Gray-600 (body), Gray-500 (muted), Gray-400 (captions)
-
----
-
-### Spacing Atoms
-**Scale**: 0, 1 (4px), 2 (8px), 3 (12px), 4 (16px), 6 (24px), 8 (32px), 12 (48px), 16 (64px), 24 (96px)
-
----
-
-## V. SYSTEM COMPONENTS (Non-UI Infrastructure)
-
-### 1. AuthService
-```typescript
-class AuthService {
-  // Role verification (HOD-AR-1.1)
-  async verifyHODRole(): Promise<boolean>
-  
-  // Session management
-  async getCurrentUser(): Promise<User>
-  async refreshToken(): Promise<string>
-  
-  // Permission checks
-  hasPermission(permission: string): boolean
-}
-```
-**Usage**: Protected routes, API request headers, permission-gated UI
-
----
-
-### 2. DataSyncLayer
-```typescript
-class DataSyncLayer {
-  // Real-time updates
-  subscribeToAuditLogs(callback: (logs) => void): Unsubscribe
-  subscribeToInterventionAlerts(callback: (alerts) => void): Unsubscribe
-  
-  // Polling fallback
-  startPolling(intervalMs: number): void
-  stopPolling(): void
-}
-```
-**Usage**: Live dashboard updates, notification triggers
-
----
-
-### 3. AuditTrailService
-```typescript
-class AuditTrailService {
-  // Capture before/after states
-  captureEdit(recordId: string, oldValue: any, newValue: any, justification: string): Promise<void>
-  
-  // Query audit history
-  getRecordHistory(recordId: string): Promise<AuditEntry[]>
-  
-  // HOD comment functionality
-  addHODComment(recordId: string, comment: string): Promise<void>
-  getHODComments(recordId: string): Promise<Comment[]>
-}
-```
-**Usage**: Mark edit tracking, justification persistence, comment threading
-
----
-
-### 4. NotificationService
-```typescript
-class NotificationService {
-  // Teacher notifications
-  notifyHODCommentAdded(teacherId: string, studentName: string, comment: string): Promise<void>
-  notifyGradeRejected(teacherId: string, className: string, reason: string): Promise<void>
-  notifyLockApplied(teacherId: string, className: string): Promise<void>
-  
-  // HOD notifications
-  notifySubmissionComplete(teacherId: string, className: string): Promise<void>
-}
-```
-**Usage**: Backend-triggered notifications, in-app toast display
-
----
-
-### 5. ReportEngine
-```typescript
-class ReportEngine {
-  // WAEC STP CSV generation (HOD-AR-4.3)
-  generateWAECCSV(termId: string, className: string, students: Student[]): Blob
-  
-  // Broadsheet generation
-  generateBroadsheet(termId: string, department: string): Blob
-  
-  // Validation
-  validateExportReady(termId: string, className: string): Promise<ValidationResult>
-  
-  // PDF generation (if server-side)
-  generatePDF(termId: string, className: string): Promise<Blob>
-}
-```
-**Usage**: Grade export, WAEC compliance formatting, error reporting
-
----
-
-### 6. PermissionMiddleware
-```typescript
-class PermissionMiddleware {
-  // Route protection
-  requireHOD(): (req, res, next) => void
-  
-  // API endpoint guards
-  requireDepartmentMatch(departmentId: string): (req, res, next) => void
-  
-  // Resource permissions
-  canViewStudent(studentId: string): Promise<boolean>
-  canEditAuditLog(logId: string): Promise<boolean>
-}
-```
-**Usage**: Backend route protection, frontend permission checks
-
----
-
-### 7. CacheLayer
-```typescript
-class CacheLayer {
-  // TTL-based caching
-  get<T>(key: string): T | null
-  set<T>(key: string, value: T, ttlMs: number): void
-  
-  // Invalidation
-  invalidatePattern(pattern: string): void
-  
-  // Pre-built methods
-  getAuditLogs(params: FilterParams): Promise<AuditLog[]>
-  getInterventionAlerts(): Promise<Alert[]>
-  getTeacherSubmissions(): Promise<Submission[]>
-}
-```
-**Usage**: Dashboard performance, reduce API load, faster page loads
-
----
-
-### 8. ErrorHandler
-```typescript
-class ErrorHandler {
-  // Centralized error processing
-  handle(error: Error, context: string): void
-  
-  // User-friendly messages
-  getUserMessage(error: Error): string
-  
-  // Retry logic
-  async retry<T>(operation: () => Promise<T>, maxRetries: number): Promise<T>
-}
-```
-**Usage**: API error handling, user feedback, logging
-
----
-
-### 9. APIClient
-```typescript
-class APIClient {
-  // Authenticated requests
-  async get<T>(path: string, params?: object): Promise<T>
-  async post<T>(path: string, body: object): Promise<T>
-  async patch<T>(path: string, body: object): Promise<T>
-  
-  // Interceptors
-  addAuthToken(token: string): void
-  addRequestInterceptor(interceptor: RequestInterceptor): void
-  addResponseInterceptor(interceptor: ResponseInterceptor): void
-}
-```
-**Usage**: All HTTP requests, auth token management, request/response transformation
-
----
-
-### 10. EventBus
-```typescript
-class EventBus {
-  // Pub/sub pattern
-  subscribe(event: string, handler: Function): Unsubscribe
-  publish(event: string, data: any): void
-  
-  // Pre-defined events
-  static ALERT_RESOLVED = 'alert:resolved'
-  static COMMENT_ADDED = 'comment:added'
-  static LOCK_APPLIED = 'lock:applied'
-  static GRADE_REJECTED = 'grade:rejected'
-}
-```
-**Usage**: Decoupled component communication, audit trail triggers, notification dispatch
-
----
-
-## VI. ATOMIC DESIGN HIERARCHY VISUALIZATION
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         PAGES                               │
-│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌──────────┐        │
-│  │Dashboard│ │  Audit  │ │Lock/    │ │Analytics │        │
-│  │         │ │ Center  │ │Export   │ │          │        │
-│  └────┬────┘ └────┬────┘ └────┬────┘ └────┬─────┘        │
-│       │           │           │           │               │
-│       ▼           ▼           ▼           ▼               │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │                     ORGANISMS                       │   │
-│  │  ┌────────────┐ ┌────────────┐ ┌────────────┐     │   │
-│  │  │ AuditLog   │ │Intervention│ │  Teacher   │     │   │
-│  │  │  Timeline  │ │   Cluster  │ │ Submission │     │   │
-│  │  └─────┬──────┘ └─────┬──────┘ └─────┬──────┘     │   │
-│  │        │              │              │              │   │
-│  │        ▼              ▼              ▼              │   │
-│  │  ┌─────────────────────────────────────────────┐   │   │
-│  │  │               MOLECULES                     │   │   │
-│  │  │  ┌────────┐┌──────────┐┌──────────────┐   │   │   │
-│  │  │  │ Status ││ Progress ││  Comment     │   │   │   │
-│  │  │  │ Badge  ││ Sparkline││  Input       │   │   │   │
-│  │  │  └───┬────┘└────┬─────┘└──────┬───────┘   │   │   │
-│  │  │      │         │             │            │   │   │
-│  │  │      ▼         ▼             ▼            │   │   │
-│  │  │  ┌───────────────────────────────────────┐   │   │   │
-│  │  │  │               ATOMS                   │   │   │   │
-│  │  │  │  ┌─────┐┌─────┐┌─────┐┌──────────┐ │   │   │   │
-│  │  │  │  │ Text ││Icon ││Badge││  Spacer  │ │   │   │   │
-│  │  │  │  └─────┘└─────┘└─────┘└──────────┘ │   │   │   │
-│  │  │  └───────────────────────────────────────┘   │   │   │
-│  │  └─────────────────────────────────────────────┘   │   │
-│  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph LR
+    direction LR
+    A[Preset Buttons] --> B[Selected Preset]
+    B --> B1[Today]
+    B --> B2[Week]
+    B --> B3[Month]
+    B --> B4[Term]
+    
+    C[allowCustom=true] --> D[Custom Range Picker]
+    D --> E[Start Date]
+    D --> F[End Date]
 ```
 
 ---
 
-## VII. IMPLEMENTATION PRIORITIES
+## V. SYSTEM FLOW DIAGRAM
 
-### Phase 1: Foundation (Critical)
-1. AuthService + PermissionMiddleware (HOD-AR-1.1)
-2. APIClient + ErrorHandler + CacheLayer
-3. Core Atoms (Typography, Layout, Form)
-4. HOD Dashboard skeleton with real data integration
+```mermaid
+flowchart TD
+    subgraph Client[Client Layer]
+        A[HOD Dashboard<br/>React Components]
+        B[Router<br/>/hod/*]
+    end
+    
+    subgraph Auth[Auth Layer]
+        C[AuthService]
+        D[PermissionMiddleware]
+        E[APIClient]
+    end
 
-### Phase 2: Core Features (High)
-1. Audit & Oversight Center (HOD-AR-2.1, HOD-AR-2.2)
-2. Grade Review & Approval (HOD-AR-3.1, HOD-AR-3.2)
-3. HOD commenting functionality (updateHODComment integration)
-4. Intervention Management Hub (HOD-AR-5.1, HOD-AR-5.2)
+    subgraph Cache[Cache Layer]
+        F[DataSyncLayer]
+        G[CacheLayer]
+    end
 
-### Phase 3: Completion (Medium)
-1. Final Lock & Export (HOD-AR-4.x)
-2. Teacher Management (HOD-AR-1.2, HOD-AR-1.3)
-3. Analytics & Reporting (HOD-AR-3.3)
-4. Support Center (Phase 6 requirements)
+    subgraph Services[Service Layer]
+        H[AuditTrailService]
+        I[NotificationService]
+        J[ReportEngine]
+        K[ErrorHandler]
+        L[EventBus]
+    end
 
-### Phase 4: Polish (Low)
-1. Skeleton loading states
-2. Advanced filtering and search
-3. Performance optimizations
-4. Accessibility audits and ARIA enhancements
+    subgraph API[API Layer]
+        M[REST API]
+        N[Route Guards]
+    end
 
----
+    subgraph Database[Data Layer]
+        O[(PostgreSQL)]
+        P[Audit Logs]
+        Q[Students]
+        R[Teachers]
+        S[Grades]
+    end
 
-## VIII. REQUIRED DATA STRUCTURES (Student Cross-Subject Visibility)
-
-```typescript
-interface StudentAcademicProfile {
-  studentId: string
-  name: string
-  indexNumber: string
-  programme: string
-  form: string
-  className: string
-  
-  // All subjects studied (core + elective + cross-department)
-  subjects: Array<{
-    subjectId: string
-    subjectName: string
-    department: string
-    type: 'CORE' | 'ELECTIVE' | 'CROSS_DEPT'
-    teacherId: string
-    teacherName: string
-    currentMark: number | null
-    previousMark: number | null
-    grade: string
-    auditStatus: 'MISSING' | 'COMPLETE' | 'ACTIVE' | 'FLAGGED'
-    lastUpdated: string
-  }>
-  
-  // Aggregated metrics
-  overallAverage: number
-  waecReadiness: 'READY' | 'AT_RISK' | 'NOT_READY'
-  interventionCount: number
-}
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+    G --> H
+    H --> I
+    I --> J
+    J --> K
+    K --> L
+    L --> M
+    M --> N
+    N --> O
+    O --> P
+    O --> Q
+    O --> R
+    O --> S
 ```
 
 ---
 
-This atomic design system provides a complete foundation for rebuilding the HOD view with proper separation of concerns, reusability, and scalability while addressing all documented requirements and identified gaps.
+## VI. USER FLOW DIAGRAMS
+
+### HOD Complete Workflow - Authentication to Action
+
+```mermaid
+flowchart TD
+    A[HOD User] --> B[Login Page]
+    B --> C{AuthService<br/>verifyHODRole()}
+    C -->|Valid| D[HOD Dashboard]
+    C -->|Invalid| E[Access Denied]
+    
+    D --> F{What Task?}
+    
+    F -->|Monitor Audit| G[Audit & Oversight]
+    F -->|Review Student| H[Grade Review]
+    F -->|Manage Interventions| I[Intervention Management]
+    F -->|Final Lock/Export| J[Lock & Export]
+    F -->|Settings| K[HOD Settings]
+    F -->|Support| L[Support Center]
+    F -->|Teachers| M[Teacher Management]
+    
+    G --> G1[Filter Audit Logs]
+    G1 --> G2{Short Justification?}
+    G2 -->|Yes| G3[Flag + Add HOD Comment]
+    G2 -->|No| G4[Proceed]
+    
+    H --> H1[Select Student]
+    H1 --> H2[Add HOD Remark<br/>HOD-AR-3.1]
+    H2 --> H3{Approve or Reject?}
+    H3 -->|Reject| H4[Notify Teacher with Reason<br/>HOD-AR-3.2]
+    H3 -->|Approve| H5[Record Approved]
+    
+    I --> I1[View Interference Clusters<br/>HOD-AR-5.1]
+    I1 --> I2[Add Counseling Note<br/>Phase 9.1]
+    I2 --> I3{Needs Flag?}
+    I3 -->|Yes| H4
+    I3 -->|No| I4[Mark Resolved<br/>HOD-AR-5.2]
+    
+    J --> J1{All Classes Complete?}
+    J1 -->|No| J2[Show Error]
+    J1 -->|Yes| J3[Apply Final Lock<br/>HOD-AR-4.1]
+    J3 --> J4[Generate WAEC Export<br/>HOD-AR-4.3]
+    
+    K --> K1[Update Settings]
+    K1 --> K2[Save to Backend]
+    
+    L --> L1[View System Health]
+    L --> L2{Add Ticket?}
+    L2 -->|Yes| L3[Create Support Ticket]
+    
+    M --> M1[View Teachers]
+    M --> M2[Impersonate Mode<br/>HOD-AR-1.3]
+    M2 --> M3[Troubleshoot As Teacher]
+```
+
+---
+
+### Grade Change Workflow (FR3 Justification)
+
+```mermaid
+flowchart TD
+    A[HOD Opens GradingSheet<br/>in Correction Mode] --> B[Select Student]
+    B --> C[Click Mark Field]
+    C --> D[JustificationPopup Opens<br/>HOD-AR-2.1]
+    
+    D --> E[Display Original Mark]
+    D --> F[Enter New Mark]
+    D --> G[Enter Justification<br/>Required ≥10 chars]
+    
+    G --> H{Justification Valid?}
+    H -->|No| I[Show Error: Too Short]
+    I --> G
+    H -->|Yes| J[Capture Edit<br/>Old Value → New Value]
+    
+    J --> K[AuditTrailService<br/>captureEdit()]
+    K --> L[Save to Audit Log]
+    L --> M[Update Grade Record]
+    M --> N[HOD Adds Feedback Comment<br/>updateHODComment()]
+    N --> O[Teacher Receives Notification]
+    O --> P[Teacher Opens Correction Mode]
+    P --> Q[HOD Feedback Visible<br/>in ObservationSidebar]
+    
+    Q --> R[Teacher Provides Explanation]
+    R --> S[Teacher Submits to HOD]
+    S --> T[HOD Reviews Response]
+    T --> U{Decision}
+    U -->|Approve| V[Record Archived]
+    U -->|Reject| W[Return with Reason]
+    W --> R
+```
+
+---
+
+### Real-Time Data Sync Flow
+
+```mermaid
+flowchart TD
+    subgraph Server[Backend]
+        A[(Database)]
+        B[WebSocket Server]
+        C[Event Source]
+    end
+
+    subgraph Client[HOD Client]
+        D[DataSyncLayer]
+        E[HODContext<br/>useState hooks]
+        F[UI Components]
+    end
+
+    A -->|Changes| C
+    C -->|Events| B
+    B -->|Push| D
+    
+    D -->|updateAuditLogs| E
+    D -->|updateInterventionAlerts| E
+    D -->|updateSubmissions| E
+    
+    E -->|rerender| F
+    
+    D -->|Fallback| G[Polling<br/>setInterval 30s]
+    G -->|Refresh| D
+```
+
+---
+
+## VII. ATOMS INTERACTION DIAGRAM (Form Propagation)
+
+```mermaid
+flowchart LR
+    subgraph InputFlow[Form Input Flow]
+        direction LR
+        A[User Input] --> B[onChange Handler]
+        B --> C[Validation Logic]
+        C --> D[setFormState]
+        D --> E[UI Rerenders]
+        
+        F[Validation Errors] --> G[Error Display]
+        G --> H[User Sees Feedback]
+    end
+
+    subgraph ButtonFlow[Button Interaction Flow]
+        direction LR
+        I[Click] --> J{Disabled?}
+        J -->|Yes| K[Ignore Click]
+        J -->|No| L[Set Loading True]
+        L --> M[Call API]
+        M --> N{Success?}
+        N -->|Yes| O[Set Loading False<br/>Close/Continue]
+        N -->|No| P[Show Error Toast]
+        P --> Q[Set Loading False]
+    end
+```
+
+---
+
+## VIII. DATA FLOW DIAGRAM (HOD Dashboard Page Load)
+
+```mermaid
+flowchart TD
+    A[Page Load] --> B[AuthGuard<br/>RequireHOD]
+    B -->|verified| C[useEffect]
+    C --> D[refreshAll() called]
+    
+    D --> D1[refreshAuditLogs]
+    D --> D2[refreshInterventionAlerts]
+    D --> D3[refreshSubmissions]
+    D --> D4[refreshLockedTerms]
+    
+    D1 --> E1[GET /api/hod/audit-logs]
+    D2 --> E2[GET /api/hod/intervention-alerts]
+    D3 --> E3[GET /api/hod/teachers/submissions]
+    D4 --> E4[GET /api/hod/locked-terms]
+    
+    E1 --> F1[setAuditLogs]
+    E2 --> F2[setInterventionAlerts]
+    E3 --> F3[setTeacherSubmissions]
+    E4 --> F4[setLockedTerms]
+    
+    F1 --> G[HODState in Context]
+    F2 --> G
+    F3 --> G
+    F4 --> G
+    
+    G --> H[HODDashboard Component]
+    H --> I[Render KPI Cards]
+    H --> J[Render Audit Timeline]
+    H --> K[Render Intervention Clusters]
+```
+
+---
+
+## IX. ATOMIC DESIGN SIZE COMPARISON
+
+```mermaid
+graph LR
+    A["<b>Atomic size</b><br/>(surface area)"] --> B{Complexity}
+    
+    B -->|Smallest| C[/* ATONS / */]
+    B -->|Small| D[/* MOLECULES / */]
+    B -->|Medium| E[/* Organisms / */]
+    B -->|Large| F[/* Templates / */]
+    B -->|Largest| G[/* PAGES / */]
+    
+    C --> C1[Button<br/>Input<br/>Label<br/>Icon]
+    D --> D1[StatusBadge<br/>CommentInput<br/>Sparkline<br/>SeverityChip]
+    E --> E1[AuditLogTimeline<br/>InterventionCluster<br/>SubmissionMatrix<br/>WAECValidator]
+    F --> F1[Dashboard Layout<br/>Form Layout<br/>Table Layout<br/>Detail Layout]
+    G --> G1[Full Page Views<br/>with Routing<br/>Data Fetching<br/>State Management]
+```
+
+---
+
+## X. COMPONENT REUSABILITY MATRIX
+
+```mermaid
+graph TD
+    subgraph Reuse[Component Reuse: Where Each Organism/Molecule Appears]
+        direction TB
+        
+        O[Organism: AuditLogTimeline] -->|Primary| O1[Audit Center Page]
+        O -->|Compact| O2[HOD Dashboard]
+        
+        M[Organism: InterventionAlertCluster] -->|Primary| M1[Interventions Hub]
+        M -->|Compact| M2[HOD Dashboard]
+        
+        S[Organism: SupportTicketKanban] -->|Primary| S1[Support Center]
+        
+        T[Molecule: StatusBadge] -->|Reused| T1[AuditLogTimeline]
+        T[Molecule: StatusBadge] -->|Reused| T2[InterventionAlertCluster]
+        T[Molecule: StatusBadge] -->|Reused| T3[TeacherSubmissionMatrix]
+        T[Molecule: StatusBadge] -->|Reused| T4[WAECExportValidator]
+        
+        J[Molecule: JustificationQualityIndicator] -->|Reused| J1[AuditLogTimeline]
+        J[Molecule: JustificationQualityIndicator] -->|Reused| J2[WAECExportValidator]
+        
+        B[Molecule: ActionButtonGroup] -->|Reused| B1[HODCommentThread]
+        B[Molecule: ActionButtonGroup] -->|Reused| B2[TeacherImpersonationConsole]
+        B[Molecule: ActionButtonGroup] -->|Reused| B3[WAECExportValidator]
+    end
+```
+
+---
+
+## XI. IMPLEMENTATION PRIORITIES (Visual)
+
+```mermaid
+gantt
+    title MAAIS HOD View Rebuild - Implementation Timeline
+    dateFormat  YYYY-MM-DD
+    section Phase 1: Foundation (Critical)
+    AuthService + PermissionMiddleware       :2025-01-01, 7d
+    APIClient + CacheLayer                   :2025-01-08, 5d
+    Core Atoms (Typography + Layout)         :2025-01-13, 7d
+    HOD Dashboard skeleton (real data)       :2025-01-20, 10d
+    
+    section Phase 2: Core Features (High)
+    Audit & Oversight Center (HOD-AR-2.x)    :2025-02-01, 14d
+    Grade Review & Approval (HOD-AR-3.x)     :2025-02-15, 14d
+    Intervention Management (HOD-AR-5.x)      :2025-02-15, 10d
+    
+    section Phase 3: Completion (Medium)
+    Final Lock & Export (HOD-AR-4.x)         :2025-03-01, 14d
+    Teacher Management (HOD-AR-1.x)           :2025-03-01, 10d
+    Analytics & Reporting (HOD-AR-3.3)        :2025-03-11, 10d
+    
+    section Phase 4: Polish (Low)
+    Skeleton loading states                   :2025-03-21, 7d
+    Advanced filtering + search              :2025-03-21, 7d
+    Performance optimizations                :2025-03-28, 7d
+    Accessibility audit                      :2025-04-04, 7d
+```
+
+---
+
+## XII. REQUIRED DATA STRUCTURE FOR CROSS-SUBJECT VISIBILITY
+
+```mermaid
+erDiagram
+    STUDENT {
+        string studentId PK
+        string name
+        string indexNumber
+        string programme
+        string form
+        string className
+        number overallAverage
+        string waecReadiness
+    }
+
+    SUBJECT_ENROLLMENT {
+        string enrollmentId PK
+        string studentId FK
+        string subjectId FK
+        string subjectName
+        string department
+        string type "CORE|ELECTIVE|CROSS_DEPT"
+        string teacherId FK
+        string teacherName
+        number|null currentMark
+        number|null previousMark
+        string grade
+        string auditStatus
+        datetime lastUpdated
+    }
+
+    AUDIT_LOG {
+        string logId PK
+        string recordId FK
+        string recordType "grade|hod_comment"
+        string userId
+        string action
+        string justification
+        json oldValue
+        json newValue
+        string status
+        datetime timestamp
+    }
+
+    HOD_COMMENT {
+        string commentId PK
+        string recordId FK
+        string hodId FK
+        string hodName
+        text message
+        datetime createdAt
+    }
+
+    STUDENT ||--o{ SUBJECT_ENROLLMENT : "enrolled in"
+    SUBJECT_ENROLLMENT ||--o{ AUDIT_LOG : "has audit"
+    AUDIT_LOG ||--o{ HOD_COMMENT : "may have"
+```
+
+---
+
+*This atomic design system document provides a complete foundation for rebuilding the HOD view with proper separation of concerns, reusability, and scalability while addressing all documented requirements and identified gaps.*
