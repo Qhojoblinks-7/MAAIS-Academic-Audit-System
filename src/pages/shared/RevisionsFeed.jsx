@@ -1,0 +1,400 @@
+import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  AlertTriangle,
+  Hourglass,
+  CheckCircle2,
+  ArrowRight,
+  Clock,
+  User,
+  BookOpen,
+  CornerDownRight,
+  MessageSquare,
+  X,
+  Sparkles,
+  Inbox,
+  Check,
+  Search
+} from 'lucide-react';
+import { cn } from '../../lib/utils';
+
+const initialRevisions = [
+  { 
+    id: 'RE-2041', 
+    student: 'Angela Owusu', 
+    index: '001',
+    class: 'SHS 1 Agric B', 
+    subject: 'General Agric', 
+    issue: 'Section B mismatch — script total sums to 48 while system reads 40.', 
+    teacher: 'Marcus Eshun', 
+    time: '2 hours ago', 
+    status: 'AWAITING_APPROVAL',
+    severity: 'HIGH',
+    history: [
+      { id: 1, role: 'HOD', user: 'Principal K. Mensah', message: 'Script total sum does not align with input fields on terminal sheet. Recheck formula or scan script.', time: '2h ago' }
+    ]
+  },
+  { 
+    id: 'RE-1982', 
+    student: 'Kwame Mensah', 
+    index: '002',
+    class: 'SHS 1 Agric B', 
+    subject: 'General Agric', 
+    issue: 'Practical lab exam score variance (+4 points correction requested).', 
+    teacher: 'Rita Owusu', 
+    time: '5 hours ago', 
+    status: 'TEACHER_REPLIED',
+    severity: 'MEDIUM',
+    history: [
+      { id: 1, role: 'HOD', user: 'Principal K. Mensah', message: 'Please provide script validation for the sudden jump in practical metrics.', time: '1 day ago' },
+      { id: 2, role: 'TEACHER', user: 'Rita Owusu', message: 'Mistake caught on final entry lab book page 14. Added the missing physics checkmark scores.', time: '5h ago' }
+    ]
+  },
+  { 
+    id: 'RE-1950', 
+    student: 'Yaw Boateng', 
+    index: '003',
+    class: 'SHS 1 Agric B', 
+    subject: 'General Agric', 
+    issue: 'Section A boundary grade distribution discrepancy.', 
+    teacher: 'Esi Aidoo', 
+    time: '1 day ago', 
+    status: 'AWAITING_APPROVAL',
+    severity: 'LOW',
+    history: [
+      { id: 1, role: 'HOD', user: 'Principal K. Mensah', message: 'Grade boundaries overlapping between B2 and B3 bands inside spreadsheet array.', time: '1 day ago' }
+    ]
+  },
+];
+
+const statusStyles = {
+  AWAITING_APPROVAL: 'bg-amber-50/70 text-amber-800 border-amber-200/50 ring-2 ring-amber-500/5',
+  TEACHER_REPLIED: 'bg-sky-50/70 text-sky-800 border-sky-200/50 ring-2 ring-sky-500/5',
+  RESOLVED: 'bg-emerald-50/70 text-emerald-800 border-emerald-200/50 ring-2 ring-emerald-500/5',
+};
+
+const severityStyles = {
+  HIGH: 'text-rose-600 bg-rose-50 border-rose-100',
+  MEDIUM: 'text-amber-600 bg-amber-50 border-amber-100',
+  LOW: 'text-slate-500 bg-slate-50 border-slate-100',
+};
+
+export function RevisionsFeed() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [revisions, setRevisions] = useState(initialRevisions);
+  const [activeTab, setActiveTab] = useState('pending');
+  const [selected, setSelected] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    const queryId = searchParams.get('revision');
+    if (queryId) {
+      const match = revisions.find(r => r.id === queryId);
+      if (match) setSelected(match);
+    } else if (revisions.length > 0 && !selected) {
+      setSelected(revisions[0]);
+    }
+  }, [searchParams, revisions]);
+
+  const filteredData = revisions.filter(item => {
+    const matchesTab = activeTab === 'all' 
+      ? true 
+      : activeTab === 'pending' 
+        ? item.status !== 'RESOLVED' 
+        : item.status === 'RESOLVED';
+        
+    const matchesSearch = 
+      item.student.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.subject.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesTab && matchesSearch;
+  });
+
+  const appendAnnotation = () => {
+    if (!replyText.trim() || !selected) return;
+
+    const newNote = {
+      id: Date.now(),
+      role: 'REGISTRY',
+      user: 'You (Auditor)',
+      message: replyText,
+      time: 'Just now'
+    };
+
+    setRevisions(prev => prev.map(item => {
+      if (item.id === selected.id) {
+        return {
+          ...item,
+          status: 'TEACHER_REPLIED',
+          history: [...item.history, newNote]
+        };
+      }
+      return item;
+    }));
+
+    setSelected(prev => ({
+      ...prev,
+      status: 'TEACHER_REPLIED',
+      history: [...prev.history, newNote]
+    }));
+    
+    setReplyText('');
+  };
+
+  return (
+    /* FIXED: Using flex-1 h-full min-h-0 instead of raw h-screen prevents bottom clipping inside layout shells */
+    <div className="flex-1 flex w-full h-full min-h-0 overflow-hidden bg-slate-50/40 font-sans antialiased">
+      
+      {/* LEFT COLUMN: PRIMARY WORKFLOW DATA STREAM */}
+      <div className="flex-1 flex flex-col min-w-0 h-full border-r border-slate-200/60 bg-white">
+        
+        {/* Navigation & Header Block */}
+        <div className="p-6 pb-4 border-b border-slate-100 shrink-0">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-sm shadow-slate-900/10">
+                <AlertTriangle size={18} className="text-amber-400" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-slate-900 tracking-tight">Correction Request Hub</h1>
+                <p className="text-xs text-slate-500 font-medium">Verify structural score and grade variances</p>
+              </div>
+            </div>
+
+            <div className="hidden sm:flex items-center gap-1.5 bg-amber-50 text-amber-800 px-2.5 py-1 rounded-lg border border-amber-200/30 text-[11px] font-semibold">
+              <Sparkles size={12} className="text-amber-600 animate-pulse" />
+              <span>{revisions.filter(r => r.status !== 'RESOLVED').length} Actions Required</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+            <div className="flex p-0.5 bg-slate-100 rounded-lg border border-slate-200/40">
+              {['pending', 'resolved', 'all'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => {
+                    setActiveTab(tab);
+                    const nextList = revisions.filter(r => tab === 'all' ? true : tab === 'pending' ? r.status !== 'RESOLVED' : r.status === 'RESOLVED');
+                    setSelected(nextList[0] || null);
+                  }}
+                  className={cn(
+                    "px-4 py-1.5 text-xs font-semibold capitalize rounded-md transition-all duration-150",
+                    activeTab === tab 
+                      ? "bg-white text-slate-900 shadow-sm border border-slate-200/20 font-bold" 
+                      : "text-slate-500 hover:text-slate-800"
+                  )}
+                >
+                  {tab === 'pending' ? 'Needs Attention' : tab}
+                </button>
+              ))}
+            </div>
+
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search student, code, course..."
+                className="w-full pl-9 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-950/5 focus:border-slate-400 transition-all placeholder:text-slate-400"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Dynamic Card Scroll Layout */}
+        <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30 space-y-3 min-h-0 no-scrollbar">
+          {filteredData.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-slate-200 p-8 text-center">
+              <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center mb-3">
+                <Inbox size={20} className="text-slate-400" />
+              </div>
+              <p className="text-xs font-semibold text-slate-700">No revisions matched filter</p>
+              <p className="text-[11px] text-slate-400 max-w-[220px] mt-0.5">Modify parameters or check the resolution log directories.</p>
+            </div>
+          ) : (
+            filteredData.map((job, idx) => {
+              const isSelected = selected?.id === job.id;
+              return (
+                <motion.div
+                  key={job.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.15, delay: idx * 0.02 }}
+                  onClick={() => {
+                    setSelected(job);
+                    setReplyText('');
+                  }}
+                  className={cn(
+                    "p-5 rounded-xl border transition-all duration-200 cursor-pointer relative group bg-white",
+                    isSelected 
+                      ? "border-slate-900 shadow-sm ring-1 ring-slate-900/5" 
+                      : "border-slate-200/70 hover:border-slate-350 hover:shadow-sm"
+                  )}
+                >
+                  {isSelected && (
+                    <div className="absolute top-0 bottom-0 left-0 w-1 bg-slate-900 rounded-l-xl" />
+                  )}
+
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded border tracking-wide", statusStyles[job.status])}>
+                        {job.status === 'AWAITING_APPROVAL' ? 'Pending Review' : job.status === 'TEACHER_REPLIED' ? 'Reply Received' : 'Resolved'}
+                      </span>
+                      <span className={cn("text-[9px] font-extrabold px-1.5 py-0.5 rounded border tracking-wider", severityStyles[job.severity])}>
+                        {job.severity}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-slate-400 text-[11px] font-medium">
+                      <Clock size={12} />
+                      <span>{job.time}</span>
+                    </div>
+                  </div>
+
+                  <p className="text-[13px] font-medium text-slate-700 leading-relaxed mb-4 bg-slate-50 border border-slate-100 p-3 rounded-lg font-mono tracking-tight">
+                    {job.issue}
+                  </p>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                    <div className="flex items-center gap-4 text-[12px] font-medium text-slate-600">
+                      <div className="flex items-center gap-1.5">
+                        <User size={13} className="text-slate-400" />
+                        <span className="font-semibold text-slate-800">{job.student}</span>
+                      </div>
+                      <div className="w-1 h-1 bg-slate-300 rounded-full" />
+                      <div className="flex items-center gap-1.5">
+                        <BookOpen size={13} className="text-slate-400" />
+                        <span>{job.class} <span className="text-slate-300 mx-1">/</span> <span className="text-slate-400 font-normal">{job.subject}</span></span>
+                      </div>
+                    </div>
+                    <ArrowRight size={14} className={cn(
+                      "transition-all duration-200",
+                      isSelected ? "text-slate-900 translate-x-0.5" : "text-slate-300 group-hover:text-slate-500 group-hover:translate-x-0.5"
+                    )} />
+                  </div>
+                </motion.div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* RIGHT COLUMN: INSPECTOR FLYOUT / CONTEXT STREAM */}
+      <AnimatePresence mode="wait">
+        {selected ? (
+          <motion.div
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 12 }}
+            transition={{ duration: 0.15 }}
+            className="w-[28rem] bg-white h-full border-l border-slate-200/70 flex flex-col shrink-0 shadow-2xl shadow-slate-900/5 hidden lg:flex min-h-0"
+          >
+            {/* Inspector Topbar Panel */}
+            <div className="p-6 border-b border-slate-100 flex items-start justify-between bg-slate-50/40 shrink-0">
+              <div>
+                <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                  <Hourglass size={12} className="text-slate-400" /> Discrepancy Context File
+                </div>
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">{selected.student}</h3>
+                <p className="text-xs font-medium text-slate-500 mt-0.5">{selected.class} • <span className="text-slate-400">{selected.subject}</span></p>
+              </div>
+              <button
+                onClick={() => setSelected(null)}
+                className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded-lg transition-all"
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            {/* Conversation Flow Stream & Timelines */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0 no-scrollbar">
+              
+              {/* History Nodes */}
+              <div className="space-y-3.5">
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Communication Logs</h4>
+                
+                <div className="space-y-3 relative before:absolute before:top-2 before:bottom-2 before:left-[13px] before:w-0.5 before:bg-slate-100">
+                  {selected.history.map((node) => (
+                    <div key={node.id} className="flex gap-3 relative z-10">
+                      <div className={cn(
+                        "w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-sm ring-4 ring-white shrink-0 mt-0.5",
+                        node.role === 'HOD' ? 'bg-amber-600' : node.role === 'TEACHER' ? 'bg-sky-600' : 'bg-slate-800'
+                      )}>
+                        {node.role[0]}
+                      </div>
+                      
+                      <div className="flex-1 bg-slate-50 border border-slate-200/60 rounded-xl p-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[11px] font-bold text-slate-800">{node.user}</span>
+                          <span className="text-[10px] text-slate-400">{node.time}</span>
+                        </div>
+                        <p className="text-xs text-slate-600 leading-relaxed font-mono">"{node.message}"</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Dynamic Note Generation Target */}
+              <div className="space-y-2">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Append System Annotation</label>
+                <div className="relative">
+                  <textarea
+                    rows={4}
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder="Enter explicit counter-validation findings..."
+                    className="w-full p-3 bg-slate-50/60 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/5 focus:border-slate-500 placeholder-slate-400 resize-none transition-all leading-relaxed"
+                  />
+                  <div className="absolute bottom-3 right-3 text-slate-300 pointer-events-none">
+                    <MessageSquare size={13} />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Panel Sticky Footer Action Blocks */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50/40 space-y-2 shrink-0">
+              <button
+                onClick={() => navigate(`/grading?revision=${selected.id}&student=${selected.index}`)}
+                className="w-full py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-slate-800 transition-all shadow-sm flex items-center justify-center gap-1.5 group"
+              >
+                Open Correction Sheet 
+                <ArrowRight size={13} className="text-slate-400 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+              </button>
+
+              <button
+                disabled={!replyText.trim()}
+                onClick={appendAnnotation}
+                className={cn(
+                  "w-full py-2 rounded-xl text-xs font-semibold tracking-wide border transition-all flex items-center justify-center gap-1.5",
+                  replyText.trim() 
+                    ? "bg-white border-slate-200 text-slate-700 hover:bg-slate-100 cursor-pointer shadow-sm" 
+                    : "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60"
+                )}
+              >
+                <CornerDownRight size={13} />
+                Save Internal Annotation
+              </button>
+            </div>
+
+          </motion.div>
+        ) : (
+          <div className="w-[28rem] bg-slate-50/20 border-l border-slate-200/60 hidden lg:flex flex-col items-center justify-center p-8 text-center shrink-0">
+            <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center mb-3 text-slate-400">
+              <Check size={16} />
+            </div>
+            <p className="text-xs font-semibold text-slate-700">No Request Selected</p>
+            <p className="text-[11px] text-slate-400 mt-0.5 max-w-[200px]">Choose an active sheet revision node from the feed flow stream to view history.</p>
+          </div>
+        )}
+      </AnimatePresence>
+
+    </div>
+  );
+}

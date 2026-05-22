@@ -1,170 +1,133 @@
-export type UserRole = 'ADMIN' | 'HOD' | 'TEACHER' | 'STUDENT';
+// Type definitions - for JSDoc type checking only
 
-export interface User {
-  id: string;
-  username: string;
-  name: string;
-  role: UserRole;
-  departmentId?: string;
-  avatar?: string;
-}
+/**
+ * @typedef {'ADMIN' | 'HOD' | 'TEACHER' | 'STUDENT'} UserRole
+ */
 
-export interface Revision {
-  id: string;
-  studentId: string;
-  studentName: string;
-  classId: string;
-  className: string;
-  section: string;
-  hodComment: string;
-  timestamp: string;
-  oldValue: number;
-  status: 'PENDING' | 'RESOLVED';
-}
+/**
+ * @typedef {Object} User
+ * @property {string} id
+ * @property {string} username
+ * @property {string} name
+ * @property {UserRole} role
+ * @property {string} [departmentId]
+ * @property {string} [avatar]
+ */
 
-export interface HistoricalTerm {
-  year: string;
-  term: string;
-  finalGrade: number;
-  behaviorRating: number;
-  department: string;
-  hodComment?: string;
-}
+/**
+ * @typedef {Object} Revision
+ * @property {string} id
+ * @property {string} studentId
+ * @property {string} studentName
+ * @property {string} classId
+ * @property {string} className
+ * @property {string} section
+ * @property {string} hodComment
+ * @property {string} timestamp
+ * @property {number} oldValue
+ * @property {'PENDING' | 'RESOLVED'} status
+ */
 
-export interface HistoricalObservation {
-  id: string;
-  date: string;
-  type: string;
-  comment: string;
-  teacherName: string;
-}
+/**
+ * @typedef {Object} HistoricalTerm
+ * @property {string} year
+ * @property {string} term
+ * @property {number} finalGrade
+ * @property {number} behaviorRating
+ * @property {string} department
+ * @property {string} [hodComment]
+ */
 
-export interface ArchiveStudent {
-  id: string;
-  name: string;
-  index: string;
-  currentClass: string;
-  department: string;
-  history: HistoricalTerm[];
-  observations: HistoricalObservation[];
-}
+/**
+ * @typedef {Object} HistoricalObservation
+ * @property {string} id
+ * @property {string} date
+ * @property {string} type
+ * @property {string} comment
+ * @property {string} teacherName
+ */
 
-export interface MissingObservation {
-  id: string;
-  studentId: string;
-  studentName: string;
-  classId: string;
-  className: string;
-  missingType: 'Lab Safety' | 'Behavioral' | 'Resource Economy' | 'Hygienic Practices';
-  department: 'Science' | 'Home Economics' | 'General';
-}
+/**
+ * @typedef {Object} ArchiveStudent
+ * @property {string} id
+ * @property {string} name
+ * @property {string} index
+ * @property {string} currentClass
+ * @property {string} department
+ * @property {HistoricalTerm[]} history
+ * @property {HistoricalObservation[]} observations
+ */
 
-export type AuditStatus = 'MISSING' | 'COMPLETE';
+/**
+ * @typedef {Object} MissingObservation
+ * @property {string} id
+ * @property {string} studentId
+ * @property {string} studentName
+ * @property {string} classId
+ * @property {string} className
+ * @property {'Lab Safety' | 'Behavioral' | 'Resource Economy' | 'Hygienic Practices'} missingType
+ * @property {'Science' | 'Home Economics' | 'General'} department
+ */
 
-export interface Student {
-  id: string;
-  indexNumber: string;
-  name: string;
-  departmentId: string;
-  currentClass: string;
-  atRisk?: boolean;
-  medicalNotes?: string;
-  behavioralNotes?: string;
-}
+/**
+ * @typedef {'MISSING' | 'COMPLETE'} AuditStatus
+ */
 
-export interface Subject {
-  id: string;
-  name: string;
-  code: string;
-  type: 'CORE' | 'ELECTIVE' | 'TECHNICAL';
-  departmentId: string;
-}
+/**
+ * @typedef {'DRAFT' | 'LOCKED' | 'RESOLVED' | 'FLAGGED'} AuditLogStatus
+ */
 
-export interface GradeRecord {
-  id: string;
-  studentId: string;
-  subjectId: string;
-  term: string;
-  year: string;
-  theoryScore: number;
-  practicalScore?: number;
-  totalScore: number;
-  status: 'DRAFT' | 'SUBMITTED' | 'LOCKED';
-  updatedAt: string;
-  updatedBy: string;
-}
+/**
+ * @typedef {Object} AuditLogEntry
+ * @property {string} id
+ * @property {string} [recordId]
+ * @property {string} userId
+ * @property {string} user
+ * @property {'CREATE' | 'UPDATE' | 'DELETE' | 'LOCK' | 'AUTO_SAVE' | 'INTERVENTION_ALERT' | 'OVERRIDE'} action
+ * @property {string} target
+ * @property {string} [oldValue]
+ * @property {string} [newValue]
+ * @property {string} justification
+ * @property {AuditLogStatus} status
+ * @property {string} time
+ * @property {string} [hodComment]
+ */
 
-export interface AuditLog {
-  id: string;
-  recordId: string;
-  userId: string;
-  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'LOCK';
-  oldValue?: any;
-  newValue?: any;
-  justification: string;
-  timestamp: string;
-}
+/**
+ * @typedef {'LOW' | 'MEDIUM' | 'HIGH'} AlertSeverity
+ */
 
-export interface UserSettings {
-  mfaEnabled: boolean;
-  notifications: {
-    system: boolean;
-    email: boolean;
-    sms: boolean;
-  };
-}
+/**
+ * @typedef {Object} InterventionAlertEntry
+ * @property {string} id
+ * @property {string} studentId
+ * @property {string} studentName
+ * @property {string} studentIndex
+ * @property {string} subject
+ * @property {string} reason
+ * @property {AlertSeverity} severity
+ * @property {string} timestamp
+ * @property {boolean} resolved
+ */
 
-export interface SupportTicket {
-  id: string;
-  subject: string;
-  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
-  timestamp: string;
-  lastUpdate: string;
-}
+/**
+ * @typedef {'LOCKED' | 'UNLOCKED' | 'SUBMITTED' | 'DRAFT'} MatrixLockStatus
+ */
 
-export interface SystemStatus {
-  localServer: 'HEALTHY' | 'UNSTABLE' | 'DOWN';
-  internet: 'HEALTHY' | 'UNSTABLE' | 'DOWN';
-}
+/**
+ * @typedef {Object} SubmissionProgress
+ * @property {string} teacherId
+ * @property {string} teacherName
+ * @property {string} subjectName
+ * @property {string} className
+ * @property {number} studentCount
+ * @property {number} gradedCount
+ * @property {number} progress
+ * @property {MatrixLockStatus} status
+ */
 
-export interface ResourceMaterial {
-  id: string;
-  title: string;
-  type: 'PDF' | 'LINK' | 'DOCUMENT';
-  url: string;
-  addedAt: string;
-}
+/**
+ * @typedef {number} LockedTermsCount
+ */
 
-export interface TimetableEntry {
-  id: string;
-  day: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday';
-  startTime: string;
-  endTime: string;
-  subjectName: string;
-  className: string;
-  venue: string;
-  type: 'REGULAR' | 'SUBSTITUTION' | 'LAB';
-  missingObservations?: number;
-  isClash?: boolean;
-  tasks?: string[];
-  materials?: ResourceMaterial[];
-}
-
-export interface InterventionAlert {
-  id: string;
-  studentId: string;
-  subjectId: string;
-  reason: string;
-  severity: 'LOW' | 'MEDIUM' | 'HIGH';
-  timestamp: string;
-  resolved: boolean;
-}
-
-export interface ClassProgress {
-  id: string;
-  subjectName: string;
-  className: string;
-  studentCount: number;
-  progress: number;
-  status: string;
-}
+export {};

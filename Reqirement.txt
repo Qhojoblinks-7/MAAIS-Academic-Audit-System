@@ -1,0 +1,121 @@
+ Interview Documentation 101: Mando SHSTS Academic Audit System Requirements
+Interviewee: Head of Department (HOD)
+Topic: Design and Implementation of the Internal Academic Audit and Intervention System
+Part 1: Understanding the Current System and Problems
+Question
+HOD's Answer/Confirmed Information
+Project Issue Addressed
+Q1: How do you currently receive, check, and record student grades after an examination? Where exactly is the final, official data kept right now?
+The process relies on manual broadsheets and un-networked spreadsheets. Fixing errors requires comparing the teacher's original paper submission with the keyed-in score.
+Data Decentralization 11
+
+
+Q2: How long does it typically take to finish compiling all the class results after the last exam?
+(Answer was interrupted, but the problem statement indicates this process often exceeds one month.) 2
+
+
+Delayed Compilation 3
+
+
+Q3: When a mistake is found in a student's mark, how do you fix it? Is it easy to find out who made the mistake or who entered the score?
+We contact the Subject Master and manually compare what they provided versus what was keyed in. It is not easy to automatically find who made the keying mistake.
+Lack of Audit and Accountability 4
+
+
+Q4: What was the main reason the old computer system stopped working well or was no longer useful?
+
+It is not online/networked: It is installed on one computer only, preventing multiple people from working simultaneously. 5 No Remote Access: Teachers must physically travel to campus to key in results; they cannot access it from home. Weak Security: Password protection is not strong enough, which leads to data integrity concerns.
+
+
+Failure of Legacy System 6
+
+
+
+Part 2: Academic Tracking and Intervention
+Question
+HOD's Answer/Confirmed Information
+Project Objective Addressed
+Q5: If a student is performing poorly in SHS 3, can you easily see their complete grades and aggregates from SHS 1 and SHS 2 right away?
+No, it is difficult and time-consuming to access the longitudinal history needed for timely intervention.
+Continuous Progress Tracking 7
+
+
+Q6: When a student shows continuously declining grades, at what point do you usually find out?
+We often cannot identify or flag weak students until the final result compilation, making strategic intervention impossible. 8
+
+
+Delayed Academic Intervention 9
+
+
+Q7: Would it help your academic board if the new system could show a simple visual trend of a student's performance over all three years?
+
+Yes, this visual trend analysis would be highly beneficial for early academic intervention. 10
+
+
+Continuous Progress Tracking Module 11
+
+
+
+Part 3: Grade Verification, Security, and Audit
+Question
+HOD's Answer/Confirmed Information
+Project Objective Addressed
+Q8: Right now, what is the exact step-by-step process a teacher follows when they submit their grades to you as the HOD?
+(Process is currently manual/fragmented.) The new system must implement a workflow where teachers submit grades, and HODs review and verify them before approval. 12
+
+
+Role-Based Grade Verification Workflow 13
+
+
+Q9: After you, the HOD, have checked and approved a mark, should the system lock that mark to prevent anyone from making further changes?
+
+Yes, absolutely. The system must lock the marks after HOD approval to prevent unauthorised changes and protect data integrity. 14
+
+
+Role-Based Grade Verification Workflow 15
+
+
+Q10: If someone modifies a sensitive student record, is it important for the system to automatically record who made the modification, when it happened, and what was changed?
+
+Yes, it is critical. The Audit Log must record the user, date, and nature of every modification to enhance accountability. 16
+
+
+Data Integrity and Auditability 17
+
+
+
+Part 4: Data Centralisation and External Compliance
+Question
+HOD's Answer/Confirmed Information
+Project Objective Addressed
+Q11: What other important information about teachers and staff should be kept safe and centralised in this new system?
+We need to track the subjects teachers teach and how those assignments change over time (e.g., teaching Mathematics one year and Elective Math the next). 18
+
+
+Centralise Personnel Data 19
+
+
+Q12: For students, what important non-grade information do you wish you could easily track over their time at school?
+We need a log for Qualitative Assessment (respectful behaviour towards authorities/colleagues) and Medical Updates (dates admitted to NHU). 20
+
+
+Centralise Qualitative Data 21
+
+
+Q13: When preparing verified data for the official WAEC STP, what is the hardest part of that process right now?
+The system must be able to: 1) Handle internal score conversion (e.g., converting class exercises/notes to the required 20%). 2) Match WAEC's specific assessment groups (Class Exercise, Exam Group, Vertical Portfolio). 3) Generate an exportable script that can be easily downloaded and uploaded directly to the WAEC STP. 22
+
+
+Facilitate External Compliance 23
+
+
+
+Part 5: Confirmed Additional Requirement
+Question
+HOD's Answer/Confirmed Information
+New Functionality
+Q14: (Open-ended) Is there any other functionality you would like the system to have?
+Student Portal/View: The system must allow students to log in with their details to access their results and academic information online.
+Student Access Module
+
+

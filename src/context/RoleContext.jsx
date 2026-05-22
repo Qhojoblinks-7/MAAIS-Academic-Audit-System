@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState } from 'react';
-import { User, UserRole } from '../types';
 
 const RoleContext = createContext(undefined);
 
@@ -11,6 +10,7 @@ const mockUsers = {
     role: 'TEACHER',
     departmentId: 'agric',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Hackman',
+    currentTerm: '2026',
   },
   HOD: {
     id: 'h1',
@@ -19,6 +19,7 @@ const mockUsers = {
     role: 'HOD',
     departmentId: 'home-ec',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Martha',
+    currentTerm: '2026',
   },
   ADMIN: {
     id: 'a1',
@@ -26,6 +27,7 @@ const mockUsers = {
     name: 'System Administrator',
     role: 'ADMIN',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin',
+    currentTerm: '2026',
   },
   STUDENT: {
     id: 's1',
@@ -34,6 +36,7 @@ const mockUsers = {
     role: 'STUDENT',
     departmentId: 'agric',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Angela',
+    currentTerm: '2026',
   },
 };
 

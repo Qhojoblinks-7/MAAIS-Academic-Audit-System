@@ -1,0 +1,795 @@
+ INTRODUCTION AND REQUIREMENTS SPECIFICATION
+1.1 Introduction
+The Mando SHTS Academic Audit and Intervention System is an integrated, web-based platform designed to modernise the management of student academic records, particularly within Technical and Vocational departments. In the current educational landscape, the transition to the WAEC Student Transcript Portal (STP) requires a high degree of data integrity and specific formatting that manual systems cannot easily provide.
+This system aims to bridge the gap between traditional classroom grading and national digital standards by implementing a "Security-First" approach to grade entry, ensuring that every modification is tracked and every drop in student performance is flagged for intervention.
+1.2 Problem Statement
+Mando SHTS currently faces three primary challenges in its academic processing:
+1.	Active Manipulation Risk: Without a digital audit trail, grades can be altered after submission without accountability, leading to potential academic fraud.
+2.	Complex Weighting: Technical subjects require complex calculations involving Workshop Practicals (WIP), Technical Drawing, and Theory. Manual calculations are prone to human error.
+3.	Lack of Proactive Intervention: There is no automated system to alert the Head of Department (HOD) when a student’s performance declines significantly across terms, often resulting in late-stage failures that could have been prevented.
+1.3 System Objectives
+The primary objectives of this project are:
+●	To develop a Mandatory Audit Trail that logs the "Who, When, and Why" of every grade change.
+●	To automate the 30/70 and Technical Weighting calculations for Core and Elective subjects.
+●	To provide an Intervention Engine that flags students with a 15% or greater performance drop.
+●	To streamline the WAEC STP Export process through an HOD-controlled "Final Lock" mechanism.
+1.4 Functional Requirements (FR)
+Functional requirements define the specific behaviors and services the system must provide.
+●	FR1: Role-Based Access Control (RBAC): The system shall provide distinct interfaces for System Admins, HODs, Teachers, and Students.
+●	FR2: Hybrid Grade Entry: The system shall support diverse grading models, including milestone-based marks for workshop projects (Marking out, Assembly, Finishing).
+●	FR3: Automated Audit Middleware: Any edit to a saved grade shall trigger a mandatory justification popup; the system shall block the save until a reason is provided.
+●	FR4: Behavioral & Safety Logging: Teachers shall be able to log workshop safety compliance and attitudinal ratings (1-5).
+●	FR5: Finalization & Locking: The system shall allow HODs to "Lock" results, making them read-only and enabling the WAEC CSV export.
+1.5 Non-Functional Requirements (NFR)
+Non-functional requirements define the system's operational constraints and quality attributes.
+●	NFR1: Data Integrity: The system must utilize ACID-compliant transactions (PostgreSQL) to ensure that result updates and audit logs are saved simultaneously or not at all.
+●	NFR2: Security: All passwords must be hashed using industry-standard algorithms (Bcrypt), and all data transmission must be encrypted via SSL/TLS.
+●	NFR3: Performance: The system shall generate a departmental broadsheet or WAEC export file in under 5 seconds.
+●	NFR4: Usability: The interface must be responsive, allowing teachers to enter marks using tablets or smartphones within the workshop environment.
+1.6 User Roles and Responsibilities
+Role	Responsibility
+System Admin	Manages user accounts, academic years, and system backups.
+HOD	Audits grade changes, reviews intervention alerts, and locks finalized data for WAEC.
+Teacher	Inputs raw scores, provides justifications for edits, and logs student behavior.
+Student	Views personal academic trends and receives counseling notifications.
+
+
+CHAPTER 2: SYSTEM ANALYSIS AND MODELING
+2.1 Overview of System Modeling
+To ensure the Mando SHSTS Audit System is both secure and efficient, this chapter employs Data Flow Diagrams (DFDs) and Sequence Diagrams. These models illustrate the journey of a grade from initial entry by a teacher, through the audit middleware, to final approval by the Head of Department.
+2.2 Context Diagram (Level 0 DFD)
+The Context Diagram represents the entire system as a single process and identifies its relationships with external entities.
+●	Entities: Teacher, HOD, Student, System Admin, and the WAEC STP Portal.
+●	Key Flows: Teachers provide marks; HODs provide approval commands; the System provides processed reports to students and formatted CSV files to the WAEC Portal.
+2.3 Data Flow Diagram (DFD) Level 1
+The Level 1 DFD breaks down the system into its core functional processes.
+1.	Process 1.0: User Authentication: Validates credentials and assigns the correct dashboard (Admin/HOD/Teacher/Student).
+2.	Process 2.0: Result Management: Handles the logic of 30/70 core grading and multi-milestone technical grading.
+3.	Process 3.0: Audit & Validation Engine: The "Watchdog" process that intercepts edits, requests justifications, and writes to the audit_logs table.
+4.	Process 4.0: Intervention Logic: Analyzes data trends and generates flags for students with declining performance.
+5.	Process 5.0: Report & Export Generation: Consolidates data for student viewing and formats the final HOD-locked data for WAEC.
+2.4 Sequence Diagram: "Edit Grade with Audit Trail"
+The Sequence Diagram focuses on the timing and interaction between the system's components during the most critical operation: Modifying an existing grade.
+●	The Handshake:
+1.	Teacher clicks edit on the Frontend (React).
+2.	Frontend requests current status from Backend (Laravel).
+3.	Backend checks Database for a "Locked" status.
+4.	If unlocked, the Teacher submits the new mark and a Reason.
+5.	Backend performs an atomic transaction: Updating the Results table while simultaneously creating an entry in the Audit_Logs.
+6.	Database confirms success back to the user.
+2.5 Logic Specification (Decision Table)
+To ensure the "Active Manipulation" of grades is stopped, the system follows this strict logic for every data entry:
+Condition	Action
+If Grade is NEW	Allow Save; Set Status to 'Draft'.
+If Grade is CHANGED	Trigger Audit Popup; Require Justification; Log Old/New values.
+If Status is 'LOCKED'	Block all Edit/Delete requests; Return "Read-Only" error.
+If Change > 15% Drop	Trigger record in intervention_alerts table.
+
+1. Functional Requirements (The "Tech" Logic)
+Based on the existing departmental trends (like the 100+100 Home Ec model or the Agric Practical merging), here is the specific logic for the Technical department:
+●	Metalwork & Woodwork: Phase-Based Grading
+○	Logic: Projects in these shops aren't marked once. They require WIP (Work-in-Progress) tracking.
+○	System Requirement: The Mark Entry screen should allow for "Milestone Marks" (e.g., Marking out,Cutting/Preparation, Assembly, Finishing).
+●	Technical Drawing (TD): The Foundation Subject
+○	Logic: TD marks often correlate with performance in Woodwork and Metalwork.
+○	System Requirement: A Correlation Analytics feature to show if a student's poor Woodwork score is due to a lack of understanding in Drawing.
+2. Design Phase: Entity Relationship Diagram (ERD)
+Your database needs to accommodate "Workshop Entities." In SAD, we define these as:
+●	Tools/Equipment Table: Track who is responsible for the Lathe (Metalwork) or the Circular Saw (Woodwork).
+●	Safety Incident Log: A requirement highlighted by the Science and Home Ec HODs. For Tech students, this tracks "Workshop Safety Compliance"—crucial for their final testimonials.
+●	Project Snapshot: A field to link to a digital portfolio or description of the final piece (e.g., "Dining Table - Sapele Wood").
+3. The "Audit" & Security Requirements
+Technical HODs face high pressure during WAEC Practical Exams. Your system must solve these:
+Feature	Technical Department Application
+Grade Locking	Once the "Final Polish" mark is entered for a project, the grade must lock to prevent late-term "score boosting."
+Audit Trail	If a mark is changed, the system must force a justification (e.g., "Re-marked due to improved finishing").
+Resource Audit	Tracking which teacher was in charge of the Woodwork shop during a specific term for accountability.
+4. Implementation Phase: User Interface (React)
+For the Technical Teachers, the interface should be "Mobile-First."
+●	Why? Teachers are in the workshop, not at a desk.
+●	Requirement: A simple React form where they can tap "Pass/Fail" for safety checks or enter quick milestone marks directly from their phone while at the workbench.
+5. SAD Summary for the Technical Module
+●	Input: Theory Scores, Practical Milestone Marks, Drawing Plates, Safety Observations.
+●	Process: Weighting (e.g., 60% Practical / 40% Theory) → Totaling → HOD Review.
+●	Output: WAEC STP Scripts, Student Progress Reports, Workshop Resource Audit.
+1. The Core Philosophy: "70/30" Split
+The new curriculum and the STP shift the focus away from "chew, pour, pass, forget."
+●	Internal Assessment (30%): This is what your system will manage. It includes formative assessments like portfolios, projects, and class exercises.
+●	External Assessment (70%): The final WAEC exam, which now focuses 70% on critical thinking and problem solving rather than factual recall.
+2. Required Data for the STP
+The STP requires a specific dataset that you must include in your PostgreSQL schema to ensure the export works perfectly:
+Data Category	Specific Requirements for your System
+Learner Bio-data	Standard name, Index number, and Class assigned.
+Assessment Groups	Grades must be categorized into: Class Exercise, Exam Group, and Vertical Portfolio.
+GPA/CGPA	The system must calculate these automatically each semester.
+Qualitative Data	A dedicated section for "Character Qualities" and "Behavioral Observations".
+________________________________________
+3. The "Pain Point": Internal Score Conversion
+As noted in your interview with the Science HOD, the hardest part of the STP is the upload aspect.
+●	The Problem: Teachers enter marks out of 100, but WAEC might need them converted to a 20% or 30% weight based on the subject's assessment group.
+●	The SAD Solution: Your Laravel backend should handle this math. The teacher enters the raw mark, and the system stores both the Raw Score and the Converted STP Score.
+________________________________________
+4. Technical Export Requirements
+To avoid the "Failed Uploads" mentioned by the teachers, your system's export function must:
+1.	Validate Data: Ensure no student has a missing mark or an impossible score (e.g., 105/100) before exporting.
+2.	Match Formats: Generate the file in the exact CSV or Excel format the WAEC portal accepts.
+3.	Handle Grouping: Automatically group Practical, Theory, and Portfolio marks into the "Vertical Portfolio" columns required for Technical and Vocational subjects.
+________________________________________
+5. SAD Data Flow for the STP
+1.	Input: Teachers enter raw marks for Metalwork, Woodwork, etc.
+2.	Audit: HOD approves the marks (locking them).
+3.	Transformation: Laravel calculates the final weighted scores and GPA.
+4.	Output: A one-click "Download for WAEC" button that produces the final script.
+These diagrams provide the "High-Level Design" (HLD) required to define your system's boundaries and data structure before you write any Laravel or React code.
+1. The Context Diagram (Start Here)
+The Context Diagram is the first graphic you should produce. It treats your entire School Management System as a single process and identifies every external entity it interacts with.
+●	Why first? It defines the scope of your project.
+●	Key Entities to Include:
+○	Teachers: Inputs for raw marks (Woodwork, Metalwork, Science, etc.).
+○	HODs: Inputs for approval and feedback.
+○	WAEC STP: The primary output destination for your exported scripts.
+○	Students: The external viewers of the verified grades.
+2. The Entity-Relationship Diagram (ERD)
+Once you know who is using the system, you must design the Database Schema through an ERD. This is critical for your project because of the complex grading formulas for the Technical and Vocational departments.
+●	Why second? A well-thought-out schema ensures data integrity and is essential for a high-performing backend.
+●	Core Entities for your ERD:
+○	Users: (Teachers, HODs, Admins) with role-based access.
+○	Students: Academic histories and enrollment records.
+○	AuditLogs: Crucial for tracking who changed a mark and why.
+○	Results/Grades: Linked to specific subjects like Metalwork or Technical Drawing.
+3. Data Flow Diagram (DFD) Level 0
+After the ERD, create a DFD Level 0 to show how data moves through the system's internal processes.
+●	The "Audit" Path: Visualize the path from Teacher Entry → HOD Validation → Audit Log Generation → Final Result Database.
+●	The "STP" Path: Show how raw scores are pulled, weighted, and transformed into the exportable WAEC script.
+Summary of Priority
+Order	Diagram Type	Purpose
+1	Context Diagram	Define system boundaries (Who uses it?).
+2	ERD	Design the PostgreSQL database structure.
+3	DFD Level 0/1	Map out the "Audit" and "Grading" logic.
+This Context Diagram (also known as a Level 0 DFD) defines the boundaries of your Mando SHSTS Academic Audit & Intervention System. It treats the entire platform as a single process in the center and maps the critical data flowing between it and external entities like the HODs, Teachers, and the WAEC STP.
+Mando SHSTS System: Context Diagram (Level 0)
+External Entity	Data Flow INTO the System (Input)	Data Flow FROM the System (Output)
+Teachers	Raw Theory/Practical Marks, Behavioral Observations, Workshop Safety Logs.	Mark Verification status, Feedback/Correction requests from HOD.
+HODs	Validation/Approval commands, Portfolio re-opening requests, Staff Assignments.	Departmental broadsheets, Student performance trend graphs, Audit trail reports.
+Students	Secure Login Credentials (to access personal records).	Individual verified grades, Performance testimonials, Medical/Behavioral status view.
+WAEC STP	No direct input (It is an external destination for data).	Clean, converted, and exported CSV/Excel scripts formatted for national upload.
+
+ 
+2. Breakdown of Data Flows
+Direction	Information Being Exchanged
+Teacher → System	Marks for Core (30/70) and Technical (Practicals/TD), plus behavioral ratings for students.
+System → HOD	Audit Trail reports showing who changed what, and Intervention Alerts for failing students.
+HOD → System	The "Lock" command that approves grades and ensures they can no longer be "actively manipulated."
+System → Student	A unified view of their academic journey, including their conduct ratings.
+System → WAEC STP	Final, validated, and formatted data scripts ready for the national portal upload.
+
+Key Data Logic Defined in this Diagram
+●	The "Double Mark" Input: For departments like Home Economics and Technical, the Teacher entity sends separate "Practical" and "Theory" data packets, which the system process then computes into a single weighted score.
+●	The Approval Loop: Data flows from the Teacher to the system, is then presented to the HOD for "Review," and only flows out to the Student/WAEC once the HOD sends an "Approval" signal.
+●	The Audit Log (Hidden): In a context diagram, the "Internal Audit Log" is inside the center bubble. It silently records the metadata of every transaction (IP address, actor, and timestamp) for accountability.
+1. The Central System: The "Bubble"
+At the heart of the school's operations is the Mando SHSTS Academic Audit & Intervention System. This is a single, integrated software platform that acts as the "Truth Source" for all academic, behavioral, and audit data.
+________________________________________
+2. External Entities and Their Data Flows
+The Teachers (Data Providers)
+●	Inflow to System: Teachers enter raw scores for Core subjects (Class/Exam) and Technical subjects (Practical, Drawing, and Project Milestones). They also submit Behavioral Ratings and Workshop Safety Logs for each student.
+●	Outflow from System: The system provides teachers with Validation Feedback. If a mark is entered incorrectly or falls outside of standard ranges, the system alerts the teacher to correct it before it reaches the HOD.
+The Heads of Department (The Auditors)
+●	Inflow to System: HODs provide Approval/Lock Commands. They review marks and either "Verify" them or "Send back for Correction." They also input Teacher Evaluations and Intervention Plans for students who are falling behind.
+●	Outflow from System: The system gives HODs the Audit Trail. This is a detailed report of every single change made to a grade. It also provides Departmental Broadsheets and Intervention Alerts that flag students failing in Core or Technical areas.
+The Students (The Beneficiaries)
+●	Inflow to System: Students provide Access Credentials (Username/Password) to view their profiles.
+●	Outflow from System: The system displays a Unified Result View. This combines their Core and Elective marks with their Behavioral Feedback. It also shows them Trend Graphs of their academic journey from SHS 1 to SHS 3.
+The WAEC STP Portal (The Destination)
+●	Outflow from System: Once the HOD locks the grades, the system generates a Formatted Data Script (CSV or Excel). This script is perfectly mapped to the WAEC Student Transcript Portal’s requirements, including the specialized vertical portfolio weights for technical students.
+________________________________________
+3. Summary of System Boundaries
+In this top-level view, the system is strictly defined as an Internal Audit and Grading Tool. It does not handle school fees, library books, or extracurricular activities. Its sole purpose is to ensure that academic and behavioral data is entered, audited, and exported without "active manipulation," fulfilling the requirements of the Science and Technical HODs.
+●	
+🏗️ Entity-Relationship Diagram (ERD) Plan
+For the Mando SHSTS System, we need to break the database into four main "clusters" to keep it organized:
+1. The Personnel Cluster (Who is involved?)
+●	Users: Stores id, name, email, role (Admin, HOD, Teacher, Student).
+●	Staff: Linked to Users. Stores specialization (e.g., Catering vs. Clothing) and studio_assignment (e.g., Metalwork Shop).
+●	Students: Linked to Users. Stores index_number, enrollment_year, and medical_history.
+2. The Academic Cluster (What is being taught?)
+●	Subjects: Stores subject_name and department_id.
+●	Classes: Links Students to specific years (SHS 1, 2, 3) and Teachers.
+●	Assessments: Defines the "WAEC Assessment Groups" (Vertical Portfolio, Class Exercise, Exam).
+3. The Grading Cluster (The Math)
+●	Results: This is where the magic happens. To handle the "100 Practical + 100 Theory" requirement, this table needs columns for raw_practical, raw_theory, and a calculated_total.
+●	Project_Milestones: Specifically for Woodwork/Metalwork to track "WIP" marks like Cutting, Assembly, and Finishing.
+4. The Audit Cluster (The Accountability)
+●	Audit_Logs: Connected to every table. It uses JSONB to store the "old_value" and "new_value" of any grade change, along with the user_id and a justification_comment.
+________________________________________
+🛠️ Key Relationships to Implement
+Relationship	Type	Logic
+Teacher → Subject	Many-to-Many	Tracks teaching history (e.g., teaching Physics in 2023 but Math in 2024).
+HOD → Results	One-to-Many	The HOD provides an approval_status. Until this is "Approved," the mark is not final.
+Result → Audit_Log	One-to-Many	Every single update to a mark creates a new row in the Audit Log for "Historical Accountability."
+
+Since you are building an Audit System, the ERD must show not just how grades are stored, but how the Audit Trail and WAEC STP requirements are linked to every student and teacher.
+1. The Mando SHSTS ERD (Logical Level)
+This diagram organizes your data into four clusters: Users, Academics, Grading (The Math), and Audit.
+2. Table Definitions & Relationships
+Entity (Table)	Primary Fields	Logic / Relationship
+Users	id, username, password_hash, role	Identifies if the person is a Teacher, HOD, or Student.
+Students	id, user_id, index_number, medical_notes	Linked to a User. Stores the "Non-grade" data HODs asked for.
+Subjects	id, name, department	Includes specialized tracks like Metalwork or Home Econs.
+Assessments	id, subject_id, term, year	Defines the specific assessment (e.g., "SHS2 Term 2 Metalwork").
+Results	id, assessment_id, student_id, raw_theory, raw_practical, total_weighted, status	Crucial: Stores separate theory/practical marks to handle the Technical/Home Econs formulas. status tracks if it is "Draft" or "Locked/Approved".
+Audit_Logs	id, result_id, user_id, old_values, new_values, comment	Every time a Result is updated, a row is created here with a JSONB snapshot of the change.
+
+ 
+
+Senior High Technical School (SHTS) like Mando, Core subjects are mandatory every single term from SHS 1 through SHS 3. While the "Elective" subjects (like Woodwork or Metalwork) define their specialized trade, the "Core" subjects (English, Core Math, Integrated Science, and Social Studies) are what allow them to graduate with a full WASSCE diploma.
+For your System Analysis and Design (SAD), this creates a specific "Data Flow" challenge. Here is how the system must handle the "Academic Journey" for Core subjects:
+________________________________________
+1. The "Continuous" Data Flow (SHS 1 to SHS 3)
+Because Core subjects are constant, the system must allow for Longitudinal Tracking. The HODs specifically asked to see if a student's Core Math grade is dropping over three years.
+●	Year 1 (Foundation): Basic concepts.
+●	Year 2 (Intermediate): Preparation for the core of the syllabus.
+●	Year 3 (Final): Revision and Mock Exams.
+System Requirement: The database must not "reset" every year. It must link the Student_ID to Core_Math across six different semesters so the system can generate a Trend Graph.
+________________________________________
+2. Departmental Responsibility vs. Class Attendance
+This is where the SAD "Logic" gets interesting. Even though a student is in the Technical Department, their Core English teacher belongs to the Languages Department.
+●	Input Entity: Languages Department Teacher.
+●	Target Entity: Technical Student.
+●	Audit Trail: The system must show that the "Languages HOD" is the one who approves the Core English marks, even if the student "belongs" to the Technical HOD.
+________________________________________
+3. DFD Level 1: The "Grading & Core Alignment" Process
+Now that we know Core subjects happen every term, we can break down the central system "bubble" into a Level 1 Data Flow Diagram. This shows how Core and Elective marks are processed separately but end up on the same transcript.
+ 
+
+4. Why "Core Throughout" matters for your Project
+1.	WAEC STP Compliance: The WAEC portal expects 4 Core subjects and 3 or 4 Electives for every student. If your system misses a Core subject in SHS 2, the upload for SHS 3 will fail.
+2.	Early Intervention: The General Arts HOD mentioned that they often realize a student is failing too late. Since Core subjects are done every term, your system can trigger an "Intervention Alert" if a student's Core Math falls below 40% for two terms in a row.
+3.	Audit Consistency: Whether it's a Core or Elective subject, the Audit Log must work the same way: Who changed the mark, what was the old mark, and what is the new mark?
+________________________________________
+Summary of the "Academic Journey" Logic
+Year	Subjects	System Task
+SHS 1	4 Core + 4 Electives	Establish Baseline Data.
+SHS 2	4 Core + 4 Electives	Track Growth/Decline Trends.
+SHS 3	4 Core + 4 Electives	Generate WAEC STP Script & Graduation Transcript.
+For a system that needs to track a 3-year "Academic Journey" across Core and Elective subjects, you use a Relational Mapping strategy.
+Instead of one giant, messy table, you use separate tables for the "Entities" (Students, Subjects, Teachers) and a "Join Table" (often called a Junction Table) to handle the lookups.
+________________________________________
+1. Why you need the "Join Table" (The Junction)
+In your school, a student doesn't just "have" a subject; they have a subject for a specific term, taught by a specific teacher, in a specific classroom.
+If you just linked a Student directly to a Subject, you couldn't track their SHS 1 marks separately from their SHS 3 marks. The Join Table (which we will call Class_Sections or Enrollments) acts as the "lookup" that connects everything.
+2. The Table Structure (PostgreSQL)
+Table	Purpose
+Students	Stores permanent bio-data (Name, Index Number, Department).
+Subjects	Stores the catalog (e.g., Core Math, Woodwork, English).
+Teachers	Stores staff details and specializations.
+Class_Sections (THE JOIN TABLE)	The Lookup: This links a Teacher_ID, a Subject_ID, and a Room/Class_Name for a specific Academic_Year.
+Grades/Results	Links a Student_ID to a Class_Section_ID. This is where the marks live.
+________________________________________
+3. How this handles the "Academic Journey"
+Because you have this "Join" structure, your system can answer complex audit questions across the three years:
+●	Year 1: Student is linked to Class_Section: Core Math (2024).
+●	Year 2: Student is linked to Class_Section: Core Math (2025).
+●	The Result: When you want to see the 3-year trend, the system just "looks up" all Class_Sections where the Subject is "Core Math" for that specific Student ID.
+This shows exactly how the Join Table acts as the "middleman" for your academic lookup.
+
+ 
+
+5. Why this is the "Pro" way to do it
+●	No Duplicate Data: You only write "Core Mathematics" once in the Subjects table, but it can be reused for 1,000 students over 10 years.
+●	Audit Integrity: If a teacher changes, you don't change the student's record; you just update the Teacher_ID in the Class_Section lookup. The Audit Log will see that change and record it.
+●	WAEC STP Ready: This structure makes it incredibly easy to pull a "Full History" report because all the terms are indexed in the join table.
+a separate table for every single subject (e.g., a table for "Woodwork," a table for "English"), your database will become an unmanageable mess of 20+ tables that look exactly the same.
+Instead, we use Category-based tables. Here is the clean, professional way to structure this:
+1. The "Subject" Hierarchy
+Instead of separate tables for each subject, we use a single subjects table with a "Type" column. This allows you to differentiate between them without breaking the database structure.
+●	subjects table:
+○	id
+○	name (e.g., "Core Math", "Woodwork")
+○	category (e.g., "Core" or "Elective")
+○	department_id (Links it to the technical, science, or agric department)
+2. The "Result" Tables (The Differentiation)
+This is where your idea of "separate tables" actually works best. Because Technical Electives (Woodwork/Metalwork) have different grading parts than Core Subjects, you can use two specialized result tables:
+1.	core_results table: For English, Math, etc. (Simple 30% Class / 70% Exam structure).
+2.	technical_results table: For Woodwork/Metalwork. This table includes extra columns for Workshop Practical, Technical Drawing, and Project Milestones.
+3. The "Joint" Table (The Enrollment/Lookup)
+You are exactly right about the "Joint" table. In SAD, this is your enrollments or class_sections table. This is the "brain" of the lookup:
+Student ID + Subject ID + Teacher ID + Term/Year = The Record
+To "break open" the top-level view, we move to the Data Flow Diagram (DFD) Level 1. While the Context Diagram showed who uses the system, the Level 1 DFD shows the internal machinery—the specific processes that handle your 12 database tables.
+🏗️ Level 1 DFD: The Internal Process Logic
+This diagram breaks the central "bubble" into four major sub-processes.
+1.0 User Authentication & Role Mapping
+●	Input: Login credentials from the Users table.
+●	Logic: The system checks if the user is a Student, Teacher, or HOD. It then "maps" them to their specific data (e.g., a Woodwork teacher only sees Woodwork classes).
+●	Output: Access token and personalized dashboard.
+2.0 Academic & Behavioral Data Entry
+●	Input: Raw scores (Core/Technical) and behavioral ratings.
+●	Logic: This process separates data into the core_results, technical_results, and behavioral_logs tables. It performs the Intervention Math: if a Core Math grade is <40%, it triggers an entry in the intervention_alerts table.
+●	Data Store: Writes to the Result Cluster and Behavioral Cluster.
+3.0 Audit & Validation Engine
+●	Input: Modification requests (when a teacher updates a mark).
+●	Logic: This is the most important part for your project. Before a grade is updated, this process captures the "Snapshot."
+○	It reads the old_value.
+○	It requires a justification.
+○	It writes both to the audit_logs table.
+●	Data Store: Writes to audit_logs.
+4.0 HOD Review & Finalization
+●	Input: Approval or Rejection commands from the HOD.
+●	Logic: The system checks the status field. If the HOD clicks "Approve," the process changes the status to "Locked." Once locked, the data can no longer be edited by the Teacher.
+●	Output: Generates the final WAEC STP CSV Export.
+________________________________________
+2. diagram for Level 1 DFD
+ 
+
+3. Pure Language Description
+In this internal view, the system is no longer a "black box." When a Teacher enters a mark, it travels through Process 2.0, where it is categorized as either a standard Core mark or a complex Technical mark. If that teacher tries to change a mark later, Process 3.0 intercepts it, forcing them to provide a reason and logging the change for the HOD.
+Finally, Process 4.0 acts as the "Gatekeeper." It gathers all the academic and behavioral data from the database and presents it to the HOD. Only after the HOD is satisfied with the Audit Trail does the system format the data for the WAEC STP and release the results to the Student.
+For the Mando SHSTS System, we will use a 3-Tier Web Architecture. This is the standard for modern, secure applications like those built with Laravel and React.
+________________________________________
+1. The 3-Tier Architecture Breakdown
+Tier 1: Presentation Layer (The Frontend)
+●	Technology: React.js / Tailwind CSS.
+●	Role: This is what the Teachers and HODs see on their screens. It handles the "User Experience."
+●	Key Function: It captures the marks and behavioral ratings and sends them to the server via API calls. It also renders the Trend Graphs for the students.
+Tier 2: Application Layer (The Backend)
+●	Technology: Laravel (PHP Framework).
+●	Role: The "Brain" of the system.
+●	Key Function:
+○	Logic: It calculates the Core vs. Technical formulas (e.g., $(Theory + Practical) / 2$).
+○	Security: It enforces the Audit Trail logic—ensuring no mark is saved without a justification if it’s an edit.
+○	Gatekeeper: It checks roles to ensure a Student cannot access the HOD’s approval button.
+Tier 3: Data Layer (The Database)
+●	Technology: PostgreSQL.
+●	Role: The "Memory" of the system.
+●	Key Function: It stores the 12 tables we documented. PostgreSQL is chosen specifically because it handles JSONB (perfect for our Audit Logs) and ensures high data integrity.
+________________________________________
+2. Physical Deployment View (Infrastructure)
+Since Mando SHSTS is a physical school, we have two options for where this "lives." For your project, we recommend a Cloud-Hosted Model for accessibility.
+Component	Technology	Purpose
+Web Server	Nginx / Apache	To serve the Laravel application to the school's internet.
+API	RESTful API	How the React frontend talks to the Laravel backend.
+Storage	Cloud Storage (e.g., AWS S3)	For storing PDF backups of the WAEC STP exports.
+Security	SSL/HTTPS	Encrypts the data so marks cannot be "sniffed" on the school Wi-Fi.
+ 3. Architecture Diagram (Mermaid)
+This diagram shows how a request (like a Teacher entering a grade) moves through the architecture.
+4. Why this Architecture fits your "Audit" requirement
+●	Centralized Logic: By putting the audit logic in the Application Layer (Laravel), it doesn't matter if the teacher uses a phone or a laptop; the security rules remain exactly the same.
+●	Data Integrity: By using a dedicated Data Layer (Postgres), even if the website crashes, the audit logs remain safe and uncorrupted.
+●	Scalability: If the school grows from 500 to 2,000 students, you can simply upgrade the Tier 2 server without rewriting any code.
+A Sequence Diagram is the most detailed part of System Analysis. It shows the timeline of an event, moving from the Teacher's screen, through the security checks, and finally into the database.
+This diagram specifically tracks the most critical "Use Case" of your system: Changing an existing grade. This is where the Audit Trail logic actually happens.
+________________________________________
+1. Sequence Diagram: "Edit Grade with Audit Trail"
+The Step-by-Step "Handshake"
+1.	Request: The Teacher clicks "Edit" on a student's mark.
+2.	State Check: The Frontend (React) asks the Backend (Laravel): "Is this mark still editable?"
+3.	Permission: The Backend checks the status in the database. If it is already "Locked" by the HOD, it returns an error. If not, it allows the edit.
+4.	Data Submission: The Teacher enters the new mark and the Mandatory Justification (Reason).
+5.	Audit Snapshot: Before saving the new mark, the Backend performs a "Snapshot"—it grabs the current mark from the database.
+6.	Transaction:
+○	The Backend writes the new mark to the results table.
+○	Simultaneously, it writes the old mark, new mark, user ID, and reason to the audit_logs table.
+7.	Confirmation: The Database confirms the save, and the Frontend shows a success message to the Teacher.
+________________________________________
+2. Sequence Diagram
+ 
+________________________________________
+3. Why this matters for your Project Report
+●	Proof of Security: This diagram proves to your supervisors that "active manipulation" is impossible because the Audit Middleware is baked into the timeline. No grade can be changed without an automatic log entry being generated.
+●	Atomic Transactions: Notice the grey box in the diagram. This represents an "Atomic" action—either both the grade change AND the audit log save successfully, or neither does. This prevents "orphan" grades where a mark changed but no one knows why.
+●	Role Enforcement: It clearly shows the system checking the status (Locked vs. Draft) before even allowing the Teacher to type a new number.
+________________________________________
+💡 Final Step in System Analysis
+We have now covered:
+1.	Context Diagram (The Big Picture)
+2.	Database Documentation (The 12 Tables)
+3.	DFD Level 1 (Internal Processes)
+4.	System Architecture (The 3-Tier Hardware/Software)
+5.	Sequence Diagram (The Timing and Audit Logic)
+1. Teacher-Centric 3-Tier Architecture
+This architecture is optimized for offline-first data entry (crucial if the school's Wi-Fi is spotty in the workshops) and immediate validation.
+Tier 1: Teacher's Device (Frontend - React/Mobile)
+●	Form Validation: Before data even leaves the teacher's device, the React frontend checks for logical errors (e.g., entering "105" for a 70% exam).
+●	State Management: Uses Redux or React Query to temporarily store entries. If the teacher loses connection, the marks are held in the browser's local storage until they are back online.
+●	Subject Filtering: The UI only displays the specific Class_Sections assigned to that teacher's staff_id.
+Tier 2: API Gateway & Logic (Backend - Laravel)
+●	Intervention Service: As marks are submitted, this service compares the new core_results against historical data. If it detects a 15% drop, it triggers the intervention_alerts table.
+●	Audit Middleware: Intercepts every PATCH or PUT request. It forces the teacher to include a justification string in the API payload or it rejects the save.
+●	Calculation Engine: Converts raw Practical + Theory scores into the weighted totals required for the WAEC STP.
+Tier 3: The Data Vault (Database - PostgreSQL)
+●	Row-Level Security: Ensures Teacher A cannot see or edit Teacher B’s marks.
+●	ACID Transactions: Guarantees that the Result update and the Audit Log entry happen together or not at all.
+________________________________________
+2. Teacher Data Flow Architecture (Mermaid)
+This diagram shows how a teacher’s input flows through the system's specialized "Intervention" and "Audit" layers.
+ 
+
+________________________________________
+3. Key Architectural Components for Teachers
+Component	Function	Benefit to Teacher
+Form Pre-fill	Pulls student names from the students table automatically.	Reduces typing errors and manual entry time.
+Real-time Feedback	Instantly calculates the total 100% score as they type.	Prevents math errors before the HOD sees the sheet.
+Draft Savings	Saves to the core_results table with a status = 'Draft'.	Allows teachers to start entering marks and finish later.
+Audit Alert	Pops up a "Reason for Change" box if they edit a previously saved mark.	Keeps the teacher protected by providing a clear record of why a change occurred.
+________________________________________
+4. Summary of the Teacher "User Experience" Architecture
+From the teacher's perspective, the system behaves like a smart spreadsheet. However, the Architecture underneath is doing heavy lifting: it is watching for failing students, logging every correction for the HOD, and ensuring all data is formatted exactly for the WAEC STP export.
+1. The HOD-Centric 3-Tier Architecture
+Tier 1: Presentation Layer (The Command Center)
+●	The Audit Dashboard: A React-based interface that aggregates all "Draft" results from teachers.
+●	Analytical Views: Instead of just a table, the HOD sees heatmaps and trend lines (from the intervention_alerts table) to identify which teachers or students need attention.
+●	Mass Action Tools: Features that allow the HOD to "Lock" an entire class or "Reject" a whole batch of results with a single click.
+Tier 2: Application Layer (The Governance Engine)
+●	Approval Workflow Service: This Laravel service enforces the school's hierarchy. It checks if the User_ID attempting to lock the grades matches the hod_id in the departments table.
+●	Audit Aggregator: Collects all entries from the audit_logs and flags any "suspicious" changes (e.g., a grade jumping from 40% to 80% without a strong justification).
+●	Export Formatter: The engine that pulls from core_results and technical_results to generate the final CSV script for the WAEC STP.
+Tier 3: Data Layer (The Master Ledger)
+●	Locked State Integrity: Once the HOD updates the status column to "Locked," the database's Row-Level Security prevents any further UPDATE commands from the Teacher's Tier.
+●	Historical Archive: Stores previous years' behavioral and academic logs so the HOD can track a student’s entire 3-year journey.
+________________________________________
+2. HOD Governance Flow Architecture (Mermaid)
+This diagram shows how the HOD acts as the final "Quality Control" gate before data leaves the school.
+ 
+
+________________________________________
+3. Key HOD Architectural Components
+Component	Function	Strategic Value
+Integrity Monitor	Checks for "Missing Marks" across the department.	Ensures 100% of students have core/technical grades before the deadline.
+Audit Flagging	Highlights any mark change that occurred after the "Submission Deadline."	Detects "active manipulation" or late tampering.
+Staff Performance View	Links staff_evaluations with core_results accuracy.	Helps the HOD see which teachers are struggling with the new 30/70 grading.
+Electronic Signature	Sets the is_locked bit in the database to TRUE.	Permanently secures the academic record for the term.
+________________________________________
+4. Summary of the HOD Architecture
+The HOD's architecture is the Security Layer of your project. It ensures that the system isn't just a digital notebook, but a legally defensible audit tool. By linking the HOD's approval to the final WAEC export, the architecture guarantees that the data sent to the national level has been double-checked and verified against the audit logs.
+1. The Student-Centric 3-Tier Architecture
+Tier 1: Presentation Layer (The Personal Portal)
+●	Read-Only Interface: The React frontend for students is strictly non-editable. There are no input forms for grades, only buttons for "Viewing" and "Downloading."
+●	Data Visualization: Uses libraries like Chart.js or Recharts to transform the raw numbers from the database into trend lines.
+●	Responsive Design: Optimized for mobile phones, as most students will access their results via smartphones.
+Tier 2: Application Layer (The Analytics Engine)
+●	Historical Aggregator: This Laravel service pulls data from multiple academic years (SHS 1 to SHS 3) to create a longitudinal view.
+●	Behavioral-Academic Correlator: A unique logic layer that shows the student how their conduct (e.g., punctuality) might be affecting their Core Math or Woodwork grades.
+●	Security Middleware: Uses JWT (JSON Web Tokens) to ensure Student A can only see their own student_id and cannot "guess" the URL to see Student B's results.
+Tier 3: Data Layer (The Student Record)
+●	Integrated View: Instead of seeing raw table rows, the system queries a "View" (as we discussed earlier) that joins core_results, technical_results, and behavioral_logs.
+●	Access Logging: Every time a student views their result, a timestamp is recorded. This helps HODs see which students haven't checked their results yet.
+________________________________________
+2. Student Data Request Architecture (Mermaid)
+This diagram shows how the system safely pulls a student's entire 3-year history for display.
+ 
+
+________________________________________
+3. Key Student Architectural Components
+Component	Function	Value to Student
+Longitudinal API	Pulls results across all 6 terms.	Allows them to see if they are improving or declining over 3 years.
+PDF Renderer	Converts the "Joint View" into a downloadable report.	Provides a physical document they can show to parents.
+Status Indicator	Displays "Draft" or "Certified."	Tells the student if the HOD has finalized the marks or if they are still subject to change.
+Counseling Flag	Highlights areas where the intervention_alerts table has a record.	Notifies the student that they should speak to their Core Math or Technical teacher.
+4. Summary of Student Architecture
+The student architecture is the Output Phase of your system. It is designed to be highly secure and purely informative. By providing students with their behavioral logs alongside their grades, the architecture encourages self-reflection—which is a core goal of the new curriculum.
+To wrap up the System Analysis, this comparison table serves as the "Rule Book" for your Laravel developers. It defines exactly how the architecture behaves differently for each user based on the 12 tables and 3-tier structure we've built.
+📊 Mando SHTS System Permissions & Tools Matrix
+Feature	Teacher (Entry)	HOD (Audit)	Student (Output)
+Data Access	Specific assigned classes only.	Entire Department history.	Personal records only.
+Write Permissions	Can create/edit Drafts.	Can edit any record (with Log).	Read-Only.
+Audit Requirement	Must provide justification for edits.	Can view and flag all audit trails.	No access to audit logs.
+Approval Power	None (Submit for review).	Final Lock/Unlock.	None.
+Special Tools	Practical/TD score input forms.	WAEC STP Export & Staff Eval.	Trend Graphs & PDF Reports.
+Alert Interaction	Receives "Failing Student" flags.	Manages Intervention Plans.	Receives "Counseling" alerts.
+________________________________________
+🛠️ The Final "Big Picture" (System Overview)
+This is the summary of everything we have designed for the Mando SHTS Academic Audit & Intervention System:
+1.	The Database: A robust 12-table PostgreSQL schema that separates Core and Technical results to fit the WAEC STP format.
+2.	The Logic: An Audit Middleware that captures "active manipulation" by requiring a reason for every grade change.
+3.	The Architecture: A 3-Tier Web Model (React + Laravel + PostgreSQL) that ensures security, scalability, and offline-ready data entry.
+4.	The Output: A system that doesn't just store marks, but tracks the "Academic Journey" via behavioral logs and trend analytics.
+📄 System Requirements Specification (SRS): Mando SHSTS Audit System
+1. Introduction
+The Mando SHSTS Academic Audit & Intervention System is designed to digitize the grading process for Core and Technical departments. Its primary goal is to eliminate "active manipulation" of grades through a mandatory audit trail and to streamline the export of data to the WAEC Student Transcript Portal (STP).
+2. Functional Requirements (What the system does)
+These are the core features mapped to our 12-table database.
+●	FR1: Multi-Role Authentication: The system must distinguish between Students, Teachers, and HODs, providing unique dashboards for each.
+●	FR2: Hybrid Grading Engine: The system must support standard 30/70 core grading and specialized Technical/Vocational weighting (Practical, Drawing, and Project milestones).
+●	FR3: Mandatory Audit Logging: Every modification to a previously saved grade must trigger a "Justification Prompt" and be logged in the audit_logs table.
+●	FR4: Behavioral Tracking: Teachers must be able to log attitudinal ratings (1-5) and safety conduct for students.
+●	FR5: Intervention Trigger: The system must automatically flag any student whose core subject performance drops by 15% or more across terms.
+●	FR6: HOD Approval & Locking: The HOD must have the exclusive right to "Lock" grades, rendering them read-only for the final WAEC export.
+3. Non-Functional Requirements (Performance & Security)
+These define the quality of the system based on our 3-Tier Architecture.
+●	NFR1: Data Integrity (ACID Compliance): Using PostgreSQL to ensure that if an audit log fails to save, the grade change is also rolled back.
+●	NFR2: Security: All data transmission must be encrypted via HTTPS/SSL to prevent "grade sniffing" on local networks.
+●	NFR3: Availability: The system should feature a "Draft/Local Sync" mode to allow teachers to enter marks even during intermittent school Wi-Fi outages.
+●	NFR4: Auditability: The HOD must be able to generate a full "History Report" for any single grade entry within 2 seconds.
+4. Hardware & Software Requirements
+Component	Requirement
+Backend	PHP 8.x + Laravel Framework
+Frontend	React.js + Tailwind CSS
+Database	PostgreSQL 15+
+Server	Minimum 2GB RAM / 20GB SSD (Cloud or Local)
+Client	Modern Web Browser (Chrome/Edge/Safari)
+🛡️ Atomic Requirements: HOD Module
+1. Access & Security Control
+●	HOD-AR-1.1: The system shall restrict HOD dashboard access to users verified against the hod_id in the departments table.
+●	HOD-AR-1.2: The system shall allow the HOD to reset Teacher passwords within their specific department.
+●	HOD-AR-1.3: The system shall provide the HOD a "View-As" mode to see exactly what a Teacher sees for troubleshooting purposes.
+2. Audit & Oversight (The "Watchdog")
+●	HOD-AR-2.1: The system shall display a real-time list of all grade modifications made after the initial "Save."
+●	HOD-AR-2.2: The system shall highlight any grade change where the Justification String is less than 10 characters.
+●	HOD-AR-2.3: The system shall calculate the "Submission Completion Percentage" for every class under the HOD's jurisdiction.
+3. Review & Feedback
+●	HOD-AR-3.1: The system shall provide a "Comment" field on every student's result sheet specifically for HOD final remarks.
+●	HOD-AR-3.2: The system shall allow the HOD to "Reject" a class broad-sheet, which automatically reverts the status from "Submitted" to "Draft" and notifies the Teacher.
+●	HOD-AR-3.3: The system shall display a "Comparison View" showing a student's current mark alongside their previous term's mark to detect anomalies.
+4. The "Lock" & Export (The Gatekeeper)
+●	HOD-AR-4.1: The system shall provide a "Final Lock" button that changes the is_locked boolean to TRUE for all results in a selected term.
+●	HOD-AR-4.2: The system shall disable the "Edit" function for all Teachers once the HOD has activated the "Final Lock."
+●	HOD-AR-4.3: The system shall generate a WAEC-compliant CSV file only when 100% of the department's marks are in the "Locked" state.
+5. Intervention Management
+●	HOD-AR-5.1: The system shall automatically aggregate all "Low Performance" flags from the intervention_alerts table onto the HOD home screen.
+●	HOD-AR-5.2: The system shall require the HOD to tick a "Counseling Action Taken" checkbox before a failing student's report can be finalized.
+HOD User Stories (The Governance Perspective)
+1. Data Integrity & Audit
+User Story: As an HOD, I want to view a history of all grade modifications, including the original score and the teacher's justification, so that I can detect and prevent any active manipulation of marks before the WAEC upload.
+2. Finalization & Security
+User Story: As an HOD, I want to "Lock" the department’s results after my final review, so that teachers can no longer edit marks and I can guarantee the data integrity of the transcript I am exporting.
+3. Academic Intervention
+User Story: As an HOD, I want to see a summarized list of students flagged for failing Core Math or English, so that I can organize remedial counseling sessions before the term ends.
+4. Teacher Accountability
+User Story: As an HOD, I want to track the submission status of all teachers in my department, so that I can identify who is late in entering their Technical Project or Practical marks.
+________________________________________
+📋 HOD Validation Rules (The "Business Logic")
+To satisfy these stories, the system must follow these strict logical checks (the "Logic Layer" of your architecture):
+Trigger Action	System Rule	Outcome
+Teacher submits mark	Check if subject_type is Elective.	If Elective, require workshop_practical score.
+Teacher edits mark	Check status in core_results.	If status == 'Submitted', force a justification entry.
+HOD clicks "Lock"	Update is_locked to true.	Disable all POST/PATCH API routes for that class.
+Export for WAEC	Verify is_locked == true.	Generate CSV; if false, block the download.
+📝 Atomic Requirements: Teacher Module
+1. Data Entry & Validation
+●	T-AR-1.1: The system shall display only the specific subjects and classes assigned to the teacher based on their staff_id.
+●	T-AR-1.2: The system shall prevent the entry of any score higher than the defined maximum (e.g., 30 for Class Score, 70 for Exam).
+●	T-AR-1.3: The system shall auto-calculate the Total Score and Grade (A1-F9) in real-time as the teacher inputs raw marks.
+2. Technical & Vocational Specifics
+●	T-AR-2.1: For technical electives, the system shall provide dedicated fields for Workshop Practical and Technical Drawing marks.
+●	T-AR-2.2: The system shall allow teachers to save a result as a "Draft" to be completed later before final submission to the HOD.
+●	T-AR-2.3: The system shall allow the teacher to attach a project milestone (e.g., "Design Phase Completed") to a student's technical record.
+3. Behavioral & Conduct Logging
+●	T-AR-3.1: The system shall provide a dropdown menu for standard behavioral categories (Punctuality, Interest, Workshop Safety).
+●	T-AR-3.2: The system shall allow teachers to enter qualitative remarks that will be pulled into the student's final report.
+4. Audit & Modification
+●	T-AR-4.1: The system shall trigger a mandatory "Reason for Change" popup if a teacher attempts to edit a mark that has already been saved.
+●	T-AR-4.2: The system shall notify the teacher if a mark they submitted has been "Rejected" by the HOD for correction.
+________________________________________
+👤 Teacher User Stories (The "Instructional" Perspective)
+1. Classroom Efficiency
+User Story: As a teacher, I want my class list to be pre-populated with student names and index numbers, so that I can spend less time on data entry and more time on workshop instruction.
+2. Accuracy & Weighting
+User Story: As a Technical Teacher, I want the system to automatically apply the correct weights to my Practical and Theory scores, so that I don't make calculation errors that could affect a student's WAEC transcript.
+3. Security of Data
+User Story: As a teacher, I want to see a "Submitted" status once I send my marks to the HOD, so that I have proof that I completed my grading on time and that the marks are now awaiting audit.
+4. Student Insight
+User Story: As a teacher, I want to see a flag if a student's performance has significantly dropped, so that I can provide extra help or log a behavioral concern regarding their interest in the subject.
+________________________________________
+🛠️ Teacher Workflow Logic (The Backend Rules)
+Action	Logical Constraint	System Outcome
+Open Grading Sheet	Filter by class_sections.teacher_id.	Shows only the teacher's own students.
+Enter Technical Mark	If subject_category == 'Technical'.	Enable workshop_practical input field.
+Edit Saved Mark	Check if audit_log is required.	Block the "Save" button until justification is provided.
+Final Submit	Change status to 'Submitted'.	Lock the record from further teacher edits until HOD rejects/unlocks it.
+📝 Atomic Requirements: Student Module
+1. Data Access & Security
+●	S-AR-1.1: The system shall allow students to view only their own records based on their unique index_number and user_id.
+●	S-AR-1.2: The system shall provide a Read-Only interface, strictly prohibiting any modification of academic or behavioral data by the student.
+●	S-AR-1.3: The system shall record a "Last Seen" timestamp in the database every time a student accesses their results.
+2. Academic Visualization
+●	S-AR-2.1: The system shall display a unified report card combining Core results and Technical elective results for the current term.
+●	S-AR-2.2: The system shall generate a Longitudinal Trend Graph showing performance in a specific subject (e.g., Core Math) across multiple terms.
+●	S-AR-2.3: The system shall display the "Approval Status" of results (e.g., "Draft" vs. "Verified by HOD") so students know when results are final.
+3. Behavioral Feedback
+●	S-AR-3.1: The system shall display a "Behavioral Summary" section where students can read qualitative remarks from their teachers.
+●	S-AR-3.2: The system shall visualize behavioral ratings (Punctuality, Workshop Safety, Interest) using a 5-star or bar-chart scale.
+4. Reporting & Export
+●	S-AR-4.1: The system shall provide a "Download PDF" button to generate an unofficial transcript of the term's results.
+●	S-AR-4.2: The system shall display "Intervention Notifications" if the HOD has flagged the student for a remedial session.
+________________________________________
+👤 Student User Stories (The "Self-Improvement" Perspective)
+1. Immediate Feedback
+User Story: As a student, I want to see my combined Core and Practical marks on one dashboard as soon as they are approved, so that I can understand my overall standing without waiting for a paper report.
+2. Performance Tracking
+User Story: As a Technical student, I want to see my progress in Woodwork projects over the last three terms, so that I can see if my practical skills are improving alongside my theory marks.
+3. Behavioral Awareness
+User Story: As a student, I want to see my workshop safety and punctuality ratings, so that I can adjust my conduct to meet the school's standards for a positive final testimonial.
+4. Accountability
+User Story: As a student, I want to be notified if my grades in Core subjects are dropping, so that I can seek help from the Intervention Program before the final WAEC exams.
+________________________________________
+🛠️ Student Workflow Logic (The Backend Rules)
+Trigger Action	Logical Constraint	System Outcome
+Login Attempt	Authenticate via users table.	Grant access only to records where student_id == current_user_id.
+View Results	Check status in results table.	Show "Pending" if the HOD has not yet "Locked" the grades.
+Request History	Join core_results and technical_results by academic_year.	Render a multi-term performance graph.
+Download PDF	Query unified_result_view.	Generate a PDF with the school's digital watermark for authenticity.
+🧪 Mando SHSTS System Testing Plan
+1. The Testing Matrix
+Each test case is designed to verify the Atomic Requirements we defined earlier.
+Test ID	Scenario	Expected Result	Requirement Verified
+TC-01	Grade Tamper Test	System blocks the save until a "Justification" is typed into the popup.	Audit (T-AR-4.1)
+TC-02	Technical Weighting	Entering 20/30 (Practical) and 40/70 (Theory) results in the correct weighted GPA.	Accuracy (T-AR-1.3)
+TC-03	The Lockdown	Once HOD clicks "Lock," the Teacher’s "Edit" button disappears.	Governance (HOD-AR-4.2)
+TC-04	Student Privacy	Student A tries to access Student B's results via URL; System returns "403 Forbidden."	Security (S-AR-1.1)
+TC-05	WAEC Export	System generates a CSV only if all marks in the dept are "Locked."	Compliance (HOD-AR-4.3)
+________________________________________
+2. Specialized Audit Testing (The "Traceability" Test)
+Since your project focuses on Audit, you must perform a "Traceability Walkthrough."
+1.	Action: Teacher A changes a student's Woodwork mark from 45 to 85.
+2.	Observation: The system must record this in the audit_logs table.
+3.	Verification: The HOD logs in and checks the Audit Dashboard. They must see:
+○	The Timestamp.
+○	The Old Value (45).
+○	The New Value (85).
+○	The Teacher's ID.
+○	The Reason (e.g., "Error in practical sheet entry").
+________________________________________
+3. User Interface (UI) Testing
+This ensures the 3-Tier Architecture is rendering correctly for the different roles.
+●	Responsive Test: Open the Student Portal on a mobile phone to ensure Trend Graphs are readable.
+●	Accessibility Test: Ensure that the "Save" and "Lock" buttons are clearly colored (Green for Save, Red for Lock) to prevent accidental clicks by the HOD.
+________________________________________
+4. System Stress Test (Submission Deadline Simulation)
+●	Scenario: 20 Teachers attempt to submit marks at the same time (simulating the end of term).
+●	Success Metric: The PostgreSQL Database must handle the concurrent writes without losing data or mixing up student records.
+________________________________________
+5. Final Approval Sign-off
+Before your defense, you should have a "Sign-off" sheet where the HOD of Technical or Science at Mando SHSTS would theoretically sign.
+"I, the HOD, certify that I have reviewed the Audit Logs and verified that the exported WAEC STP file matches the school’s physical records."
+________________________________________
+1. The Admin-Centric Architecture (The Fourth Pillar)
+Tier 1: Presentation Layer (The Admin Console)
+●	System Health Dashboard: Real-time monitoring of server performance and database connectivity.
+●	User Lifecycle Management: Tools to onboard new staff, offboard retired teachers, and assign "Acting HOD" roles.
+●	Global Audit View: Unlike the HOD (who only sees their department), the Admin sees every log across the entire school.
+Tier 2: Application Layer (The Management Engine)
+●	Access Control List (ACL) Manager: The logic that defines the "Permissions" we discussed in the matrix.
+●	Backup & Recovery Service: Manages the automated daily snapshots of the PostgreSQL database.
+●	System Configuration: The ability to open or close the "Grading Window" (e.g., locking the entire system over the holidays).
+Tier 3: Data Layer (The Infrastructure)
+●	Schema Management: Handling database migrations and index optimization.
+●	System Logs: Specialized tables that track who the Admin is (logging the "Watcher").
+________________________________________
+2. Updated Architecture Diagram (Including System Admin)
+ 
+
+3. Atomic Requirements: System Admin (SA)
+●	SA-AR-1.1: The system shall allow the Admin to create and manage Department entities (Technical, Science, etc.).
+●	SA-AR-1.2: The system shall provide a global "Freeze" toggle to disable all data entry school-wide for maintenance.
+●	SA-AR-1.3: The system shall generate "System Activity Reports" showing login/logout times for all staff to monitor system adoption.
+●	SA-AR-1.4: The system shall allow the Admin to manually trigger a database backup before any major WAEC STP export.
+________________________________________
+4. System Admin User Stories
+Security & Roles
+User Story: As a System Admin, I want to assign a new staff member to the "Technical Department" and give them "Teacher" permissions, so that they can begin entering marks for Woodwork classes.
+Disaster Recovery
+User Story: As a System Admin, I want to be able to restore the database to a previous state if an accidental mass-deletion occurs, so that the school's academic data is never permanently lost.
+Global Oversight
+User Story: As a System Admin, I want to see which departments have completed their "Locking" process, so that I can notify the Headmaster when the school is ready for the WAEC submission.
+________________________________________
+🛡️ The "Who Watches the Watcher?" Rule
+In a secure audit system, even the Admin is logged. Every time the Admin changes a user's role or resets a password, the system writes a record to a Super-Audit Table. This ensures that even the person with the "keys to the building" cannot silently change a student's grade without a trace.
+📊 Updated User Permissions & Roles Matrix (Complete)
+This table defines the Access Control List (ACL) for your Laravel backend development.
+Feature	System Admin	HOD (Audit)	Teacher (Entry)	Student (Output)
+System Config	Full Access (Terms, years, depts)	None	None	None
+User Management	Create/Delete Users & Roles	Reset Dept Passwords	None	None
+Data Access	Infrastructure View	Department View	Class View	Personal View
+Grade Editing	Only in Emergency (Logged)	Full Review Power	Draft & Submission	No Access
+The "Lock"	Can override locks	Primary Locker	Cannot Lock	None
+Audit Visibility	Global Logs	Dept Logs	Personal Entry Logs	None
+Exports	System Backups	WAEC STP CSV	Class Lists	PDF Report Card
+________________________________________
+🛡️ The System Admin's Technical Logic
+The Administrator's role is unique because they interact with the System Boundary rather than the academic content.
+1. Atomic Requirements: Administrative Governance
+●	SA-AR-1.1: The system shall allow the Admin to define "Grading Windows" (Start and End Dates) during which the core_results and technical_results tables accept data.
+●	SA-AR-1.2: The system shall maintain a System-Level Audit Log that records every login, logout, and IP address of staff users.
+●	SA-AR-1.3: The system shall support "Database Maintenance Mode," which temporarily restricts all users while the Admin performs backups or schema updates.
+2. User Story: The Infrastructure Guardian
+As a System Admin, I want to monitor the Audit Trail for unusual patterns (like 100 grade changes in 5 minutes), so that I can investigate potential security breaches or unauthorized "active manipulation" before it affects the school's reputation.
+________________________________________
+🗺️ Final Architecture Mapping
+With the Admin included, your 3-tier architecture is now a Secure Enterprise Model:
+1.	Presentation Tier: Unique UIs for Admin (Tools), HOD (Audit), Teacher (Forms), and Student (Viewer).
+2.	Application Tier: Logic that validates marks, triggers intervention alerts, and logs every single "Edit" request into the database.
+3.	Data Tier: A PostgreSQL database protected by Row-Level Security (RLS), ensuring users only see what their role allows.
+1. The Global Command Center (Dashboard)
+This is the "Pulse" of the system. It’s a read-only overview that lets the Admin know if the school is running smoothly.
+●	Key Metrics: Total students enrolled, total active teachers, and "Submission Progress" by department.
+●	Security Monitor: A "Live Feed" of the most recent audit logs across the whole school.
+●	System Health: Indicators for database connection status and storage usage for PDF backups.
+2. User & Role Management Vault
+This is the most "active" screen where the Admin manages the users, teachers, and students tables.
+●	User Grid: A searchable list of all staff and students.
+●	Role Mapping: A toggle to promote a teacher to HOD or assign a staff member to a new department.
+●	Credential Control: Buttons to reset forgotten passwords or "Deactivate" a user who has left the school.
+3. Institutional Configuration Screen
+This is the "Setup" area where the Admin defines the school's structure.
+●	Academic Calendar: Fields to set the Current Term and Academic Year.
+●	Department Setup: Where the Admin links a specific user to the hod_id for the Technical or Science departments.
+●	Grading Windows: A "Master Switch" to open or close the system for mark entry (e.g., closing the system at 5:00 PM on Friday of the 12th week).
+4. Master Audit & Maintenance Logs
+While HODs see their department's audit logs, the Admin uses this screen for Forensic Review.
+●	Global Search: Ability to search the audit_logs table by Date, Teacher Name, or Student Index Number.
+●	Backup Manager: A simple interface to manually trigger a database backup or download an encrypted snapshot of the database.
+●	Error Logs: A technical view of any failed API requests or "Unauthorized Access" attempts.
+1. Departmental Oversight Dashboard
+This is the HOD's home screen. It provides an immediate "At-a-Glance" status of the department's work for the term.
+●	Submission Tracking: A list of all subjects (Woodwork, Metalwork, etc.) with a progress bar showing how many students have marks entered vs. total students.
+●	Intervention Flagging: A "High-Priority" panel showing students whose Core or Technical marks have dropped significantly (pulled from the intervention_alerts table).
+●	Teacher Status: A summary showing which teachers have "Submitted" their records and which are still in "Draft" mode.
+2. The Audit Trail & Review Screen
+This is the most critical screen for your project's goal of stopping "active manipulation."
+●	Modification List: A table showing every instance where a teacher changed a mark. It highlights the Old Score, New Score, and the Justification.
+●	Discrepancy Highlighting: The system flags changes that happened after a certain date or changes that cross a grade boundary (e.g., changing a 44/F9 to a 50/C6).
+●	Approval/Rejection Toggle: Beside each class list, the HOD has two buttons:
+○	Approve: Moves the status to "Verified."
+○	Reject: Sends it back to the teacher with a mandatory comment on what to fix.
+3. Final Certification & WAEC Export Screen
+This is the "Point of No Return" screen where the HOD finalizes the term.
+●	The Master Lock: A prominent button that, when clicked, changes the is_locked status to TRUE for the entire department. This triggers the System Architecture to disable teacher edits.
+●	WAEC STP Generator: Once locked, the "Download CSV" button becomes active. This generates the file formatted exactly for the WAEC Student Transcript Portal.
+●	Broadsheet Viewer: A digital version of the traditional school broadsheet, showing all student scores across all subjects for final verification before the lock.
+1. The Classroom Navigator (Dashboard)
+This is the starting point. It prevents the teacher from being overwhelmed by showing only what is relevant to them.
+●	Assigned Classes Grid: Cards showing each class the teacher is assigned to (e.g., "SHS 2 - Woodwork," "SHS 1 - Core Math").
+●	Submission Countdown: A visual timer or deadline indicator showing how many days are left before the HOD "Locks" the system.
+●	Status Badges: Each class card shows a badge: In Progress, Submitted, or Locked.
+________________________________________
+2. The Smart Grading Sheet (Data Entry)
+This is the "Workhorse" of the system. It replaces the traditional paper mark sheet with a digital version that validates data as it is typed.
+●	Core vs. Technical Toggle: The system automatically changes the columns based on the subject.
+○	Core Subjects: Shows Class Mark (30) and Exam Mark (70).
+○	Technical Subjects: Shows specialized columns for Workshop Practical, Technical Drawing, and Theory.
+●	Auto-Save & Real-time Math: As the teacher types, the system calculates the 100% total and the Grade (A1-F9) instantly.
+●	Draft Mode: A "Save Draft" button allows the teacher to stop and come back later without the HOD seeing the marks yet.
+________________________________________
+3. The Audit & Justification Screen (The "Pop-up")
+This isn't a standalone page, but a Critical Logic Layer that appears during the grading process.
+●	Modification Trigger: If a teacher clicks a cell that already has a saved mark, the "Justification Prompt" appears.
+●	The Log Form: A simple modal that requires:
+1.	The New Score.
+2.	A Reason (e.g., "Student's project was re-evaluated," "Typo in previous entry").
+●	Submission Review: Before the final "Submit to HOD," the teacher gets a summary page showing all their entries and any "Intervention Flags" (students who are failing) so they can add a final comment.
+________________________________________
+📊 Teacher Screen Summary
+Screen	Primary Function	Logic Applied
+Navigator	Selecting the target class.	Filter by staff_id.
+Grading Sheet	Mass data entry.	Auto-weighting (30/70 or Practical %).
+Audit Popup	Logging grade changes.	Mandatory justification field.
+________________________________________
+💡 Implementation Detail: Core vs. Technical Logic
+In your Laravel backend, when the Grading Sheet loads, it should check the subject_type.
+●	If type == 'Technical', the React frontend should render 3-4 input columns.
+●	If type == 'Core', it renders only 2.
+This keeps the screen from being cluttered with empty columns that don't apply to the subject.
+1. The Performance Portal (Current Results)
+This is the "Digital Report Card." It replaces the need for students to wait for printed sheets to see their standing.
+●	Unified Grade Table: Displays Core subjects and Technical electives side-by-side. It clearly shows the breakdown (e.g., what they got in Woodwork Practical vs. Woodwork Theory).
+●	Approval Status Tracker: A status bar showing if the grades are currently In Review (Teacher level), Verified (HOD level), or Certified (Final Locked). This manages student expectations.
+●	Behavioral Scorecard: A visual section showing ratings for punctuality, workshop safety, and interest, along with the teacher’s qualitative remarks.
+________________________________________
+2. The Academic Journey (Longitudinal Analytics)
+This screen is the most advanced part of the student UI. It uses the data from your results history to show growth over time.
+●	Subject Trend Lines: A line graph where a student can select "Core Math" or "Technical Drawing" and see their scores from SHS 1 Term 1 through the current term.
+●	Intervention Alerts: If a student has been flagged for a drop in performance, a supportive notification appears here: "Your Core Math score dropped by 15%. Please see your counselor for the next remedial session."
+●	Download Center: A simple button to export the current term's results as a Secure PDF with a school watermark.
+________________________________________
+📊 Student Screen Summary
+Screen	Primary Function	Key Feature
+Performance Portal	Viewing current term data.	Joint Core/Technical view + Behavioral logs.
+Academic Journey	Long-term progress tracking.	Interactive trend graphs and intervention alerts.
+________________________________________
+🏁 Final System Summary (All Modules)
+We have now mapped out the entire user experience for the Mando SHSTS Audit System:
+1.	System Admin: 4 Screens (Infrastructure & Users).
+2.	HOD: 3 Screens (Oversight & Audit).
+3.	Teacher: 3 Screens (Entry & Validation).
+4.	Student: 2 Screens (Reflection & Results).
+

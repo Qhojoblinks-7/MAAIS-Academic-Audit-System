@@ -1,0 +1,582 @@
+# MAAIS Test Case Template
+## Academic Audit and Intervention System Test Cases
+### Version: 1.0
+### Date: 2026-05-21
+### Environment: MAAIS-Academic-Audit-System
+
+## Test Case Identification Format: TC-[MODULE]-[FEATURE]-[NN]
+
+### 1. Authentication and Authorization Tests
+
+#### TC-AUTH-LOGIN-01: Role-Based Login - Teacher
+**Precondition**: User exists in system with role="TEACHER"
+**Test Steps**:
+1. Navigate to login page
+2. Enter valid teacher credentials
+3. Click login button
+**Expected Result**: 
+- User redirected to teacher dashboard
+- Teacher-specific UI elements visible
+- No access to HOD/Admin specific menus
+
+#### TC-AUTH-LOGIN-02: Role-Based Login - HOD
+**Precondition**: User exists in system with role="HOD"
+**Test Steps**:
+1. Navigate to login page
+2. Enter valid HOD credentials
+3. Click login button
+**Expected Result**: 
+- User redirected to HOD dashboard
+- HOD-specific UI elements visible (Audit trails, Final Lock, etc.)
+- Access to teacher oversight features
+
+#### TC-AUTH-LOGIN-03: Role-Based Login - Student
+**Precondition**: User exists in system with role="STUDENT"
+**Test Steps**:
+1. Navigate to login page
+2. Enter valid student credentials
+3. Click login button
+**Expected Result**: 
+- User redirected to student portal
+- Student-specific UI elements visible (Academic journey, trends, etc.)
+- No access to teacher/HOD specific menus
+
+#### TC-AUTH-ROLE-01: Unauthorized Access Prevention
+**Precondition**: User logged in as teacher
+**Test Steps**:
+1. Attempt to navigate to HOD-specific URL (e.g., /hod/dashboard)
+2. Attempt to access admin endpoints via direct URL
+**Expected Result**: 
+- Redirected to access denied page or dashboard
+- Error message displayed: "Insufficient permissions"
+
+### 2. Teacher Functionality Tests
+
+#### TC-TEACH-DASH-01: Teacher Dashboard Load
+**Precondition**: Teacher logged in
+**Test Steps**:
+1. Navigate to teacher dashboard
+**Expected Result**: 
+- Welcome message with teacher name
+- Statistical snapshot grid showing:
+  - Assigned classes count
+  - Grading operations completion percentage
+  - Total student roster count
+- Dynamic class sheets matrix displaying assigned classes
+
+#### TC-TEACH-DASH-02: Class Card Navigation
+**Precondition**: Teacher logged in with assigned classes
+**Test Steps**:
+1. On teacher dashboard, locate a class card
+2. Click on the class card
+**Expected Result**: 
+- Navigation to grading sheet for that subject-class combination
+- URL updates with subject and class parameters
+- Grading sheet header displays correct subject and class info
+
+#### TC-TEACH-TT-01: Timetable View - Weekly
+**Precondition**: Teacher logged in
+**Test Steps**:
+1. Navigate to teacher timetable view
+2. Ensure view is set to weekly (default)
+**Expected Result**: 
+- Weekly timetable grid displayed
+- Classes shown in correct time slots
+- Current period highlighted based on system time
+- Next period displayed in header
+
+#### TC-TEACH-TT-02: Timetable View - Daily Switch
+**Precondition**: Teacher logged in, viewing weekly timetable
+**Test Steps**:
+1. Toggle view to daily
+2. Select a specific day (if applicable)
+**Expected Result**: 
+- Daily timetable view for selected day
+- Time-position calculation working correctly
+- Ability to navigate between days
+
+#### TC-TEACH-GRADING-01: Grading Sheet Load
+**Precondition**: Teacher logged in, navigated to grading sheet for subject-class
+**Test Steps**:
+1. Access grading sheet via class card click or direct URL with params
+**Expected Result**: 
+- Grading sheet header loads with subject/class info
+- Student roster displayed
+- Subject-specific exam sections loaded based on SUBJECT_CONFIG
+- SBA and exam columns visible
+
+#### TC-TEACH-GRADING-02: Score Entry and Calculation
+**Precondition**: Grading sheet loaded with student data
+**Test Steps**:
+1. Enter values in SBA section for a student
+2. Enter values in exam sections for same student
+**Expected Result**: 
+- Automatic calculation of exam percentage (examRaw/maxRaw * 70)
+- Automatic calculation of final score (SBA + exam %)
+- Automatic grade assignment based on GRADE_SCALE
+- Smart remark generation based on grade
+
+#### TC-TEACH-GRADING-03: Edit Justification Required
+**Precondition**: Grading sheet with existing score, term not finalized
+**Test Steps**:
+1. Attempt to modify an existing score
+**Expected Result**: 
+- Justification popup appears
+- Save button disabled until justification provided
+- After providing justification, score updates and audit log created
+
+#### TC-TEACH-GRADING-04: Missing Observation Tracking
+**Precondition**: Grading sheet loaded, student has missing observations
+**Test Steps**:
+1. View student row in grading sheet
+2. Check audit status indicator
+**Expected Result**: 
+- Visual indication of missing observations
+- Missing count displayed in footer
+- Submission blocked if missing observations exist
+
+#### TC-TEACH-GRADING-05: Observation Sidebar - Behavioral
+**Precondition**: Student selected in grading sheet, mode=behavioral
+**Test Steps**:
+1. Click on student to open observation sidebar
+2. Ensure mode is set to behavioral
+**Expected Result**: 
+- Behavioral rating categories displayed:
+  - Punctuality
+  - Class Participation  
+  - Task Completion
+  - Respect for Rules
+  - Peer Interaction
+- 1-5 rating scale for each category
+- Safety guidelines checkbox
+- Flag student option
+- Comment/justification field (auto-shows if any rating < 3)
+
+#### TC-TEACH-GRADING-06: Observation Sidebar - Compliance
+**Precondition**: Student selected in grading sheet, mode=compliance (technical subjects)
+**Test Steps**:
+1. Click on student to open observation sidebar
+2. Ensure mode is set to compliance
+**Expected Result**: 
+- Technical compliance rating categories displayed:
+  - Equipment Handling
+  - Safety Protocol Compliance
+  - Tool Maintenance
+  - Work Area Cleanliness
+  - Material Usage
+- 1-5 rating scale for each category
+- Safety guidelines checkbox
+- Flag student option
+- Comment/justification field
+
+#### TC-TEACH-GRADING-07: STP Validation
+**Precondition**: Grading sheet loaded with student data
+**Test Steps**:
+1. Click "Run STP Validation" button
+**Expected Result**: 
+- STP overlay/modal appears
+- Validation runs against rules:
+  - Final score ≤ 100%
+  - SBA ≤ 30%
+  - Exam ≤ 70%
+  - No missing observations
+- Errors displayed if any rules violated
+- Success message if all valid
+
+#### TC-TEACH-GRADING-08: Term Finalization Lock
+**Precondition**: Term finalized by HOD (isTermFinalized=true)
+**Test Steps**:
+1. Attempt to modify any score in grading sheet
+2. Attempt to submit justification for edit
+**Expected Result**: 
+- Terminal seal banner visible at top
+- Grading sheet disabled (pointer-events-none, opacity-75)
+- All edit attempts blocked
+- Message: "Database records are marked read-only"
+
+### 3. HOD Functionality Tests
+
+#### TC-HOD-DASH-01: HOD Dashboard Load
+**Precondition**: HOD logged in
+**Test Steps**:
+1. Navigate to HOD dashboard
+**Expected Result**: 
+- HOD-specific welcome message
+- Access to oversight features:
+  - Audit trails
+  - Intervention alerts
+  - Final lock & export
+  - Teacher assignment tracking
+
+#### TC-HOD-ARCHIVE-01: HOD Archive View Load
+**Precondition**: HOD logged in
+**Test Steps**:
+1. Navigate to HOD archive view (based on visible file: HODArchiveView.jsx)
+**Expected Result**: 
+- Archive view loads successfully
+- Historical data accessible
+- Promotion/graduation cleanse controls available
+- Search/filter capabilities for historical records
+
+#### TC-HOD-AUDIT-01: Audit Trail Access
+**Precondition**: HOD logged in, grade modifications exist
+**Test Steps**:
+1. Navigate to audit trail section
+**Expected Result**: 
+- List of all grade modifications visible
+- Each entry shows:
+  - Who made change (user)
+  - When changed (timestamp)
+  - What was changed (old/new values)
+  - Justification provided
+- Immutable log entries (cannot be edited/deleted)
+
+#### TC-HOD-INTERVEN-01: Intervention Alerts
+**Precondition**: Students with performance drops exist (>15% decline)
+**Test Steps**:
+1. Access intervention alerts/dashboard
+**Expected Result**: 
+- Alerts displayed for qualifying students
+- Performance trend visualization
+- Ability to acknowledge/resolve alerts
+- Details showing score history
+
+#### TC-HOD-LOCK-01: Final Lock and Export
+**Precondition**: HOD logged in, term data ready for finalization
+**Test Steps**:
+1. Navigate to final lock & export section
+2. Review data for completeness
+3. Activate final lock
+4. Initiate WAEC STP export
+**Expected Result**: 
+- System validates data integrity before locking
+- Lock prevents further modifications
+- Export generates compliant CSV/script for WAEC STP
+- Export includes required assessment groups and score conversions
+- Success confirmation upon completion
+
+#### TC-HOD-TEACHER-TRACK-01: Teacher Assignment History
+**Precondition**: HOD logged in
+**Test Steps**:
+1. Navigate to teacher assignment tracking
+2. Select a teacher
+**Expected Result**: 
+- History of subjects taught over time visible
+- Assignment changes tracked per academic year
+- Programme/department assignments shown
+
+### 4. Student Functionality Tests
+
+#### TC-STUD-PORTAL-01: Student Portal Load
+**Precondition**: Student logged in
+**Test Steps**:
+1. Navigate to student portal
+**Expected Result**: 
+- Student-specific welcome message
+- Academic journey view showing performance trends
+- Access to results and transcripts
+- Notification center for alerts/messages
+
+#### TC-STUD-PORTAL-02: Result Viewing
+**Precondition**: Student logged in, results available
+**Test Steps**:
+1. Navigate to results section
+2. Select specific term/subject
+**Expected Result**: 
+- Detailed score breakdown visible (SBA, exam sections, final)
+- Grade display with smart remark
+- Historical performance data accessible
+- Ability to download/print results
+
+#### TC-STUD-PORTAL-03: Trend Analysis
+**Precondition**: Student logged in, multi-term data available
+**Test Steps**:
+1. Navigate to academic journey/trends section
+**Expected Result**: 
+- Visual performance trends across terms
+- Subject-wise performance tracking
+- Intervention alerts if applicable
+- Counseling notifications visible
+
+### 5. System Integration and Performance Tests
+
+#### TC-SYS-PERF-01: Grading Sheet Load Time
+**Precondition**: System with typical data load
+**Test Steps**:
+1. Load grading sheet for medium-sized class (30-40 students)
+**Expected Result**: 
+- Page loads within 3 seconds (meeting NFR3)
+- All interactive elements functional immediately
+- No noticeable lag during score entry
+
+#### TC-SYS-PERF-02: Export Generation Time
+**Precondition**: HOD logged in, ready to export
+**Test Steps**:
+1. Initiate WAEC STP export process
+**Expected Result**: 
+- Export generated within 5 seconds (meeting NFR3)
+- File is properly formatted and complete
+- All student records included
+- Validation checks passed
+
+#### TC-SYS-SEC-01: Data Transmission Security
+**Precondition**: System in operation
+**Test Steps**:
+1. Monitor network traffic during grade submission
+2. Check authentication token handling
+**Expected Result**: 
+- All data transmission encrypted (SSL/TLS)
+- Authentication tokens properly managed
+- No sensitive data exposed in URLs or headers
+- Passwords stored using bcrypt hashing
+
+#### TC-SYS-DB-01: Audit Log Integrity
+**Precondition**: Grade modifications made
+**Test Steps**:
+1. Attempt to delete or modify audit log entries directly
+**Expected Result**: 
+- Database prevents modification/deletion of audit logs
+- Insert-only enforcement for audit_logs table
+- Any attempt returns appropriate error
+
+### 6. Workflow and Business Process Tests
+
+#### TC-WORKFLOW-GRADING-01: Complete Teacher Submission Cycle
+**Precondition**: Teacher logged in, class assigned, term open
+**Test Steps**:
+1. Enter scores for all students in class
+2. Address any missing observations
+3. Run STP validation and resolve any issues
+4. Submit grades for HOD review
+**Expected Result**: 
+- All scores entered with valid calculations
+- Missing observations resolved or justified
+- STP validation passes
+- Submission marked as "Pending Review"
+- Notification sent to HOD
+
+#### TC-WORKFLOW-HOD-01: Complete HOD Approval Cycle
+**Precondition**: Teacher submitted grades pending review
+**Test Steps**:
+1. HOD reviews submitted grades
+2. HOD accesses audit trail for any modifications
+3. HOD provides feedback/corrections if needed
+4. HOD approves and locks final results
+5. HOD initiates WAEC STP export
+**Expected Result**: 
+- Detailed review possible with audit trail
+- Feedback loop functional (teacher can respond)
+- Lock prevents further changes after approval
+- Export generates compliant WAEC STP package
+- System notified of successful completion
+
+#### TC-WORKFLOW-INTERVEN-01: Intervention Process
+**Precondition**: Student showing >15% performance drop
+**Test Steps**:
+1. System detects performance decline
+2. Intervention alert generated
+3. HOD reviews alert and student history
+4. Appropriate action taken (counseling, extra support)
+5. Follow-up tracking
+**Expected Result**: 
+- Automatic detection of performance drops
+- Alert appears in HOD dashboard
+- Historical data accessible for context
+- Ability to document intervention actions
+- Tracking of student progress post-intervention
+
+### 7. Error Handling and Edge Cases
+
+#### TC-ERR-01: Invalid Score Entry
+**Precondition**: Grading sheet in edit mode
+**Test Steps**:
+1. Enter score outside valid range (e.g., 150 for SBA)
+2. Attempt to save
+**Expected Result**: 
+- Validation prevents invalid entry
+- Error message displayed: "Score must be between 0-30 for SBA"
+- Focus remains on invalid field
+
+#### TC-ERR-02: Missing Justification for Edit
+**Precondition**: Attempting to modify existing score
+**Test Steps**:
+1. Modify score without providing justification
+2. Click save
+**Expected Result**: 
+- Justification popup appears/reappears
+- Save blocked until justification provided
+- Clear indication that justification is required
+
+#### TC-ERR-03: Network Failure During Save
+**Precondition**: System connected, simulating network issue
+**Test Steps**:
+1. Begin score modification process
+2. Simulate network disruption during save
+**Expected Result**: 
+- Save operation fails gracefully
+- User notified of connection issue
+- Option to retry when connection restored
+- No data loss or corruption
+
+#### TC-ERR-04: Invalid URL Access
+**Precondition**: User logged in
+**Test Steps**:
+1. Attempt to access non-existent URL
+2. Attempt to access URL with invalid parameters
+**Expected Result**: 
+- Redirect to 404/error page or dashboard
+- Informative error message
+- No system crash or exposure of stack traces
+
+### 8. Requirements Compliance Verification
+
+#### TC-REQ-FR1: Role-Based Access Control
+**Specification**: Requirement and specs.txt Section 1.6
+**Test**: Verify distinct interfaces for Admin/HOD/Teacher/Student
+**Expected Result**: 
+- Each role sees only authorized features
+- Role context properly enforced throughout application
+- No privilege escalation possible
+
+#### TC-REQ-FR2: Hybrid Grade Entry
+**Specification**: Requirement and specs.txt Section 1.18
+**Test**: Verify support for core 30/70 and technical milestone-based grading
+**Expected Result**: 
+- Core subjects use SBA(30%)/Exam(70%) model
+- Technical subjects support milestone-based marking
+- Subject configuration drives UI rendering
+
+#### TC-REQ-FR3: Automated Audit Middleware
+**Specification**: Requirement and specs.txt Section 1.19
+**Test**: Verify mandatory justification for edits
+**Expected Result**: 
+- Popup required for any grade modification
+- Justification saved with audit log
+- Save blocked without justification
+- Audit log captures: user, timestamp, old value, new value, justification
+
+#### TC-REQ-FR4: Behavioral & Safety Logging
+**Specification**: Requirement and specs.txt Section 1.20
+**Test**: Verify 1-5 rating scale logging capability
+**Expected Result**: 
+- Behavioral observations: punctuality, participation, etc.
+- Safety observations: equipment handling, safety compliance, etc.
+- 1-5 scale implemented for all observations
+- Comments required for low ratings (<3)
+
+#### TC-REQ-FR5: Finalization & Locking
+**Specification**: Requirement and specs.txt Section 1.21
+**Test**: Verify HOD locking mechanism and export
+**Expected Result**: 
+- HOD can lock results making them read-only
+- Locked state prevents all modifications
+- Export functionality generates WAEC STP compliant output
+- Export includes score conversion and assessment groups
+
+#### TC-REQ-NFR1: Data Integrity
+**Specification**: Requirement and specs.txt Section 1.25
+**Test**: Verify ACID-compliant transaction handling
+**Expected Result**: 
+- Grade updates and audit logs saved atomically
+- Database enforces referential integrity
+- Consistent state maintained despite failures
+
+#### TC-REQ-NFR2: Security
+**Specification**: Requirement and specs.txt Section 1.26
+**Test**: Verify password hashing and encryption
+**Expected Result**: 
+- Passwords stored using bcrypt
+- All data transmission via HTTPS
+- Secure token-based authentication (Laravel Sanctum equivalent)
+
+#### TC-REQ-NFR3: Performance
+**Specification**: Requirement and specs.txt Section 1.27
+**Test**: Verify broadsheet/export generation time
+**Expected Result**: 
+- Departmental broadsheet generated in <5 seconds
+- WAEC export file generated in <5 seconds
+- System responsive under typical load
+
+#### TC-REQ-NFR4: Usability
+**Specification**: Requirement and specs.txt Section 1.28
+**Test**: Verify responsive interface
+**Expected Result**: 
+- Interface usable on tablets and smartphones
+- Touch-friendly controls in grading sheet
+- Readable text and appropriate target sizes
+- Workshop-environment friendly design
+
+### 9. Data Model Validation Tests
+
+#### TC-DM-TEACHERASSIGNMENT-01: Teacher Assignment Structure
+**Test**: Verify TeacherAssignment model compliance
+**Expected Result**: 
+- Contains teacherId, academicYear, assignments array
+- Each assignment has: id, subjectId, subjectName, classId, className, form, stream, studentCount, programme
+- Proper linking to subject and class masters
+
+#### TC-DM-SUBJECTDEFINITION-01: Subject Definition Structure
+**Test**: Verify SubjectDefinition model compliance
+**Expected Result**: 
+- Contains id, name, category, scorableComponents
+- Contains maxSbaScore, maxExamScore
+- Contains gradeThresholds object with A1-F9 minimums
+
+#### TC-DM-CLASSROSTER-01: Class Roster Structure
+**Test**: Verify ClassRoster model compliance
+**Expected Result**: 
+- Contains classId
+- Contains students array with student objects
+- Each student has: id, index, name, subjects array
+- Subjects array lists all registered subjects
+
+#### TC-DM-GRADECALCULATION-01: Score Calculation Formula
+**Test**: Verify grade calculation implementation
+**Expected Result**: 
+- ExamPct = (ExamTotalRaw / SubjectMaxRaw) × 70
+- Final = SBAScore + ExamPct (0-100 range)
+- Grade thresholds properly applied (≥75=A1, ≥70=B2, etc.)
+
+### 10. Cross-Cutting Concerns
+
+#### TC-CC-LOCALIZATION-01: Date and Time Handling
+**Test**: Verify proper date/time formatting and timezone handling
+**Expected Result**: 
+- Timestamps displayed in local timezone
+- Date formats consistent throughout system
+- No timezone confusion in audit trails or reports
+
+#### TC-CC-ACCESSIBILITY-01: Basic Accessibility
+**Test**: Verify basic accessibility compliance
+**Expected Result**: 
+- Sufficient color contrast for text/background
+- Keyboard navigation possible for core functions
+- Form fields properly labeled
+- ARIA labels where appropriate for dynamic content
+
+#### TC-CC-INTERNATIONALIZATION-01: Text Externalization
+**Test**: Verify strings are externalized for i18n
+**Expected Result**: 
+- No hard-coded strings in UI components
+- Text pulled from localization files
+- Structure supports multiple language deployment
+
+---
+**Test Execution Notes**:
+1. These test cases should be executed against a test environment with realistic data
+2. Automation recommended for repetitive tests (UI, API, database)
+3. Exploratory testing advised for usability and workflow validation
+4. Regular regression testing as features evolve
+5. Performance testing should include load simulation
+6. Security testing should include penetration testing and vulnerability scanning
+
+**Traceability Matrix**:
+Each test case maps to specific requirements from:
+- Reqirement.txt (HOD interview documentation)
+- requirement and specs.txt (functional and non-functional specifications)
+- System Analysis and Design (SAD).txt (where applicable)
+- Implemented components observed in visible files
+
+**Last Updated**: 2026-05-21T03:23:10+00:00
+**Test Environment**: MAAIS-Academic-Audit-System
+**Working Directory**: C:\Users\imman\Desktop\WebApps\MAAIS-Academic-Audit-System
