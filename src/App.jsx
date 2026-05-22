@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { Sidebar } from './components/layout';
+import { Sidebar, HODSidebar } from './components/layout';
 import { Topbar, RightPanel, MobileDrawer, MobileBottomNav } from './components/shared';
 import { Dashboard } from './pages/shared';
 import { GradingSheet, GRADE_SCALE } from './pages/shared';
@@ -156,7 +156,7 @@ function AppContent() {
   return (
     <div className="flex h-screen bg-[#F9F9F7] font-sans selection:bg-emerald-100 selection:text-emerald-900">
       <div className="hidden lg:block">
-        <Sidebar />
+        {user?.role === 'HOD' ? <HODSidebar /> : <Sidebar />}
       </div>
       <div className="flex-1 flex flex-col min-w-0">
         {location.pathname !== '/journey-audit' && <Topbar />}
@@ -199,13 +199,12 @@ function AppContent() {
      <Route path="/archive/teacher/:id" element={
        <RequireRole allowedRoles={['TEACHER']}><TeacherArchiveDetailView /></RequireRole>
      } />
-            <Route path="/hod-teachers"     element={<RequireRole allowedRoles={['HOD']}><HODTeachers /></RequireRole>} />
-            <Route path="/certification"   element={<RequireRole allowedRoles={['HOD']}><HODLockExport /></RequireRole>} />
-            <Route path="/hod-dashboard"   element={<RequireRole allowedRoles={['HOD']}><HODDashboard /></RequireRole>} />
+            <Route path="/hod"             element={<RequireRole allowedRoles={['HOD']}><HODDashboard /></RequireRole>} />
             <Route path="/hod/audit"       element={<RequireRole allowedRoles={['HOD']}><HODAudit /></RequireRole>} />
             <Route path="/hod/interventions" element={<RequireRole allowedRoles={['HOD']}><HODInterventions /></RequireRole>} />
             <Route path="/hod/review"      element={<RequireRole allowedRoles={['HOD']}><HODReview /></RequireRole>} />
             <Route path="/hod/lock-export" element={<RequireRole allowedRoles={['HOD']}><HODLockExport /></RequireRole>} />
+            <Route path="/hod/teachers"    element={<RequireRole allowedRoles={['HOD']}><HODTeachers /></RequireRole>} />
             <Route path="/hod/analytics"   element={<RequireRole allowedRoles={['HOD']}><HODAnalytics /></RequireRole>} />
             <Route path="/hod/settings"    element={<RequireRole allowedRoles={['HOD']}><HODSettingsPage /></RequireRole>} />
             <Route path="/hod/support"     element={<RequireRole allowedRoles={['HOD']}><HODSupportPage /></RequireRole>} />
