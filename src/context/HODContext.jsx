@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useRole } from './RoleContext';
 import { hodService } from '../services/hodService';
+import { auditTrail } from '../services/auditTrailService';
+import { notification } from '../services/notificationService';
+import { dataSync } from '../services/dataSyncLayer';
+import { eventBus } from '../services/eventBus';
+import { cacheLayer } from '../services/cacheLayer';
 
 const HODContext = createContext(undefined);
 

@@ -1,467 +1,321 @@
-﻿import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import {
-  ShieldCheck, AlertTriangle, Users, ClipboardList,
-  Lock, Download, Zap, Award, CheckCircle2, Clock, AlertCircle,
-  AlertOctagon, Stethoscope, MessageSquare, Save, BookOpen
+  AlertCircle, Users, ShieldCheck, TrendingUp,
+  BarChart3, CheckCircle2, Clock, RefreshCw,
+  ChevronRight, FileText, AlertTriangle, GraduationCap,
+  MessageSquare, ArrowUpRight
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useHOD } from '../../context/HODContext';
 import { cn } from '../../lib/utils';
+import { useHOD } from '../../context/HODContext';
+import { SubmissionProgressSparkline, StatusBadge, JustificationQualityIndicator } from '../../components/molecules';
+import { AuditLogTimeline, TeacherSubmissionMatrix, InterventionAlertCluster } from '../../components/organisms';
+import { SkeletonLoader, SkeletonText, SkeletonCard, SkeletonTableRow } from '../../components/molecules/SkeletonLoader';
 
-/* ─── Phase 8.1 — Short Justification Badge ──────────────────────────── */
-function ShortJustifBadge({ justification }) {
-  if (!justification) return null;
-  const isShort = justification.trim().length < 10;
-  if (!isShort) return null;
+const STAGGER = {
+  container: { initial: "hidden", animate: "show", variants: { hidden: {}, show: { transition: { staggerChildren: 0.07 } } } },
+  item:    { initial: { opacity: 0, y: 14 },       animate: { opacity: 1, y: 0 }, transition: { duration: 0.28, ease: 'easeOut' } },
+};
+
+function KpiCard({ icon: Icon, label, value, subValue, color = 'emerald', trend }) {
+  const colors = {
+    emerald: 'bg-emerald-50 text-emerald-600',
+    rose:    'bg-rose-50    text-rose-600',
+    blue:    'bg-blue-50    text-blue-600',
+    amber:   'bg-amber-50   text-amber-600',
+    gray:    'bg-gray-50    text-gray-600',
+    purple:  'bg-purple-50  text-purple-600',
+  };
   return (
-    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-rose-50 text-rose-600 text-[9px] font-black uppercase tracking-wider border border-rose-200">
-      <AlertOctagon size={10} />
-      HOD-AR-2.2 Short
-    </span>
+    <motion.div variants={STAGGER.item}
+      className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between mb-3">
+        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", colors[color])}>
+          <Icon size={20} />
+        </div>
+        {trend && (
+          <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full",
+            trend.positive ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700")}>
+            {trend.value}
+          </span>
+        )}
+      </div>
+      <p className="text-2xl font-bold text-gray-900">{value}</p>
+      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mt-0.5">{label}</p>
+      {subValue && <p className="text-[11px] text-gray-400 mt-1">{subValue}</p>}
+    </motion.div>
   );
 }
 
-/* ─── Phase 9.2 — Severity sort + cluster summary helpers ─────────────── */
-function sortBySeverity(alerts) {
-  const order = { HIGH: 0, MEDIUM: 1, LOW: 2 };
-  return [...alerts].sort((a, b) => (order[a.severity || 'LOW'] ?? 9) - (order[b.severity || 'LOW'] ?? 9));
+function QuickAction({ to, icon: Icon, label, color = 'emerald' }) {
+  const colors = {
+    emerald: 'bg-emerald-50  text-emerald-600  hover:bg-emerald-100',
+    blue:    'bg-blue-50     text-blue-600     hover:bg-blue-100',
+    purple:  'bg-purple-50   text-purple-600   hover:bg-purple-100',
+    amber:   'bg-amber-50    text-amber-600    hover:bg-amber-100',
+    rose:    'bg-rose-50     text-rose-600     hover:bg-rose-100',
+    gray:    'bg-gray-50     text-gray-600     hover:bg-gray-100',
+  };
+  return (
+    <Link to={to}
+      className={cn("p-3 rounded-2xl transition-all flex items-center gap-2.5", colors[color])}>
+      <Icon size={18} />
+      <span className="text-xs font-semibold text-gray-800">{label}</span>
+      <ChevronRight size={13} className="ml-auto text-gray-400" />
+    </Link>
+  );
 }
 
 export function HODDashboard() {
-  const navigate = useNavigate();
   const {
-    auditLogs,
-    setAuditLogs,
-    auditFilter,
-    setAuditFilter,
-    interventionAlerts,
-    alertFilter,
-    setAlertFilter,
-    isLoading,
-    isExporting,
-    resolveAlert,
-    hasShortJustification,
-    addAlertNote,
-    teacherSubmissions,
-    submissionPct,
-    refreshTeacherSubmissions,
-    refreshAuditLogs,
-    refreshInterventionAlerts,
-    refreshDepartmentProgress,
-    refreshAll,
-    lockedTerms,
-    refreshLockedTerms,
-    // Phase 9
-    getAggregatedAlerts,
-    alertClusterCount,
+    auditLogs, interventionAlerts, teacherSubmissions,
+    unresolvedAlerts, atRiskStudentCount, submissionPct,
+    totalAlerts, isLoading, error,
+    refreshAll, departmentProgress,
   } = useHOD();
 
-  /* Phase 9.1 — counseling note entry per alert */
-  const [expandedNote, setExpandedNote] = useState(null);
-  const [noteDraft, setNoteDraft] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    refreshAll();
-  }, [refreshAll]);
+  useEffect(() => { refreshAll(); }, []);
 
-  const filteredAuditLogs = auditFilter === 'all'
-    ? auditLogs
-    : auditLogs.filter(
-        (log) =>
-          log.status === auditFilter ||
-          log.action?.toUpperCase().includes(auditFilter.toUpperCase()),
-      );
-
-  // Phase 9.2: sort alerts by severity within the current filter
-  const filteredAlertsRaw = alertFilter === 'all'
-    ? interventionAlerts
-    : interventionAlerts.filter((a) =>
-        alertFilter === 'resolved' ? a.resolved : a.severity?.toUpperCase() === alertFilter.toUpperCase(),
-      );
-  const filteredAlerts = useMemo(() => sortBySeverity(filteredAlertsRaw), [filteredAlertsRaw]);
-
-  // Phase 9.2: aggregated (student-keyed) alert clusters
-  const aggregatedAlerts = getAggregatedAlerts(interventionAlerts);
-  const unresolvedClusters = aggregatedAlerts.filter((g) => !g.allResolved).length;
-
-  const severityColors = {
-    HIGH: 'bg-red-50 text-red-700 border border-red-100',
-    MEDIUM: 'bg-amber-50 text-amber-700 border border-amber-100',
-    LOW: 'bg-blue-50 text-blue-700 border border-blue-100',
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refreshAll();
+    setRefreshing(false);
   };
 
-  const statusColors = {
-    RESOLVED: 'bg-emerald-50 text-emerald-700 border border-emerald-100',
-    LOCKED: 'bg-blue-50 text-blue-700 border border-blue-100',
-    DRAFT: 'bg-slate-100 text-slate-600',
-    FLAGGED: 'bg-amber-50 text-amber-700 border border-amber-100',
-  };
+  const lockedClasses  = useMemo(() => departmentProgress.filter(c => c.status === 'LOCKED').length, [departmentProgress]);
+  const totalClasses   = useMemo(() => departmentProgress.length,                                 [departmentProgress]);
+  const shortJusts     = useMemo(() => auditLogs.filter(l => (l.justification || '').trim().length < 10).length, [auditLogs]);
+  const recentLogs     = useMemo(() => auditLogs.slice(0, 4), [auditLogs]);
 
-  /* ─── Phase 9.1 handlers ─────────────────────────────────────────── */
-  const handleToggleNote = useCallback((alertId, existingNote) => {
-    setExpandedNote((prev) => (prev === alertId ? null : alertId));
-    setNoteDraft(existingNote || '');
-  }, []);
-
-  const handleSaveNote = useCallback((alertId) => {
-    if (!noteDraft.trim()) return;
-    addAlertNote(alertId, noteDraft.trim());
-    setExpandedNote(null);
-    setNoteDraft('');
-  }, [noteDraft, addAlertNote]);
-
-  /* ─── Phase 8.2 — submission progress per teacher ─────────────────── */
-  const teacherProgress = useMemo(() => {
-    const map = new Map();
-    teacherSubmissions.forEach((s) => {
-      const t = s.teacherName || s.teacherId || '—';
-      if (!map.has(t)) map.set(t, { teacherName: t, total: 0, graded: 0, classes: 0, pctSum: 0, subjects: new Set() });
-      const entry = map.get(t);
-      entry.total += s.studentCount || 0;
-      entry.graded += s.gradedCount || 0;
-      entry.subjects.add(s.subjectName || s.subject || '—');
-      entry.classes = entry.subjects.size;
-    });
-    const list = Array.from(map.values()).map((e) => ({
-      ...e,
-      pct: e.total > 0 ? Math.round((e.graded / e.total) * 100) : 0,
-    }));
-    list.sort((a, b) => a.pct - b.pct);
-    return list;
-  }, [teacherSubmissions]);
-
-  const atRiskTeachers = teacherProgress.filter((t) => t.pct < 80 && t.total > 0);
+  const topTeachers    = useMemo(() => [...teacherSubmissions].sort((a,b) => (b.progress||0)-(a.progress||0)).slice(0, 4), [teacherSubmissions]);
+  const atRiskTeachers = useMemo(() => teacherSubmissions.filter(t => (t.progress||0) < 70),                    [teacherSubmissions]);
 
   return (
-    <div className="w-full min-h-screen bg-slate-50/50 p-6 lg:p-10 text-slate-900 font-sans overflow-y-auto">
-      <div className="max-w-7xl w-full mx-auto flex flex-col space-y-8">
+    <div className="flex-1 flex flex-col min-h-0 bg-gray-50/30">
+      {/* Page header */}
+      <div className="px-6 lg:px-8 pt-6 pb-2">
+        <div className="max-w-7xl mx-auto flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-black text-gray-900">Department Overview</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Academic Audit &amp; Oversight — live snapshot</p>
+          </div>
+          <button onClick={handleRefresh} disabled={refreshing || isLoading}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 shadow-sm">
+            <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+            Refresh
+          </button>
+        </div>
+      </div>
 
-        {/* ── Top Header Section ───────────────────────────────────── */}
-        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b border-slate-200/60 pb-6 shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-md">
-              <ShieldCheck size={26} />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">HOD Dashboard</h1>
-              <p className="text-xs text-slate-500 font-medium tracking-wide mt-0.5">Audit oversight &amp; intervention management</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 sm:flex items-center gap-3">
-            <button onClick={() => navigate('/grading')} className="px-4 py-2.5 bg-white text-slate-700 border border-slate-200 font-semibold rounded-lg hover:bg-slate-50 text-sm flex items-center justify-center gap-2"><ClipboardList size={16} /> Grade Submission</button>
-            <button onClick={() => navigate('/certification')} className="px-4 py-2.5 bg-white text-slate-700 border border-slate-200 font-semibold rounded-lg hover:bg-slate-50 text-sm flex items-center justify-center gap-2"><Award size={16} /> Certification</button>
-            <button onClick={() => navigate('/identity/students')} className="px-4 py-2.5 bg-white text-slate-700 border border-slate-200 font-semibold rounded-lg hover:bg-slate-50 text-sm flex items-center justify-center gap-2"><Users size={16} /> Registry</button>
-            <button disabled={isExporting} className="col-span-2 sm:col-span-1 px-4 py-2.5 bg-slate-900 text-white font-semibold rounded-lg hover:bg-slate-800 text-sm flex items-center justify-center gap-2 shadow-sm">{isExporting ? <Zap size={16} className="animate-spin" /> : <Download size={16} />} Export</button>
-          </div>
-        </header>
+      <div className="flex-1 overflow-auto px-6 lg:px-8 pb-8">
+        <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* ── Stats Grid (Phase 9.2: alertClusterCount instead of total) ─ */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 shrink-0">
-          <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Audit Log Items</p>
-              <p className="text-2xl font-bold text-slate-900 tracking-tight">{filteredAuditLogs.length}</p>
-            </div>
-            <div className="w-9 h-9 bg-slate-50 rounded-lg flex items-center justify-center border border-slate-100"><ClipboardList size={18} className="text-slate-600" /></div>
-          </div>
-          <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Alert Clusters</p>
-              <p className="text-2xl font-bold text-slate-900 tracking-tight">{alertClusterCount}</p>
-            </div>
-            <div className="w-9 h-9 bg-amber-50 rounded-lg flex items-center justify-center border border-amber-100"><AlertTriangle size={18} className="text-amber-600" /></div>
-          </div>
-          <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Unresolved Clusters</p>
-              <p className="text-2xl font-bold text-red-600 tracking-tight">{unresolvedClusters}</p>
-            </div>
-            <div className="w-9 h-9 bg-red-50 rounded-lg flex items-center justify-center border border-red-100"><AlertOctagon size={18} className="text-red-600" /></div>
-          </div>
-          <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Locked Terms</p>
-              <p className="text-2xl font-bold text-slate-900 tracking-tight">{lockedTerms.length}</p>
-            </div>
-            <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-100"><Lock size={18} className="text-blue-600" /></div>
-          </div>
-          <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">At-Risk Students</p>
-              <p className="text-2xl font-bold text-red-600 tracking-tight">{interventionAlerts.filter((a) => !a.resolved).length}</p>
-            </div>
-            <div className="w-9 h-9 bg-red-50 rounded-lg flex items-center justify-center border border-red-100"><Users size={18} className="text-red-600" /></div>
-          </div>
-        </section>
+          {/* ── KPI Grid ── */}
+          <motion.div variants={STAGGER.container} initial="hidden" animate="show"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <KpiCard
+              icon={AlertCircle}     label="Intervention Alerts"   value={unresolvedAlerts}  color="rose"
+              trend={{ positive: unresolvedAlerts < 5, value: `${unresolvedAlerts < 5 ? 'Low' : 'Elevated'}` }}
+              subValue={`${totalAlerts} total • at-risk students`} />
+            <KpiCard
+              icon={Users}           label="At-Risk Students"      value={atRiskStudentCount} color="purple"
+              subValue="Need HOD review" />
+            <KpiCard
+              icon={ShieldCheck}     label="Classes Locked"        value={`${lockedClasses}/${totalClasses}`} color="emerald"
+              subValue={`${Math.round(100 * lockedClasses / Math.max(totalClasses, 1))}% locked`} />
+            <KpiCard
+              icon={TrendingUp}      label="Teacher Submission %"  value={`${Math.round(submissionPct)}%`}  color="amber"
+              trend={{ positive: submissionPct > 80, value: `${teacherSubmissions.length} teachers` }}
+              subValue={`${atRiskTeachers.length} at-risk`} />
+          </motion.div>
 
-        {/* ── Phase 8.2: Teacher Submission Progress ─────────────────── */}
-        {teacherSubmissions.length > 0 && (
-          <section className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
-            <div className="p-5 border-b border-slate-100 shrink-0 bg-white flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                  <BookOpen size={18} className="text-blue-600" />
-                  Submission Progress by Teacher
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">Real submission counts from API — sort will sort ascending (lowest first)</p>
+          {/* ── KPI row 2: short justifications and total logs ── */}
+          <motion.div variants={STAGGER.container} initial="hidden" animate="show"
+            className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <KpiCard
+              icon={AlertTriangle}   label="Short Justifications"            value={shortJusts}          color="amber"
+              subValue="HOD-AR-2.2: below 10-character minimum" />
+            <KpiCard
+              icon={FileText}       label="Total Audit Logs"                 value={auditLogs.length}     color="blue"
+              subValue="Recent edits captured" />
+            <KpiCard
+              icon={GraduationCap}  label="Dept. Teachers"                  value={teacherSubmissions.length} color="purple"
+              subValue="In submission feed" />
+          </motion.div>
+
+          {/* ── Quick Actions ── */}
+          <motion.div variants={STAGGER.container} initial="hidden" animate="show"
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <QuickAction to="/hod/audit"         icon={FileText}     label="Audit Logs"     color="blue"    />
+            <QuickAction to="/hod/interventions" icon={AlertCircle}  label="Interventions"  color="rose"    />
+            <QuickAction to="/hod/review"        icon={CheckCircle2} label="Grade Review"   color="emerald" />
+            <QuickAction to="/hod/lock-export"   icon={ShieldCheck}  label="Lock &amp; Export" color="purple" />
+            <QuickAction to="/hod/teachers"      icon={Users}        label="Teacher Mgmt"  color="amber"  />
+            <QuickAction to="/hod/analytics"     icon={BarChart3}    label="Analytics"     color="gray"   />
+          </motion.div>
+
+          {/* ── Intervention Alerts + Audit Feed ── */}
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Intervention Alerts */}
+            <motion.div variants={STAGGER.item} initial="hidden" animate="show"
+              className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-rose-50 rounded-lg flex items-center justify-center">
+                    <AlertCircle size={16} className="text-rose-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-bold text-gray-900">Interventions</h2>
+                    <p className="text-[10px] text-gray-500">{unresolvedAlerts} active</p>
+                  </div>
+                </div>
+                <Link to="/hod/interventions" className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-0.5">
+                  View all <ChevronRight size={12} />
+                </Link>
               </div>
-              <button
-                onClick={refreshTeacherSubmissions}
-                className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50"
-              >
-                Refresh
-              </button>
-            </div>
-            <div className="divide-y divide-slate-100">
-              {teacherProgress.map((t, i) => {
-                const low = t.pct < 80;
-                const fillColor = low ? 'bg-red-500' : t.pct < 95 ? 'bg-amber-400' : 'bg-emerald-500';
-                return (
-                  <motion.div
-                    key={`${t.teacherName || t.teacherId}-${i}`}
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.03 }}
-                    className="p-4 flex items-center gap-5 hover:bg-slate-50/50 transition-all"
-                  >
-                    <div className="w-36 min-w-[144px] shrink-0">
-                      <p className="text-sm font-bold text-slate-900 truncate">{t.teacherName}</p>
-                      <p className="text-[9px] text-slate-400 font-bold uppercase">{t.subjects} subject{t.subjects > 1 ? 's' : ''}</p>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] font-bold text-slate-500">
-                          {t.graded}/{t.total} graded
-                        </span>
-                        <span className={cn(
-                          "text-[10px] font-black",
-                          low ? 'text-red-600' : 'text-emerald-700',
-                        )}>
-                          {t.pct}%
-                        </span>
+              <div className="p-2 max-h-[22rem] overflow-y-auto">
+                {interventionAlerts.length === 0 ? (
+                  <div className="p-6 text-center">
+                    <CheckCircle2 size={36} className="text-gray-200 mx-auto mb-2" />
+                    <p className="text-xs text-gray-400">No active alerts</p>
+                  </div>
+                ) : (
+                  <InterventionAlertCluster
+                    alerts={interventionAlerts.slice(0, 6)}
+                    className="!space-y-2"
+                  />
+                )}
+              </div>
+            </motion.div>
+
+            {/* Recent Audit Activity */}
+            <motion.div variants={STAGGER.item} initial="hidden" animate="show"
+              className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                    <Clock size={16} className="text-blue-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-bold text-gray-900">Recent Audit Activity</h2>
+                    <p className="text-[10px] text-gray-500">{auditLogs.length} entries captured</p>
+                  </div>
+                </div>
+                <Link to="/hod/audit" className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-0.5">
+                  Full audit <ChevronRight size={12} />
+                </Link>
+              </div>
+
+              <div className="p-3 space-y-2 max-h-80 overflow-y-auto">
+                {error && (
+                  <div className="p-3 bg-amber-50 border border-amber-200/60 rounded-xl text-xs text-amber-800">{error}</div>
+                )}
+
+                {auditLogs.length === 0 ? (
+                  <div className="p-6 text-center">
+                    <BarChart3 size={36} className="text-gray-200 mx-auto mb-2" />
+                    <p className="text-xs text-gray-400">No audit logs yet</p>
+                  </div>
+                ) : (
+                  recentLogs.map((log, i) => (
+                    <motion.div key={log.id || i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="flex items-start gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors">
+                      <div className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                        log.status === 'RESOLVED' ? 'bg-emerald-50 text-emerald-600' :
+                        log.status === 'FLAGGED'  ? 'bg-rose-50   text-rose-600'  :
+                        log.status === 'LOCKED'   ? 'bg-gray-50   text-gray-600'   :
+                                                        'bg-amber-50  text-amber-600'
+                      )}>
+                        {log.status === 'RESOLVED' ? <CheckCircle2 size={14} /> :
+                         log.status === 'FLAGGED'  ? <AlertTriangle  size={14} /> :
+                         log.status === 'LOCKED'   ? <ShieldCheck size={14} />     : <Clock size={14} />}
                       </div>
-                      <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          className={cn("h-full rounded-full transition-all duration-700", fillColor)}
-                          style={{ width: `${Math.min(100, Math.max(0, t.pct))}%` }}
-                        />
-                      </div>
-                    </div>
-                    {low && <span className="text-[9px] font-black text-red-500 uppercase tracking-wider shrink-0">⚠ At-Risk</span>}
-                  </motion.div>
-                );
-              })}
-            </div>
-            {atRiskTeachers.length > 0 && (
-              <div className="px-5 py-3 bg-red-50/50 border-t border-red-100 flex items-center gap-2">
-                <AlertOctagon size={14} className="text-red-500 shrink-0" />
-                <span className="text-[10px] font-bold text-red-700">
-                  {atRiskTeachers.length} teacher{atRiskTeachers.length > 1 ? 's have' : ' has'} below 80% completion
-                </span>
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* ── Main Panels ───────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pb-10">
-
-          {/* ── Left: Audit Trail (Phase 8.1 highlighted short-justif) ── */}
-          <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm lg:col-span-7 flex flex-col overflow-hidden h-[450px] lg:h-[calc(100vh-400px)] min-h-[400px]">
-            <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 bg-white">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">Audit Trail</h2>
-                <p className="text-xs text-slate-500">Historical trace of system adjustments</p>
-              </div>
-              <div className="flex flex-wrap gap-1.5 bg-slate-50 p-1 rounded-lg border border-slate-200/60 self-start sm:self-center">
-                {['all', 'RESOLVED', 'FLAGGED'].map((tab) => (
-                  <button key={tab} onClick={() => setAuditFilter(tab)} className={cn("px-2.5 py-1 rounded-md text-xs font-semibold capitalize transition-all", auditFilter === tab ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-800")}>{tab.toLowerCase()}</button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-100 min-h-0 custom-scrollbar">
-              <AnimatePresence mode="popLayout">
-                {filteredAuditLogs.map((log, i) => {
-                  const shortJ = hasShortJustification(log.justification);
-                  return (
-                    <motion.div
-                      key={log.id}
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, x: -8 }}
-                      transition={{ duration: 0.2, delay: i * 0.03 }}
-                      className={cn(
-                        "p-5 hover:bg-slate-50/50 transition-all flex gap-4 items-start justify-between",
-                        shortJ && "bg-rose-50/30 border-l-2 border-l-rose-300"
-                      )}
-                    >
-                      <div className="flex gap-3.5 items-start">
-                        <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5", log.status === 'RESOLVED' ? "bg-emerald-50 text-emerald-600" : log.status === 'FLAGGED' ? "bg-amber-50 text-amber-600" : log.status === 'LOCKED' ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-500")}>
-                          {log.status === 'RESOLVED' && <CheckCircle2 size={16} />}
-                          {log.status === 'FLAGGED' && <AlertCircle size={16} />}
-                          {log.status === 'LOCKED' && <Lock size={16} />}
-                          {log.status === 'DRAFT' && <Clock size={16} />}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-medium text-gray-900 truncate">{log.action || 'Unknown action'}</span>
+                          <StatusBadge status={log.status || 'UNKNOWN'} />
                         </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-semibold text-slate-900 leading-tight">{log.action} — <span className="text-slate-600 font-normal">{log.target}</span></p>
-                            <ShortJustifBadge justification={log.justification} />
+                        <p className="text-[10px] text-gray-500 mt-0.5">
+                          {log.teacherName || 'Unknown teacher'} · {(log.timestamp || '').split('T')[0] || '—'}
+                        </p>
+                        {log.justification && log.justification.length < 10 && (
+                          <div className="mt-1">
+                            <JustificationQualityIndicator text={log.justification} />
                           </div>
-                          <p className="text-xs font-medium text-slate-400">{log.user} • {log.time}</p>
-                          {log.oldValue && log.newValue && (
-                            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 rounded text-[11px] font-mono text-slate-600 border border-slate-200/50 mt-1">
-                              <span>{log.oldValue}</span><span className="text-slate-400">→</span><span className="font-bold text-slate-800">{log.newValue}</span>
-                            </div>
-                          )}
-                          {log.justification && (
-                            <p className={cn("text-xs italic mt-1.5 pl-2 border-l-2", shortJ ? "text-rose-500 border-rose-300 font-bold" : "text-slate-500 border-slate-200")}>
-                              {log.justification}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-md shrink-0 tracking-wide", statusColors[log.status] || "bg-slate-100 text-slate-600")}>{log.status}</span>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-              {isLoading && (
-                <div className="p-8 text-center text-sm text-slate-400">Loading audit logs…</div>
-              )}
-              {!isLoading && filteredAuditLogs.length === 0 && (
-                <div className="p-8 text-center text-sm text-slate-400">No audit logs found.
-                  <button onClick={refreshAuditLogs} className="ml-2 underline text-slate-600">Retry</button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* ── Right: Intervention Alerts (Phase 9.1 counseling notes, 9.2 cluster count) ── */}
-          <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm lg:col-span-5 flex flex-col overflow-hidden h-[450px] lg:h-[calc(100vh-400px)] min-h-[400px]">
-            <div className="p-5 border-b border-slate-100 space-y-4 shrink-0 bg-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900">Intervention Alerts</h2>
-                  <p className="text-xs text-slate-500">System generated academic risk markers</p>
-                </div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
-                  {unresolvedClusters} unresolved cluster{unresolvedClusters !== 1 ? 's' : ''}
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {['all', 'HIGH', 'MEDIUM', 'resolved'].map((filter) => (
-                  <button key={filter} onClick={() => setAlertFilter(filter)} className={cn("px-2.5 py-1 rounded-md text-xs font-medium border transition-all capitalize", alertFilter === filter ? "bg-slate-900 border-slate-900 text-white shadow-xs" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}>{filter}</button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-100 min-h-0 custom-scrollbar">
-              <AnimatePresence mode="popLayout">
-                {filteredAlerts.map((alert, i) => {
-                  const isExpanded = expandedNote === alert.id;
-                  const existingNote = null; // persisted via addAlertNote context action
-                  return (
-                    <motion.div
-                      key={alert.id}
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.2, delay: i * 0.03 }}
-                      className={cn("p-5 space-y-3 transition-colors", alert.resolved ? "bg-slate-50/40" : "bg-white", isExpanded && "bg-slate-50")}
-                    >
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="space-y-0.5">
-                          <h3 className="text-sm font-bold text-slate-900">{alert.studentName}</h3>
-                          <p className="text-xs text-slate-400 font-medium">ID: {alert.studentIndex} • <span className="text-slate-600 font-semibold">{alert.subject}</span></p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-md tracking-wide", severityColors[alert.severity] || "bg-slate-100 text-slate-600")}>{alert.severity}</span>
-                          <button
-                            onClick={() => handleToggleNote(alert.id, null)}
-                            className={cn(
-                              "p-1.5 rounded-lg transition-all",
-                              isExpanded ? "bg-emerald-50 text-emerald-700" : "hover:bg-slate-100 text-slate-400"
-                            )}
-                            title="Add counseling note"
-                          >
-                            <Stethoscope size={14} />
-                          </button>
-                        </div>
-                      </div>
-
-                      <p className="p-3 bg-slate-50 rounded-lg border border-slate-200/40 text-xs font-medium text-slate-600">{alert.reason}</p>
-
-                      {/* Phase 9.1 — Counseling note composer */}
-                      <AnimatePresence>
-                        {isExpanded && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.15 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="space-y-2">
-                              <label className="block text-[9px] font-black text-emerald-700 uppercase tracking-widest">
-                                <MessageSquare size={10} className="inline mr-1" />
-                                Counseling Action Note (Phase 9.1)
-                              </label>
-                              <textarea
-                                value={noteDraft}
-                                onChange={(e) => setNoteDraft(e.target.value)}
-                                rows={2}
-                                placeholder="Record counseling action taken, student response, next steps…"
-                                className="w-full px-3 py-2 bg-white border border-emerald-200 rounded-xl text-xs text-slate-900 resize-none focus:outline-none focus:ring-1 focus:ring-emerald-500/30 focus:border-emerald-500"
-                              />
-                              <div className="flex items-center justify-end gap-2">
-                                <button
-                                  onClick={() => { setExpandedNote(null); setNoteDraft(''); }}
-                                  className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hover:text-slate-600 px-3 py-1"
-                                >
-                                  Cancel
-                                </button>
-                                <button
-                                  onClick={() => handleSaveNote(alert.id)}
-                                  disabled={!noteDraft.trim()}
-                                  className={cn(
-                                    "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5",
-                                    noteDraft.trim()
-                                      ? 'bg-emerald-900 text-white hover:bg-black'
-                                      : 'bg-gray-100 text-gray-300 cursor-not-allowed'
-                                  )}
-                                >
-                                  <Save size={11} />
-                                  Save Note
-                                </button>
-                              </div>
-                            </div>
-                          </motion.div>
                         )}
-                      </AnimatePresence>
-
-                      <div className="flex items-center justify-between gap-4 pt-1">
-                        <span className="text-xs text-slate-400 font-medium">{alert.timestamp}</span>
-                        <div className="flex items-center gap-2">
-                          {alert.resolved ? (
-                            <div className="flex items-center gap-1 text-emerald-600 text-xs font-semibold"><CheckCircle2 size={14} /> Resolved</div>
-                          ) : (
-                            <button onClick={() => resolveAlert(alert.id)} className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-md shadow-xs transition-all">Mark Resolved</button>
-                          )}
-                        </div>
+                        {log.hodComment && (
+                          <div className="mt-1 flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200/60 rounded-lg px-2 py-1">
+                            <MessageSquare size={10} /> HOD comment added
+                          </div>
+                        )}
                       </div>
                     </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-              {interventionAlerts.length === 0 && (
-                <div className="p-8 text-center text-sm text-slate-400">No active alerts.
-                  <button onClick={refreshInterventionAlerts} className="ml-2 underline text-slate-600">Retry</button>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </div>
+
+          {/* ── Teacher Submissions ── */}
+          <motion.div variants={STAGGER.item} initial="hidden" animate="show"
+            className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center">
+                  <Users size={16} className="text-amber-600" />
                 </div>
+                <div>
+                  <h2 className="text-sm font-bold text-gray-900">Teacher Submissions</h2>
+                  <p className="text-[10px] text-gray-500">{teacherSubmissions.length} teachers · {Math.round(submissionPct)}% avg</p>
+                </div>
+              </div>
+              <Link to="/hod/teachers" className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-0.5">
+                All teachers <ChevronRight size={12} />
+              </Link>
+            </div>
+            <div className="p-3 divide-y divide-gray-50 max-h-72 overflow-y-auto">
+              {topTeachers.length === 0 ? (
+                <div className="p-6 text-center">
+                  <GraduationCap size={32} className="text-gray-200 mx-auto mb-2" />
+                  <p className="text-xs text-gray-400">No submission data</p>
+                </div>
+              ) : (
+                topTeachers.map((teacher, i) => {
+                  const pct = teacher.progress || 0;
+                  const atRisk = pct < 70;
+                  return (
+                    <div key={teacher.id || i} className="flex items-center gap-3 py-2.5 px-1">
+                      <div className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold",
+                        atRisk ? "bg-rose-100 text-rose-700" : "bg-emerald-50 text-emerald-700"
+                      )}>
+                        {(teacher.name || '?').charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-medium text-gray-900 truncate">{teacher.name || '—'}</p>
+                          {atRisk && <span className="text-[9px] font-bold uppercase tracking-widest text-rose-700">At risk</span>}
+                        </div>
+                        <SubmissionProgressSparkline value={pct} size="sm" />
+                      </div>
+                      <Link to="/hod/teachers"
+                        className={cn(
+                          "text-[10px] font-medium px-2 py-0.5 rounded-lg",
+                          atRisk ? "text-rose-600 hover:bg-rose-50" : "text-gray-500 hover:bg-gray-50"
+                        )}>
+                        {pct}%
+                      </Link>
+                    </div>
+                  );
+                })
               )}
             </div>
-          </div>
+          </motion.div>
 
         </div>
       </div>

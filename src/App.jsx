@@ -11,7 +11,7 @@ import {
   SchedulingView, FinanceView, CommsView, MasterTimetable, EventCalendarView,
   AcademicArchitect, ReportGeneratorView, GradingRulesView,
 } from './pages/admin';
-import { HODCertification, HODDashboard, HODArchiveView, HODSettings, HODSupport, HODTeacherManagement } from './pages/hod';
+import { HODDashboard, HODAudit, HODInterventions, HODReview, HODLockExport, HODSettings, HODSettingsPage, HODSupport, HODSupportPage, HODTeachers, HODAnalytics } from './pages/hod';
 import { StudentJourney, StudentDashboard, StudentTimetable, StudentSettings, StudentSupport } from './pages/student';
 import { TeacherTimetableView, TeacherDashboard, TeacherGradingView, TeacherObservationsView, TeacherAnalyticsView, TeacherArchiveView, TeacherArchiveDetailView, TeacherSettings, TeacherSupport } from './pages/teacher';
 import { HOD_JourneyHistoryAudit, RevisionsFeed, MissingObservations, SettingsView, SupportView } from './pages/shared';
@@ -199,15 +199,16 @@ function AppContent() {
      <Route path="/archive/teacher/:id" element={
        <RequireRole allowedRoles={['TEACHER']}><TeacherArchiveDetailView /></RequireRole>
      } />
-            <Route path="/hod-teachers" element={
-              <RequireRole allowedRoles={['HOD']}><HODTeacherManagement /></RequireRole>
-            } />
-            <Route path="/certification" element={
-              <RequireRole allowedRoles={['HOD']}><HODCertification /></RequireRole>
-            } />
-            <Route path="/hod-dashboard" element={
-              <RequireRole allowedRoles={['HOD']}><HODDashboard /></RequireRole>
-            } />
+            <Route path="/hod-teachers"     element={<RequireRole allowedRoles={['HOD']}><HODTeachers /></RequireRole>} />
+            <Route path="/certification"   element={<RequireRole allowedRoles={['HOD']}><HODLockExport /></RequireRole>} />
+            <Route path="/hod-dashboard"   element={<RequireRole allowedRoles={['HOD']}><HODDashboard /></RequireRole>} />
+            <Route path="/hod/audit"       element={<RequireRole allowedRoles={['HOD']}><HODAudit /></RequireRole>} />
+            <Route path="/hod/interventions" element={<RequireRole allowedRoles={['HOD']}><HODInterventions /></RequireRole>} />
+            <Route path="/hod/review"      element={<RequireRole allowedRoles={['HOD']}><HODReview /></RequireRole>} />
+            <Route path="/hod/lock-export" element={<RequireRole allowedRoles={['HOD']}><HODLockExport /></RequireRole>} />
+            <Route path="/hod/analytics"   element={<RequireRole allowedRoles={['HOD']}><HODAnalytics /></RequireRole>} />
+            <Route path="/hod/settings"    element={<RequireRole allowedRoles={['HOD']}><HODSettingsPage /></RequireRole>} />
+            <Route path="/hod/support"     element={<RequireRole allowedRoles={['HOD']}><HODSupportPage /></RequireRole>} />
             <Route path="/system" element={
               <RequireRole allowedRoles={['ADMIN']}><AdminManagement /></RequireRole>
             } />

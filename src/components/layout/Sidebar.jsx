@@ -23,6 +23,7 @@ import {
   BarChart3,
   Eye,
   LibraryBig,
+  Search,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
   import { useRole } from '../../context/RoleContext';
@@ -108,6 +109,10 @@ export function Sidebar() {
     { icon: Database, label: 'Archive', id: 'archive', path: '/archive', roles: ['ADMIN', 'HOD'] },
     { icon: LibraryBig, label: 'Archive', id: 'teacher-archive', path: '/teacher/archive', roles: ['TEACHER'] },
     { icon: ShieldCheck, label: 'Certification', id: 'certification', path: '/certification', roles: ['HOD'], badge: 2, badgeColor: 'bg-emerald-600' },
+    { icon: Search,       label: 'Audit Log',    id: 'hod-audit', path: '/hod/audit', roles: ['HOD'] },
+    { icon: BarChart3,    label: 'Analytics',    id: 'analytics', path: '/hod/analytics', roles: ['HOD'] },
+    { icon: Settings,     label: 'Settings',     id: 'settings', path: '/hod/settings',  roles: ['HOD'] },
+    { icon: LifeBuoy,     label: 'Support',      id: 'support',  path: '/hod/support',   roles: ['HOD'] },
     { icon: TrendingUp, label: 'Journey', id: 'journey', path: '/journey', roles: ['STUDENT'] },
   ];
 

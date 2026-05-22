@@ -77,12 +77,18 @@ export function Topbar() {
       crumbs.push({ label: archiveLabel, path: '/archive' });
     }
     else if (path === '/grading') crumbs.push({ label: 'Mark Entry', path: '/grading' });
-    else if (path === '/audit') crumbs.push({ label: 'Audit Logs', path: '/audit' });
-    else if (path === '/certification') crumbs.push({ label: 'Certification', path: '/certification' });
+    else if (path === '/audit')  crumbs.push({ label: 'Audit & Oversight', path: '/audit' });
+    else if (path === '/hod/audit') crumbs.push({ label: 'Audit & Oversight', path: '/hod/audit' });
+    else if (path === '/hod/interventions') crumbs.push({ label: 'Interventions', path: '/hod/interventions' });
+    else if (path === '/hod/review') crumbs.push({ label: 'Grade Review', path: '/hod/review' });
+    else if (path === '/hod/lock-export') crumbs.push({ label: 'Lock & Export', path: '/hod/lock-export' });
+    else if (path === '/hod/analytics') crumbs.push({ label: 'Analytics', path: '/hod/analytics' });
+    else if (path === '/hod-teachers') crumbs.push({ label: 'Teacher Management', path: '/hod-teachers' });
+    else if (path === '/certification') crumbs.push({ label: 'Lock & Export', path: '/certification' });
     else if (path === '/journey') crumbs.push({ label: 'Student Journey', path: '/journey' });
     else if (path === '/system') crumbs.push({ label: 'System Admin', path: '/system' });
-    else if (path === '/settings') crumbs.push({ label: 'Vault Settings', path: '/settings' });
-    else if (path === '/support') crumbs.push({ label: 'Student Support', path: '/support' });
+    else if (path === '/settings') crumbs.push({ label: 'Settings', path: '/settings' });
+    else if (path === '/support') crumbs.push({ label: 'Support', path: '/support' });
 
     return crumbs;
   };
