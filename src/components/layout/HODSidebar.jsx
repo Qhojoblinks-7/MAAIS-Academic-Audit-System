@@ -10,7 +10,6 @@ import {
   LifeBuoy,
   Users,
   Database,
-  TrendingUp,
   X,
   ChevronRight,
   ShieldCheck,
@@ -30,69 +29,69 @@ export function HODSidebar() {
   
   const sidebarRef = useRef(null);
 
-  // HOD-specific navigation items organized by workflow
+  // Debugged navigation config: Added ID handles and sample submenu routing endpoints
   const hodNavItems = [
     {
+      id: 'dashboard',
       icon: LayoutDashboard,
       label: 'Dashboard',
       path: '/hod',
       roles: ['HOD'],
     },
     {
+      id: 'audit',
       icon: ShieldCheck,
       label: 'Audit & Oversight',
       path: '/hod/audit',
       roles: ['HOD'],
+      subHeader: 'Oversight Controls',
+      subItems: [
+        { label: 'Activity Audit Log', path: '/hod/audit/logs' },
+        { label: 'Compliance Metrics', path: '/hod/audit/compliance' }
+      ]
     },
     {
+      id: 'interventions',
       icon: AlertTriangle,
       label: 'Interventions',
       path: '/hod/interventions',
       roles: ['HOD'],
-      badge: 0, // Will be dynamically updated
+      badge: 3, 
       badgeColor: 'bg-amber-500',
     },
     {
+      id: 'review',
       icon: ClipboardList,
       label: 'Grade Review',
       path: '/hod/review',
       roles: ['HOD'],
-      badge: 0, // Will be dynamically updated
+      badge: 7,
     },
     {
+      id: 'lock-export',
       icon: Database,
       label: 'Lock & Export',
       path: '/hod/lock-export',
       roles: ['HOD'],
     },
     {
+      id: 'teachers',
       icon: Users,
       label: 'Teachers',
       path: '/hod/teachers',
       roles: ['HOD'],
     },
     {
+      id: 'analytics',
       icon: BarChart3,
       label: 'Analytics',
       path: '/hod/analytics',
       roles: ['HOD'],
-      badge: 0, // Will be dynamically updated
-    },
-    {
-      icon: Settings,
-      label: 'Settings',
-      path: '/hod/settings',
-      roles: ['HOD'],
-    },
-    {
-      icon: LifeBuoy,
-      label: 'Support',
-      path: '/hod/support',
-      roles: ['HOD'],
+      badge: 0,
     },
   ];
 
-  // Auto-close open flyouts when clicking outside the menu
+  // Auto-close open flyouts when clicking outside the menu area
   useEffect(() => {
     function handleClickOutside(event) {
       if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
@@ -103,7 +102,7 @@ export function HODSidebar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Clear submenus whenever the global location route changes
+  // Clear tracking submenus whenever the global location route changes
   useEffect(() => {
     setActiveSubMenu(null);
   }, [location.pathname]);
@@ -118,27 +117,27 @@ export function HODSidebar() {
 
   return (
     <>
-      <aside 
-        ref={sidebarRef}
-        className="w-20 h-screen bg-slate-50 border-r border-slate-200/60 flex flex-col items-center py-8 gap-8 z-30 select-none shrink-0"
-      >
+<aside 
+         ref={sidebarRef}
+         className="w-20 h-screen bg-slate-50 border-r border-slate-200/60 flex flex-col items-center py-8 gap-8 z-30 select-none shrink-0 print:hidden"
+       >
         <Link to="/hod" className="w-12 h-12 bg-brand-teal rounded-2xl flex items-center justify-center text-white font-semibold text-xl shadow-lg shadow-brand-teal/20 transition-transform active:scale-95">
           M
         </Link>
 
         <nav className="flex-1 flex flex-col gap-4 w-full px-3 overflow-y-auto no-scrollbar">
           {filteredItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            const hasSubMenu = !!item.subItems;
+            const isActive = location.pathname === item.path || item.subItems?.some(sub => location.pathname === sub.path);
+            const hasSubMenu = !!item.subItems && item.subItems.length > 0;
             const isSubMenuOpen = activeSubMenu === item.id;
 
             return (
-              <div key={item.label} className="relative flex justify-center w-full">
+              <div key={item.id || item.label} className="relative flex justify-center w-full">
                 {hasSubMenu ? (
                   <button
-                    onClick={() => setActiveSubMenu(isSubMenuOpen ? null : item.label)}
+                    onClick={() => setActiveSubMenu(isSubMenuOpen ? null : item.id)}
                     className={cn(
-                      "p-3 rounded-2xl transition-all duration-200 relative w-12 h-12 flex items-center justify-center",
+                      "p-3 rounded-2xl transition-all duration-200 relative w-12 h-12 flex items-center justify-center cursor-pointer",
                       isActive || isSubMenuOpen
                         ? "bg-white text-brand-teal shadow-md shadow-slate-200/40 ring-1 ring-slate-100/80"
                         : "text-slate-400 hover:bg-white hover:text-slate-900"
@@ -164,7 +163,7 @@ export function HODSidebar() {
                       
                       {item.badge && item.badge > 0 && (
                         <div className={cn(
-                          "absolute -top-2 -right-2 px-1.5 py-0.5 min-w-[1.15rem] h-4.5 text-white text-[8px] font-bold rounded-full flex items-center justify-center border-2 border-slate-50 shadow-sm pointer-events-none",
+                          "absolute -top-2 -right-2 px-1.5 min-w-[1.15rem] h-[18px] text-white text-[8px] font-bold rounded-full flex items-center justify-center border-2 border-slate-50 shadow-sm pointer-events-none",
                           item.badgeColor || "bg-rose-500"
                         )}>
                           {item.badge}
@@ -220,25 +219,23 @@ export function HODSidebar() {
         </nav>
 
         <div className="flex flex-col gap-4 mt-auto px-3 w-full items-center">
-          <>
-            <button
-              onClick={() => setSupportModalOpen(true)}
-              className="p-3 rounded-2xl text-slate-400 hover:bg-white hover:text-slate-600 transition-all duration-200 w-12 h-12 flex items-center justify-center"
-              title="ICT Support"
-            >
-              <LifeBuoy size={22} />
-            </button>
-            <button
-              onClick={() => setSettingsModalOpen(true)}
-              className="p-3 rounded-2xl text-slate-400 hover:bg-white hover:text-slate-600 transition-all duration-200 w-12 h-12 flex items-center justify-center"
-              title="Settings"
-            >
-              <Settings size={22} />
-            </button>
-          </>
+          <button
+            onClick={() => setSupportModalOpen(true)}
+            className="p-3 rounded-2xl text-slate-400 hover:bg-white hover:text-slate-600 transition-all duration-200 w-12 h-12 flex items-center justify-center cursor-pointer"
+            title="ICT Support"
+          >
+            <LifeBuoy size={22} />
+          </button>
+          <button
+            onClick={() => setSettingsModalOpen(true)}
+            className="p-3 rounded-2xl text-slate-400 hover:bg-white hover:text-slate-600 transition-all duration-200 w-12 h-12 flex items-center justify-center cursor-pointer"
+            title="Settings"
+          >
+            <Settings size={22} />
+          </button>
           <button
             onClick={() => setShowLogoutModal(true)}
-            className="p-3 rounded-2xl text-slate-300 hover:bg-rose-50 hover:text-rose-600 transition-all duration-200 w-12 h-12 flex items-center justify-center"
+            className="p-3 rounded-2xl text-slate-300 hover:bg-rose-50 hover:text-rose-600 transition-all duration-200 w-12 h-12 flex items-center justify-center cursor-pointer"
             title="Logout"
           >
             <LogOut size={22} />
@@ -269,7 +266,7 @@ export function HODSidebar() {
                   </div>
                   <button 
                     onClick={() => setShowLogoutModal(false)} 
-                    className="p-2 hover:bg-slate-50 rounded-xl transition-all text-slate-400 hover:text-slate-600"
+                    className="p-2 hover:bg-slate-50 rounded-xl transition-all text-slate-400 hover:text-slate-600 cursor-pointer"
                   >
                     <X size={20} />
                   </button>
@@ -283,13 +280,13 @@ export function HODSidebar() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowLogoutModal(false)}
-                    className="flex-1 py-3 bg-slate-50 text-slate-700 font-medium rounded-xl text-sm hover:bg-slate-100 transition-all border border-slate-200/40"
+                    className="flex-1 py-3 bg-slate-50 text-slate-700 font-medium rounded-xl text-sm hover:bg-slate-100 transition-all border border-slate-200/40 cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleLogout}
-                    className="flex-1 py-3 bg-rose-600 text-white font-medium rounded-xl text-sm hover:bg-rose-700 transition-all shadow-md shadow-rose-600/10"
+                    className="flex-1 py-3 bg-rose-600 text-white font-medium rounded-xl text-sm hover:bg-rose-700 transition-all shadow-md shadow-rose-600/10 cursor-pointer"
                   >
                     Log Out
                   </button>

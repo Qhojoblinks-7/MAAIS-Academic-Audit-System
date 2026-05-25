@@ -30,8 +30,9 @@ const mockUsers = {
     currentTerm: '2026',
   },
   STUDENT: {
-    id: 's1',
-    username: '10001',
+    // SYNCED KEYS: Altered credentials to point cleanly to records inside studentPortalMockData.json
+    id: 'stud001',
+    username: '001', 
     name: 'Angela Efia Owusu',
     role: 'STUDENT',
     departmentId: 'agric',
@@ -41,10 +42,13 @@ const mockUsers = {
 };
 
 export function RoleProvider({ children }) {
-  const [user, setUser] = useState(mockUsers.TEACHER);
+  // Configured to load STUDENT profile directly to support portal diagnostics
+  const [user, setUser] = useState(mockUsers.STUDENT);
 
   const setRole = (role) => {
-    setUser(mockUsers[role]);
+    if (mockUsers[role]) {
+      setUser(mockUsers[role]);
+    }
   };
 
   const logout = () => {

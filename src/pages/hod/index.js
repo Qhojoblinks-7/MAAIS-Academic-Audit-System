@@ -6,7 +6,6 @@ export { HODReview }            from './HODReview';
 export { HODLockExport }        from './HODLockExport';
 export { HODSettings }          from './HODSettings';
 export { HODSettingsPage }      from './HODSettingsPage';
-export { HODSupport }           from './HODSupport';
 export { HODSupportPage }       from './HODSupportPage';
 export { HODTeachers }          from './HODTeachers';
 export { HODAnalytics }         from './HODAnalytics';

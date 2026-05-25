@@ -1,5 +1,4 @@
-export { StudentDashboard } from './StudentDashboard';
-export { StudentJourney } from './StudentJourney';
-export { StudentSettings } from './StudentSettings';
-export { StudentSupport } from './StudentSupport';
-export { StudentTimetable } from './StudentTimetable';
+export { StudentPortal } from "./StudentPortal";
+export { StudentSettings } from "./StudentSettings";
+export { StudentSupport } from "./StudentSupport";
+export { StudentTimetable } from "./StudentTimetable";

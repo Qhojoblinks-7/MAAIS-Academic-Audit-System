@@ -1,11 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useRole } from './RoleContext';
 import { hodService } from '../services/hodService';
-import { auditTrail } from '../services/auditTrailService';
-import { notification } from '../services/notificationService';
-import { dataSync } from '../services/dataSyncLayer';
-import { eventBus } from '../services/eventBus';
-import { cacheLayer } from '../services/cacheLayer';
 
 const HODContext = createContext(undefined);
 
@@ -174,7 +169,7 @@ export function HODProvider({ children }) {
 
   const submissionPct = (teacherSubmissions.length / Math.max(teacherSubmissions.length, 1)) * 100;
 
-  // ── Session timeout ─────────────────────────────────────────────────────────
+// ── Session timeout ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isHod) return;
     const handler = () => {/* handled at App level */};
@@ -585,6 +580,12 @@ export function HODProvider({ children }) {
       URL.revokeObjectURL(url);
     })();
   }, [isHod, startExport]);
+
+  // ── Load teachers on mount for HOD ───────────────────────────────────────────
+  useEffect(() => {
+    if (!isHod) return;
+    refreshDepartmentTeachers();
+  }, [isHod, refreshDepartmentTeachers]);
 
   const value = {
      // state

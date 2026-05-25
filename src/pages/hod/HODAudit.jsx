@@ -1,203 +1,218 @@
-import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import {
-  Calendar, Flag, RefreshCw, ChevronDown, AlertTriangle, Search,
-  X, CheckSquare, Square, ChevronRight, MessageSquare,
-  Download, Send, User, Clock, Filter
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  RefreshCw, Search, Filter, Calendar, BarChart3, 
+  AlertCircle, CheckCircle2, XCircle, ShieldCheck, History 
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useHOD } from '../../context/HODContext';
-import { DateRangeFilter, ActionButtonGroup, StatusBadge, JustificationQualityIndicator, HODCommentInput } from '../../components/molecules';
-import { AuditLogTimeline } from '../../components/organisms';
-import { ConfirmationDialog } from '../../components/molecules';
-
-const ACTION_FILTERS = [
-  { value: 'all',           label: 'All Actions' },
-  { value: 'GRADE_CHANGE',  label: 'Grade Changes' },
-  { value: 'JUSTIFICATION', label: 'Justifications' },
-  { value: 'FLAG',          label: 'Flags' },
-  { value: 'HOD_COMMENT',   label: 'HOD Comments' },
-  { value: 'LOCK',          label: 'Locks' },
-];
+import { AuditLogTimeline } from '../../components/organisms/AuditLogTimeline';
 
 export function HODAudit() {
-  const { auditLogs, auditFilter, setAuditFilter, addHODComment, hasShortJustification, refreshAuditLogs, isLoading } = useHOD();
+  const {
+    auditLogs = [],
+    auditFilter,
+    setAuditFilter,
+    getFilteredAuditLogs,
+    isLoading,
+    refreshAuditLogs,
+    addHODComment,
+  } = useHOD();
 
   const [search, setSearch] = useState('');
-  const [selectedIds, setSelectedIds] = useState(new Set());
-  const [showBulkMenu,  setShowBulkMenu]  = useState(false);
-  const [showConfirm,   setShowConfirm]    = useState(null); // { label, onConfirm }
+  const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [selectedEntity, setSelectedEntity] = useState('all');
+
+  useEffect(() => {
+    if (typeof refreshAuditLogs === 'function') {
+      refreshAuditLogs();
+    }
+  }, [refreshAuditLogs]);
 
   const filteredLogs = useMemo(() => {
-    let list = auditLogs;
-    if (auditFilter !== 'all') {
-      list = list.filter(l => l.status === auditFilter || (l.action || '').toUpperCase().includes(auditFilter));
-    }
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(l =>
-        (l.action     || '').toLowerCase().includes(q) ||
-        (l.teacherName|| '').toLowerCase().includes(q) ||
-        (l.justification || '').toLowerCase().includes(q) ||
-        (l.recordId   || '').toLowerCase().includes(q)
+    let logs = typeof getFilteredAuditLogs === 'function' ? getFilteredAuditLogs() : auditLogs;
+    const query = search.trim().toLowerCase();
+    
+    if (query) {
+      logs = logs.filter(log =>
+        String(log.teacherName || '').toLowerCase().includes(query) ||
+        String(log.recordId || '').toLowerCase().includes(query) ||
+        String(log.justification || '').toLowerCase().includes(query) ||
+        String(log.action || '').toLowerCase().includes(query),
       );
     }
-    return list;
-  }, [auditLogs, auditFilter, search]);
+    if (dateRange.start && dateRange.end) {
+      logs = logs.filter(log => {
+        const logDate = log.timestamp?.split('T')[0];
+        return logDate >= dateRange.start && logDate <= dateRange.end;
+      });
+    }
+    if (selectedEntity !== 'all') {
+      logs = logs.filter(log => log.entityType === selectedEntity);
+    }
+    return logs;
+  }, [getFilteredAuditLogs, auditLogs, search, dateRange, selectedEntity]);
 
-  const toggleSelect = (id) => {
-    setSelectedIds(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
+  const stats = useMemo(() => {
+    const total = auditLogs.length;
+    const resolved = auditLogs.filter(l => l.status === 'RESOLVED').length;
+    const flagged = auditLogs.filter(l => l.status === 'FLAGGED').length;
+    const locked = auditLogs.filter(l => l.status === 'LOCKED').length;
+    const draft = auditLogs.filter(l => l.status === 'DRAFT').length;
+    return { total, resolved, flagged, locked, draft };
+  }, [auditLogs]);
+
+  const handleAddComment = async (logId, comment) => {
+    if (typeof addHODComment === 'function') {
+      await addHODComment(logId, comment);
+    }
   };
-  const toggleSelectAll = () => {
-    const allIds = new Set(filteredLogs.map(l => l.id || l.recordId));
-    setSelectedIds(allIds.size === selectedIds.size ? new Set() : allIds);
-  };
 
-  const flagged        = filteredLogs.filter(l => hasShortJustification(l.justification));
-  const selectedCount  = selectedIds.size;
+  const entityTypes = [
+    { value: 'all', label: 'All Operations' },
+    { value: 'student_result', label: 'Student Results' },
+    { value: 'grade_revision', label: 'Grade Revisions' },
+    { value: 'teacher_submission', label: 'Submissions' },
+  ];
 
-  const bulkActions = [
-    { label: 'Flag All',            variant: 'danger',  icon: Flag,      onClick: () => console.log('bulk flag', selectedIds) },
-    { label: 'Short Justification', variant: 'secondary',icon: AlertTriangle, onClick: () => console.log('filter short') },
-    { label: 'Export CSV',          variant: 'secondary',icon: Download,   onClick: () => console.log('export csv') },
+  const filterPresets = [
+    { value: 'all', label: 'All States' },
+    { value: 'RESOLVED', label: 'Resolved' },
+    { value: 'FLAGGED', label: 'Flagged' },
+    { value: 'LOCKED', label: 'Locked' },
+    { value: 'DRAFT', label: 'Draft' },
   ];
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-gray-50/30">
-      <div className="flex-1 overflow-auto p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto space-y-5">
-
-          {/* Header + stats */}
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Audit &amp; Oversight</h1>
-              <p className="text-sm text-gray-500 mt-0.5">{filteredLogs.length} log entries · HOD-AR-2.x compliance view</p>
-            </div>
-            <button onClick={refreshAuditLogs} disabled={isLoading}
-              className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 shadow-sm">
-              <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} /> Refresh
-            </button>
+    <div className="flex-1 flex flex-col min-h-0 bg-slate-50/50 font-sans antialiased">
+      
+      {/* 1. View Control Header */}
+      <header className="bg-white border-b border-gray-200/80 px-6 py-4 sticky top-0 z-10 backdrop-blur-md bg-white/95">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-base font-bold text-gray-900 tracking-tight">System Accountability Ledger</h1>
+            <p className="text-xs text-gray-400 mt-0.5">Immutable audit pipeline monitoring across structural evaluation matrices.</p>
           </div>
-
-          {/* Summary chips */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 rounded-lg text-[10px] font-medium text-gray-600">
-              <Filter size={11} /> {auditLogs.length} total
-            </div>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200/60 rounded-lg text-[10px] font-bold text-amber-700">
-              <AlertTriangle size={11} /> {flagged.length} short justifications
-            </div>
-            {selectedCount > 0 && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200/60 rounded-lg text-[10px] font-bold text-blue-700">
-                {selectedCount} selected
-              </div>
-            )}
-          </div>
-
-          {/* Toolbar */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Status filter */}
-              <div className="relative">
-                <select
-                  value={auditFilter}
-                  onChange={(e) => setAuditFilter(e.target.value)}
-                  className="text-xs font-medium text-gray-700 border border-gray-200 rounded-xl px-3 py-1.5 focus:outline-none bg-white hover:border-gray-300 appearance-none pr-7"
-                >
-                  {ACTION_FILTERS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-                </select>
-                <ChevronDown size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-              </div>
-
-              {/* Search */}
-              <div className="relative flex-1 max-w-xs">
-                <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search logs…"
-                  className="w-full pl-8 pr-7 py-1.5 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                />
-                {search && (
-                  <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                    <X size={11} />
-                  </button>
-                )}
-              </div>
-
-              {/* Bulk toolbar */}
-              {selectedCount > 0 && (
-                <div className="relative">
-                  <button onClick={() => setShowBulkMenu(!showBulkMenu)}
-                    className="px-3 py-1.5 bg-blue-50 border border-blue-200/60 text-blue-700 text-xs font-medium rounded-xl hover:bg-blue-100 flex items-center gap-1.5">
-                    <CheckSquare size={12} /> Bulk Actions ({selectedCount})
-                    <ChevronDown size={12} />
-                  </button>
-                  {showBulkMenu && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setShowBulkMenu(false)} />
-                      <div className="absolute right-0 mt-2 bg-white rounded-xl border border-gray-100 shadow-lg p-1 min-w-[160px] z-50">
-                        {bulkActions.map((a, i) => (
-                          <button key={i} onClick={() => {
-                            a.onClick();
-                            setShowBulkMenu(false);
-                          }} className={cn(
-                            "w-full px-3 py-2 text-left text-xs rounded-lg hover:bg-gray-50",
-                            a.variant === 'danger' ? 'text-rose-600 hover:bg-rose-50' : 'text-gray-700'
-                          )}>
-                            {a.label}
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Column check bar */}
-            <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-xl">
-              <button
-                onClick={toggleSelectAll}
-                className="flex items-center gap-1.5"
-              >
-                {selectedCount === filteredLogs.length && filteredLogs.length > 0
-                  ? <CheckSquare size={14} className="text-blue-600" />
-                  : <Square size={14} className="text-gray-400" />
-                }
-                <span className="text-[10px] font-medium text-gray-600">
-                  {selectedCount === filteredLogs.length ? 'Deselect All' : 'Select All'}
-                </span>
-              </button>
-              <span className="text-[10px] text-gray-400">|</span>
-              <label className="flex items-center gap-1"><input type="checkbox" defaultChecked className="rounded border-gray-300" />
-                <span className="text-[10px] text-gray-600">Action</span></label>
-              <label className="flex items-center gap-1"><input type="checkbox" defaultChecked className="rounded border-gray-300" />
-                <span className="text-[10px] text-gray-600">Who</span></label>
-              <label className="flex items-center gap-1"><input type="checkbox" defaultChecked className="rounded border-gray-300" />
-                <span className="text-[10px] text-gray-600">Timestamp</span></label>
-              <label className="flex items-center gap-1"><input type="checkbox" defaultChecked className="rounded border-gray-300" />
-                <span className="text-[10px] text-gray-600">Status</span></label>
-            </div>
-          </div>
-
-          {/* Audit timeline */}
-          <AuditLogTimeline
-            logs={filteredLogs}
-            onAddComment={addHODComment}
-          />
+          <button
+            onClick={refreshAuditLogs}
+            disabled={isLoading}
+            className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-50 flex items-center gap-2 shadow-3xs transition-all active:scale-95 disabled:opacity-40 shrink-0 self-start sm:self-center"
+          >
+            <RefreshCw size={12} className={isLoading ? 'animate-spin' : ''} />
+            Synchronize Logs
+          </button>
         </div>
-      </div>
+      </header>
 
-      <ConfirmationDialog
-        open={showConfirm?.open}
-        title={showConfirm?.title}
-        message={showConfirm?.message}
-        confirmLabel={showConfirm?.confirmLabel}
-        onConfirm={() => { showConfirm?.onConfirm(); setShowConfirm(null); }}
-        onCancel={() => setShowConfirm(null)}
-      />
+      <main className="flex-1 overflow-auto p-6 space-y-6 max-w-6xl w-full mx-auto">
+        
+        {/* 2. Micro Summary Cards Strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          {[
+            { label: 'Total Index', value: stats.total, icon: BarChart3, color: 'text-gray-950' },
+            { label: 'Resolved', value: stats.resolved, icon: CheckCircle2, color: 'text-emerald-600' },
+            { label: 'Flagged', value: stats.flagged, icon: XCircle, color: 'text-rose-600' },
+            { label: 'Locked', value: stats.locked, icon: AlertCircle, color: 'text-amber-600' },
+            { label: 'Drafts', value: stats.draft, icon: Calendar, color: 'text-sky-600' }
+          ].map((card, idx) => (
+            <div key={idx} className="bg-white rounded-xl border border-gray-200/70 p-3.5 shadow-3xs flex flex-col justify-between h-[85px]">
+              <div className="flex items-center gap-1.5 text-gray-400">
+                <card.icon size={12} />
+                <span className="text-[10px] font-bold uppercase tracking-wider">{card.label}</span>
+              </div>
+              <p className={cn("text-xl font-black tracking-tight", card.color)}>{card.value}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* 3. Balanced Split Workspace Engine */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+          
+          {/* Left Layout Column: Navigation Filters Matrix */}
+          <div className="space-y-4 md:sticky md:top-24">
+            <div className="bg-white rounded-xl border border-gray-200/70 shadow-3xs p-4 space-y-4">
+              <div className="flex items-center gap-1.5 border-b border-gray-100 pb-2.5 text-gray-400">
+                <Filter size={12} />
+                <h3 className="text-[10px] font-bold uppercase tracking-wider">Parameters Filtering</h3>
+              </div>
+
+              {/* Text Query Input */}
+              <div className="space-y-1">
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Search Context</label>
+                <div className="relative">
+                  <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search ledger marks..."
+                    className="w-full pl-8.5 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 placeholder-gray-400 font-medium text-gray-700"
+                  />
+                </div>
+              </div>
+
+              {/* Entity Context Type Dropdown */}
+              <div className="space-y-1">
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Entity Boundary</label>
+                <select
+                  value={selectedEntity}
+                  onChange={(e) => setSelectedEntity(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs bg-gray-50 border border-gray-200/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 text-gray-700 font-medium"
+                >
+                  {entityTypes.map(et => (
+                    <option key={et.value} value={et.value}>{et.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Dual Range Processing Nodes */}
+              <div className="space-y-1">
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Date Threshold bounds</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="date"
+                    value={dateRange.start}
+                    onChange={(e) => setDateRange(r => ({ ...r, start: e.target.value }))}
+                    className="w-full px-2 py-1 text-xs bg-gray-50 border border-gray-200/80 rounded-lg text-gray-600 font-medium focus:outline-none"
+                  />
+                  <input
+                    type="date"
+                    value={dateRange.end}
+                    onChange={(e) => setDateRange(r => ({ ...r, end: e.target.value }))}
+                    className="w-full px-2 py-1 text-xs bg-gray-50 border border-gray-200/80 rounded-lg text-gray-600 font-medium focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Informational Notice */}
+            <div className="bg-indigo-50/40 border border-indigo-100/50 rounded-xl p-3 flex items-start gap-2.5">
+              <History size={13} className="text-indigo-500 shrink-0 mt-0.5" />
+              <p className="text-[11px] text-indigo-950/80 leading-normal font-medium">
+                Records meet state structural tracking framework criteria. Alteration points are fully cryptographically timestamped.
+              </p>
+            </div>
+          </div>
+
+          {/* Right Layout Column: Interactive Feed Display Stream */}
+          <div className="md:col-span-2 bg-white rounded-xl border border-gray-200/70 shadow-3xs p-5 min-h-[400px]">
+            <div className="flex items-center gap-1.5 border-b border-gray-100 pb-3 mb-4">
+              <ShieldCheck size={13} className="text-indigo-500" />
+              <h2 className="text-xs font-bold text-gray-950 tracking-tight">Ledger Timeline Node Output</h2>
+              <span className="ml-auto text-[10px] font-bold bg-slate-100 text-gray-500 px-2 py-0.5 rounded-md">
+                {filteredLogs.length} Records Passed
+              </span>
+            </div>
+
+            <AuditLogTimeline
+              logs={filteredLogs}
+              onAddComment={handleAddComment}
+              filterPresets={filterPresets}
+            />
+          </div>
+
+        </div>
+
+      </main>
     </div>
   );
 }

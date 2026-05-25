@@ -17,7 +17,6 @@ export function ObservationSidebar({
   teacherReply = '',
   onReplyChange,
   onSecondaryAction,
-  // Optional but recommended to handle state lifting and prevent loss on unmount:
   isFlagged = false,
   onFlagChange,
   safetyChecked = false,
@@ -26,8 +25,6 @@ export function ObservationSidebar({
   const safeStudent = student || { name: '', index: '' };
   const isCorrection = mode === 'correction';
   const isCompliance = mode === 'compliance';
-  // Note: isBehavioral removed — WAEC STP §7 ratingsList is now unified for all
-  // non-correction modes; behavioral mode is preserved via the G-ratings section.
 
   // Fallback local state if state-lifting props aren't wired up from parent yet
   const [localIsFlagged, setLocalIsFlagged] = React.useState(false);
@@ -46,19 +43,13 @@ export function ObservationSidebar({
     else setLocalSafetyChecked(checked);
   };
 
-  // WAEC STP §7 Qualitative Assessment — define rating categories aligned to
-  // the four mandated WAEC observation groups: Lab Safety (workshop subjects),
-  // Behavioral (attitudinal), Resource Economy (conservation & inventory care),
-  // Hygienic Practices (cleanliness & personal hygiene).
-  // WAEC-compliant categories — 1–5 rating scale per STP Qualitative Assessment module
   const ratingsList = [
-    { label: 'Lab Safety',        id: 'lab_safety',       description: 'Follows all workshop safety guidelines and PPE protocols' },
+    { label: 'Lab Safety',        id: 'lab_safety',        description: 'Follows all workshop safety guidelines and PPE protocols' },
     { label: 'Behavioral',         id: 'behavioral',        description: 'Attitudinal: punctuality, respect, classroom conduct' },
     { label: 'Resource Economy',   id: 'resource_economy',  description: 'Conserves materials, tools, and consumables' },
-    { label: 'Hygienic Practices', id: 'hygienic_practices',description: 'Maintains personal hygiene and workspace cleanliness' },
+    { label: 'Hygienic Practices', id: 'hygienic_practices', description: 'Maintains personal hygiene and workspace cleanliness' },
   ];
 
-  // Show the justification/comment block if any WAEC rating is below 3 (FR3 multi-field gate)
   const hasLowRating = Object.values(ratings).some(
     (score) => score > 0 && score < 3
   );
@@ -72,10 +63,11 @@ export function ObservationSidebar({
       initial={{ x: 340, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: 340, opacity: 0 }}
-      className="w-[300px] h-[calc(100vh-2rem)] flex flex-col m-4 rounded-[1.5rem] border border-gray-100 shadow-2xl bg-white shrink-0 overflow-hidden"
+      transition={{ type: "tween", duration: 0.2, ease: "easeOut" }}
+      className="w-[300px] fixed top-20 right-4 bottom-4 flex flex-col rounded-[1.5rem] border border-gray-100 shadow-2xl bg-white z-30 overflow-hidden"
     >
       {/* Sticky Sidebar Header */}
-      <div className={cn("px-5 py-4 font-black flex items-center justify-between shrink-0 backdrop-blur-md border-b border-gray-100/20", headerColor)}>
+      <div className={cn("px-5 py-4 font-black flex items-center justify-between shrink-0 border-b border-gray-100/20", headerColor)}>
         <span className="text-base tracking-tight">
           {isCorrection ? 'Correction Bridge' :
            isCompliance ? 'Guided Observation' :
@@ -92,7 +84,7 @@ export function ObservationSidebar({
       </div>
 
       {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto min-h-0 pb-6">
+      <div className="flex-1 overflow-y-auto min-h-0 pb-6 overscroll-contain">
         <div className="p-5 flex flex-col gap-4">
           {/* Student Information */}
           <div className="flex items-center gap-3 mb-1">
@@ -241,3 +233,5 @@ export function ObservationSidebar({
     </motion.aside>
   );
 }
+
+export default ObservationSidebar;

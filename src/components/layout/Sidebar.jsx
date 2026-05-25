@@ -24,6 +24,7 @@ import {
   Eye,
   LibraryBig,
   Search,
+  BookOpen,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
   import { useRole } from '../../context/RoleContext';
@@ -45,7 +46,8 @@ export function Sidebar() {
       icon: LayoutDashboard,
       label: 'Dashboard',
       id: 'dashboard',
-      path: '/',
+      // STUDENT dashboard icon should open the StudentPortal
+      path: user?.role === 'STUDENT' ? '/student/portal' : '/',
       roles: ['TEACHER', 'HOD', 'ADMIN', 'STUDENT'],
     },
     {
@@ -113,7 +115,7 @@ export function Sidebar() {
     { icon: BarChart3,    label: 'Analytics',    id: 'analytics', path: '/hod/analytics', roles: ['HOD'] },
     { icon: Settings,     label: 'Settings',     id: 'settings', path: '/hod/settings',  roles: ['HOD'] },
     { icon: LifeBuoy,     label: 'Support',      id: 'support',  path: '/hod/support',   roles: ['HOD'] },
-    { icon: TrendingUp, label: 'Journey', id: 'journey', path: '/journey', roles: ['STUDENT'] },
+
   ];
 
   // Auto-close open flyouts when clicking outside the menu
@@ -142,10 +144,10 @@ export function Sidebar() {
 
   return (
     <>
-      <aside 
-        ref={sidebarRef}
-        className="w-20 h-screen bg-slate-50 border-r border-slate-200/60 flex flex-col items-center py-8 gap-8 z-30 select-none shrink-0"
-      >
+<aside 
+         ref={sidebarRef}
+         className="w-20 h-screen bg-slate-50 border-r border-slate-200/60 flex flex-col items-center py-8 gap-8 z-30 select-none shrink-0 print:hidden"
+       >
         <Link to="/" className="w-12 h-12 bg-brand-teal rounded-2xl flex items-center justify-center text-white font-semibold text-xl shadow-lg shadow-brand-teal/20 transition-transform active:scale-95">
           M
         </Link>

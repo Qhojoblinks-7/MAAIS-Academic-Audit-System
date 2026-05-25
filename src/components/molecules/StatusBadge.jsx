@@ -3,11 +3,10 @@ import { cn } from '../../lib/utils';
 
 export function StatusBadge({ status, children, className }) {
   const statusConfig = {
-    RESOLVED: { color: 'emerald', icon: '✓' },
-    FLAGGED: { color: 'rose', icon: '⚠' },
-    LOCKED: { color: 'gray', icon: '🔒' },
-    DRAFT: { color: 'amber', icon: '📝' },
-    ACTIVE: { color: 'blue', icon: '●' },
+    DRAFT: { color: 'gray', icon: '📝' },
+    SUBMITTED: { color: 'blue', icon: '📤' },
+    VERIFIED: { color: 'emerald', icon: '✓' },
+    LOCKED: { color: 'emerald', icon: '🔒' },
   };
 
   const config = statusConfig[status] || statusConfig.DRAFT;

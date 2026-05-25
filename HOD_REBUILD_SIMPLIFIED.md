@@ -382,7 +382,7 @@ src/
 │   ├── HODReview.jsx            ← New
 │   ├── HODLockExport.jsx        ← New
 │   ├── HODSettings.jsx          ← Existing → enhance
-│   ├── HODSupport.jsx           ← Existing → enhance
+│   ├── HODSupportPage.jsx       ← Existing → enhance
 │   ├── HODTeachers.jsx          ← New
 │   └── HODAnalytics.jsx         ← New
 ├── services/

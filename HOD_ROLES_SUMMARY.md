@@ -59,7 +59,7 @@ Based on requirements analysis and code examination, the HOD in the MAAIS system
 - **CorrectionMode.jsx**: Shows HOD feedback messages and collects teacher explanations
 - **GradingSheet.jsx**: Main grading interface where HOD can initiate corrections
 - **HODSettings.jsx**: Manages department-specific HOD configurations
-- **HODSupport.jsx**: Handles support ticket creation and management
+- **HODSupportPage.jsx**: Handles support ticket creation and management
 - **HODTeacherManagement.jsx**: Manages teacher information and impersonation capabilities
 
 ## III. Workflow for HOD-Initiated Corrections

@@ -346,28 +346,268 @@
   },
 
   "departmentProgress": {
-    "description": "Department-wide progress metrics for HOD dashboard.",
-    "totalStudents": 245,
-    "gradedStudents": 189,
-    "progressPercent": 77,
-    "submissionStatus": {
-      "submitted": 12,
-      "pending": 8,
-      "overdue": 2
-    },
-    "gradeDistribution": {
-      "A1": 45,
-      "B2": 68,
-      "B3": 52,
-      "C4": 23
-    },
-    "alertsCount": {
-      "high": 2,
-      "medium": 5,
-      "low": 8
-    },
-    "trend": "improving",
-    "lastUpdated": "2026-05-22T10:00:00Z"
+    "description": "Array of class-level progress objects for HOD lock/export and dashboard views.",
+    "items": [
+      {
+        "id": "class001",
+        "className": "SHS 1 Agric A",
+        "name": "SHS 1 Agric A",
+        "subject": "General Agriculture",
+        "teacherName": "Mr. Kwame Mensah",
+        "studentCount": 38,
+        "studentIds": ["stud001", "stud002", "stud003", "stud004", "stud005"],
+        "studentIndexRange": [1, 38],
+        "submissionPct": 100,
+        "status": "LOCKED",
+        "form": "Form 1",
+        "programme": "SHS",
+        "subjects": ["General Agriculture"],
+        "students": [
+          {
+            "id": "stud001",
+            "name": "Angela Owusu",
+            "indexNumber": "001",
+            "subject": "General Agriculture",
+            "grade": "A1"
+          },
+          {
+            "id": "stud002",
+            "name": "Ama Serwaa",
+            "indexNumber": "002",
+            "subject": "General Agriculture",
+            "grade": "B3"
+          },
+          {
+            "id": "stud003",
+            "name": "Kofi Mensah",
+            "indexNumber": "003",
+            "subject": "General Agriculture",
+            "grade": "B2"
+          },
+          {
+            "id": "stud004",
+            "name": "Yaa Asare",
+            "indexNumber": "004",
+            "subject": "General Agriculture",
+            "grade": "C4"
+          }
+        ],
+        "checks": [
+          { "label": "All scores entered", "pass": true },
+          { "label": "Totals verified", "pass": true },
+          { "label": "Sequential entries", "pass": true }
+        ]
+      },
+      {
+        "id": "class002",
+        "className": "SHS 1 Agric B",
+        "name": "SHS 1 Agric B",
+        "subject": "General Agriculture",
+        "teacherName": "Mr. Kwame Mensah",
+        "studentCount": 36,
+        "studentIds": ["stud011", "stud012", "stud013", "stud014", "stud015"],
+        "studentIndexRange": [1, 36],
+        "submissionPct": 100,
+        "status": "LOCKED",
+        "form": "Form 1",
+        "programme": "SHS",
+        "subjects": ["General Agriculture"],
+        "students": [
+          {
+            "id": "stud011",
+            "name": "Kwame Boateng",
+            "indexNumber": "001",
+            "subject": "General Agriculture",
+            "grade": "A1"
+          },
+          {
+            "id": "stud012",
+            "name": "Akua Mensah",
+            "indexNumber": "002",
+            "subject": "General Agriculture",
+            "grade": "B2"
+          },
+          {
+            "id": "stud013",
+            "name": "Kweku Asare",
+            "indexNumber": "003",
+            "subject": "General Agriculture",
+            "grade": "B3"
+          },
+          {
+            "id": "stud014",
+            "name": "Efua Serwaa",
+            "indexNumber": "004",
+            "subject": "General Agriculture",
+            "grade": "B3"
+          }
+        ],
+        "checks": [
+          { "label": "All scores entered", "pass": true },
+          { "label": "Totals verified", "pass": true },
+          { "label": "Sequential entries", "pass": true }
+        ]
+      },
+      {
+        "id": "class003",
+        "className": "SHS 2 Animal Hsb",
+        "name": "SHS 2 Animal Hsb",
+        "subject": "Animal Husbandry",
+        "teacherName": "Ms. Esi Broni",
+        "studentCount": 28,
+        "studentIds": ["stud021", "stud022", "stud023"],
+        "studentIndexRange": [1, 28],
+        "submissionPct": 62,
+        "status": "PENDING",
+        "form": "Form 2",
+        "programme": "SHS",
+        "subjects": ["Animal Husbandry"],
+        "students": [
+          {
+            "id": "stud021",
+            "name": "Nana Yaw Osei",
+            "indexNumber": "001",
+            "subject": "Animal Husbandry",
+            "grade": null
+          },
+          {
+            "id": "stud022",
+            "name": "Adwoa Appiah",
+            "indexNumber": "002",
+            "subject": "Animal Husbandry",
+            "grade": null
+          },
+          {
+            "id": "stud023",
+            "name": "Yaw Dwamena",
+            "indexNumber": "003",
+            "subject": "Animal Husbandry",
+            "grade": null
+          }
+        ],
+        "checks": [
+          { "label": "All scores entered", "pass": false },
+          { "label": "Totals verified", "pass": true },
+          { "label": "Sequential entries", "pass": false }
+        ]
+      },
+      {
+        "id": "class004",
+        "className": "SHS 1 Crop Science",
+        "name": "SHS 1 Crop Science",
+        "subject": "Crop Science",
+        "teacherName": "Mr. Kofi Asare",
+        "studentCount": 42,
+        "studentIds": ["stud031", "stud032", "stud033", "stud034"],
+        "studentIndexRange": [1, 42],
+        "submissionPct": 85,
+        "status": "PENDING",
+        "form": "Form 1",
+        "programme": "SHS",
+        "subjects": ["Crop Science"],
+        "students": [
+          {
+            "id": "stud031",
+            "name": "Ama Owusu",
+            "indexNumber": "001",
+            "subject": "Crop Science",
+            "grade": null
+          },
+          {
+            "id": "stud032",
+            "name": "Yaw Darko",
+            "indexNumber": "002",
+            "subject": "Crop Science",
+            "grade": null
+          },
+          {
+            "id": "stud033",
+            "name": "Eva Mensah",
+            "indexNumber": "003",
+            "subject": "Crop Science",
+            "grade": null
+          },
+          {
+            "id": "stud034",
+            "name": "Kwabena Boateng",
+            "indexNumber": "004",
+            "subject": "Crop Science",
+            "grade": null
+          }
+        ],
+        "checks": [
+          { "label": "All scores entered", "pass": true },
+          { "label": "Totals verified", "pass": false },
+          { "label": "Sequential entries", "pass": true }
+        ]
+      },
+      {
+        "id": "class005",
+        "className": "SHS 2 Agric Econ",
+        "name": "SHS 2 Agric Econ",
+        "subject": "Agricultural Economics",
+        "teacherName": "Ms. Ama Boateng",
+        "studentCount": 35,
+        "studentIds": ["stud041", "stud042", "stud043"],
+        "studentIndexRange": [1, 35],
+        "submissionPct": 40,
+        "status": "PENDING",
+        "form": "Form 2",
+        "programme": "SHS",
+        "subjects": ["Agricultural Economics"],
+        "students": [
+          {
+            "id": "stud041",
+            "name": "Kofi Amponsah",
+            "indexNumber": "001",
+            "subject": "Agricultural Economics",
+            "grade": null
+          },
+          {
+            "id": "stud042",
+            "name": "Abena Darko",
+            "indexNumber": "002",
+            "subject": "Agricultural Economics",
+            "grade": null
+          },
+          {
+            "id": "stud043",
+            "name": "Yaw Ofori",
+            "indexNumber": "003",
+            "subject": "Agricultural Economics",
+            "grade": null
+          }
+        ],
+        "checks": [
+          { "label": "All scores entered", "pass": false },
+          { "label": "Totals verified", "pass": false },
+          { "label": "Sequential entries", "pass": false }
+        ]
+      }
+    ],
+    "summary": {
+      "totalStudents": 245,
+      "gradedStudents": 189,
+      "progressPercent": 77,
+      "submissionStatus": {
+        "submitted": 12,
+        "pending": 8,
+        "overdue": 2
+      },
+      "gradeDistribution": {
+        "A1": 45,
+        "B2": 68,
+        "B3": 52,
+        "C4": 23
+      },
+      "alertsCount": {
+        "high": 2,
+        "medium": 5,
+        "low": 8
+      },
+      "trend": "improving",
+      "lastUpdated": "2026-05-22T10:00:00Z"
+    }
   },
 
   "teacherSubmissions": {
@@ -377,41 +617,53 @@
         "teacherId": "teacher001",
         "teacherName": "Mr. Kwame Mensah",
         "subjectName": "General Agriculture",
+        "subject": "General Agriculture",
         "className": "SHS 1 Agric B",
         "studentCount": 38,
         "gradedCount": 38,
         "progress": 100,
-        "status": "SUBMITTED"
+        "status": "SUBMITTED",
+        "avgScore": 78,
+        "passRate": 95
       },
       {
         "teacherId": "teacher001",
         "teacherName": "Mr. Kwame Mensah",
         "subjectName": "Animal Husbandry",
+        "subject": "Animal Husbandry",
         "className": "SHS 2 Agric A",
         "studentCount": 42,
         "gradedCount": 25,
         "progress": 59,
-        "status": "DRAFT"
+        "status": "DRAFT",
+        "avgScore": 65,
+        "passRate": 72
       },
       {
         "teacherId": "teacher002",
         "teacherName": "Dr. Yaw Boateng",
         "subjectName": "Integrated Science",
+        "subject": "Integrated Science",
         "className": "SHS 2 Science A",
         "studentCount": 42,
         "gradedCount": 42,
         "progress": 100,
-        "status": "SUBMITTED"
+        "status": "SUBMITTED",
+        "avgScore": 82,
+        "passRate": 92
       },
       {
         "teacherId": "teacher002",
         "teacherName": "Dr. Yaw Boateng",
         "subjectName": "Physics",
+        "subject": "Physics",
         "className": "SHS 3 Science 1",
         "studentCount": 35,
         "gradedCount": 18,
         "progress": 51,
-        "status": "DRAFT"
+        "status": "DRAFT",
+        "avgScore": 71,
+        "passRate": 68
       }
     ]
   },
@@ -472,6 +724,16 @@
         "termB": { "grade": "C5", "score": 58 },
         "trend": "declined"
       }
+    ],
+    "subjectPerformance": [
+      { "subject": "General Agriculture", "average": 78, "passRate": 95 },
+      { "subject": "Animal Husbandry", "average": 72, "passRate": 88 },
+      { "subject": "Integrated Science", "average": 82, "passRate": 92 },
+      { "subject": "Physics", "average": 68, "passRate": 85 },
+      { "subject": "Crop Science", "average": 75, "passRate": 90 },
+      { "subject": "Agricultural Economics", "average": 69, "passRate": 80 },
+      { "subject": "Core Mathematics", "average": 71, "passRate": 87 },
+      { "subject": "English Language", "average": 79, "passRate": 94 }
     ]
   },
 
@@ -615,25 +877,29 @@
     "description": "System health metrics for monitoring platform status.",
     "status": "healthy",
     "uptime": 1245,
-    "cpu": {
-      "usage": 42,
-      "cores": 4
-    },
-    "memory": {
-      "used": 2.1,
-      "total": 4.0,
-      "usage": 52
-    },
-    "disk": {
-      "used": 45.2,
-      "total": 100,
-      "usage": 45
-    },
-    "services": {
-      "database": "online",
-      "api": "online",
-      "storage": "online"
-    },
+    "cpu": 42,
+    "memory": 52,
+    "disk": 45,
+    "services": [
+      {
+        "id": "database",
+        "name": "Database Cluster",
+        "status": "OPERATIONAL",
+        "latency": 12
+      },
+      {
+        "id": "api",
+        "name": "API Gateway",
+        "status": "OPERATIONAL",
+        "latency": 8
+      },
+      {
+        "id": "storage",
+        "name": "Object Storage",
+        "status": "OPERATIONAL",
+        "latency": 15
+      }
+    ],
     "lastUpdated": "2026-05-22T10:30:00Z"
   },
 

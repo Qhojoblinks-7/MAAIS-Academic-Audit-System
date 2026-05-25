@@ -117,7 +117,7 @@ Based on: HOD_View_Requirements_Gap_Analysis.txt
 
 ---
 
-## PHASE 6: HOD SUPPORT (HODSupport.jsx) ✅
+## PHASE 6: HOD SUPPORT (HODSupportPage.jsx) ✅
 
 ### 6.1 Ticket System
 - [x] Create support ticket API integration — `getSupportTickets`, `createSupportTicket`, `updateSupportTicket`, `escalateTicket` in `hodService.js`

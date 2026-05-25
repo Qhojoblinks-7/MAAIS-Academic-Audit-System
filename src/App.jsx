@@ -1,9 +1,9 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { Sidebar, HODSidebar } from './components/layout';
-import { Topbar, RightPanel, MobileDrawer, MobileBottomNav } from './components/shared';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { Sidebar, HODSidebar, StudentSidebar } from './components/layout';
+import { Topbar, RightPanel, MobileDrawer, StudentMobileDrawer } from './components/shared';
 import { Dashboard } from './pages/shared';
-import { GradingSheet, GRADE_SCALE } from './pages/shared';
+import { GradingSheet } from './pages/shared';
 import {
   AuditLogsView, ArchiveView, AdminManagement, StaffRegistry,
   DepartmentManagement, StudentRegistry, ParentRegistry,
@@ -11,8 +11,8 @@ import {
   SchedulingView, FinanceView, CommsView, MasterTimetable, EventCalendarView,
   AcademicArchitect, ReportGeneratorView, GradingRulesView,
 } from './pages/admin';
-import { HODDashboard, HODAudit, HODInterventions, HODReview, HODLockExport, HODSettings, HODSettingsPage, HODSupport, HODSupportPage, HODTeachers, HODAnalytics } from './pages/hod';
-import { StudentJourney, StudentDashboard, StudentTimetable, StudentSettings, StudentSupport } from './pages/student';
+import { HODDashboard, HODAudit, HODInterventions, HODReview, HODLockExport, HODSettings, HODSettingsPage, HODSupportPage, HODTeachers, HODAnalytics } from './pages/hod';
+import {StudentTimetable, StudentSettings, StudentSupport, StudentPortal } from './pages/student';
 import { TeacherTimetableView, TeacherDashboard, TeacherGradingView, TeacherObservationsView, TeacherAnalyticsView, TeacherArchiveView, TeacherArchiveDetailView, TeacherSettings, TeacherSupport } from './pages/teacher';
 import { HOD_JourneyHistoryAudit, RevisionsFeed, MissingObservations, SettingsView, SupportView } from './pages/shared';
 import { UIProvider, useUI } from './context/UIContext';
@@ -45,12 +45,12 @@ function StandaloneGradingWrapper() {
   };
 
   const STANDALONE_MOCK_STUDENTS = [
-    { id: '001', name: 'Angela Owusu', index: '001', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 35, secB: 50, secC: 38, sba: 28.5, exam: 61.5, final: 90.0, grade: 'A1', auditStatus: 'MISSING' },
-    { id: '002', name: 'Kwame Mensah', index: '002', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 20, secB: 30, secC: 15, sba: 15.2, exam: 32.5, final: 47.7, grade: 'D7', auditStatus: 'MISSING' },
-    { id: '003', name: 'Yaw Boateng', index: '003', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 35, secB: 50, secC: 38, sba: 28.5, exam: 61.5, final: 90.0, grade: 'A1', auditStatus: 'COMPLETE' },
-    { id: '004', name: 'Esi Ansah', index: '004', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 32, secB: 48, secC: 35, sba: 26.0, exam: 55.0, final: 81.0, grade: 'A1', auditStatus: 'COMPLETE' },
-    { id: '005', name: 'Kofi Appiah', index: '005', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 28, secB: 42, secC: 32, sba: 22.0, exam: 46.0, final: 68.0, grade: 'B3', auditStatus: 'COMPLETE' },
-    { id: '009', name: 'Ama Serwaa', index: '009', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 30, secB: 40, secC: 35, sba: 25.0, exam: 50.0, final: 75.0, grade: 'A1', auditStatus: 'ACTIVE' },
+    { id: 'stud001', name: 'Angela Owusu', index: '001', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 35, secB: 50, secC: 38, sba: 28.5, exam: 61.5, final: 90.0, grade: 'A1', auditStatus: 'MISSING' },
+    { id: 'stud002', name: 'Kwame Mensah', index: '002', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 20, secB: 30, secC: 15, sba: 15.2, exam: 32.5, final: 47.7, grade: 'D7', auditStatus: 'MISSING' },
+    { id: 'stud003', name: 'Yaw Boateng', index: '003', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 35, secB: 50, secC: 38, sba: 28.5, exam: 61.5, final: 90.0, grade: 'A1', auditStatus: 'COMPLETE' },
+    { id: 'stud004', name: 'Esi Ansah', index: '004', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 32, secB: 48, secC: 35, sba: 26.0, exam: 55.0, final: 81.0, grade: 'A1', auditStatus: 'COMPLETE' },
+    { id: 'stud005', name: 'Kofi Appiah', index: '005', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 28, secB: 42, secC: 32, sba: 22.0, exam: 46.0, final: 68.0, grade: 'B3', auditStatus: 'COMPLETE' },
+    { id: 'stud009', name: 'Ama Serwaa', index: '009', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 30, secB: 40, secC: 35, sba: 25.0, exam: 50.0, final: 75.0, grade: 'A1', auditStatus: 'ACTIVE' },
   ];
 
   const DEFAULT_STANDALONE_CLASSINFO = {
@@ -118,7 +118,7 @@ function Modal({ isOpen, onClose, title, children }) {
 const RoleBasedArchiveView = () => {
   const { user } = useRole();
   if (user?.role === 'ADMIN') return <ArchiveView />;
-  if (user?.role === 'HOD') return <HODArchiveView />;
+  if (user?.role === 'HOD') return <TeacherArchiveView />; // Fallback routing setup to avoid undefined references
   if (user?.role === 'TEACHER') return <TeacherArchiveView />;
   return <ArchiveView />;
 };
@@ -155,20 +155,23 @@ function AppContent() {
 
   return (
     <div className="flex h-screen bg-[#F9F9F7] font-sans selection:bg-emerald-100 selection:text-emerald-900">
-      <div className="hidden lg:block">
-        {user?.role === 'HOD' ? <HODSidebar /> : <Sidebar />}
-      </div>
+<div className="hidden lg:block">
+         {user?.role === 'STUDENT' ? <StudentSidebar /> :
+          user?.role === 'HOD' ? <HODSidebar /> : <Sidebar />}
+       </div>
       <div className="flex-1 flex flex-col min-w-0">
         {location.pathname !== '/journey-audit' && <Topbar />}
         <main className="flex-1 flex overflow-hidden relative">
           <Routes>
             <Route path="/" element={<Dashboard />} />
+             <Route path="/student/portal" element={
+               <RequireRole allowedRoles={['STUDENT']}><StudentPortal /></RequireRole>
+             } />
 
-            <Route path="/journey" element={
-              <RequireRole allowedRoles={['STUDENT']}><StudentJourney /></RequireRole>
-            } />
             <Route path="/student-dashboard" element={
-              <RequireRole allowedRoles={['STUDENT']}><StudentDashboard /></RequireRole>
+               <RequireRole allowedRoles={['STUDENT']}>
+                  <Navigate to="/" replace />
+               </RequireRole>
             } />
             <Route path="/timetable" element={
               <RequireRole allowedRoles={['TEACHER', 'STUDENT', 'ADMIN']}>
@@ -190,19 +193,19 @@ function AppContent() {
             <Route path="/teacher/observations" element={
               <RequireRole allowedRoles={['TEACHER']}><TeacherObservationsView /></RequireRole>
             } />
-    <Route path="/teacher/analytics" element={
-      <RequireRole allowedRoles={['TEACHER']}><TeacherAnalyticsView /></RequireRole>
-    } />
-<Route path="/teacher/archive" element={
-       <RequireRole allowedRoles={['TEACHER']}><TeacherArchiveView /></RequireRole>
-     } />
-     <Route path="/archive/teacher/:id" element={
-       <RequireRole allowedRoles={['TEACHER']}><TeacherArchiveDetailView /></RequireRole>
-     } />
+            <Route path="/teacher/analytics" element={
+              <RequireRole allowedRoles={['TEACHER']}><TeacherAnalyticsView /></RequireRole>
+            } />
+            <Route path="/teacher/archive" element={
+               <RequireRole allowedRoles={['TEACHER']}><TeacherArchiveView /></RequireRole>
+             } />
+             <Route path="/archive/teacher/:id" element={
+               <RequireRole allowedRoles={['TEACHER']}><TeacherArchiveDetailView /></RequireRole>
+             } />
             <Route path="/hod"             element={<RequireRole allowedRoles={['HOD']}><HODDashboard /></RequireRole>} />
             <Route path="/hod/audit"       element={<RequireRole allowedRoles={['HOD']}><HODAudit /></RequireRole>} />
             <Route path="/hod/interventions" element={<RequireRole allowedRoles={['HOD']}><HODInterventions /></RequireRole>} />
-            <Route path="/hod/review"      element={<RequireRole allowedRoles={['HOD']}><HODReview /></RequireRole>} />
+            <Route path="/hod/review"       element={<RequireRole allowedRoles={['HOD']}><HODReview /></RequireRole>} />
             <Route path="/hod/lock-export" element={<RequireRole allowedRoles={['HOD']}><HODLockExport /></RequireRole>} />
             <Route path="/hod/teachers"    element={<RequireRole allowedRoles={['HOD']}><HODTeachers /></RequireRole>} />
             <Route path="/hod/analytics"   element={<RequireRole allowedRoles={['HOD']}><HODAnalytics /></RequireRole>} />
@@ -260,7 +263,7 @@ function AppContent() {
             <Route path="/support" element={
               <RequireRole allowedRoles={['STUDENT', 'HOD', 'ADMIN', 'TEACHER']}>
                 {user?.role === 'STUDENT' ? <StudentSupport /> :
-                 user?.role === 'HOD' ? <HODSupport /> :
+                 user?.role === 'HOD' ? <HODSupportPage /> :
                  user?.role === 'ADMIN' ? <AdminSupport /> : <TeacherSupport />}
               </RequireRole>
             } />
@@ -274,8 +277,7 @@ function AppContent() {
         </main>
       </div>
 
-      <MobileDrawer />
-      <MobileBottomNav />
+       {user?.role === 'STUDENT' ? <StudentMobileDrawer /> : <MobileDrawer />}
 
       <Modal
         isOpen={settingsModalOpen}
@@ -293,7 +295,7 @@ function AppContent() {
         title="ICT Support Desk"
       >
         {user?.role === 'STUDENT' ? <StudentSupport /> :
-         user?.role === 'HOD' ? <HODSupport /> :
+          user?.role === 'HOD' ? <HODSupportPage /> :
          user?.role === 'ADMIN' ? <AdminSupport /> : <SupportView />}
       </Modal>
     </div>
