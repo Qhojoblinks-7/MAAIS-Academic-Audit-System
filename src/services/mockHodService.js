@@ -44,9 +44,23 @@ const createMockService = () => ({
     return items;
   },
 
-  getDepartmentProgress: async () => {
+  getDepartmentProgress: async (params = {}) => {
     await simulateDelay();
-    return mockData.departmentProgress.items;
+    const { page = 1, limit = 50 } = params;
+    const items = mockData.departmentProgress.items;
+    
+    // Calculate pagination
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedItems = items.slice(startIndex, endIndex);
+    
+    return {
+      items: paginatedItems,
+      total: items.length,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      pages: Math.ceil(items.length / limit)
+    };
   },
 
   getTeacherSubmissionStatus: async () => {
@@ -57,6 +71,27 @@ const createMockService = () => ({
   getLockedTerms: async () => {
     await simulateDelay();
     return mockData.lockedTerms.items;
+  },
+
+  validateLock: async (termId) => {
+    await simulateDelay();
+    const pendingSubmissions = mockData.teacherSubmissions.items.filter(
+      (s) => s.status === 'DRAFT',
+    ).length;
+    const term = mockData.lockedTerms.items.find((t) => t.id === termId);
+    return {
+      canLock: pendingSubmissions === 0,
+      isLocked: term?.status === 'LOCKED',
+      blockingIssues:
+        pendingSubmissions > 0
+          ? [`${pendingSubmissions} classes have pending submissions (100% completion required)`]
+          : [],
+      warnings: term?.status === 'LOCKED' ? ['Term is already locked'] : [],
+      pendingSubmissions,
+      completionPct: mockData.teacherSubmissions.items.length > 0
+        ? Math.round((mockData.teacherSubmissions.items.filter(s => s.status === 'SUBMITTED').length / mockData.teacherSubmissions.items.length) * 100)
+        : 0,
+    };
   },
 
   lockDepartmentMatrix: async (termId) => {
@@ -100,7 +135,46 @@ const createMockService = () => ({
 
   rejectGradeRevision: async (recordId, reason) => {
     await simulateDelay();
+    const log = mockData.auditLogs.items.find((l) => l.recordId === recordId);
+    if (log) {
+      log.status = 'REJECTED';
+      log.rejectionReason = reason;
+    }
     return { success: true, message: "Grade revision rejected", reason };
+  },
+
+  approveGradeRevision: async (recordId, comment) => {
+    await simulateDelay();
+    const log = mockData.auditLogs.items.find((l) => l.recordId === recordId);
+    if (log) {
+      log.status = 'RESOLVED';
+      log.hodComment = comment;
+    }
+    return { success: true, message: "Grade revision approved" };
+  },
+
+  getGradeRevisions: async () => {
+    await simulateDelay();
+    return mockData.auditLogs.items
+      .filter((l) => l.action === "UPDATE" && !!l.justification)
+      .map((l) => ({
+        id: l.recordId,
+        student: l.target?.split(' - ')[1]?.split(' (')[0] || 'Unknown Student',
+        index: l.target?.match(/\(([^)]+)\)/)?.[1] || '000',
+        class: l.className,
+        subject: l.subject,
+        issue: l.justification || 'Grade revision requested',
+        status: l.status === 'RESOLVED' ? 'RESOLVED' : 'AWAITING_APPROVAL',
+        severity: l.severity || 'MEDIUM',
+        time: new Date(l.time).toLocaleDateString(),
+        history: [{
+          id: `h-${l.id}`,
+          role: l.role,
+          user: l.user,
+          message: l.justification || l.oldValue,
+          time: new Date(l.time).toLocaleDateString()
+        }]
+      }));
   },
 
   getArchivedDepartmentData: async (params = {}) => {
@@ -311,40 +385,14 @@ const createMockService = () => ({
     return { success: true, message: "Impersonation stopped" };
   },
 
-  getActiveImpersonations: async () => {
+getActiveImpersonations: async () => {
     await simulateDelay();
     return mockData.impersonations.items;
   },
 
-  getStudentAcademicProfile: async (studentId) => {
+  getStudentAcademicHistory: async (studentId) => {
     await simulateDelay();
-    return mockData.students.items.find((s) => s.id === studentId);
-  },
-
-  getAllStudentProfiles: async () => {
-    await simulateDelay();
-    return { items: mockData.students.items };
-  },
-
-  getInterventionAlertAggregation: async () => {
-    await simulateDelay();
-    const alerts = mockData.interventionAlerts.items;
-    const aggregation = {
-      totalAlerts: alerts.length,
-      highSeverity: alerts.filter((a) => a.severity === "HIGH").length,
-      mediumSeverity: alerts.filter((a) => a.severity === "MEDIUM").length,
-      lowSeverity: alerts.filter((a) => a.severity === "LOW").length,
-      unresolved: alerts.filter((a) => !a.resolved).length,
-      bySubject: {},
-      byReason: {},
-    };
-    alerts.forEach((a) => {
-      aggregation.bySubject[a.subject] =
-        (aggregation.bySubject[a.subject] || 0) + 1;
-      aggregation.byReason[a.reason] =
-        (aggregation.byReason[a.reason] || 0) + 1;
-    });
-    return aggregation;
+    return mockData.studentAcademicHistory?.items?.find(h => h.studentId === studentId) || null;
   },
 
   getJournalEditCaptures: async (params = {}) => {
@@ -383,7 +431,7 @@ const createMockService = () => ({
       .concat(
         rows.map(
           (r) =>
-            `${r.index},${r.name},${r.sba},${r.exam},${r.final},${r.grade},`,
+            `${r.index},"${r.name.replace(/"/g, '""')}",${r.sba},${r.exam},${r.final},${r.grade},${r.roman || ''}`,
         ),
       )
       .join("\r\n");

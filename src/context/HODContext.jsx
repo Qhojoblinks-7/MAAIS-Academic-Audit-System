@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { useRole } from './RoleContext';
 import { hodService } from '../services/hodService';
+import { cacheLayer } from '../services';
+import { useUI } from './UIContext';
 
 const HODContext = createContext(undefined);
 
@@ -23,9 +25,158 @@ export function HODProvider({ children }) {
   const [lockedTerms, setLockedTerms] = useState([]);
   const [archivedClasses, setArchivedClasses] = useState([]);
   const [promotionRecommendations, setPromotionRecommendations] = useState([]);
-  // ── Phase 5: HOD Settings state ──────────────────────────────────────────────
-  const [hodSettings, setHodSettings] = useState(null);
+  const [revisions, setRevisions] = useState([]);
+    // ── Phase 5: HOD Settings state ──────────────────────────────────────────────
+    const [hodSettings, setHodSettings] = useState({
+      profile: {
+        name: '',
+        email: '',
+        phone: '',
+        department: ''
+      },
+      notifications: {
+        grading: true,
+        certification: true,
+        security: true,
+        gradeSubmissionReminders: true,
+        interventionAlerts: true,
+        systemAnnouncements: true,
+        weeklyDigest: false
+      },
+      security: {
+        mfaEnabled: false,
+        mfaEnforced: false,
+        sessionTimeout: 30,
+        passwordLastChanged: '',
+        mfaEnrolledUsers: []
+      },
+      uiPreferences: {
+        theme: 'light',
+        density: 'comfortable',
+        defaultView: 'dashboard'
+      },
+      departmentConfig: {
+        autoAlertThreshold: 15,
+        autoResolveDays: 7
+      },
+      auditFrequency: 'daily'
+    });
   const [activeSessions, setActiveSessions] = useState([]);
+  // ── Offline/Draft mode state ─────────────────────────────────────────────────
+  const { isOnline, setIsOnline, isDraftMode, setIsDraftMode } = useUI();
+  const [pendingChanges, setPendingChanges] = useState([]);
+  const [draftRecords, setDraftRecords] = useState({});
+
+  // Derive effective offline state: network offline OR user opted for draft mode
+  const isEffectivelyOffline = !isOnline || isDraftMode;
+
+  // Save a record as draft locally (for offline access)
+  const saveDraftRecord = useCallback((recordId, recordData) => {
+    setDraftRecords(prev => ({
+      ...prev,
+      [recordId]: {
+        ...recordData,
+        savedAt: new Date().toISOString(),
+        isDraft: true
+      }
+    }));
+    // Also persist to localStorage for page reloads
+    try {
+      const drafts = JSON.parse(localStorage.getItem('hodDraftRecords') || '{}');
+      localStorage.setItem('hodDraftRecords', JSON.stringify({
+        ...drafts,
+        [recordId]: {
+          ...recordData,
+          savedAt: new Date().toISOString(),
+          isDraft: true
+        }
+      }));
+    } catch (e) {
+      console.warn('Failed to persist draft to localStorage:', e);
+    }
+  }, []);
+
+  // Load a draft record from local storage
+  const loadDraftRecord = useCallback((recordId) => {
+    // First check in-memory state
+    if (draftRecords[recordId]) {
+      return draftRecords[recordId];
+    }
+    // Then check localStorage
+    try {
+      const drafts = JSON.parse(localStorage.getItem('hodDraftRecords') || '{}');
+      return drafts[recordId] || null;
+    } catch (e) {
+      console.warn('Failed to load draft from localStorage:', e);
+      return null;
+    }
+  }, [draftRecords]);
+
+  // Get all draft records
+  const getAllDraftRecords = useCallback(() => {
+    // Merge in-memory and localStorage drafts
+    try {
+      const storageDrafts = JSON.parse(localStorage.getItem('hodDraftRecords') || '{}');
+      return { ...storageDrafts, ...draftRecords };
+    } catch (e) {
+      console.warn('Failed to load drafts from localStorage:', e);
+      return { ...draftRecords };
+    }
+  }, [draftRecords]);
+
+  // Queue a change for offline processing
+  const queueChange = useCallback((change) => {
+    setPendingChanges(prev => [...prev, change]);
+  }, []);
+
+  // Process pending changes when online and not in draft mode
+  useEffect(() => {
+    if (!isEffectivelyOffline && pendingChanges.length > 0) {
+      // Process each change
+      const process = async () => {
+        try {
+          for (const change of pendingChanges) {
+            // Depending on the change type, call the appropriate service method
+            switch (change.type) {
+              case 'ADD_HOD_COMMENT':
+                await hodService.updateHODComment(change.payload.recordId, change.payload.comment);
+                break;
+              case 'REJECT_REVISION':
+                await hodService.rejectGradeRevision(change.payload.recordId, change.payload.reason);
+                break;
+              case 'BULK_APPROVE_REVISIONS':
+                await hodService.bulkApproveRevisions(change.payload.recordIds, change.payload.remark);
+                break;
+              case 'BULK_REJECT_REVISIONS':
+                await hodService.bulkRejectRevisions(change.payload.recordIds, change.payload.reason);
+                break;
+              // Add more cases as needed
+              default:
+                console.warn('Unknown change type:', change.type);
+            }
+          }
+          // Clear pending changes after successful processing
+          setPendingChanges([]);
+        } catch (err) {
+          console.error('Failed to process pending changes:', err);
+          // Keep pending changes for retry
+        }
+      };
+      process();
+    }
+  }, [isEffectivelyOffline, pendingChanges, hodService]);
+
+  // Load persisted drafts on initialization
+  useEffect(() => {
+    try {
+      const savedDrafts = JSON.parse(localStorage.getItem('hodDraftRecords') || '{}');
+      if (Object.keys(savedDrafts).length > 0) {
+        setDraftRecords(savedDrafts);
+      }
+    } catch (e) {
+      console.warn('Failed to load drafts from localStorage on init:', e);
+    }
+  }, []);
   // ── Phase 6: Support data ─────────────────────────────────────────────────────
   const [supportTickets, setSupportTickets] = useState([]);
   const [ticketFilter, setTicketFilter] = useState('all');
@@ -37,15 +188,19 @@ export function HODProvider({ children }) {
   const [viewAsTeacherId, setViewAsTeacherId] = useState(null);
   const [viewAsTeacherName, setViewAsTeacherName] = useState(null);
   const [departmentTeachers, setDepartmentTeachers] = useState([]);
-  // ── Phase 9: Intervention counseling notes & aggregated alerts ─────────────────
-  const [alertNotes, setAlertNotes] = useState({});
-  const [alertAggregationMode, setAlertAggregationMode] = useState(true);
+   // ── Phase 9: Intervention counseling notes & aggregated alerts ─────────────────
+   const [alertNotes, setAlertNotes] = useState({});
+   const [alertAggregationMode, setAlertAggregationMode] = useState(true);
 
-  // ── Shared UI state ─────────────────────────────────────────────────────────
-  const [isLoading, setIsLoading] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-  const [error, setError] = useState(null);
-  const [activeActionMenu, setActiveActionMenu] = useState(null);
+    // ── Shared UI state ─────────────────────────────────────────────────────
+    const [isLoading, setIsLoading] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
+    const [error, setError] = useState(null);
+    const [activeActionMenu, setActiveActionMenu] = useState(null);
+    // ── Pagination state ────────────────────────────────────────────────────
+    const [departmentProgressPage, setDepartmentProgressPage] = useState(1);
+    const [departmentProgressLimit, setDepartmentProgressLimit] = useState(50);
+    const [departmentProgressTotal, setDepartmentProgressTotal] = useState(0);
 
   // ── Filters ─────────────────────────────────────────────────────────────────
   const getFilteredAuditLogs = useCallback(
@@ -236,15 +391,58 @@ export function HODProvider({ children }) {
      }
    }, [isHod]);
 
-   const refreshDepartmentProgress = useCallback(async () => {
-     if (!isHod) return;
-     try {
-       const data = await hodService.getDepartmentProgress();
-       setDepartmentProgress(Array.isArray(data) ? data : []);
-     } catch (e) {
-       console.warn('[HODContext] department-progress fetch failed:', e);
-     }
-   }, [isHod]);
+      const refreshDepartmentProgress = useCallback(async (page = departmentProgressPage, limit = departmentProgressLimit) => {
+        if (!isHod) return;
+        
+        // Create cache key based on pagination parameters
+        const cacheKey = `departmentProgress_page-${page}_limit-${limit}`;
+        
+        // Try to get from cache first
+        const cachedData = cacheLayer.get(cacheKey);
+        if (cachedData) {
+          // We need to recalculate submissionPct for cached data too?
+          // For simplicity, we'll recalculate here as well.
+          const items = Array.isArray(cachedData.items) ? cachedData.items : [];
+          const updatedItems = items.map(item => ({
+            ...item,
+            submissionPct: calculateSubmissionPct(item)
+          }));
+          setDepartmentProgress(updatedItems);
+          setDepartmentProgressTotal(cachedData.total || 0);
+          setDepartmentProgressPage(page);
+          return;
+        }
+        
+        try {
+          const data = await hodService.getDepartmentProgress({ page, limit });
+          if (data) {
+            // Cache the response for 5 minutes (300000 ms)
+            cacheLayer.set(cacheKey, data, 300000);
+            
+            const items = Array.isArray(data.items) ? data.items : [];
+            const updatedItems = items.map(item => ({
+              ...item,
+              submissionPct: calculateSubmissionPct(item)
+            }));
+            
+            setDepartmentProgress(updatedItems);
+            setDepartmentProgressTotal(data.total || 0);
+            setDepartmentProgressPage(page);
+          }
+        } catch (e) {
+          console.warn('[HODContext] department-progress fetch failed:', e);
+        }
+      }, [isHod, departmentProgressPage, departmentProgressLimit]);
+
+      // Helper function to calculate submission percentage for a class
+      const calculateSubmissionPct = (classItem) => {
+        const students = classItem.students || [];
+        if (students.length === 0) return 0;
+        const submitted = students.filter(s => 
+          s.grade !== null && s.grade !== undefined && s.grade !== ''
+        ).length;
+        return Math.round((submitted / students.length) * 100);
+      };
 
    const refreshTeacherSubmissions = useCallback(async () => {
      if (!isHod) return;
@@ -266,8 +464,8 @@ export function HODProvider({ children }) {
       }
     }, [isHod]);
 
-    const refreshArchivedClasses = useCallback(async () => {
-      if (!isHod) return;
+const refreshArchivedClasses = useCallback(async () => {
+      if (!isHod) return [];
       try {
         const data = await hodService.getArchivedDepartmentData({
           year: archiveYearFilter !== 'all' ? archiveYearFilter : undefined,
@@ -275,12 +473,13 @@ export function HODProvider({ children }) {
           status: archiveFilter !== 'all' ? archiveFilter : undefined,
         });
         setArchivedClasses(Array.isArray(data) ? data : []);
+        return data;
       } catch (e) {
         console.warn('[HODContext] archived-classes fetch failed:', e);
       }
-    }, [isHod, archiveYearFilter, archiveFilter, archiveSearchQuery]);
+     }, [isHod, archiveYearFilter, archiveFilter, archiveSearchQuery]);
 
-    const refreshPromotionRecommendations = useCallback(async () => {
+const refreshPromotionRecommendations = useCallback(async () => {
       if (!isHod) return;
       try {
         const data = await hodService.getPromotionRecommendations();
@@ -290,14 +489,90 @@ export function HODProvider({ children }) {
       }
     }, [isHod]);
 
+    const refreshRevisions = useCallback(async () => {
+      if (!isHod) return;
+      try {
+        const data = await hodService.getGradeRevisions?.() || [];
+        setRevisions(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.warn('[HODContext] revisions fetch failed:', e);
+      }
+    }, [isHod]);
+
     const refreshSettings = useCallback(async () => {
       if (!isHod) return;
       try {
         const data = await hodService.getHODSettings();
-        setHodSettings(data ?? null);
+        setHodSettings(data ?? {
+          profile: {
+            name: '',
+            email: '',
+            phone: '',
+            department: ''
+          },
+          notifications: {
+            grading: true,
+            certification: true,
+            security: true,
+            gradeSubmissionReminders: true,
+            interventionAlerts: true,
+            systemAnnouncements: true,
+            weeklyDigest: false
+          },
+          security: {
+            mfaEnabled: false,
+            mfaEnforced: false,
+            sessionTimeout: 30,
+            passwordLastChanged: '',
+            mfaEnrolledUsers: []
+          },
+          uiPreferences: {
+            theme: 'light',
+            density: 'comfortable',
+            defaultView: 'dashboard'
+          },
+          departmentConfig: {
+            autoAlertThreshold: 15,
+            autoResolveDays: 7
+          },
+          auditFrequency: 'daily'
+        });
       } catch (e) {
         console.warn('[HODContext] settings fetch failed:', e);
-        setHodSettings(null);
+        setHodSettings({
+          profile: {
+            name: '',
+            email: '',
+            phone: '',
+            department: ''
+          },
+          notifications: {
+            grading: true,
+            certification: true,
+            security: true,
+            gradeSubmissionReminders: true,
+            interventionAlerts: true,
+            systemAnnouncements: true,
+            weeklyDigest: false
+          },
+          security: {
+            mfaEnabled: false,
+            mfaEnforced: false,
+            sessionTimeout: 30,
+            passwordLastChanged: '',
+            mfaEnrolledUsers: []
+          },
+          uiPreferences: {
+            theme: 'light',
+            density: 'comfortable',
+            defaultView: 'dashboard'
+          },
+          departmentConfig: {
+            autoAlertThreshold: 15,
+            autoResolveDays: 7
+          },
+          auditFrequency: 'daily'
+        });
       }
     }, [isHod]);
 
@@ -514,6 +789,19 @@ export function HODProvider({ children }) {
     return hodService.lockDepartmentMatrix(termId);
   }, [isHod]);
 
+  const lockTermWithValidation = useCallback(async (termId) => {
+    if (!isHod) throw new Error('Not authorized');
+    const validation = await hodService.validateLock(termId);
+    if (!validation.canLock) {
+      throw new Error(`Cannot lock: ${validation.blockingIssues?.join(', ') || '100% completion required'}`);
+    }
+    const result = await hodService.lockDepartmentMatrix(termId);
+    if (validation.completionPct < 100) {
+      console.warn(`Locking with ${validation.completionPct}% completion`);
+    }
+    return result;
+  }, [isHod]);
+
   const unlockTerm = useCallback(async (termId) => {
     if (!isHod) throw new Error('Not authorized');
     return hodService.unlockDepartmentMatrix(termId);
@@ -524,7 +812,7 @@ export function HODProvider({ children }) {
     return hodService.exportWAECCSV(termId, classId);
   }, [isHod]);
 
-  const rejectRevision = useCallback(async (recordId, reason) => {
+const rejectRevision = useCallback(async (recordId, reason) => {
     if (!isHod) throw new Error('Not authorized');
     const result = await hodService.rejectGradeRevision(recordId, reason);
     setAuditLogs((prev) =>
@@ -535,20 +823,66 @@ export function HODProvider({ children }) {
     return result;
   }, [isHod]);
 
-  const lockClass = useCallback(async (classId) => {
+  const approveRevision = useCallback(async (recordId, comment) => {
     if (!isHod) throw new Error('Not authorized');
-    const result = await hodService.lockDepartmentMatrix(classId);
+    const result = await hodService.approveGradeRevision(recordId, comment);
+    setAuditLogs((prev) =>
+      prev.map((log) =>
+        log.recordId === recordId ? { ...log, status: 'RESOLVED', hodComment: comment } : log,
+      ),
+    );
+    setRevisions((prev) =>
+      prev.map((rev) =>
+        rev.id === recordId ? { ...rev, status: 'RESOLVED' } : rev,
+      ),
+    );
     return result;
   }, [isHod]);
 
-  // Triggered from context to sync local state after a server lock
-  const markClassLocked = useCallback((classId) => {
-    setDepartmentProgress((prev) =>
-      prev.map((cls) =>
-        cls.id === classId ? { ...cls, status: 'LOCKED' } : cls,
-      ),
-    );
-  }, []);
+  const lockClass = useCallback(async (classId) => {
+     if (!isHod) throw new Error('Not authorized');
+     const result = await hodService.lockDepartmentMatrix(classId);
+     return result;
+   }, [isHod]);
+
+   const bulkApproveRevisions = useCallback(async (recordIds, remark = 'Bulk approved') => {
+     if (!isHod) throw new Error('Not authorized');
+     const results = await Promise.all(
+       recordIds.map(id => hodService.updateHODComment(id, remark))
+     );
+     setAuditLogs((prev) =>
+       prev.map((log) =>
+         recordIds.includes(log.recordId || log.id)
+           ? { ...log, status: 'APPROVED', hodComment: remark }
+           : log,
+       ),
+     );
+     return results;
+   }, [isHod]);
+
+   const bulkRejectRevisions = useCallback(async (recordIds, reason = 'Bulk rejected') => {
+     if (!isHod) throw new Error('Not authorized');
+     const results = await Promise.all(
+       recordIds.map(id => hodService.rejectGradeRevision(id, reason))
+     );
+     setAuditLogs((prev) =>
+       prev.map((log) =>
+         recordIds.includes(log.recordId || log.id)
+           ? { ...log, status: 'FLAGGED', rejectionReason: reason }
+           : log,
+       ),
+     );
+     return results;
+   }, [isHod]);
+
+   // Triggered from context to sync local state after a server lock
+   const markClassLocked = useCallback((classId) => {
+     setDepartmentProgress((prev) =>
+       prev.map((cls) =>
+         cls.id === classId ? { ...cls, status: 'LOCKED' } : cls,
+       ),
+     );
+   }, []);
 
   const markClassArchived = useCallback((classId) => {
     setDepartmentProgress((prev) =>
@@ -587,24 +921,34 @@ export function HODProvider({ children }) {
     refreshDepartmentTeachers();
   }, [isHod, refreshDepartmentTeachers]);
 
-  const value = {
-     // state
-     auditLogs,
-     setAuditLogs,
-     auditFilter,
-     setAuditFilter,
-     interventionAlerts,
-     setInterventionAlerts,
-     alertFilter,
-     setAlertFilter,
-     departmentProgress,
-     teacherSubmissions,
-     gradeComparison,
-     lockedTerms,
-     archivedClasses,
-     promotionRecommendations,
-     // ── Phase 5: Settings ────────────────────────────────────────────────────
-     hodSettings,
+  // ── Periodic system health refresh (every 30 seconds) ────────────────────────
+  useEffect(() => {
+    if (!isHod) return;
+    const interval = setInterval(() => {
+      refreshSystemHealth();
+    }, 30000); // 30 seconds
+    return () => clearInterval(interval);
+  }, [isHod, refreshSystemHealth]);
+
+const value = {
+      // state
+      auditLogs,
+      setAuditLogs,
+      auditFilter,
+      setAuditFilter,
+      interventionAlerts,
+      setInterventionAlerts,
+      alertFilter,
+      setAlertFilter,
+      departmentProgress,
+      teacherSubmissions,
+      gradeComparison,
+      lockedTerms,
+      archivedClasses,
+      promotionRecommendations,
+      revisions,
+      // ── Phase 5: Settings ────────────────────────────────────────────────────
+      hodSettings,
      setHodSettings,
      activeSessions,
      // ── Phase 6: Support ─────────────────────────────────────────────────────
@@ -682,15 +1026,16 @@ export function HODProvider({ children }) {
       getAggregatedAlerts,
       alertClusterCount,
 
-     // data fetching
-     refreshAuditLogs,
-     refreshInterventionAlerts,
-     refreshDepartmentProgress,
-     refreshTeacherSubmissions,
-     refreshLockedTerms,
-     refreshArchivedClasses,
-     refreshPromotionRecommendations,
-     refreshSettings,
+// data fetching
+      refreshAuditLogs,
+      refreshInterventionAlerts,
+      refreshDepartmentProgress,
+      refreshTeacherSubmissions,
+      refreshLockedTerms,
+      refreshArchivedClasses,
+      refreshPromotionRecommendations,
+      refreshRevisions,
+      refreshSettings,
      refreshActiveSessions,
      refreshSupportTickets,
      refreshSystemHealth,
@@ -704,18 +1049,35 @@ export function HODProvider({ children }) {
      mfaEnroll,
      mfaVerify,
 
-     // export helpers
-     startExport,
-     lockTerm,
-     unlockTerm,
-     exportClassCSV,
-     rejectRevision,
-     lockClass,
-     markClassLocked,
-     markClassArchived,
-     archiveClass,
-     exportArchivedDataCtx,
-   };
+// export helpers
+        startExport,
+        lockTerm,
+        lockTermWithValidation,
+        unlockTerm,
+        exportClassCSV,
+        rejectRevision,
+        approveRevision,
+        lockClass,
+       bulkApproveRevisions,
+       bulkRejectRevisions,
+       markClassLocked,
+       markClassArchived,
+       archiveClass,
+       exportArchivedDataCtx,
+
+    // offline/draft mode
+      isOnline,
+      setIsOnline,
+      isDraftMode,
+      setIsDraftMode,
+      isEffectivelyOffline,
+      pendingChanges,
+      draftRecords,
+      queueChange,
+      saveDraftRecord,
+      loadDraftRecord,
+      getAllDraftRecords
+     };
 
   return <HODContext.Provider value={value}>{children}</HODContext.Provider>;
 }

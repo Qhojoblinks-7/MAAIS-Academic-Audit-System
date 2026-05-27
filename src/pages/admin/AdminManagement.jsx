@@ -28,7 +28,7 @@ import { cn } from '../../lib/utils';
 const users = [
   { id: '1', name: 'Martha Baah', role: 'HOD', dept: 'Home Ec', status: 'ACTIVE', lastLogin: '1h ago' },
   { id: '2', name: 'Anthony Hackman', role: 'ADMIN', dept: 'Administration', status: 'ACTIVE', lastLogin: 'Now' },
-  { id: '3', name: 'Angela Efia Owusu', role: 'STUDENT', dept: 'Agric', status: 'ACTIVE', lastLogin: '5h ago' },
+   { id: '3', name: 'Angela Owusu', role: 'STUDENT', dept: 'Agric', status: 'ACTIVE', lastLogin: '5h ago' },
   { id: '4', name: 'Samuel Boateng', role: 'TEACHER', dept: 'Science', status: 'INACTIVE', lastLogin: '2d ago' },
 ];
 

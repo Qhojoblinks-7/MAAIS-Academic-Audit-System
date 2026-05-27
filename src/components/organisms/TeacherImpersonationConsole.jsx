@@ -196,22 +196,28 @@ export function TeacherImpersonationConsole({
     );
   }, [teachers, search]);
 
-  const handleImpersonate = async (teacher) => {
-    const oldVal = auditTrail.captureSnapshot({ impersonating: null });
-    await onImpersonate?.(teacher);
-    const newVal = auditTrail.captureSnapshot({ impersonating: teacher.id });
-    
-    await auditTrail.logChange(
-      'impersonation_session', 
-      teacher.id, 
-      oldVal, 
-      newVal, 
-      `HOD administrative session mirror initialized for targeting block: ${teacher.name}`
-    );
-    
-    eventBus.emit('impersonation-started', { teacherId: teacher.id, teacherName: teacher.name });
-    setSearch('');
-  };
+const handleImpersonate = async (teacher) => {
+     const hodId = auditTrail.getCurrentUserId();
+     const oldVal = auditTrail.captureSnapshot({ impersonating: null });
+     await onImpersonate?.(teacher);
+     const newVal = auditTrail.captureSnapshot({ impersonating: teacher.id });
+     
+     try {
+       await auditTrail.logImpersonation(teacher.id, hodId, `HOD administrative session mirror initialized`);
+       await auditTrail.logChange(
+         'impersonation_session', 
+         teacher.id, 
+         oldVal, 
+         newVal, 
+         `HOD administrative session mirror initialized for targeting block: ${teacher.name}`
+       );
+     } catch (e) {
+       console.warn('Audit logging failed:', e);
+     }
+     
+     eventBus.emit('impersonation-started', { teacherId: teacher.id, teacherName: teacher.name });
+     setSearch('');
+   };
 
   const isImpersonating = Boolean(viewAsTeacherId);
 

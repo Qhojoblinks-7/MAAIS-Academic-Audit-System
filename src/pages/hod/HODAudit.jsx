@@ -1,35 +1,82 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   RefreshCw, Search, Filter, Calendar, BarChart3, 
-  AlertCircle, CheckCircle2, XCircle, ShieldCheck, History 
+  AlertCircle, CheckCircle2, XCircle, ShieldCheck, History, Bookmark, Trash2 
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useHOD } from '../../context/HODContext';
 import { AuditLogTimeline } from '../../components/organisms/AuditLogTimeline';
 
 export function HODAudit() {
-  const {
-    auditLogs = [],
-    auditFilter,
-    setAuditFilter,
-    getFilteredAuditLogs,
-    isLoading,
-    refreshAuditLogs,
-    addHODComment,
-  } = useHOD();
+   const {
+     auditLogs = [],
+     isLoading,
+     refreshAuditLogs,
+     addHODComment,
+   } = useHOD();
 
-  const [search, setSearch] = useState('');
-  const [dateRange, setDateRange] = useState({ start: '', end: '' });
-  const [selectedEntity, setSelectedEntity] = useState('all');
+   const [search, setSearch] = useState('');
+   const [dateRange, setDateRange] = useState({ start: '', end: '' });
+   const [selectedEntity, setSelectedEntity] = useState('all');
+   const [selectedTeacher, setSelectedTeacher] = useState('all');
+   const [selectedActionType, setSelectedActionType] = useState('all');
+   const [savedFilterName, setSavedFilterName] = useState('');
+   const [savedFilters, setSavedFilters] = useState([]);
 
-  useEffect(() => {
-    if (typeof refreshAuditLogs === 'function') {
-      refreshAuditLogs();
-    }
-  }, [refreshAuditLogs]);
+   // Safely synchronize logs exactly once on component mount
+   useEffect(() => {
+     if (typeof refreshAuditLogs === 'function') {
+       refreshAuditLogs();
+     }
+     const saved = localStorage.getItem('auditFilterPresets');
+     if (saved) {
+       try { setSavedFilters(JSON.parse(saved)); } catch { /* no-op */ }
+     }
+   }, []); // Removed refreshAuditLogs to prevent cascading infinite re-render loops
+
+   const teachers = useMemo(() => {
+     const set = new Set(auditLogs.map(l => l.teacherName).filter(Boolean));
+     return ['all', ...Array.from(set)];
+   }, [auditLogs]);
+
+   const actionTypes = useMemo(() => {
+     const set = new Set(auditLogs.map(l => l.action).filter(Boolean));
+     return ['all', ...Array.from(set)];
+   }, [auditLogs]);
+
+   const saveFilterPreset = () => {
+     if (!savedFilterName.trim()) return;
+     const preset = {
+       id: Date.now(),
+       name: savedFilterName.trim(),
+       search,
+       dateRange,
+       selectedEntity,
+       selectedTeacher,
+       selectedActionType,
+     };
+     const updated = [...savedFilters, preset];
+     setSavedFilters(updated);
+     localStorage.setItem('auditFilterPresets', JSON.stringify(updated));
+     setSavedFilterName('');
+   };
+
+   const loadFilterPreset = (preset) => {
+     setSearch(preset.search || '');
+     setDateRange(preset.dateRange || { start: '', end: '' });
+     setSelectedEntity(preset.selectedEntity || 'all');
+     setSelectedTeacher(preset.selectedTeacher || 'all');
+     setSelectedActionType(preset.selectedActionType || 'all');
+   };
+
+   const deleteFilterPreset = (id) => {
+     const updated = savedFilters.filter(f => f.id !== id);
+     setSavedFilters(updated);
+     localStorage.setItem('auditFilterPresets', JSON.stringify(updated));
+   };
 
   const filteredLogs = useMemo(() => {
-    let logs = typeof getFilteredAuditLogs === 'function' ? getFilteredAuditLogs() : auditLogs;
+    let logs = [...auditLogs];
     const query = search.trim().toLowerCase();
     
     if (query) {
@@ -37,20 +84,26 @@ export function HODAudit() {
         String(log.teacherName || '').toLowerCase().includes(query) ||
         String(log.recordId || '').toLowerCase().includes(query) ||
         String(log.justification || '').toLowerCase().includes(query) ||
-        String(log.action || '').toLowerCase().includes(query),
+        String(log.action || '').toLowerCase().includes(query)
       );
     }
-    if (dateRange.start && dateRange.end) {
-      logs = logs.filter(log => {
-        const logDate = log.timestamp?.split('T')[0];
-        return logDate >= dateRange.start && logDate <= dateRange.end;
-      });
+    if (dateRange.start) {
+      logs = logs.filter(log => (log.timestamp?.split('T')[0] || '') >= dateRange.start);
+    }
+    if (dateRange.end) {
+      logs = logs.filter(log => (log.timestamp?.split('T')[0] || '') <= dateRange.end);
     }
     if (selectedEntity !== 'all') {
       logs = logs.filter(log => log.entityType === selectedEntity);
     }
+    if (selectedTeacher !== 'all') {
+      logs = logs.filter(log => log.teacherName === selectedTeacher);
+    }
+    if (selectedActionType !== 'all') {
+      logs = logs.filter(log => log.action === selectedActionType);
+    }
     return logs;
-  }, [getFilteredAuditLogs, auditLogs, search, dateRange, selectedEntity]);
+  }, [auditLogs, search, dateRange, selectedEntity, selectedTeacher, selectedActionType]);
 
   const stats = useMemo(() => {
     const total = auditLogs.length;
@@ -95,7 +148,7 @@ export function HODAudit() {
           <button
             onClick={refreshAuditLogs}
             disabled={isLoading}
-            className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-50 flex items-center gap-2 shadow-3xs transition-all active:scale-95 disabled:opacity-40 shrink-0 self-start sm:self-center"
+            className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-50 flex items-center gap-2 shadow-2xs transition-all active:scale-95 disabled:opacity-40 shrink-0 self-start sm:self-center"
           >
             <RefreshCw size={12} className={isLoading ? 'animate-spin' : ''} />
             Synchronize Logs
@@ -114,7 +167,7 @@ export function HODAudit() {
             { label: 'Locked', value: stats.locked, icon: AlertCircle, color: 'text-amber-600' },
             { label: 'Drafts', value: stats.draft, icon: Calendar, color: 'text-sky-600' }
           ].map((card, idx) => (
-            <div key={idx} className="bg-white rounded-xl border border-gray-200/70 p-3.5 shadow-3xs flex flex-col justify-between h-[85px]">
+            <div key={idx} className="bg-white rounded-xl border border-gray-200/70 p-3.5 shadow-2xs flex flex-col justify-between h-[85px]">
               <div className="flex items-center gap-1.5 text-gray-400">
                 <card.icon size={12} />
                 <span className="text-[10px] font-bold uppercase tracking-wider">{card.label}</span>
@@ -145,7 +198,7 @@ export function HODAudit() {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search ledger marks..."
-                    className="w-full pl-8.5 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 placeholder-gray-400 font-medium text-gray-700"
+                    className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 placeholder-gray-400 font-medium text-gray-700"
                   />
                 </div>
               </div>
@@ -160,6 +213,36 @@ export function HODAudit() {
                 >
                   {entityTypes.map(et => (
                     <option key={et.value} value={et.value}>{et.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Teacher Filter */}
+              <div className="space-y-1">
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Teacher</label>
+                <select
+                  value={selectedTeacher}
+                  onChange={(e) => setSelectedTeacher(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs bg-gray-50 border border-gray-200/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 text-gray-700 font-medium"
+                >
+                  <option value="all">All Teachers</option>
+                  {teachers.filter(t => t !== 'all').map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Action Type Filter */}
+              <div className="space-y-1">
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Action Type</label>
+                <select
+                  value={selectedActionType}
+                  onChange={(e) => setSelectedActionType(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs bg-gray-50 border border-gray-200/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 text-gray-700 font-medium"
+                >
+                  <option value="all">All Actions</option>
+                  {actionTypes.filter(a => a !== 'all').map(a => (
+                    <option key={a} value={a}>{a}</option>
                   ))}
                 </select>
               </div>
@@ -182,6 +265,53 @@ export function HODAudit() {
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Presets Management Section */}
+            <div className="bg-white rounded-xl border border-gray-200/70 shadow-3xs p-4 space-y-3">
+              <div className="flex items-center gap-1.5 border-b border-gray-100 pb-2 text-gray-400">
+                <Bookmark size={12} />
+                <h3 className="text-[10px] font-bold uppercase tracking-wider">Saved Filter Presets</h3>
+              </div>
+              
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={savedFilterName}
+                  onChange={(e) => setSavedFilterName(e.target.value)}
+                  placeholder="Preset label..."
+                  className="flex-1 px-2.5 py-1 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-gray-700"
+                />
+                <button
+                  onClick={saveFilterPreset}
+                  disabled={!savedFilterName.trim()}
+                  className="px-2.5 py-1 bg-indigo-600 text-white font-semibold rounded-lg text-xs hover:bg-indigo-700 disabled:opacity-40 transition-colors"
+                >
+                  Save
+                </button>
+              </div>
+
+              {savedFilters.length > 0 && (
+                <div className="pt-2 max-h-32 overflow-y-auto space-y-1.5 border-t border-gray-50">
+                  {savedFilters.map((preset) => (
+                    <div key={preset.id} className="flex items-center justify-between bg-slate-50 p-1.5 rounded-lg group">
+                      <button
+                        onClick={() => loadFilterPreset(preset)}
+                        className="text-[11px] font-medium text-gray-600 hover:text-indigo-600 transition-colors text-left truncate flex-1 mr-2"
+                      >
+                        {preset.name}
+                      </button>
+                      <button
+                        onClick={() => deleteFilterPreset(preset.id)}
+                        className="text-gray-400 hover:text-rose-600 p-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Delete Preset"
+                      >
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Quick Informational Notice */}

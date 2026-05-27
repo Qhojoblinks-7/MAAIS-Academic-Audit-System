@@ -13,7 +13,7 @@ const STUDENT_STATS = [
 
 export function StudentSettings() {
   const navigate = useNavigate();
-  const [name, setName] = React.useState('Angela Efia Owusu');
+  const [name, setName] = React.useState('Angela Owusu');
   const [bio, setBio] = React.useState('SHS 3 Agric B student interested in agritech.');
   const [isTwoFactor, setIsTwoFactor] = React.useState(true);
 
@@ -49,7 +49,7 @@ export function StudentSettings() {
             </p>
           </div>
         </header>
-
+        
         {/* Dashboard Metric Matrix Row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           {STUDENT_STATS.map((stat, i) => (
@@ -66,7 +66,7 @@ export function StudentSettings() {
             </div>
           ))}
         </div>
-
+        
         {/* Profile Settings Block */}
         <section className="bg-white rounded-2xl sm:rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
           <div className="p-4 sm:p-6 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2.5">
@@ -109,7 +109,7 @@ export function StudentSettings() {
                 </div>
               </div>
             </div>
-
+            
             <div>
               <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] mb-1.5 block">Bio / About</label>
               <textarea 
@@ -119,7 +119,7 @@ export function StudentSettings() {
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/10 resize-none transition-all" 
               />
             </div>
-
+            
             {/* Two-Factor Toggle Interaction Panel */}
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 gap-4">
               <div className="flex items-center gap-3 min-w-0">
@@ -145,14 +145,14 @@ export function StudentSettings() {
                 />
               </button>
             </div>
-
+            
             {/* Submission Primary Controls */}
             <button className="w-full py-3.5 bg-gray-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all active:scale-[0.99] flex items-center justify-center gap-2 select-none cursor-pointer shadow-md">
               <Save size={15} /> Save Changes
             </button>
           </div>
         </section>
-
+        
         {/* Preferences Block */}
         <section className="bg-white rounded-2xl sm:rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
           <div className="p-4 sm:p-6 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2.5">
@@ -190,7 +190,7 @@ export function StudentSettings() {
             ))}
           </div>
         </section>
-
+        
       </div>
     </div>
   );

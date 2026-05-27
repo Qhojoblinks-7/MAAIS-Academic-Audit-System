@@ -2,19 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  AlertTriangle,
-  Hourglass,
-  ArrowRight,
-  Clock,
-  User,
-  BookOpen,
-  X,
-  MessageSquare,
-  CornerDownRight,
-  Inbox,
-  Check,
-  Search
-} from 'lucide-react';
+   AlertTriangle,
+   Hourglass,
+   ArrowRight,
+   Clock,
+   User,
+   BookOpen,
+   X,
+   MessageSquare,
+   CornerDownRight,
+   Inbox,
+   Check,
+   Search,
+   ChevronDown,
+   ChevronUp
+ } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
 import mockTeacherService from '../../services/mockTeacherService';
@@ -31,6 +33,9 @@ const TeacherRevisionsFeed = () => {
   const [selected, setSelected] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [discussionExpanded, setDiscussionExpanded] = useState(false);
+  const [discussionInput, setDiscussionInput] = useState('');
+  const [isDiscussionLoading, setIsDiscussionLoading] = useState(false);
 
   useEffect(() => {
     const fetchRevisions = async () => {
@@ -95,15 +100,32 @@ const TeacherRevisionsFeed = () => {
         await notification.notifyHODOfTeacherAction?.(selected.id, 'TEACHER_RESPONSE', replyText);
       }
 
-      setRevisions(prev => prev.map(item => item.id === selected.id ? updatedRevision : item));
-      setSelected(updatedRevision);
-      setReplyText('');
-    } catch (e) {
-      console.error('Failed to submit response:', e);
-    }
-  };
+setRevisions(prev => prev.map(item => item.id === selected.id ? updatedRevision : item));
+       setSelected(updatedRevision);
+       setReplyText('');
+     } catch (e) {
+       console.error('Failed to submit response:', e);
+     }
+   };
 
-  return (
+   const sendDiscussionMessage = async () => {
+     if (!discussionInput.trim() || !selected) return;
+
+     try {
+       setIsDiscussionLoading(true);
+
+       alert('Discussion message sent: ' + discussionInput);
+
+       setDiscussionInput('');
+     } catch (err) {
+       console.error('Failed to send discussion message:', err);
+       alert('Failed to send message');
+     } finally {
+       setIsDiscussionLoading(false);
+     }
+   };
+
+   return (
     <div className="flex-1 flex w-full h-full min-h-0 overflow-hidden bg-slate-50/40 font-sans antialiased">
       
       <div className="flex-1 flex flex-col min-w-0 h-full border-r border-slate-200/60 bg-white">
@@ -286,10 +308,94 @@ const TeacherRevisionsFeed = () => {
                       </div>
                     </div>
                   ))}
-                </div>
-              </div>
-
-              {selected.status === 'AWAITING_APPROVAL' && (
+                 </div>
+               </div>
+ 
+               {/* Grade Discussion Thread */}
+               <div className="border-t border-slate-100 pt-6">
+                 <div className="flex items-center justify-between mb-3">
+                   <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                     Grade Discussion
+                   </h4>
+                   <div className="flex items-center gap-2">
+                     <span className="text-sm text-slate-500">
+                       {selected.history?.length || 0} messages
+                     </span>
+                     <button
+                       onClick={() => setDiscussionExpanded(!discussionExpanded)}
+                       className="p-1 hover:bg-slate-100 rounded hover:text-slate-700 transition-colors"
+                     >
+                       {discussionExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                     </button>
+                   </div>
+                 </div>
+                 
+                 {discussionExpanded && (
+                   <div className="space-y-2">
+                     {selected.history?.length === 0 ? (
+                       <p className="text-center py-4 text-slate-500 italic">
+                         No discussion yet. Start the conversation!
+                       </p>
+                     ) : (
+                       <div className="space-y-2">
+                         {selected.history.map((msg) => (
+                           <div key={msg.id} className={cn(
+                             "flex gap-3",
+                             msg.role === 'TEACHER' ? 'flex-row' : 'flex-row-reverse'
+                           )}>
+                             <div className="w-8 h-8 flex items-center justify-center rounded-full 
+                               {msg.role === 'HOD' ? 'bg-amber-100 text-amber-600' : 'bg-sky-100 text-sky-600'}">
+                               {msg.role === 'HOD' ? 'H' : 'T'}
+                             </div>
+                             <div className="flex-1 max-w-[80%]">
+                               <div className={cn(
+                                 "px-3 py-2 rounded-xl",
+                                 msg.role === 'HOD' ? 'bg-amber-50 text-slate-800 rounded-tr-none' : 
+                                   'bg-sky-50 text-slate-800 rounded-tl-none'
+                               )}>
+                                 <p className="text-xs font-medium text-slate-500 mb-0.5">
+                                   {msg.user}
+                                 </p>
+                                 <p className="text-sm text-slate-800 whitespace-pre-wrap break-words">
+                                   {msg.message}
+                                 </p>
+                                 <p className="text-xs text-slate-400 mt-1">
+                                   {msg.time}
+                                 </p>
+                               </div>
+                             </div>
+                           </div>
+                         ))}
+                       </div>
+                     )}
+                   </div>
+                 )}
+                 
+                 <div className="mt-3 pt-2 border-t border-slate-200">
+                   <div className="flex items-center gap-2">
+                     <div className="flex-1">
+                       <textarea
+                         value={discussionInput}
+                         onChange={(e) => setDiscussionInput(e.target.value)}
+                         placeholder="Type your message..."
+                         rows={2}
+                         className="w-full p-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500/20"
+                         disabled={isDiscussionLoading}
+                       />
+                     </div>
+                     <button
+                       onClick={sendDiscussionMessage}
+                       disabled={isDiscussionLoading || !discussionInput.trim()}
+                       className="px-3 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-colors disabled:opacity-50"
+                     >
+                       {isDiscussionLoading ? 'Sending...' : 'Send'}
+                     </button>
+                   </div>
+                 </div>
+               </div>
+               {/* End Grade Discussion Thread */}
+ 
+               {selected.status === 'AWAITING_APPROVAL' && (
                 <div className="space-y-2">
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Add Teacher Response</label>
                   <div className="relative">

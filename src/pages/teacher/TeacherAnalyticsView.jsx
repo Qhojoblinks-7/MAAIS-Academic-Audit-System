@@ -12,25 +12,10 @@ import {
 import { cn } from '../../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { useRole } from '../../context/RoleContext';
-import MOCK from '../../data/teacherMockData.json';
+import mockTeacherService from '../../services/mockTeacherService';
 
-const {
-  analyticsObservations,
-  termTrends,
-  gradeConfig,
-  observationTypes,
-} = MOCK;
-
-// Module-level constants sourced from centralized mock data
-// — used when live API data has not yet loaded.
-const ANALYTICS_OBS = analyticsObservations.items;
-const ANALYTIC_GRADE_CONFIG = gradeConfig.bands;
-
-const OBS_TYPES_MODULE = observationTypes.types;
-const OBS_COLORS_MODULE = Object.values(observationTypes.analyticsColors);
-
-const FALLBACK_OBS = MOCK.analyticsObservations.items;
-const FALLBACK_TRENDS = MOCK.termTrends.items;
+const OBS_TYPES_MODULE = ['Behavioral', 'Academic', 'Lab Safety', 'Collaboration', 'Punctuality'];
+const OBS_COLORS_MODULE = ['#1D4D4F', '#f59e0b', '#ef4444', '#3b82f6', '#a855f7'];
 const FALLBACK_STUDENT_SCORES = [
   { student: "Ama Serwaa", score: 78, trend: "+3", trendUp: true },
   { student: "Kwame Mensah", score: 65, trend: "-2", trendUp: false },
@@ -56,11 +41,11 @@ export function TeacherAnalyticsView() {
   const [obsFilter, setObsFilter] = useState('All');
   const navigate = useNavigate();
 
-  /* ── WAEC STP T-AR-4.2 — live data fetch replaces all mock arrays ── */
   const [observations, setObservations] = useState([]);
   const [classProgress, setClassProgress] = useState([]);
   const [studentScores, setStudentScores] = useState([]);
   const [termTrends, setTermTrends] = useState([]);
+  const [gradeConfig, setGradeConfig] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -70,56 +55,24 @@ export function TeacherAnalyticsView() {
         setLoading(false);
         return;
       }
-
-      const loadEndpoint = async (promise, fallback) => {
-        try {
-          const res = await promise;
-          const data = await res.json();
-          return data;
-        } catch {
-          return fallback;
-        }
-      };
-
-      const [obsData, clsData, scoresData, trendsData] = await Promise.all([
-        loadEndpoint(
-          fetch(`/api/teacher/classes/${user.id}/observations`).then(r => r.json()),
-          { observations: FALLBACK_OBS }
-        ),
-        loadEndpoint(
-          fetch(`/api/teacher/classes/${user.id}/analytics`).then(r => r.json()),
-          { classProgress: FALLBACK_CLASS_PROGRESS }
-        ),
-        loadEndpoint(
-          fetch(`/api/teacher/classes/${user.id}/student-scores`).then(r => r.json()),
-          { studentScores: FALLBACK_STUDENT_SCORES }
-        ),
-        loadEndpoint(
-          fetch(`/api/teacher/classes/${user.id}/term-trends`).then(r => r.json()),
-          { termTrends: FALLBACK_TRENDS }
-        ),
-      ]);
-
-      setObservations(obsData.observations || FALLBACK_OBS);
-      setClassProgress(clsData.classProgress || clsData || FALLBACK_CLASS_PROGRESS);
-      setStudentScores(scoresData.studentScores || scoresData || FALLBACK_STUDENT_SCORES);
-      setTermTrends(trendsData.termTrends || trendsData || FALLBACK_TRENDS);
-      setLoading(false);
+      try {
+        const obsData = await mockTeacherService.getAnalytics(user.id);
+        const gradeCfg = await mockTeacherService.getGradeConfig();
+        
+        setObservations(obsData.observations || []);
+        setClassProgress(obsData.classProgress || FALLBACK_CLASS_PROGRESS);
+        setStudentScores(obsData.studentScores || FALLBACK_STUDENT_SCORES);
+        setTermTrends(obsData.termTrends || []);
+        setGradeConfig(gradeCfg || []);
+      } catch (err) {
+        setError('Failed to load analytics');
+      } finally {
+        setLoading(false);
+      }
     };
-
     fetchAnalytics();
   }, [user?.id]);
 
-/* ── WAEC STP — WAEC grade-case: 9 bands per §77 ──
- * Used for grade-distribution pie / bar charts derived from live student scores.
- * If both API stats and API gradeConfig are absent it stays [] — no crash. */
-const gradeConfig = MOCK.gradeConfig.bands;
-
-  /* O(1) — WAEC STP grade lookup per SAD.txt §77 */
-  /* O(1) — WAEC STP grade lookup: maps percentage to grade band
-   * WAEC Grading Scale: A1(≥75), B2(70-74), B3(65-69), C4(60-64), C5(55-59), C6(50-54), D7(45-49), E8(40-44), F9(<40)
-   * All 9 bands covered per WAEC STP §77 requirements
-   */
   function getGradeBand(pct) {
     if (pct >= 75) return 'A1';
     if (pct >= 70) return 'B2';
@@ -132,40 +85,20 @@ const gradeConfig = MOCK.gradeConfig.bands;
     return 'F9';
   }
 
-  /* O(gradeConfig.length · studentScores.length) — computed from live data */
   const gradeDist = useMemo(() =>
     gradeConfig.map((g) => ({
       label: g.label,
       count: studentScores.filter(s => getGradeBand(s.score) === g.label).length,
       fill: g.color,
     })),
-    [studentScores]
-  );
-
-  /* O(obsTypes.length · observations.length) — computed from live data */
-  const obsPieData = useMemo(() =>
-    observations.length > 0 && gradeConfig?.length > 0
-      ? gradeConfig.map((g, i) => ({
-          name: g.label,
-          /* O(n) per grade band — check scores within range */
-          value: studentScores.filter(s => {
-            const score = s.score;
-            return score >= g.min && score <= g.max;
-          }).length,
-          fill: g.color,
-        }))
-      : [],
     [studentScores, gradeConfig]
   );
 
-  /* O(obsTypes.length · observations.length) — computed from live observations */
   const obsTypePieData = useMemo(() => {
-    const OBS_TYPES = ['Behavioral', 'Academic', 'Lab Safety', 'Collaboration', 'Punctuality'];
-    const OBS_COLORS = ['#1D4D4F', '#f59e0b', '#ef4444', '#3b82f6', '#a855f7'];
-    return OBS_TYPES.map((t, i) => ({
+    return OBS_TYPES_MODULE.map((t, i) => ({
       name: t,
       value: observations.filter(o => o.type === t).length,
-      fill: OBS_COLORS[i],
+      fill: OBS_COLORS_MODULE[i],
     }));
   }, [observations]);
 
@@ -186,7 +119,6 @@ const gradeConfig = MOCK.gradeConfig.bands;
     ];
   }, [studentScores, classProgress, observations]);
 
-  /* O(n) — live from studentScores */
   const atRiskCount = useMemo(() => studentScores.filter(s => (s.score || 0) < 60).length, [studentScores]);
   const topPerformerCount = useMemo(() => studentScores.filter(s => (s.score || 0) >= 80).length, [studentScores]);
   const meanScore = useMemo(() => {
@@ -229,9 +161,7 @@ const gradeConfig = MOCK.gradeConfig.bands;
   });
 
   const filteredStudents = studentScores
-    /* O(n) — WAEC STP compliance: filter + sort on live student data */
     .filter(s => s.student.toLowerCase().includes(searchQuery.toLowerCase()))
-    /* O(n log n) — WAEC STP §376 proof: sort call documented */
     .sort((a, b) => b.score - a.score);
 
   return (
@@ -406,7 +336,7 @@ const gradeConfig = MOCK.gradeConfig.bands;
                       <YAxis tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 700 }} tickLine={false} axisLine={false} />
                       <Tooltip
                         contentStyle={{ fontSize: 11, fontWeight: 700, borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}
-                        formatter={(val, name) => [name === 'meanAvg' ? `${val}%` : `${val}/${classProgress.find(c => c.subject === val)?.students || val}`, name === 'meanAvg' ? 'Avg Score' : 'Completion']}
+                        formatter={(val, name) => [`${val}`, name === 'meanAvg' ? 'Avg Score' : 'Completion']}
                       />
                       <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 10, fontWeight: 700 }} />
                       <Bar dataKey="avgScore" name="Avg Score (%)" fill="#1D4D4F" radius={[5, 5, 0, 0]} />

@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
-import { Sidebar, HODSidebar, StudentSidebar } from './components/layout';
+import { AdminSidebar, HODSidebar, StudentSidebar, TeacherSidebar } from './components/layout';
 import { Topbar, RightPanel, MobileDrawer, StudentMobileDrawer } from './components/shared';
 import { Dashboard } from './pages/shared';
 import { GradingSheet } from './pages/shared';
@@ -11,16 +11,17 @@ import {
   SchedulingView, FinanceView, CommsView, MasterTimetable, EventCalendarView,
   AcademicArchitect, ReportGeneratorView, GradingRulesView,
 } from './pages/admin';
-import { HODDashboard, HODAudit, HODInterventions, HODReview, HODLockExport, HODSettings, HODSettingsPage, HODSupportPage, HODTeachers, HODAnalytics } from './pages/hod';
-import {StudentTimetable, StudentSettings, StudentSupport, StudentPortal } from './pages/student';
-import { TeacherTimetableView, TeacherDashboard, TeacherGradingView, TeacherObservationsView, TeacherAnalyticsView, TeacherArchiveView, TeacherArchiveDetailView, TeacherSettings, TeacherSupport } from './pages/teacher';
-import { HOD_JourneyHistoryAudit, RevisionsFeed, MissingObservations, SettingsView, SupportView } from './pages/shared';
+import { HODDashboard, HODAudit, HODInterventions, HODReview, HODLockExport, HODSettings, HODSettingsPage, HODSupportPage, HODTeachers, HODAnalytics, HODArchiveView, HODArchiveDetailView, Unauthorized, BroadsheetGenerator, HODCertification, HODRevisionsFeed } from './pages/hod';
+import {StudentTimetable, StudentSettings, StudentSupport, StudentPortal, StudentProfile } from './pages/student';
+import { TeacherTimetableView, TeacherDashboard, TeacherGradingView, TeacherObservationsView, TeacherAnalyticsView, TeacherArchiveView, TeacherArchiveDetailView, TeacherSettings, TeacherSupport, TeacherRevisionsFeed } from './pages/teacher';
+import { HOD_JourneyHistoryAudit, MissingObservations, SettingsView, SupportView } from './pages/shared';
 import { UIProvider, useUI } from './context/UIContext';
 import { useRole, RoleProvider } from './context/RoleContext';
 import { HODProvider } from './context/HODContext';
 import { RequireRole } from './components/auth/RequireRole';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {NotificationsPage} from './pages/NotificationsPage';
 
 // ── Standalone wrapper for /grading route ─────────────────────────────────────
 // Provides the default data sources (mock students, SUBJECT_CONFIG) that
@@ -116,12 +117,12 @@ function Modal({ isOpen, onClose, title, children }) {
 }
 
 const RoleBasedArchiveView = () => {
-  const { user } = useRole();
-  if (user?.role === 'ADMIN') return <ArchiveView />;
-  if (user?.role === 'HOD') return <TeacherArchiveView />; // Fallback routing setup to avoid undefined references
-  if (user?.role === 'TEACHER') return <TeacherArchiveView />;
-  return <ArchiveView />;
-};
+   const { user } = useRole();
+   if (user?.role === 'ADMIN') return <ArchiveView />;
+   if (user?.role === 'HOD') return <HODArchiveView />;
+   if (user?.role === 'TEACHER') return <TeacherArchiveView />;
+   return <ArchiveView />;
+ };
 
 function AppContent() {
   const location = useLocation();
@@ -156,9 +157,10 @@ function AppContent() {
   return (
     <div className="flex h-screen bg-[#F9F9F7] font-sans selection:bg-emerald-100 selection:text-emerald-900">
 <div className="hidden lg:block">
-         {user?.role === 'STUDENT' ? <StudentSidebar /> :
-          user?.role === 'HOD' ? <HODSidebar /> : <Sidebar />}
-       </div>
+           {user?.role === 'STUDENT' ? <StudentSidebar /> :
+            user?.role === 'HOD' ? <HODSidebar /> :
+            user?.role === 'TEACHER' ? <TeacherSidebar /> : <AdminSidebar />}
+         </div>
       <div className="flex-1 flex flex-col min-w-0">
         {location.pathname !== '/journey-audit' && <Topbar />}
         <main className="flex-1 flex overflow-hidden relative">
@@ -208,12 +210,25 @@ function AppContent() {
             <Route path="/hod/review"       element={<RequireRole allowedRoles={['HOD']}><HODReview /></RequireRole>} />
             <Route path="/hod/lock-export" element={<RequireRole allowedRoles={['HOD']}><HODLockExport /></RequireRole>} />
             <Route path="/hod/teachers"    element={<RequireRole allowedRoles={['HOD']}><HODTeachers /></RequireRole>} />
-            <Route path="/hod/analytics"   element={<RequireRole allowedRoles={['HOD']}><HODAnalytics /></RequireRole>} />
-            <Route path="/hod/settings"    element={<RequireRole allowedRoles={['HOD']}><HODSettingsPage /></RequireRole>} />
-            <Route path="/hod/support"     element={<RequireRole allowedRoles={['HOD']}><HODSupportPage /></RequireRole>} />
-            <Route path="/system" element={
-              <RequireRole allowedRoles={['ADMIN']}><AdminManagement /></RequireRole>
+<Route path="/hod/analytics"   element={<RequireRole allowedRoles={['HOD']}><HODAnalytics /></RequireRole>} />
+              <Route path="/hod/archive" element={<RequireRole allowedRoles={['HOD']}><HODArchiveView /></RequireRole>} />
+              <Route path="/hod/archive/:id" element={<RequireRole allowedRoles={['HOD']}><HODArchiveDetailView /></RequireRole>} />
+              <Route path="/hod/settings"    element={<RequireRole allowedRoles={['HOD']}><HODSettingsPage /></RequireRole>} />
+             <Route path="/hod/support"     element={<RequireRole allowedRoles={['HOD']}><HODSupportPage /></RequireRole>} />
+             
+            <Route path="/hod/broadsheet" element={<RequireRole allowedRoles={['HOD']}><BroadsheetGenerator /></RequireRole>} />
+            <Route path="/notifications" element={
+              <RequireRole allowedRoles={['TEACHER', 'HOD', 'ADMIN', 'STUDENT']}>
+                <NotificationsPage />
+              </RequireRole>
             } />
+            <Route path="/student-profile" element={<RequireRole allowedRoles={['TEACHER', 'HOD']}><StudentProfile /></RequireRole>} />
+<Route path="/certification" element={<RequireRole allowedRoles={['HOD']}><HODCertification /></RequireRole>} />
+             <Route path="/revisions" element={
+               <RequireRole allowedRoles={['TEACHER', 'HOD']}>
+                 {user?.role === 'HOD' ? <HODRevisionsFeed /> : <TeacherRevisionsFeed />}
+               </RequireRole>
+             } />
             <Route path="/finance" element={
               <RequireRole allowedRoles={['ADMIN']}><FinanceView /></RequireRole>
             } />
@@ -229,11 +244,8 @@ function AppContent() {
             <Route path="/audit/extended" element={
               <RequireRole allowedRoles={['ADMIN']}><ExtendedLogsView /></RequireRole>
             } />
-            <Route path="/archive" element={
+<Route path="/archive" element={
               <RequireRole allowedRoles={['ADMIN', 'TEACHER', 'HOD']}><RoleBasedArchiveView /></RequireRole>
-            } />
-            <Route path="/revisions" element={
-              <RequireRole allowedRoles={['TEACHER', 'HOD']}><RevisionsFeed /></RequireRole>
             } />
             <Route path="/missing-observations" element={
               <RequireRole allowedRoles={['TEACHER', 'HOD']}><MissingObservations /></RequireRole>
@@ -241,6 +253,7 @@ function AppContent() {
             <Route path="/journey-audit" element={
               <RequireRole allowedRoles={['HOD']}><HOD_JourneyHistoryAudit /></RequireRole>
             } />
+            <Route path="/unauthorized" element={<Unauthorized />} />
             <Route path="/identity/staff" element={
               <RequireRole allowedRoles={['ADMIN']}><StaffRegistry /></RequireRole>
             } />
@@ -306,11 +319,11 @@ export default function App() {
   return (
     <Router>
       <RoleProvider>
-        <HODProvider>
-          <UIProvider>
+        <UIProvider>
+          <HODProvider>
             <AppContent />
-          </UIProvider>
-        </HODProvider>
+          </HODProvider>
+        </UIProvider>
       </RoleProvider>
     </Router>
   );

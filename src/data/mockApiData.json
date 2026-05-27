@@ -1,8 +1,8 @@
 {
   "_meta": {
-    "description": "Centralized mock data for HOD API endpoints. Simulates backend responses for all hodService endpoints.",
-    "lastUpdated": "2026-05-22T22:00:00Z",
-    "endpoints": {
+    "description": "Centralized mock data for all API endpoints. Simulates backend responses for HOD, Teacher, and Student services.",
+    "lastUpdated": "2026-05-26T21:35:00Z",
+    "hodEndpoints": {
       "auditLogs": "/api/hod/audit-logs",
       "interventionAlerts": "/api/hod/intervention-alerts",
       "departmentProgress": "/api/hod/department-progress",
@@ -24,9 +24,22 @@
       "contactChannels": "/api/hod/contact-channels",
       "teachers": "/api/hod/teachers",
       "impersonate": "/api/hod/impersonate"
-    }
+    },
+    "teacherEndpoints": {
+      "classes": "/api/teacher/classes/:teacherId",
+      "analytics": "/api/teacher/classes/:teacherId/analytics",
+      "observations": "/api/teacher/classes/:teacherId/observations",
+      "studentScores": "/api/teacher/classes/:teacherId/student-scores",
+      "termTrends": "/api/teacher/classes/:teacherId/term-trends",
+      "timetable": "/api/timetable",
+      "profile": "/api/teacher/profile",
+      "gradingStudents": "/api/teacher/grading/students"
+    },
+    "studentEndpoints": {
+      "portal": "/api/student/portal",
+      "academicHistory": "/api/student/academic-history"
+}
   },
-
   "users": {
     "description": "User accounts for authentication and authorization.",
     "hodUsers": [
@@ -51,26 +64,6 @@
         "email": "kwame.mensah@atu.edu.gh",
         "phone": "+233244111111",
         "avatar": null
-      },
-      {
-        "id": "teacher002",
-        "username": "boateng.science",
-        "name": "Dr. Yaw Boateng",
-        "role": "TEACHER",
-        "departmentId": "dept002",
-        "email": "yaw.boateng@atu.edu.gh",
-        "phone": "+233244222222",
-        "avatar": null
-      },
-      {
-        "id": "teacher003",
-        "username": "owusu.homeec",
-        "name": "Mrs. Abena Owusu",
-        "role": "TEACHER",
-        "departmentId": "dept003",
-        "email": "abena.owusu@atu.edu.gh",
-        "phone": "+233244333333",
-        "avatar": null
       }
     ],
     "adminUsers": [
@@ -85,7 +78,6 @@
       }
     ]
   },
-
   "departments": {
     "description": "Academic departments in the school.",
     "items": [
@@ -96,26 +88,9 @@
         "hodId": "hod001",
         "teacherCount": 12,
         "studentCount": 245
-      },
-      {
-        "id": "dept002",
-        "name": "Science",
-        "code": "SCI",
-        "hodId": "hod002",
-        "teacherCount": 8,
-        "studentCount": 180
-      },
-      {
-        "id": "dept003",
-        "name": "Home Economics",
-        "code": "HOME",
-        "hodId": "hod003",
-        "teacherCount": 6,
-        "studentCount": 150
       }
     ]
   },
-
   "students": {
     "description": "Student records for cross-subject visibility.",
     "items": [
@@ -131,78 +106,26 @@
             "trend": "improving",
             "lastGrade": "B2",
             "hodComment": "Excellent practical work"
-          },
-          "science": {
-            "currentTermAverage": 82,
-            "trend": "stable",
-            "lastGrade": "A1",
-            "hodComment": null
-          },
-          "mathematics": {
-            "currentTermAverage": 75,
-            "trend": "declining",
-            "lastGrade": "B3",
-            "hodComment": "Needs additional support in algebra"
           }
         }
       },
       {
-        "id": "stud002",
-        "index": "009",
-        "name": "Ama Serwaa",
-        "currentClass": "SHS 1 Agric B",
-        "department": "Agriculture",
-        "academicProfiles": {
-          "agriculture": {
-            "currentTermAverage": 85,
-            "trend": "improving",
-            "lastGrade": "A1",
-            "hodComment": null
-          },
-          "science": {
-            "currentTermAverage": 79,
-            "trend": "stable",
-            "lastGrade": "B2",
-            "hodComment": null
-          },
-          "mathematics": {
-            "currentTermAverage": 88,
-            "trend": "improving",
-            "lastGrade": "A1",
-            "hodComment": null
-          }
-        }
-      },
-      {
-        "id": "stud003",
-        "index": "017",
+        "id": "stud006",
+        "index": "006",
         "name": "Kwame Mensah",
         "currentClass": "SHS 1 Agric B",
         "department": "Agriculture",
         "academicProfiles": {
           "agriculture": {
             "currentTermAverage": 62,
-            "trend": "declining",
+            "trend": "improving",
             "lastGrade": "C5",
-            "hodComment": "Monitor attendance and participation"
-          },
-          "science": {
-            "currentTermAverage": 58,
-            "trend": "declining",
-            "lastGrade": "C6",
-            "hodComment": null
-          },
-          "mathematics": {
-            "currentTermAverage": 65,
-            "trend": "stable",
-            "lastGrade": "B3",
             "hodComment": null
           }
         }
       }
     ]
   },
-
   "auditLogs": {
     "description": "Audit trail entries for HOD oversight with filters for student, teacher, subject, and date range.",
     "items": [
@@ -222,7 +145,8 @@
         "subject": "General Agriculture",
         "className": "SHS 1 Agric B",
         "studentId": "stud001",
-        "hodComment": "Approved - excellent improvement shown"
+        "hodComment": "Approved - excellent improvement shown",
+        "severity": "MEDIUM"
       },
       {
         "id": "log002",
@@ -230,62 +154,21 @@
         "userId": "teacher001",
         "user": "Mr. Kwame Mensah",
         "role": "TEACHER",
-        "action": "AUTO_SAVE",
-        "target": "Grading Sheet - SHS 1 Agric B",
-        "justification": "Auto-save draft progress",
-        "status": "DRAFT",
-        "time": "2026-05-21T09:15:00Z",
-        "subject": "General Agriculture",
-        "className": "SHS 1 Agric B"
-      },
-      {
-        "id": "log003",
-        "recordId": "rec003",
-        "userId": "teacher002",
-        "user": "Dr. Yaw Boateng",
-        "role": "TEACHER",
-        "action": "INTERVENTION_ALERT",
-        "target": "Low attendance flagged - Kwame Mensah",
-        "justification": "Attendance below 70% threshold",
-        "status": "FLAGGED",
-        "time": "2026-05-19T11:45:00Z",
-        "subject": "Integrated Science",
-        "className": "SHS 2 Science A",
-        "studentId": "stud003",
-        "severity": "HIGH"
-      },
-      {
-        "id": "log004",
-        "recordId": "rec004",
-        "userId": "hod001",
-        "user": "Mr. Kwame Asante",
-        "role": "HOD",
-        "action": "OVERRIDE",
-        "target": "Grade Revision Request - Ama Serwaa",
-        "oldValue": "PENDING",
-        "newValue": "APPROVED",
-        "justification": "Verified practical assessment scores match",
-        "status": "RESOLVED",
-        "time": "2026-05-18T16:00:00Z",
+        "action": "UPDATE",
+        "target": "Student Grade - Kwame Mensah (Index 006)",
+        "oldValue": "C5",
+        "newValue": "B2",
+        "justification": "Student re-assessed practical work",
+        "status": "AWAITING_APPROVAL",
+        "time": "2026-05-22T10:15:00Z",
         "subject": "General Agriculture",
         "className": "SHS 1 Agric B",
-        "studentId": "stud002"
-      },
-      {
-        "id": "log005",
-        "recordId": "rec005",
-        "userId": "system",
-        "user": "System",
-        "role": "SYSTEM",
-        "action": "LOCK",
-        "target": "Term 2 Grading Matrix - Agriculture Department",
-        "justification": "Term submission deadline reached",
-        "status": "LOCKED",
-        "time": "2026-05-01T00:00:00Z"
+        "studentId": "stud006",
+        "hodComment": null,
+        "severity": "MEDIUM"
       }
     ]
   },
-
   "interventionAlerts": {
     "description": "Aggregated intervention alerts sorted by severity for HOD oversight.",
     "items": [
@@ -301,50 +184,9 @@
         "resolved": false,
         "teacherId": "teacher002",
         "teacherName": "Dr. Yaw Boateng"
-      },
-      {
-        "id": "alert002",
-        "studentId": "stud003",
-        "studentName": "Kwame Mensah",
-        "studentIndex": "017",
-        "subject": "General Agriculture",
-        "reason": "Three consecutive low practical scores",
-        "severity": "HIGH",
-        "timestamp": "2026-05-19T14:20:00Z",
-        "resolved": false,
-        "teacherId": "teacher001",
-        "teacherName": "Mr. Kwame Mensah"
-      },
-      {
-        "id": "alert003",
-        "studentId": "stud002",
-        "studentName": "Ama Serwaa",
-        "studentIndex": "009",
-        "subject": "Core Mathematics",
-        "reason": "Missing observation entry",
-        "severity": "MEDIUM",
-        "timestamp": "2026-05-18T09:00:00Z",
-        "resolved": true,
-        "teacherId": "teacher003",
-        "teacherName": "Mrs. Abena Owusu",
-        "resolvedAt": "2026-05-19T11:00:00Z"
-      },
-      {
-        "id": "alert004",
-        "studentId": "stud004",
-        "studentName": "Yaw Boateng",
-        "studentIndex": "023",
-        "subject": "Animal Husbandry",
-        "reason": "Late submission penalty applied",
-        "severity": "LOW",
-        "timestamp": "2026-05-15T16:45:00Z",
-        "resolved": true,
-        "teacherId": "teacher001",
-        "teacherName": "Mr. Kwame Mensah"
       }
     ]
   },
-
   "departmentProgress": {
     "description": "Array of class-level progress objects for HOD lock/export and dashboard views.",
     "items": [
@@ -369,33 +211,11 @@
             "indexNumber": "001",
             "subject": "General Agriculture",
             "grade": "A1"
-          },
-          {
-            "id": "stud002",
-            "name": "Ama Serwaa",
-            "indexNumber": "002",
-            "subject": "General Agriculture",
-            "grade": "B3"
-          },
-          {
-            "id": "stud003",
-            "name": "Kofi Mensah",
-            "indexNumber": "003",
-            "subject": "General Agriculture",
-            "grade": "B2"
-          },
-          {
-            "id": "stud004",
-            "name": "Yaa Asare",
-            "indexNumber": "004",
-            "subject": "General Agriculture",
-            "grade": "C4"
           }
         ],
         "checks": [
           { "label": "All scores entered", "pass": true },
-          { "label": "Totals verified", "pass": true },
-          { "label": "Sequential entries", "pass": true }
+          { "label": "Totals verified", "pass": true }
         ]
       },
       {
@@ -404,9 +224,37 @@
         "name": "SHS 1 Agric B",
         "subject": "General Agriculture",
         "teacherName": "Mr. Kwame Mensah",
-        "studentCount": 36,
-        "studentIds": ["stud011", "stud012", "stud013", "stud014", "stud015"],
-        "studentIndexRange": [1, 36],
+        "studentCount": 42,
+        "studentIds": ["stud006", "stud007", "stud008", "stud009", "stud010"],
+        "studentIndexRange": [39, 80],
+        "submissionPct": 75,
+        "status": "PENDING",
+        "form": "Form 1",
+        "programme": "SHS",
+        "subjects": ["General Agriculture"],
+        "students": [
+          {
+            "id": "stud006",
+            "name": "Kwame Mensah",
+            "indexNumber": "006",
+            "subject": "General Agriculture",
+            "grade": "C6"
+          }
+        ],
+        "checks": [
+          { "label": "All scores entered", "pass": false },
+          { "label": "Totals verified", "pass": false }
+        ]
+      },
+      {
+        "id": "class002_fixed_leak", 
+        "className": "SHS 1 Agric C",
+        "name": "SHS 1 Agric C",
+        "subject": "General Agriculture",
+        "teacherName": "Mr. Kwame Mensah",
+        "studentCount": 38,
+        "studentIds": ["stud011", "stud012", "stud013", "stud014"],
+        "studentIndexRange": [1, 38],
         "submissionPct": 100,
         "status": "LOCKED",
         "form": "Form 1",
@@ -469,20 +317,6 @@
             "indexNumber": "001",
             "subject": "Animal Husbandry",
             "grade": null
-          },
-          {
-            "id": "stud022",
-            "name": "Adwoa Appiah",
-            "indexNumber": "002",
-            "subject": "Animal Husbandry",
-            "grade": null
-          },
-          {
-            "id": "stud023",
-            "name": "Yaw Dwamena",
-            "indexNumber": "003",
-            "subject": "Animal Husbandry",
-            "grade": null
           }
         ],
         "checks": [
@@ -510,27 +344,6 @@
             "id": "stud031",
             "name": "Ama Owusu",
             "indexNumber": "001",
-            "subject": "Crop Science",
-            "grade": null
-          },
-          {
-            "id": "stud032",
-            "name": "Yaw Darko",
-            "indexNumber": "002",
-            "subject": "Crop Science",
-            "grade": null
-          },
-          {
-            "id": "stud033",
-            "name": "Eva Mensah",
-            "indexNumber": "003",
-            "subject": "Crop Science",
-            "grade": null
-          },
-          {
-            "id": "stud034",
-            "name": "Kwabena Boateng",
-            "indexNumber": "004",
             "subject": "Crop Science",
             "grade": null
           }
@@ -562,20 +375,6 @@
             "indexNumber": "001",
             "subject": "Agricultural Economics",
             "grade": null
-          },
-          {
-            "id": "stud042",
-            "name": "Abena Darko",
-            "indexNumber": "002",
-            "subject": "Agricultural Economics",
-            "grade": null
-          },
-          {
-            "id": "stud043",
-            "name": "Yaw Ofori",
-            "indexNumber": "003",
-            "subject": "Agricultural Economics",
-            "grade": null
           }
         ],
         "checks": [
@@ -585,6 +384,9 @@
         ]
       }
     ],
+    "total": 6,
+    "page": 1,
+    "limit": 50,
     "summary": {
       "totalStudents": 245,
       "gradedStudents": 189,
@@ -609,7 +411,6 @@
       "lastUpdated": "2026-05-22T10:00:00Z"
     }
   },
-
   "teacherSubmissions": {
     "description": "Teacher submission status for department oversight.",
     "items": [
@@ -625,49 +426,9 @@
         "status": "SUBMITTED",
         "avgScore": 78,
         "passRate": 95
-      },
-      {
-        "teacherId": "teacher001",
-        "teacherName": "Mr. Kwame Mensah",
-        "subjectName": "Animal Husbandry",
-        "subject": "Animal Husbandry",
-        "className": "SHS 2 Agric A",
-        "studentCount": 42,
-        "gradedCount": 25,
-        "progress": 59,
-        "status": "DRAFT",
-        "avgScore": 65,
-        "passRate": 72
-      },
-      {
-        "teacherId": "teacher002",
-        "teacherName": "Dr. Yaw Boateng",
-        "subjectName": "Integrated Science",
-        "subject": "Integrated Science",
-        "className": "SHS 2 Science A",
-        "studentCount": 42,
-        "gradedCount": 42,
-        "progress": 100,
-        "status": "SUBMITTED",
-        "avgScore": 82,
-        "passRate": 92
-      },
-      {
-        "teacherId": "teacher002",
-        "teacherName": "Dr. Yaw Boateng",
-        "subjectName": "Physics",
-        "subject": "Physics",
-        "className": "SHS 3 Science 1",
-        "studentCount": 35,
-        "gradedCount": 18,
-        "progress": 51,
-        "status": "DRAFT",
-        "avgScore": 71,
-        "passRate": 68
       }
     ]
   },
-
   "lockedTerms": {
     "description": "Currently locked term status for department matrix operations.",
     "items": [
@@ -679,19 +440,9 @@
         "lockedAt": "2026-05-01T00:00:00Z",
         "lockedBy": "hod001",
         "canUnlock": true
-      },
-      {
-        "id": "term_2025_2",
-        "term": "Term 2",
-        "year": "2025/2026",
-        "status": "UNLOCKED",
-        "lockedAt": null,
-        "lockedBy": null,
-        "canUnlock": false
       }
     ]
   },
-
   "gradeComparison": {
     "description": "Grade comparison data between two terms for trend analysis.",
     "subjectId": "subject001",
@@ -709,34 +460,12 @@
         "termA": { "grade": "B3", "score": 65 },
         "termB": { "grade": "A1", "score": 82 },
         "trend": "improved"
-      },
-      {
-        "studentId": "stud002",
-        "studentName": "Ama Serwaa",
-        "termA": { "grade": "A1", "score": 88 },
-        "termB": { "grade": "A1", "score": 91 },
-        "trend": "unchanged"
-      },
-      {
-        "studentId": "stud003",
-        "studentName": "Kwame Mensah",
-        "termA": { "grade": "B2", "score": 72 },
-        "termB": { "grade": "C5", "score": 58 },
-        "trend": "declined"
       }
     ],
     "subjectPerformance": [
-      { "subject": "General Agriculture", "average": 78, "passRate": 95 },
-      { "subject": "Animal Husbandry", "average": 72, "passRate": 88 },
-      { "subject": "Integrated Science", "average": 82, "passRate": 92 },
-      { "subject": "Physics", "average": 68, "passRate": 85 },
-      { "subject": "Crop Science", "average": 75, "passRate": 90 },
-      { "subject": "Agricultural Economics", "average": 69, "passRate": 80 },
-      { "subject": "Core Mathematics", "average": 71, "passRate": 87 },
-      { "subject": "English Language", "average": 79, "passRate": 94 }
+      { "subject": "General Agriculture", "average": 78, "passRate": 95 }
     ]
   },
-
   "archive": {
     "description": "Archived department data with optional filters for promotion status and year.",
     "items": [
@@ -746,30 +475,53 @@
         "term": "Term 3",
         "subject": "General Agriculture",
         "class": "SHS 3 Agric B",
-        "students": 42,
+        "className": "SHS 3 Agric B",
+        "academicYear": "2023/2024",
+        "averageScore": 82,
+        "status": "LOCKED",
+        "students": [
+          { "id": "stud001", "name": "Angela Owusu", "indexNumber": "001", "grade": "A1" },
+          { "id": "stud002", "name": "Kwame Mensah", "indexNumber": "002", "grade": "B2" },
+          { "id": "stud003", "name": "Yaw Boateng", "indexNumber": "003", "grade": "B3" },
+          { "id": "stud004", "name": "Esi Ansah", "indexNumber": "004", "grade": "C4" }
+        ],
         "locked": true
       },
       {
         "id": "arch002",
-        "year": "2023/2024",
-        "term": "Term 3",
-        "subject": "Animal Science",
-        "class": "SHS 3 Animal A",
-        "students": 38,
+        "year": "2024/2025",
+        "term": "Term 1",
+        "subject": "General Agriculture",
+        "class": "SHS 1 Agric A",
+        "className": "SHS 1 Agric A",
+        "academicYear": "2024/2025",
+        "averageScore": 78,
+        "status": "ARCHIVED",
+        "students": [
+          { "id": "stud005", "name": "Ama Serwaa", "indexNumber": "005", "grade": "B2" },
+          { "id": "stud006", "name": "Kwame Ofori", "indexNumber": "006", "grade": "C5" },
+          { "id": "stud007", "name": "Efia Asante", "indexNumber": "007", "grade": "B3" }
+        ],
         "locked": true
       },
       {
         "id": "arch003",
-        "year": "2022/2023",
-        "term": "Term 2",
-        "subject": "Integrated Science",
-        "class": "SHS 2 Science B",
-        "students": 45,
+        "year": "2025/2026",
+        "term": "Term 1",
+        "subject": "Animal Husbandry",
+        "class": "SHS 2 Agric B",
+        "className": "SHS 2 Agric B",
+        "academicYear": "2025/2026",
+        "averageScore": 85,
+        "status": "LOCKED",
+        "students": [
+          { "id": "stud008", "name": "Yaw Amponsah", "indexNumber": "008", "grade": "A1" },
+          { "id": "stud009", "name": "Akua Mensah", "indexNumber": "009", "grade": "B2" }
+        ],
         "locked": true
       }
     ]
   },
-
   "promotions": {
     "description": "Promotion recommendations for archived students.",
     "items": [
@@ -781,29 +533,9 @@
         "recommendation": "PROMOTED",
         "average": 82,
         "year": "2025/2026"
-      },
-      {
-        "studentId": "stud002",
-        "studentName": "Ama Serwaa",
-        "fromClass": "SHS 1 Agric B",
-        "toClass": "SHS 2 Agric A",
-        "recommendation": "PROMOTED",
-        "average": 89,
-        "year": "2025/2026"
-      },
-      {
-        "studentId": "stud003",
-        "studentName": "Kwame Mensah",
-        "fromClass": "SHS 1 Agric B",
-        "toClass": "SHS 2 Agric A",
-        "recommendation": "CONDITIONAL",
-        "average": 65,
-        "year": "2025/2026",
-        "conditions": "Must achieve minimum C4 in final exam"
       }
     ]
   },
-
   "settings": {
     "description": "HOD settings including profile, notifications, and security preferences.",
     "profile": {
@@ -829,7 +561,6 @@
       "defaultView": "dashboard"
     }
   },
-
   "supportTickets": {
     "description": "Support tickets for HOD issues and requests.",
     "items": [
@@ -843,36 +574,12 @@
         "createdAt": "2026-05-20T09:30:00Z",
         "updatedAt": "2026-05-21T14:00:00Z",
         "createdBy": "hod001"
-      },
-      {
-        "id": "ticket002",
-        "subject": "Export PDF fails for large class",
-        "description": "WAEC PDF export times out for classes with more than 40 students",
-        "status": "IN_PROGRESS",
-        "priority": "MEDIUM",
-        "departmentId": "dept001",
-        "createdAt": "2026-05-18T11:00:00Z",
-        "updatedAt": "2026-05-19T16:00:00Z",
-        "createdBy": "hod001",
-        "assignedTo": "admin001"
-      },
-      {
-        "id": "ticket003",
-        "subject": "Feature request: Bulk grade import",
-        "description": "Would like to import grades from Excel sheet for efficiency",
-        "status": "OPEN",
-        "priority": "LOW",
-        "departmentId": "dept001",
-        "createdAt": "2026-05-15T09:00:00Z",
-        "updatedAt": "2026-05-15T09:00:00Z",
-        "createdBy": "hod001"
       }
     ],
     "total": 3,
     "page": 1,
     "pageSize": 10
   },
-
   "systemHealth": {
     "description": "System health metrics for monitoring platform status.",
     "status": "healthy",
@@ -886,23 +593,10 @@
         "name": "Database Cluster",
         "status": "OPERATIONAL",
         "latency": 12
-      },
-      {
-        "id": "api",
-        "name": "API Gateway",
-        "status": "OPERATIONAL",
-        "latency": 8
-      },
-      {
-        "id": "storage",
-        "name": "Object Storage",
-        "status": "OPERATIONAL",
-        "latency": 15
       }
     ],
     "lastUpdated": "2026-05-22T10:30:00Z"
   },
-
   "escalations": {
     "description": "Escalated issues across the department.",
     "items": [
@@ -915,21 +609,9 @@
         "createdAt": "2026-05-19T14:00:00Z",
         "createdBy": "stud002",
         "departmentId": "dept001"
-      },
-      {
-        "id": "esc002",
-        "title": "Missing practical assessment records",
-        "description": "Lab assessment records for SHS 2 appear incomplete",
-        "severity": "MEDIUM",
-        "status": "RESOLVED",
-        "createdAt": "2026-05-10T09:00:00Z",
-        "resolvedAt": "2026-05-12T16:00:00Z",
-        "createdBy": "hod001",
-        "departmentId": "dept001"
       }
     ]
   },
-
   "contactChannels": {
     "description": "HOD contact channels and preferences.",
     "email": "kwame.asante@atu.edu.gh",
@@ -937,7 +619,6 @@
     "whatsapp": "+233244567890",
     "preferredChannel": "email"
   },
-
   "teachers": {
     "description": "Teachers in the HOD's department with status and permissions.",
     "items": [
@@ -949,28 +630,9 @@
         "subjects": ["General Agriculture", "Animal Husbandry"],
         "status": "ACTIVE",
         "lastLogin": "2026-05-22T08:30:00Z"
-      },
-      {
-        "id": "teacher002",
-        "name": "Dr. Yaw Boateng",
-        "email": "yaw.boateng@atu.edu.gh",
-        "phone": "+233244222222",
-        "subjects": ["Integrated Science", "Physics"],
-        "status": "ACTIVE",
-        "lastLogin": "2026-05-21T14:00:00Z"
-      },
-      {
-        "id": "teacher003",
-        "name": "Mrs. Abena Owusu",
-        "email": "abena.owusu@atu.edu.gh",
-        "phone": "+233244333333",
-        "subjects": ["Core Mathematics"],
-        "status": "INACTIVE",
-        "lastLogin": "2026-05-15T11:00:00Z"
       }
     ]
   },
-
   "impersonations": {
     "description": "Active impersonation sessions for HOD oversight.",
     "items": [
@@ -985,7 +647,6 @@
       }
     ]
   },
-
   "subjects": {
     "description": "Subject catalog for the school.",
     "items": [
@@ -994,22 +655,9 @@
         "name": "General Agriculture",
         "code": "AGRIC-GEN",
         "department": "Agriculture"
-      },
-      {
-        "id": "subject002",
-        "name": "Integrated Science",
-        "code": "SCI-INT",
-        "department": "Science"
-      },
-      {
-        "id": "subject003",
-        "name": "Core Mathematics",
-        "code": "MATH-CORE",
-        "department": "General"
       }
     ]
   },
-
   "classes": {
     "description": "Class definitions for the school.",
     "items": [
@@ -1019,31 +667,9 @@
         "year": "SHS 1",
         "stream": "Agric A",
         "studentCount": 40
-      },
-      {
-        "id": "class002",
-        "name": "SHS 1 Agric B",
-        "year": "SHS 1",
-        "stream": "Agric B",
-        "studentCount": 38
-      },
-      {
-        "id": "class003",
-        "name": "SHS 2 Agric A",
-        "year": "SHS 2",
-        "stream": "Agric A",
-        "studentCount": 42
-      },
-      {
-        "id": "class004",
-        "name": "SHS 3 Science 1",
-        "year": "SHS 3",
-        "stream": "Science 1",
-        "studentCount": 35
       }
     ]
   },
-
   "waecExport": {
     "description": "Mock WAEC export data structure for CSV/PDF generation.",
     "studentRows": [
@@ -1054,23 +680,142 @@
         "exam": 82,
         "final": 82,
         "grade": "A1"
-      },
-      {
-        "index": "009",
-        "name": "Ama Serwaa",
-        "sba": 32,
-        "exam": 89,
-        "final": 89,
-        "grade": "A1"
-      },
-      {
-        "index": "017",
-        "name": "Kwame Mensah",
-        "sba": 25,
-        "exam": 58,
-        "final": 58,
-        "grade": "C6"
       }
+    ]
+  },
+  "studentAcademicHistory": {
+    "description": "Longitudinal academic history for students across terms.",
+    "items": [
+      {
+        "studentId": "stud001",
+        "termHistory": [
+          { "term": "2023/24 Term 1", "gpa": 2.85, "credits": 6, "grade": "B2" },
+          { "term": "2023/24 Term 2", "gpa": 3.12, "credits": 6, "grade": "B2" },
+          { "term": "2023/24 Term 3", "gpa": 3.25, "credits": 6, "grade": "B2" },
+          { "term": "2024/25 Term 1", "gpa": 3.45, "credits": 6, "grade": "A1" },
+          { "term": "2024/25 Term 2", "gpa": 3.62, "credits": 6, "grade": "A1" }
+        ],
+        "subjectPerformance": [
+          { "subject": "General Agriculture", "grades": ["B3", "B2", "B2", "A1"], "trend": "improving" },
+          { "subject": "Mathematics", "grades": ["C5", "B3", "B2", "B2"], "trend": "improving" },
+          { "subject": "English", "grades": ["B2", "B2", "B2", "B2"], "trend": "stable" },
+          { "subject": "Science", "grades": ["B3", "B2", "B3", "C4"], "trend": "stable" }
+        ]
+      },
+      {
+        "studentId": "stud006",
+        "termHistory": [
+          { "term": "2023/24 Term 1", "gpa": 2.15, "credits": 6, "grade": "C5" },
+          { "term": "2023/24 Term 2", "gpa": 2.28, "credits": 6, "grade": "C4" },
+          { "term": "2023/24 Term 3", "gpa": 2.45, "credits": 6, "grade": "C4" },
+          { "term": "2024/25 Term 1", "gpa": 2.65, "credits": 6, "grade": "B3" },
+          { "term": "2024/25 Term 2", "gpa": 2.72, "credits": 6, "grade": "B3" }
+        ],
+        "subjectPerformance": [
+          { "subject": "General Agriculture", "grades": ["D7", "D7", "D7", "C6"], "trend": "improving" },
+          { "subject": "Mathematics", "grades": ["C6", "C5", "C4", "C5"], "trend": "improving" }
+        ]
+      },
+      {
+        "studentId": "stud011",
+        "termHistory": [
+          { "term": "2023/24 Term 1", "gpa": 3.25, "credits": 6, "grade": "A1" },
+          { "term": "2023/24 Term 2", "gpa": 3.35, "credits": 6, "grade": "A1" },
+          { "term": "2023/24 Term 3", "gpa": 3.42, "credits": 6, "grade": "A1" },
+          { "term": "2024/25 Term 1", "gpa": 3.55, "credits": 6, "grade": "A1" },
+          { "term": "2024/25 Term 2", "gpa": 3.68, "credits": 6, "grade": "A1" }
+        ],
+        "subjectPerformance": [
+          { "subject": "General Agriculture", "grades": ["A1", "A1", "A1", "A1"], "trend": "stable" },
+          { "subject": "Mathematics", "grades": ["B2", "B2", "B2", "B3"], "trend": "declining" }
+        ]
+      },
+      {
+        "studentId": "stud012",
+        "termHistory": [
+          { "term": "2023/24 Term 1", "gpa": 2.95, "credits": 6, "grade": "B2" },
+          { "term": "2023/24 Term 2", "gpa": 3.05, "credits": 6, "grade": "B2" },
+          { "term": "2023/24 Term 3", "gpa": 3.12, "credits": 6, "grade": "B2" },
+          { "term": "2024/25 Term 1", "gpa": 3.18, "credits": 6, "grade": "B2" },
+          { "term": "2024/25 Term 2", "gpa": 3.22, "credits": 6, "grade": "B2" }
+        ],
+        "subjectPerformance": [
+          { "subject": "General Agriculture", "grades": ["B2", "B2", "B2", "B3"], "trend": "declining" },
+          { "subject": "Mathematics", "grades": ["B3", "B3", "B2", "B2"], "trend": "improving" }
+        ]
+      },
+      {
+        "studentId": "stud013",
+        "termHistory": [
+          { "term": "2023/24 Term 1", "gpa": 3.05, "credits": 6, "grade": "B3" },
+          { "term": "2023/24 Term 2", "gpa": 3.12, "credits": 6, "grade": "B2" },
+          { "term": "2023/24 Term 3", "gpa": 3.08, "credits": 6, "grade": "B2" },
+          { "term": "2024/25 Term 1", "gpa": 3.15, "credits": 6, "grade": "B2" },
+          { "term": "2024/25 Term 2", "gpa": 3.08, "credits": 6, "grade": "B3" }
+        ],
+        "subjectPerformance": [
+          { "subject": "General Agriculture", "grades": ["B3", "B2", "B3", "B2"], "trend": "stable" }
+        ]
+      },
+      {
+        "studentId": "stud014",
+        "termHistory": [
+          { "term": "2023/24 Term 1", "gpa": 3.02, "credits": 6, "grade": "B3" },
+          { "term": "2023/24 Term 2", "gpa": 2.98, "credits": 6, "grade": "B3" },
+          { "term": "2023/24 Term 3", "gpa": 3.05, "credits": 6, "grade": "B3" },
+          { "term": "2024/25 Term 1", "gpa": 2.95, "credits": 6, "grade": "B3" },
+          { "term": "2024/25 Term 2", "gpa": 3.02, "credits": 6, "grade": "B3" }
+        ],
+"subjectPerformance": [
+            { "subject": "General Agriculture", "grades": ["B3", "B3", "B3", "B3"], "trend": "stable" },
+            { "subject": "Mathematics", "grades": ["C4", "C5", "C4", "C5"], "trend": "stable" }
+          ]
+        }
+      ]
+   },
+   "teacher": {
+    "gradeRevisions": {
+      "items": [
+        {
+          "id": "rev001",
+          "student": "Angela Owusu",
+          "index": "001",
+          "class": "SHS 1 Agric B",
+          "subject": "General Agriculture",
+          "issue": "Grade revision requested - Revised after practical assessment review",
+          "status": "AWAITING_APPROVAL",
+          "severity": "MEDIUM",
+          "time": "2 hours ago",
+          "recordId": "rec001",
+          "history": [
+            {
+              "id": "h1",
+              "role": "TEACHER",
+              "user": "Mr. Kwame Mensah",
+              "message": "Revised after practical assessment review",
+              "time": "2 hours ago"
+            }
+          ]
+        }
+      ]
+    },
+    "classes": {
+      "items": [
+        { "id": "1", "subject": "General Agriculture", "className": "SHS 1 Agric B", "status": "Ready for Submission", "progress": 100, "studentCount": 38 },
+        { "id": "2", "subject": "Core Mathematics", "className": "SHS 1 Agric B", "status": "In Progress", "progress": 45, "studentCount": 38 },
+        { "id": "3", "subject": "English Language", "className": "SHS 1 Agric B", "status": "Not Started", "progress": 0, "studentCount": 38 }
+      ]
+    },
+    "observations": {
+      "items": [
+        { "id": "o1", "type": "Behavioral", "student": "Angela Owusu", "index": "001", "class": "SHS 1 Agric B", "date": "2026-05-14", "comment": "Exhibited high safety protocol compliance.", "status": "Active" },
+        { "id": "o2", "type": "Collaboration", "student": "Kwame Mensah", "index": "017", "class": "SHS 1 Agric B", "date": "2026-05-08", "comment": "Led the workshop group effectively.", "status": "Active" }
+      ]
+    }
+  },
+  "student": {
+    "portalStudents": [
+      { "id": "stud001", "studentName": "Angela Owusu", "indexNumber": "001", "program": "Agriculture", "cgpa": 2.86, "approvalStatus": "LOCKED" }
     ]
   }
 }

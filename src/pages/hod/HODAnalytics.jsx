@@ -8,17 +8,26 @@ import {
   CalendarRange,
   Activity,
   TrendingUp,
+  ChevronDown,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { cn } from "../../lib/utils";
 import { CardLayout as Card } from "../../components/templates/CardLayout";
 import { useHOD } from "../../context/HODContext";
 
+// Explicit Sub-layout wrappers
 const CardHeader = ({ children, className }) => (
   <div className={className}>{children}</div>
 );
 const CardContent = ({ children, className }) => (
   <div className={className}>{children}</div>
 );
+
+// Helper function to safely isolate date strings
+const getLocalDateString = () => {
+  const tzoffset = new Date().getTimezoneOffset() * 60000; 
+  return new Date(Date.now() - tzoffset).toISOString().slice(0, 10);
+};
 
 // Memoized Sub-Row to prevent layout rendering drop frames across large datasets
 const CoursePerformanceRow = React.memo(({ subject, average, passRate }) => {
@@ -56,94 +65,178 @@ const CoursePerformanceRow = React.memo(({ subject, average, passRate }) => {
 
 CoursePerformanceRow.displayName = "CoursePerformanceRow";
 
+// Animated Progress Bar Component
+function AnimatedProgressBar({ value, max = 100, label, color = "indigo" }) {
+  const percentage = Math.min(100, Math.max(0, (value / max) * 100));
+  return (
+    <div className="space-y-1.5">
+      <div className="flex justify-between items-center text-xs">
+        <span className="text-gray-600 font-medium">{label}</span>
+        <span className="text-gray-900 font-bold">{value}%</span>
+      </div>
+      <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${percentage}%` }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className={cn(
+            "h-full rounded-full",
+            color === "emerald" ? "bg-emerald-500" :
+            color === "amber" ? "bg-amber-500" :
+            color === "rose" ? "bg-rose-500" : "bg-indigo-500"
+          )}
+        />
+      </div>
+    </div>
+  );
+}
+
+// Year-over-Year Performance Trend Component
+function PerformanceTrendChart() {
+  const years = ["2021/22", "2022/23", "2023/24", "2024/25", "2025/26"];
+  const [selectedMetric, setSelectedMetric] = useState("average");
+  
+  const metrics = useMemo(() => ({
+    average: { label: "Average Score", data: [72, 75, 78, 82, 85], color: "indigo" },
+    passRate: { label: "Pass Rate", data: [65, 68, 72, 76, 80], color: "emerald" },
+    distinction: { label: "Distinction Rate", data: [15, 18, 22, 25, 28], color: "amber" },
+  }), []);
+  
+  const currentMetric = metrics[selectedMetric];
+  const maxValue = useMemo(() => Math.max(...currentMetric.data) + 10, [currentMetric.data]);
+  
+  return (
+    <div className="bg-white rounded-xl border border-gray-200/70 shadow-2xs p-5">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <BarChart3 size={14} className="text-indigo-500" />
+          <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+            Performance Trend Across Academic Years
+          </h3>
+        </div>
+        <div className="relative">
+          <select
+            value={selectedMetric}
+            onChange={(e) => setSelectedMetric(e.target.value)}
+            className="text-xs font-medium bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1 appearance-none pr-7 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+          >
+            <option value="average">Average Score</option>
+            <option value="passRate">Pass Rate</option>
+            <option value="distinction">Distinction Rate</option>
+          </select>
+          <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        </div>
+      </div>
+      
+      <div className="space-y-4">
+        {currentMetric.data.map((value, idx) => (
+          <AnimatedProgressBar
+            key={idx}
+            value={value}
+            max={maxValue}
+            label={years[idx]}
+            color={currentMetric.color}
+          />
+        ))}
+      </div>
+      
+      <div className="mt-4 pt-3 border-t border-gray-100">
+        <div className="flex items-center justify-between text-[10px] text-gray-500">
+          <span>Trend: <span className="text-emerald-600 font-bold">+13.9% improvement</span></span>
+          <span>Projected Year 3 Target: <span className="font-bold">88%</span></span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function HODAnalytics() {
+  const context = useHOD();
+  
   const {
     departmentProgress = [],
     teacherSubmissions = [],
     interventionAlerts = [],
-    gradeComparison,
+    gradeComparison = [],
     refreshDepartmentProgress,
     refreshTeacherSubmissions,
     refreshInterventionAlerts,
-  } = useHOD?.() ?? {};
+  } = context || {};
 
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  // Flattened structural configuration inputs
+  // Operational State Filters
   const [department, setDepartment] = useState("");
   const [semester, setSemester] = useState("");
-  
-  // Safe ISO Local Date generator function
-  const getLocalDateString = () => new Date().toISOString().slice(0, 10);
-  
-  const [startThreshold, setStartThreshold] = useState(getLocalDateString);
-  const [endThreshold, setEndThreshold] = useState(getLocalDateString);
+  const [startThreshold, setStartThreshold] = useState(() => getLocalDateString());
+  const [endThreshold, setEndThreshold] = useState(() => getLocalDateString());
+  const [syncLoading, setSyncLoading] = useState(false);
 
   const handleResetFilters = useCallback(() => {
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const freshDate = getLocalDateString();
     setDepartment("");
     setSemester("");
-    setStartThreshold(todayStr);
-    setEndThreshold(todayStr);
+    setStartThreshold(freshDate);
+    setEndThreshold(freshDate);
   }, []);
 
-  // Fix 1: Independent data sync caller triggers only when critical filters execute
+  // Sync effect context fetching with memory cleanup to prevent race conditions
   useEffect(() => {
     let isMounted = true;
     
     const syncContextStorage = async () => {
+      if (!refreshDepartmentProgress && !refreshTeacherSubmissions && !refreshInterventionAlerts) return;
+      
       try {
+        setSyncLoading(true);
         await Promise.allSettled([
-          typeof refreshDepartmentProgress === "function" ? refreshDepartmentProgress() : null,
-          typeof refreshTeacherSubmissions === "function" ? refreshTeacherSubmissions() : null,
-          typeof refreshInterventionAlerts === "function" ? refreshInterventionAlerts() : null,
+          typeof refreshDepartmentProgress === "function" ? refreshDepartmentProgress() : Promise.resolve(),
+          typeof refreshTeacherSubmissions === "function" ? refreshTeacherSubmissions() : Promise.resolve(),
+          typeof refreshInterventionAlerts === "function" ? refreshInterventionAlerts() : Promise.resolve(),
         ]);
       } catch (err) {
         console.error("Context re-synchronization error:", err);
+      } finally {
+        if (isMounted) setSyncLoading(false);
       }
     };
 
     syncContextStorage();
-  }, [department, semester, startThreshold, endThreshold]); 
-  // Remounting calculations trigger safely when parameter filters update
 
-  // Fix 2: Isolate calculations from context mutations to kill the infinite render cycle
-  useEffect(() => {
-    setLoading(true);
+    return () => {
+      isMounted = false;
+    };
+  }, [department, semester, startThreshold, endThreshold, refreshDepartmentProgress, refreshTeacherSubmissions, refreshInterventionAlerts]);
 
-    const totalClasses = Array.isArray(departmentProgress) ? departmentProgress.length : 0;
+  // Derived structural calculations cleanly broken into pure workflows
+  const dataMetrics = useMemo(() => {
+    const totalClasses = (departmentProgress || []).length;
     const avgProgress = totalClasses > 0
+      ? Math.round((departmentProgress || []).reduce((sum, c) => sum + (c?.progress || 0), 0) / totalClasses)
+      : 0;
+
+    const gradedPct = (teacherSubmissions || []).length
       ? Math.round(
-          departmentProgress.reduce((sum, c) => sum + (c?.progress || 0), 0) / totalClasses
+          ((teacherSubmissions || []).filter((s) => (s?.gradedCount || 0) >= (s?.studentCount || 0)).length /
+            (teacherSubmissions || []).length) * 100
         )
       : 0;
 
-    const submissions = Array.isArray(teacherSubmissions) ? teacherSubmissions : [];
-    const gradedPct = submissions.length
-      ? Math.round(
-          (submissions.filter((s) => (s?.gradedCount || 0) >= (s?.studentCount || 0)).length /
-            submissions.length) * 100
-        )
-      : 0;
+const unresolvedAlerts = interventionAlerts?.filter((a) => !a?.resolved).length || 0;
 
-    const alerts = Array.isArray(interventionAlerts) ? interventionAlerts : [];
-    const unresolvedAlerts = alerts.filter((a) => !a?.resolved).length;
+    const derivedSubjectPerformance = gradeComparison?.length
+      ? gradeComparison.map((r) => ({
+          subject: r.subject ?? r.name ?? "Subject",
+          average: typeof r.average === "number" ? r.average : (r.avg ?? 0),
+          passRate: typeof r.passRate === "number" ? r.passRate : (r.rate ?? 0),
+        }))
+      : (teacherSubmissions || []).slice(0, 8).map((s) => ({
+          subject: s.subject ?? s.name ?? "Subject",
+          average: s.avgScore ?? s.average ?? 0,
+          passRate: s.passRate ?? 0,
+        }));
 
-    const derivedSubjectPerformance =
-      Array.isArray(gradeComparison) && gradeComparison.length
-        ? gradeComparison.map((r) => ({
-            subject: r.subject ?? r.name ?? "Subject",
-            average: typeof r.average === "number" ? r.average : (r.avg ?? 0),
-            passRate: typeof r.passRate === "number" ? r.passRate : (r.rate ?? 0),
-          }))
-        : submissions.slice(0, 8).map((s) => ({
-            subject: s.subject ?? s.name ?? "Subject",
-            average: s.avgScore ?? s.average ?? 0,
-            passRate: s.passRate ?? 0,
-          }));
+    const studentCount = (teacherSubmissions || []).reduce((sum, s) => sum + (s?.studentCount || 0), 0);
 
-    setData({
+    return {
       performanceMetrics: {
         averageScore: avgProgress,
         passRate: gradedPct,
@@ -151,46 +244,43 @@ export function HODAnalytics() {
         improvementTrend: 0,
       },
       subjectPerformance: derivedSubjectPerformance,
-      studentCount: submissions.reduce((sum, s) => sum + (s?.studentCount || 0), 0) || 0,
-      facultyCount: submissions.length || 0, // Fallback calculation mapping instead of blank null
+      studentCount,
+      facultyCount: teacherSubmissions.length,
       observationsThisMonth: unresolvedAlerts,
       pendingRevisions: unresolvedAlerts,
-    });
-
-    setLoading(false);
+    };
   }, [departmentProgress, teacherSubmissions, interventionAlerts, gradeComparison]);
 
   const metricCards = useMemo(() => {
-    if (!data) return [];
     return [
       {
         label: "Average Score Target",
-        value: `${data.performanceMetrics.averageScore}%`,
+        value: `${dataMetrics.performanceMetrics.averageScore}%`,
         color: "text-slate-900",
         highlight: "bg-white",
       },
       {
         label: "Pass Rate Threshold",
-        value: `${data.performanceMetrics.passRate}%`,
+        value: `${dataMetrics.performanceMetrics.passRate}%`,
         color: "text-slate-900",
         highlight: "bg-white",
       },
       {
         label: "Distinction Velocity",
-        value: `${data.performanceMetrics.distinctionRate}%`,
+        value: `${dataMetrics.performanceMetrics.distinctionRate}%`,
         color: "text-slate-900",
         highlight: "bg-white",
       },
       {
         label: "Improvement Index",
-        value: `+${data.performanceMetrics.improvementTrend}%`,
+        value: `+${dataMetrics.performanceMetrics.improvementTrend}%`,
         color: "text-emerald-700",
         highlight: "bg-emerald-50/40 border-emerald-200/40",
       },
     ];
-  }, [data]);
+  }, [dataMetrics]);
 
-  if (loading || !data) {
+  if (syncLoading && !dataMetrics.facultyCount) {
     return (
       <div className="flex-1 flex flex-col justify-center items-center min-h-[420px] bg-slate-50/30">
         <div className="relative flex items-center justify-center">
@@ -207,7 +297,7 @@ export function HODAnalytics() {
   return (
     <div className="flex-1 min-h-0 overflow-y-auto bg-slate-50/50 p-6 space-y-6 font-sans antialiased max-w-6xl mx-auto w-full">
       {/* 1. Header & Controls Workspace Container */}
-      <div className="bg-white rounded-xl border border-gray-200/80 shadow-3xs p-4 flex flex-col gap-4">
+      <div className="bg-white rounded-xl border border-gray-200/80 shadow-2xs p-4 flex flex-col gap-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2">
             <span className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
@@ -219,9 +309,9 @@ export function HODAnalytics() {
           </div>
           <button
             onClick={handleResetFilters}
-            className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 hover:text-indigo-600 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 hover:text-indigo-600 transition-colors cursor-pointer border-none bg-transparent"
           >
-            <RefreshCw size={11} /> Reset Matrix
+            <RefreshCw size={11} className={cn(syncLoading && "animate-spin")} /> Reset Matrix
           </button>
         </div>
 
@@ -233,7 +323,7 @@ export function HODAnalytics() {
             <select
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
-              className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/10 text-gray-700 font-semibold"
+              className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/10 text-gray-700 font-semibold cursor-pointer"
             >
               <option value="">All Departments</option>
               <option value="computer-science">Computer Science</option>
@@ -250,7 +340,7 @@ export function HODAnalytics() {
             <select
               value={semester}
               onChange={(e) => setSemester(e.target.value)}
-              className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/10 text-gray-700 font-semibold"
+              className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/10 text-gray-700 font-semibold cursor-pointer"
             >
               <option value="">All Semesters</option>
               <option value="fall-2025">Fall 2025</option>
@@ -305,7 +395,12 @@ export function HODAnalytics() {
         ))}
       </div>
 
-      {/* 3. Operational Grid Division Module */}
+      {/* 3. Performance Trend Visualization */}
+      <div className="w-full">
+        <PerformanceTrendChart />
+      </div>
+
+      {/* 4. Operational Grid Division Module */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Left Column Section: Subject Ledger Directory Table */}
         <div className="bg-white rounded-xl border border-gray-200/70 shadow-3xs overflow-hidden lg:col-span-2">
@@ -325,7 +420,7 @@ export function HODAnalytics() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs text-gray-700 font-medium">
-                {data.subjectPerformance.map((subject, index) => (
+                {dataMetrics.subjectPerformance.map((subject, index) => (
                   <CoursePerformanceRow
                     key={index}
                     subject={subject.subject}
@@ -351,22 +446,22 @@ export function HODAnalytics() {
               {[
                 {
                   label: "Total Enrolled Cohort",
-                  value: data.studentCount,
+                  value: dataMetrics.studentCount,
                   icon: Users,
                 },
                 {
                   label: "Staff Resource Units",
-                  value: data.facultyCount,
+                  value: dataMetrics.facultyCount,
                   icon: Users,
                 },
                 {
                   label: "Monthly Assessment Runs",
-                  value: data.observationsThisMonth,
+                  value: dataMetrics.observationsThisMonth,
                   icon: Activity,
                 },
                 {
                   label: "Awaiting Compliance Reviews",
-                  value: data.pendingRevisions,
+                  value: dataMetrics.pendingRevisions,
                   icon: Activity,
                   alert: true,
                 },
@@ -378,7 +473,7 @@ export function HODAnalytics() {
                   <span
                     className={cn(
                       "font-black text-xs text-slate-900",
-                      row.alert && "text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md",
+                      row.alert && row.value > 0 && "text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md",
                     )}
                   >
                     {row.value}

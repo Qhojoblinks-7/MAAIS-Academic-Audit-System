@@ -6,7 +6,7 @@ import { cn } from '../../lib/utils';
 const revisions = [
   {
     id: '1',
-    studentName: 'Angela Efia Owusu',
+    studentName: 'Angela Owusu',
     class: 'SHS 1 Agric B',
     comment: 'Please review the latest test score',
     time: '58 sec ago',
@@ -14,7 +14,7 @@ const revisions = [
   },
   {
     id: '2',
-    studentName: 'Angela Efia Owusu',
+    studentName: 'Angela Owusu',
     class: 'SHS 1 Agric B',
     comment: 'Please review the latest test score',
     time: '58 sec ago',
@@ -22,7 +22,7 @@ const revisions = [
   },
   {
     id: '3',
-    studentName: 'Angela Efia Owusu',
+    studentName: 'Angela Owusu',
     class: 'SHS 1 Agric B',
     comment: 'Please review the latest test score',
     time: '58 sec ago',
@@ -33,19 +33,19 @@ const revisions = [
 const atRiskStudents = [
   {
     id: '1',
-    name: 'Angela Efia Owusu',
+    name: 'Angela Owusu',
     index: '10001',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Angela',
   },
   {
     id: '2',
-    name: 'Angela Efia Owusu',
+    name: 'Angela Owusu',
     index: '10001',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Angela',
   },
   {
     id: '3',
-    name: 'Angela Efia Owusu',
+    name: 'Angela Owusu',
     index: '10001',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Angela',
   },

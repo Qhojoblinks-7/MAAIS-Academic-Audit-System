@@ -25,14 +25,19 @@ function KanbanCard({ ticket, actions }) {
       dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
       className="bg-white rounded-xl border border-gray-200 p-3 cursor-grab active:cursor-grabbing"
     >
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <AlertSeverityChip severity={ticket.priority || ticket.severity || 'MEDIUM'} />
-        {ticket.updatedAt && (
-          <span className="text-[9px] text-gray-400">
-            {new Date(ticket.updatedAt).toLocaleDateString()}
-          </span>
-        )}
-      </div>
+       <div className="flex items-start justify-between gap-2 mb-2">
+         <AlertSeverityChip severity={ticket.priority || ticket.severity || 'MEDIUM'} />
+         {ticket.updatedAt && (
+           <span className="text-[9px] text-gray-400">
+             {new Date(ticket.updatedAt).toLocaleDateString()}
+           </span>
+         )}
+         {ticket.createdAt && ticket.status !== 'RESOLVED' && isTicketSLABreach(ticket.createdAt) && (
+           <span className="text-[9px] text-red-500 ml-1" title="SLA breached">
+             <AlertTriangle size={10} />
+           </span>
+         )}
+       </div>
       <h4 className="text-xs font-semibold text-gray-900 mb-1">{ticket.subject || 'Untitled'}</h4>
       {ticket.description && (
         <p className="text-[10px] text-gray-500 mb-2 line-clamp-2">
@@ -80,7 +85,7 @@ export function SupportTicketKanban({
   columns = TICKET_COLUMNS,
   className,
 }) {
-  const { supportTickets, getFilteredTickets, ticketTabs, setTicketTabs, updateTicketAction, escalateTicketAction, createTicket, isLoading } = useHOD();
+  const { supportTickets, getFilteredTickets, ticketTabs, setTicketTabs, updateTicketAction, escalateTicketAction, createTicket, isLoading, isTicketSLABreach } = useHOD();
   const tickets = controlledTickets ?? supportTickets;
   const filtered = getFilteredTickets(tickets);
 

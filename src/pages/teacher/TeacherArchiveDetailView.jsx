@@ -1,255 +1,480 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Lock } from "lucide-react";
-import { GradingSheet } from "../shared/GradingSheet";
-import { useRole } from "../../context/RoleContext";
-import MOCK from "../../data/teacherMockData.json";
+import React from 'react';
+import { motion } from 'framer-motion';
+import { 
+  FileText, 
+  Printer, 
+  ShieldCheck, 
+  User, 
+  Database, 
+  TrendingUp, 
+  History, 
+  CheckCircle2, 
+  ArrowLeft, 
+  Calendar,
+  Lock,
+  Bot,
+  Award
+} from 'lucide-react';
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer 
+} from 'recharts';
+import { cn } from '../../lib/utils';
 
-const SKELETON_ARCHIVED_RECORDS = MOCK?.skeletonArchivedRecords?.items || [];
-
-const SUBJECT_CONFIG = {
-  "General Agriculture": {
-    sections: ["Paper 1 (50)", "Paper 2-Agri (90)", "Paper 3-Pract (60)"],
-    maxRaw: 200,
-    sectionCount: 3,
-    hasPractical: true,
-    practicalMarks: 60,
-    sbaLabel: "SBA (30%)",
-    examLabel: "Exam (70%)",
-  },
-  "Animal Science": {
-    sections: ["Paper 1 (50)", "Paper 2-Agri (90)", "Paper 3-Pract (60)"],
-    maxRaw: 200,
-    sectionCount: 3,
-    hasPractical: true,
-    practicalMarks: 60,
-    sbaLabel: "SBA (30%)",
-    examLabel: "Exam (70%)",
-  },
-  "Integrated Science": {
-    sections: ["Sec A (40)", "Sec B (60)"],
-    maxRaw: 100,
-    sectionCount: 2,
-    hasPractical: false,
-    practicalMarks: 0,
-    sbaLabel: "SBA (30%)",
-    examLabel: "Exam (70%)",
-  },
-  Mathematics: {
-    sections: ["Sec A (40)", "Sec B (60)"],
-    maxRaw: 100,
-    sectionCount: 2,
-    hasPractical: false,
-    practicalMarks: 0,
-    sbaLabel: "SBA (30%)",
-    examLabel: "Exam (70%)",
-  },
+// Helper to calculate WAEC Grade
+const getWAECGrade = (score) => {
+  if (score >= 80) return { grade: 'A1', label: 'Excellent', color: 'bg-[#F9F9F7] text-slate-900 border-slate-300 font-black' };
+  if (score >= 70) return { grade: 'B2', label: 'Very Good', color: 'bg-slate-50 text-slate-800 border-slate-200' };
+  if (score >= 65) return { grade: 'B3', label: 'Good', color: 'bg-slate-50 text-slate-850 border-slate-200' };
+  if (score >= 60) return { grade: 'C4', label: 'Credit', color: 'bg-slate-100/50 text-slate-700 border-slate-200' };
+  if (score >= 55) return { grade: 'C5', label: 'Credit', color: 'bg-slate-100/50 text-slate-700 border-slate-200' };
+  if (score >= 50) return { grade: 'C6', label: 'Credit', color: 'bg-slate-100/50 text-slate-700 border-slate-200' };
+  if (score >= 45) return { grade: 'D7', label: 'Pass', color: 'bg-amber-50/50 text-amber-800 border-amber-200' };
+  if (score >= 40) return { grade: 'E8', label: 'Pass', color: 'bg-orange-50/50 text-orange-850 border-orange-200' };
+  return { grade: 'F9', label: 'Fail', color: 'bg-rose-50 text-rose-800 border-rose-250' };
 };
 
-const ARCHIVE_STUDENTS = {
-  t1: [
-    {
-      id: "001",
-      name: "Angela Owusu",
-      index: "001",
-      form: "SHS 3",
-      programme: "AGRICULTURE",
-      secA: 35,
-      secB: 50,
-      secC: 38,
-      sba: 28.5,
-      exam: 61.5,
-      final: 90.0,
-      grade: "A1",
-    },
-    {
-      id: "003",
-      name: "Yaw Boateng",
-      index: "003",
-      form: "SHS 3",
-      programme: "AGRICULTURE",
-      secA: 35,
-      secB: 50,
-      secC: 38,
-      sba: 28.5,
-      exam: 61.5,
-      final: 90.0,
-      grade: "A1",
-    },
-    {
-      id: "004",
-      name: "Esi Ansah",
-      index: "004",
-      form: "SHS 3",
-      programme: "AGRICULTURE",
-      secA: 32,
-      secB: 48,
-      secC: 35,
-      sba: 26.0,
-      exam: 55.0,
-      final: 81.0,
-      grade: "A1",
-    },
-    {
-      id: "009",
-      name: "Ama Serwaa",
-      index: "009",
-      form: "SHS 3",
-      programme: "AGRICULTURE",
-      secA: 30,
-      secB: 40,
-      secC: 35,
-      sba: 25.0,
-      exam: 50.0,
-      final: 75.0,
-      grade: "A1",
-    },
-  ],
-};
+export function TeacherArchiveDetailView({ student, onBack }) {
+  const [showToast, setShowToast] = React.useState(null);
 
-const getArchiveRecord = (id) =>
-  SKELETON_ARCHIVED_RECORDS.find((r) => r.id === id);
+  const triggerToast = (msg) => {
+    setShowToast(msg);
+    setTimeout(() => setShowToast(null), 3000);
+  };
 
-const getMockStudents = (record) => {
-  if (!record) return [];
-  const key = record.subject.toLowerCase().includes("agric")
-    ? "General Agriculture"
-    : record.subject.toLowerCase().includes("animal")
-      ? "Animal Science"
-      : record.subject.toLowerCase().includes("math")
-        ? "Mathematics"
-        : record.subject.toLowerCase().includes("science")
-          ? "Integrated Science"
-          : null;
-  return key && ARCHIVE_STUDENTS["t1"]
-    ? ARCHIVE_STUDENTS["t1"].map((s) => ({ ...s, subject: key }))
-    : ARCHIVE_STUDENTS["t1"] || [];
-};
-
-export function TeacherArchiveDetailView() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { user } = useRole();
-  const [record, setRecord] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchArchive = async () => {
-      if (!user?.id || !id) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const response = await fetch(
-          `/api/archive/teacher/${id}?teacher_id=${encodeURIComponent(user.id)}`,
-        );
-        setRecord(
-          response.ok
-            ? (await response.json()).record || getArchiveRecord(id)
-            : getArchiveRecord(id),
-        );
-      } catch (err) {
-        setRecord(getArchiveRecord(id));
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchArchive();
-  }, [user?.id, id]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
-        <div className="w-6 h-6 border-2 border-slate-300 border-t-slate-800 rounded-full animate-spin mb-3" />
-        <p className="text-xs font-medium text-slate-400">
-          Opening archive workspace...
-        </p>
-      </div>
-    );
-  }
-
-  if (!record) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4">
-        <p className="text-sm font-medium text-slate-500">
-          Archive record not found
-        </p>
-        <button
-          onClick={() => navigate("/teacher/archive")}
-          className="mt-4 px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-lg"
-        >
-          Back to Archive
-        </button>
-      </div>
-    );
-  }
-
-  const subjectKey = record.subject.includes("Mathematics")
-    ? "Mathematics"
-    : record.subject.includes("Animal")
-      ? "Animal Science"
-      : record.subject.includes("Science")
-        ? "Integrated Science"
-        : "General Agriculture";
+  const scores = student.history.map(h => h.finalGrade);
+  const averageGpa = scores.length > 0 ? (scores.reduce((acc, s) => acc + s, 0) / scores.length).toFixed(1) : 'No Terms';
+  const highestTerminal = scores.length > 0 ? Math.max(...scores) : 'N/A';
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50/50 antialiased">
-      {/* Context Bar */}
-      <header className="bg-white border-b border-slate-200/80 sticky top-0 z-10 backdrop-blur-md bg-white/95">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate("/teacher/archive")}
-              className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+    <div className="flex-1 overflow-y-auto bg-slate-50/40 relative no-scrollbar pb-24 h-full">
+      {/* Dynamic Toast Alerts */}
+      {showToast && (
+        <div className="fixed bottom-8 right-8 bg-slate-900 border border-slate-800 text-white px-6 py-4 rounded-2xl shadow-xl z-50 flex items-center gap-3 text-xs font-black tracking-wide animate-bounce">
+          <ShieldCheck className="text-emerald-400" size={16} />
+          {showToast}
+        </div>
+      )}
+
+      {/* Header Panel */}
+      <div className="bg-white border-b border-slate-200/60 sticky top-0 z-30 shadow-sm/30">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={onBack}
+              className="p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl text-slate-600 border border-slate-200/60 transition-all flex items-center justify-center outline-none"
+              title="Return to department archives"
             >
-              <ArrowLeft size={16} />
+              <ArrowLeft size={18} />
             </button>
-            <div className="h-4 w-[1px] bg-slate-200" />
-            <div className="flex items-baseline gap-2">
-              <h1 className="text-sm font-bold text-slate-900">
-                {record.subject}
-              </h1>
-              <span className="text-xs text-slate-400 font-medium">
-                ({record.class} •{" "}
-                {record.year || record.academicYear || "2023/2024"})
+            <div>
+              <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] bg-slate-100 px-2 py-1 rounded inline-flex items-center gap-1">
+                <Lock size={10} /> Faculty Archive Ledger (Frozen)
               </span>
+              <h2 className="text-xl font-bold text-slate-900 tracking-tight mt-1 flex items-center gap-2 font-sans">
+                Longitudinal Portfolio: <span className="italic font-display font-medium text-slate-700">{student.name}</span>
+              </h2>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 text-slate-600 text-[11px] font-medium rounded-md border border-slate-200">
-            <Lock size={12} className="text-slate-400" />
-            <span>Read-Only</span>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => triggerToast("Compiling full alumni academic report...")}
+              className="flex items-center gap-2 px-5 py-3 bg-slate-900 border border-slate-800 text-white rounded-2xl text-xs font-black hover:bg-slate-800 transition-all shadow-md outline-none"
+            >
+              <Printer size={15} />
+              Export Verified Transcript
+            </button>
           </div>
         </div>
-      </header>
+      </div>
 
-      {/* Main Workspace */}
-      <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col">
-        <div className="bg-white border border-slate-200/80 rounded-xl shadow-xs flex-1">
-          <GradingSheet
-            classInfo={{
-              id: record.id,
-              subject: subjectKey,
-              className: record.class,
-              programme: "AGRICULTURE",
-              studentCount: record.students,
-              form: "SHS 3",
-              academicYear: record.year || record.academicYear || "2023/2024",
-            }}
-            students={getMockStudents(record)}
-            subjectConfig={SUBJECT_CONFIG}
-            stpRules={[
-              {
-                check: (s) => s.final > 100,
-                message: "Final score exceeds 100%",
-              },
-              { check: (s) => s.sba > 30, message: "SBA exceeds 30% limit" },
-              { check: (s) => s.exam > 70, message: "Exam exceeds 70% limit" },
-            ]}
-            isTermFinalized={true}
-          />
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8 space-y-8">
+        
+        {/* Quick Biographical Summary Banner */}
+        <div className="bg-white rounded-[2.5rem] border border-slate-200/60 p-8 shadow-sm relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 z-10">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+          
+          <div className="flex flex-col md:flex-row items-center gap-6 relative">
+            <div className="relative">
+              <img 
+                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${student.name}`} 
+                alt={student.name} 
+                className="w-24 h-24 rounded-[2rem] bg-slate-50 p-1 border-4 border-slate-100 shadow-md"
+              />
+              <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-xl flex items-center justify-center text-white shadow-lg border-2 border-white bg-slate-900">
+                <ShieldCheck size={16} />
+              </div>
+            </div>
+
+            <div className="text-center md:text-left">
+              <div className="flex items-center justify-center md:justify-start gap-3">
+                <span className="px-2.5 py-0.5 bg-slate-100 rounded-lg text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">{student.index}</span>
+                <span className="px-2.5 py-0.5 bg-slate-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest">Class of {student.graduationYear}</span>
+              </div>
+              <h1 className="text-3xl font-black text-slate-900 tracking-tighter mt-2">{student.name}</h1>
+              <p className="text-slate-400 font-bold text-xs mt-1 uppercase tracking-wider font-sans">
+                Stream: {student.currentClass} • Performance Rank: <span className="text-slate-900 font-extrabold">{student.consistencyScore}</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full md:w-auto self-stretch md:self-center relative">
+            {[
+              { label: 'Longitudinal GPA', val: `${averageGpa}%`, note: 'Overall 3-year mean' },
+              { label: 'Highest Cycle Grade', val: `${highestTerminal}%`, note: 'Peak score achievement' },
+              { label: 'WASSCE Certificate', val: student.finalWassce, note: 'National exam output' },
+              { label: 'Vault Security', val: 'SEALED & LOCKED', note: 'Tamper-proof status', accent: true }
+            ].map((stat, i) => (
+              <div key={i} className="bg-slate-50/80 border border-slate-100 rounded-2xl px-5 py-4 min-w-[130px] flex flex-col justify-between shadow-sm">
+                <p className="text-[9px] font-black text-slate-405 uppercase tracking-widest">{stat.label}</p>
+                <p className={cn(
+                  "text-xl font-black tracking-tight mt-1 text-slate-900",
+                  stat.accent && "text-emerald-700 bg-none font-black text-xs"
+                )}>{stat.val}</p>
+                <p className="text-[9px] font-semibold text-slate-400 mt-1 leading-none">{stat.note}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </main>
+
+        {/* Section 1: Dynamic Performance Trend Graph */}
+        <section className="bg-white rounded-[2.5rem] border border-slate-200/60 p-8 shadow-sm">
+          <header className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-900">
+                <TrendingUp size={20} />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest font-sans">1. Completed Longitudinal Grade Progression</h3>
+                <p className="text-[10px] font-bold text-slate-400 uppercase">3-Year High School Grade Mapping</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg text-[9px] font-black text-slate-600 uppercase tracking-wider">
+              <Bot size={13} className="text-slate-900" />
+              Historic Grade Ledger Map
+            </div>
+          </header>
+
+          {student.history.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 bg-slate-50/50 border border-slate-200/50 rounded-3xl text-center">
+              <History size={36} className="text-slate-300 mb-2" />
+              <p className="text-xs font-black text-slate-800 uppercase tracking-widest">No Past Terms Archived Yet</p>
+              <p className="text-[10px] text-slate-450 uppercase font-black tracking-wider mt-1">This student is currently in SHS 1. Archives compile starting in Form 2.</p>
+            </div>
+          ) : (
+            <div className="h-[300px] w-full pt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={student.history}>
+                  <defs>
+                    <linearGradient id="teacherTrendGlow" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#0f172a" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#0f172a" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e2e8f0" />
+                  <XAxis 
+                    dataKey="term" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fontSize: 9, fontWeight: 900, fill: '#64748b' }} 
+                    dy={8} 
+                  />
+                  <YAxis 
+                    domain={[30, 100]} 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fontSize: 9, fontWeight: 900, fill: '#64748b' }} 
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#0f172a', 
+                      borderRadius: '16px', 
+                      border: 'none', 
+                      color: 'white', 
+                      fontSize: '11px',
+                      fontWeight: 900,
+                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+                    }}
+                    formatter={(value) => [`${value}%`, 'Grade Average']}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="finalGrade" 
+                    stroke="#0f172a" 
+                    strokeWidth={5} 
+                    fillOpacity={1} 
+                    fill="url(#teacherTrendGlow)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </section>
+
+        {/* Section 2: Terminal Assessment Breakdowns --> Subject Grades */}
+        <section className="space-y-6">
+          <header className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-900">
+              <FileText size={20} />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest font-sans">2. Terminal Assessment Sheets Archive (General Agric Scope)</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase">Scoped instructor ledger: Displaying performance data specific to General Agric streams</p>
+            </div>
+          </header>
+
+          {student.history.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 bg-white border border-slate-200/60 rounded-[2.5rem] shadow-sm text-center w-full">
+              <FileText size={32} className="text-slate-300 mb-2 font-sans" />
+              <p className="text-xs font-black text-slate-800 uppercase tracking-widest">No Terminal Assessment Dossiers</p>
+              <p className="text-[10px] text-slate-450 uppercase font-bold mt-1">Student dossier is active, but first-year high school quarters have not yet completed for archival storage.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {student.history.map((term, tIdx) => (
+                <div key={term.term} className="bg-white rounded-3xl border border-slate-200/60 overflow-hidden flex flex-col shadow-sm">
+                  
+                  {/* Upper bar */}
+                  <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-md">
+                        {tIdx + 1}
+                      </div>
+                      <div>
+                        <h4 className="text-[12px] font-black text-slate-900 uppercase tracking-wider">{term.term} Journal</h4>
+                        <p className="text-[8px] font-bold text-slate-400 uppercase">Phase verified</p>
+                      </div>
+                    </div>
+                    <span className="text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border bg-emerald-50 text-emerald-800 border-emerald-100">
+                      Sealed Record
+                    </span>
+                  </div>
+
+                  {/* Subject Grade Table */}
+                  <div className="p-4 overflow-x-auto no-scrollbar">
+                    <table className="w-full text-left min-w-[280px]">
+                      <thead>
+                        <tr className="text-[8px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                          <th className="pb-3 pl-2">Subject</th>
+                          <th className="pb-3 text-center">Class (30)</th>
+                          <th className="pb-3 text-center">Exam (70)</th>
+                          <th className="pb-3 text-center">Grade</th>
+                          <th className="pb-3 text-right pr-2 font-black italic">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {['General Agric (Theory)', 'General Agric (Practical)'].map((subj, sIdx) => {
+                          const baseGrade = term.finalGrade || 70;
+                          const classScore = Math.round((baseGrade * 0.3) + (sIdx % 2 === 0 ? 1 : -3));
+                          const examScore = Math.round((baseGrade * 0.7) + (sIdx % 3 === 0 ? -1 : 3));
+                          const totalScore = Math.min(100, Math.max(0, classScore + examScore));
+                          const calculatedGrade = getWAECGrade(totalScore);
+
+                          return (
+                            <tr key={subj} className="hover:bg-slate-50/50 transition-all text-[11px] font-medium text-slate-600">
+                              <td className="py-3 pl-2 font-semibold text-slate-800 leading-tight">
+                                {subj}
+                              </td>
+                              <td className="py-3 text-center font-mono text-slate-500">
+                                {classScore}
+                              </td>
+                              <td className="py-3 text-center font-mono text-slate-500">
+                                {examScore}
+                              </td>
+                              <td className="py-3 text-center">
+                                <span className={cn(
+                                  "px-2 py-0.5 text-[9px] rounded-md border",
+                                  calculatedGrade.color
+                                )}>
+                                  {calculatedGrade.grade}
+                                </span>
+                              </td>
+                              <td className="py-3 text-right pr-2 font-extrabold font-mono text-slate-900">
+                                {totalScore}%
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Term Aggregate Summary Footer */}
+                  <div className="bg-slate-50/30 border-t border-slate-100 p-4.5 flex items-center justify-between text-slate-500 text-xs mt-auto">
+                    <div>
+                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Behavior Rating:</span>
+                      <span className="ml-1 text-slate-800 font-extrabold">
+                        {Array.from({ length: 5 }).map((_, idx) => (
+                          <span 
+                            key={idx} 
+                            className={cn(
+                              "text-base leading-none", 
+                              idx < (term.behaviorRating || 3) ? "text-slate-900" : "text-slate-200"
+                            )}
+                          >
+                            ★
+                          </span>
+                        ))}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block leading-none">Journal Average</span>
+                      <span className="text-sm font-black text-slate-900 italic font-mono mt-0.5 block">{term.finalGrade}%</span>
+                    </div>
+                  </div>
+
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Section 3: Observational Diaries & Remedial Intervention Logs */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
+          {/* Observation Logs */}
+          <section className="bg-white rounded-[2.5rem] border border-slate-200/60 p-8 shadow-sm flex flex-col justify-between">
+            <div>
+              <header className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-900">
+                    <History size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest font-sans">3. Student Observation Journal</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">Qualitative Teacher Diaries</p>
+                  </div>
+                </div>
+                
+                <span className="px-3 py-1 bg-slate-100 text-slate-500 font-extrabold text-[9px] rounded-lg tracking-wider border border-slate-200 uppercase">
+                  Locked Vault Link
+                </span>
+              </header>
+
+              <div className="space-y-4">
+                {student.observations && student.observations.length > 0 ? (
+                  student.observations.map((obs) => (
+                    <div key={obs.id} className="p-5 bg-slate-50/60 border-l-4 border-slate-900 border-y border-r border-slate-150 rounded-r-2xl">
+                      <div className="flex justify-between items-center mb-1.5">
+                        <span className="text-[8px] font-black text-slate-800 bg-slate-200 px-2 py-0.5 rounded uppercase">{obs.type}</span>
+                        <span className="text-[8px] font-bold text-slate-400 font-mono">{obs.date}</span>
+                      </div>
+                      <p className="text-xs font-semibold leading-relaxed text-slate-700 italic">"{obs.comment}"</p>
+                      <p className="text-[8px] font-black text-slate-450 mt-2 uppercase tracking-wide">— Signed: Instructor {obs.teacherName}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-slate-400 text-center italic py-8">No qualitative academic observations logged for this record cycle.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-8 bg-slate-50/50 p-4 border border-slate-100 rounded-2xl flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-slate-900 shrink-0 animate-pulse" />
+              <p className="text-[10px] font-extrabold text-slate-400 uppercase leading-normal">Compliance Guard: Archives are read-only and sealed for record security under MAAIS Protocol.</p>
+            </div>
+          </section>
+
+          {/* Intervention Logs & Certificates of Clearance */}
+          <section className="bg-white rounded-[2.5rem] border border-slate-200/60 p-8 shadow-sm flex flex-col justify-between">
+            <div>
+              <header className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-900">
+                    <Award size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest font-sans">4. Remedial Coaching & Interventions</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">Interactive counseling and training logs</p>
+                  </div>
+                </div>
+
+                <span className="px-3 py-1 bg-slate-100 text-slate-500 font-extrabold text-[9px] rounded-lg tracking-wider border border-slate-200 uppercase">
+                  Archived State
+                </span>
+              </header>
+
+              <div className="space-y-4">
+                {student.interventions && student.interventions.length > 0 ? (
+                  student.interventions.map((int) => (
+                    <div key={int.id} className="bg-slate-50/60 border border-slate-205 p-6 rounded-2xl flex flex-col justify-between hover:border-slate-300 transition-all">
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-[8px] font-black text-slate-700 bg-slate-200 px-2.5 py-1 rounded">REMEDIAL REGISTRY FILE</span>
+                          <span className="text-[8px] font-bold text-slate-450 uppercase">{int.term}</span>
+                        </div>
+                        <p className="text-xs font-bold text-slate-800 tracking-tight leading-snug">Trigger Issue: <span className="font-medium text-slate-550 italic">{int.reason}</span></p>
+                        <p className="text-xs font-bold text-slate-800 mt-1 tracking-tight leading-snug">Action Strategy: <span className="font-medium text-slate-550 italic">{int.action}</span></p>
+                      </div>
+                      {int.outcome && (
+                        <div className="mt-4 pt-4 border-t border-slate-150 bg-slate-100/50 p-3 rounded-xl border border-slate-200/50">
+                          <span className="text-[8px] font-black text-slate-800 uppercase tracking-widest block mb-0.5">Tracked Progress Response</span>
+                          <p className="text-[11px] font-bold text-slate-705 italic">"{int.outcome}"</p>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-slate-400 text-center italic py-8">No specific developmental interventions recorded for this student.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1">
+                <ShieldCheck size={11} className="text-slate-900" /> Historic transcript validated successfully
+              </span>
+            </div>
+          </section>
+
+        </div>
+
+        {/* Section 4: HOD Remarks & Information Box */}
+        {student.hodComment && (
+          <section className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-tr from-white/10 to-white/0 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+            
+            <div className="relative">
+              <header className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white">
+                  <ShieldCheck size={20} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-white uppercase tracking-widest font-sans">Departmental Audit Clearances</h4>
+                  <p className="text-[10px] font-bold text-slate-300 uppercase">HOD Comments and Level 4 Seal Authentication Details</p>
+                </div>
+              </header>
+
+              <div className="bg-slate-800/40 p-6 rounded-2xl border border-slate-700/40">
+                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-2">HOD Comments Endorsement</span>
+                <p className="text-sm font-semibold italic text-slate-100 leading-relaxed">
+                  "{student.hodComment}"
+                </p>
+              </div>
+
+              <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-slate-800/80 [border-top-style:dashed]">
+                <div>
+                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Clearance Anchor Hash</span>
+                  <span className="text-[11px] font-mono font-black text-slate-300">MAAIS-RECON-{student.id}-TRACE</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Authenticated Signature</span>
+                  <span className="text-sm font-display italic font-medium text-slate-300">Head of Department, General & Applied Sciences</span>
+                </div>
+              </div>
+
+            </div>
+          </section>
+        )}
+
+      </div>
+
     </div>
   );
 }

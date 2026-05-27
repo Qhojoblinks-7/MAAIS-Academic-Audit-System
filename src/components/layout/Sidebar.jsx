@@ -145,9 +145,9 @@ export function Sidebar() {
   return (
     <>
 <aside 
-         ref={sidebarRef}
-         className="w-20 h-screen bg-slate-50 border-r border-slate-200/60 flex flex-col items-center py-8 gap-8 z-30 select-none shrink-0 print:hidden"
-       >
+          ref={sidebarRef}
+          className="w-20 h-screen bg-slate-50 border-r border-slate-200/60 flex flex-col items-center py-8 gap-8 z-[60] select-none shrink-0 print:hidden"
+        >
         <Link to="/" className="w-12 h-12 bg-brand-teal rounded-2xl flex items-center justify-center text-white font-semibold text-xl shadow-lg shadow-brand-teal/20 transition-transform active:scale-95">
           M
         </Link>
@@ -208,7 +208,7 @@ export function Sidebar() {
                       animate={{ opacity: 1, x: 0, scale: 1 }}
                       exit={{ opacity: 0, x: -8, scale: 0.95 }}
                       transition={{ duration: 0.15, ease: "easeOut" }}
-                      className="absolute left-[calc(100%+14px)] top-0 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 py-3 px-2 z-50 ring-1 ring-slate-900/5"
+                      className="absolute left-[calc(100%+14px)] top-0 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 py-3 px-2 z-[60] ring-1 ring-slate-900/5"
                     >
                       <div className="mb-2 px-2.5">
                         <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{item.label}</p>

@@ -120,13 +120,17 @@ function createRealService() {
     getDepartmentProgress: () => request('GET', '/api/hod/department-progress').then(r => r?.data ?? r),
     getTeacherSubmissionStatus: () => request('GET', '/api/hod/teachers/submissions').then(r => r?.data ?? r),
     getLockedTerms: () => request('GET', '/api/hod/locked-terms').then(r => r?.data ?? r),
+    validateLock: (termId) => request('GET', `/api/hod/lock-matrix/${termId}/validate`).then(r => r?.data ?? r),
     lockDepartmentMatrix: (termId) => request('POST', `/api/hod/lock-matrix/${termId}`),
     unlockDepartmentMatrix: (termId) => request('POST', `/api/hod/unlock-matrix/${termId}`),
     exportWAECCSV: (termId, className) => exportWAECCSVDownload(termId, className, 'Subject', null),
     exportWAECPDF: (termId) => request('POST', `/api/hod/export-waec/${termId}`, { format: 'pdf' }),
     getGradeComparison: (subjectId, termA, termB) => request('GET', `/api/hod/grades/compare?subjectId=${subjectId}&termA=${termA}&termB=${termB}`).then(r => r?.data ?? r),
     updateHODComment: (recordId, comment) => request('PATCH', `/api/hod/records/${recordId}/comment`, { comment }),
-    rejectGradeRevision: (recordId, reason) => request('POST', `/api/hod/records/${recordId}/reject`, { reason }),
+rejectGradeRevision: (recordId, reason) => request('POST', `/api/hod/records/${recordId}/reject`, { reason }),
+    approveGradeRevision: (recordId, comment) =>
+      request('POST', `/api/hod/records/${recordId}/approve`, { comment }),
+    getGradeRevisions: () => request('GET', '/api/hod/grade-revisions').then(r => r?.data ?? r),
     getArchivedDepartmentData: (params = {}) => request('GET', '/api/hod/archive', params ? { params } : undefined).then(r => r?.data ?? r),
     getPromotionRecommendations: (params = {}) => request('GET', '/api/hod/archive/promotions', params ? { params } : undefined).then(r => r?.data ?? r),
 
@@ -167,11 +171,13 @@ function createRealService() {
       request('GET', '/api/hod/teachers', params ? { params } : undefined).then(r => r?.data ?? r),
     impersonateTeacher: (teacherId, body = {}) =>
       request('POST', `/api/hod/impersonate/${teacherId}`, body).then(r => r?.data ?? r),
-    stopImpersonation: () =>
-      request('POST', '/api/hod/impersonate/stop').then(r => r?.data ?? r),
-    getActiveImpersonations: () =>
-      request('GET', '/api/hod/impersonate/active').then(r => r?.data ?? r),
-  };
+stopImpersonation: () =>
+       request('POST', '/api/hod/impersonate/stop').then(r => r?.data ?? r),
+     getActiveImpersonations: () =>
+       request('GET', '/api/hod/impersonate/active').then(r => r?.data ?? r),
+     getStudentAcademicHistory: (studentId) =>
+       request('GET', `/api/hod/students/${studentId}/academic-history`).then(r => r?.data ?? r),
+   };
 }
 
 export const hodService = USE_MOCK ? mockHodService : createRealService();

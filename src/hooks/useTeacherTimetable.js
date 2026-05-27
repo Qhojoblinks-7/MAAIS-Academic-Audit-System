@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useRole } from '../context/RoleContext';
-import MOCK from '../data/teacherMockData.json';
+import MOCK from '../data/mockApiData.json';
 
 /* O(1) — WAEC STP assignment guard:
  * GET /api/timetable?teacher_id=... returns only the subjects and classes
  * specifically assigned to the logged-in teacher per WAEC STP T-AR-1.1.
- * Fallback to an error state if the teacher has no active assignments.
+ * Fallback to mock data if the teacher has no active assignments / API fails.
  */
 
-// timetableFallback sourced from centralized mock data — replace with real backend route
-const TIMETABLE_FALLBACK = MOCK.timetableFallback.items;
+// timetableFallback sourced from centralized mock data
+const TIMETABLE_FALLBACK = MOCK.teacher?.timetableFallback?.items || [];
 
 export function useTeacherTimetable() {
   const { user } = useRole();

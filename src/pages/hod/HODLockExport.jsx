@@ -95,12 +95,15 @@ function ClassProgressCard({ cls, onLock, onUnlock, onExport, locking, exporting
 export function HODLockExport() {
   const {
     departmentProgress = [], 
-    lockTerm, 
+    lockTermWithValidation,
     unlockTerm, 
     exportClassCSV,
     refreshDepartmentProgress, 
     lockedTerms = [],
     refreshLockedTerms,
+    validateLock,
+    departmentProgressPage,
+    departmentProgressLimit,
   } = useHOD();
 
   const [locking, setLocking] = useState(null);
@@ -109,10 +112,10 @@ export function HODLockExport() {
   const [confirmUnlock, setConfirmUnlock] = useState(null);
   const [activeClassId, setActiveClassId] = useState(null);
 
-  useEffect(() => {
-    if (typeof refreshDepartmentProgress === 'function') refreshDepartmentProgress();
-    if (typeof refreshLockedTerms === 'function') refreshLockedTerms();
-  }, [refreshDepartmentProgress, refreshLockedTerms]);
+   useEffect(() => {
+     if (typeof refreshDepartmentProgress === 'function') refreshDepartmentProgress(departmentProgressPage, departmentProgressLimit);
+     if (typeof refreshLockedTerms === 'function') refreshLockedTerms();
+   }, [refreshDepartmentProgress, refreshLockedTerms, departmentProgressPage, departmentProgressLimit]);
 
   const sortedClasses = useMemo(() => {
     if (!Array.isArray(departmentProgress)) return [];
@@ -128,20 +131,38 @@ export function HODLockExport() {
     return sortedClasses.find(c => c.id === activeClassId) || sortedClasses[0] || null;
   }, [sortedClasses, activeClassId]);
 
-  const handleLock = (clsId) => {
-    setConfirmLock({ 
-      id: clsId, 
-      title: 'Seal Evaluation Payload?', 
-      message: 'All associated marks will freeze instantly. System overrides will require secure audit tracking keys. Proceed?', 
-    });
+  const handleLock = async (clsId) => {
+    if (!clsId || typeof validateLock !== 'function') return;
+    try {
+      const validation = await validateLock(clsId);
+      if (!validation.canLock) {
+        alert(`Cannot lock: ${validation.blockingIssues?.join(', ') || 'Validation failed'}`);
+        return;
+      }
+      if (validation.warnings?.length > 0) {
+        console.warn('Lock warnings:', validation.warnings);
+      }
+      setConfirmLock({ 
+        id: clsId, 
+        title: 'Seal Evaluation Payload?', 
+        message: `All associated marks will freeze instantly. ${validation.completionPct || 100}% completion verified. Proceed?`, 
+      });
+    } catch (e) {
+      console.error('Lock validation error:', e);
+      setConfirmLock({ 
+        id: clsId, 
+        title: 'Seal Evaluation Payload?', 
+        message: 'All associated marks will freeze instantly. System overrides will require secure audit tracking keys. Proceed?', 
+      });
+    }
   };
 
   const doLock = async (clsId) => {
-    if (!clsId || typeof lockTerm !== 'function') return;
+    if (!clsId || typeof lockTermWithValidation !== 'function') return;
     setLocking(clsId);
     try {
       const oldVal = typeof auditTrail?.captureSnapshot === 'function' ? auditTrail.captureSnapshot({ status: 'PENDING' }) : {};
-      await lockTerm(clsId);
+      await lockTermWithValidation(clsId);
       const newVal = typeof auditTrail?.captureSnapshot === 'function' ? auditTrail.captureSnapshot({ status: 'LOCKED' }) : {};
       
       if (auditTrail?.logChange) {
@@ -155,6 +176,7 @@ export function HODLockExport() {
       await refreshLockedTerms?.();
     } catch (e) {
       console.error('Lock configuration stream error:', e);
+      alert(e.message || 'Failed to lock term');
     } finally {
       setLocking(null);
       setConfirmLock(null);
@@ -194,6 +216,21 @@ export function HODLockExport() {
 
   const handleExport = async (clsId) => {
     if (!clsId || typeof exportClassCSV !== 'function') return;
+    
+    // Find the class to check its validation status
+    const cls = departmentProgress.find(c => c.id === clsId) || 
+                lockedTerms.find(c => c.id === clsId);
+                
+    if (!cls) return;
+    
+    const checks = Array.isArray(cls?.checks) ? cls.checks.filter(Boolean) : [];
+    const failCount = checks.length - checks.filter(c => c.pass).length;
+    
+    if (failCount > 0) {
+      alert('Cannot export: Validation checks are failing. Please resolve issues before export.');
+      return;
+    }
+    
     setExporting(clsId);
     try {
       const blob = await exportClassCSV(clsId);
@@ -202,7 +239,10 @@ export function HODLockExport() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `WAEC_export_${clsId}_2026.csv`;
+      // Use more descriptive filename with subject and class name if available
+      const subject = cls.subject || 'Subject';
+      const className = cls.className || cls.name || 'Class';
+      a.download = `WAEC_${subject}_${className}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

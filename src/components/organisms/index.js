@@ -6,4 +6,5 @@ export { HODCommentThread } from './HODCommentThread';
 export { TeacherImpersonationConsole } from './TeacherImpersonationConsole';
 export { SupportTicketKanban } from './SupportTicketKanban';
 export { GradeComparisonView } from './GradeComparisonView';
-export { SystemHealthMonitor } from './SystemHealthMonitor';
+export { CurrentPreviousTermComparisonView } from './CurrentPreviousTermComparisonView';
+export { GradeDiscussionThread } from './GradeDiscussionThread';

@@ -3,12 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { QrCode, CheckCircle2, Clock, ArrowRight, Star, Edit, Lock, AlertCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import MOCK from '../../data/teacherMockData.json';
-
-// myObservations / gradeIssues / statusStyles sourced from centralized mock data
-const MY_OBSERVATIONS = MOCK.supportObservations.items;
-const GRADE_ISSUES = MOCK.gradeIssues.items;
-const STATUS_STYLES = MOCK.gradeIssues.statusMeta;
+import mockTeacherService from '../../services/mockTeacherService';
 
 export function TeacherSupport() {
   const navigate = useNavigate();
@@ -18,6 +13,25 @@ export function TeacherSupport() {
   const [loading, setLoading] = React.useState(false);
   const [successMessage, setSuccessMessage] = React.useState('');
   const [errorMessage, setErrorMessage] = React.useState('');
+  const [supportObservations, setSupportObservations] = React.useState([]);
+  const [gradeIssues, setGradeIssues] = React.useState([]);
+  const [statusStyles, setStatusStyles] = React.useState({});
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const obs = await mockTeacherService.getSupportObservations();
+        const issues = await mockTeacherService.getGradeIssues();
+        const styles = await mockTeacherService.getGradeIssueStatusMeta();
+        setSupportObservations(obs || []);
+        setGradeIssues(issues || []);
+        setStatusStyles(styles || {});
+      } catch (err) {
+        console.error('Failed to load support data');
+      }
+    };
+    fetchData();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -90,7 +104,7 @@ export function TeacherSupport() {
             <h2 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">My Observations</h2>
           </div>
           <div className="space-y-4">
-            {MY_OBSERVATIONS.map((obs, i) => (
+            {supportObservations.map((obs, i) => (
               <motion.div
                 key={obs.id}
                 initial={{ opacity: 0, y: 10 }}
@@ -115,13 +129,13 @@ export function TeacherSupport() {
             <h2 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">Grade Issue Flags</h2>
           </div>
           <div className="space-y-3">
-            {GRADE_ISSUES.map((issue) => (
+            {gradeIssues.map((issue) => (
               <div key={issue.id} className="flex items-center justify-between p-4 rounded-2xl hover:bg-gray-50 transition-all">
                 <div>
                   <p className="text-sm font-black text-gray-900 mb-0.5">{issue.issue}</p>
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{issue.subject} &middot; {issue.className} &middot; {issue.date}</p>
                 </div>
-                <span className={cn("text-[9px] font-black px-2 py-1 rounded uppercase tracking-widest", STATUS_STYLES[issue.status])}>{issue.status}</span>
+                <span className={cn("text-[9px] font-black px-2 py-1 rounded uppercase tracking-widest", statusStyles[issue.status])}>{issue.status}</span>
               </div>
             ))}
           </div>

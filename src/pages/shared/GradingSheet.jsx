@@ -33,7 +33,10 @@ import { GRADE_SCALE } from './GradingSheet.constants';
  * Exposes GRADE_SCALE via named export.
  */
 export function GradingSheet(props) {
-  const logic = useGradingSheetLogic(props);
+  const logic = useGradingSheetLogic({
+    ...props,
+    teacherId: props.teacherId,
+  });
 
   const {
     // Data

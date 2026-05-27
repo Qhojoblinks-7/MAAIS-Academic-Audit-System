@@ -4,9 +4,8 @@ import { motion } from 'framer-motion';
 import { useRole } from '../../context/RoleContext';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Percent, GraduationCap, Layers, AlertTriangle, CheckCircle2, Clock, RefreshCw } from 'lucide-react';
-import MOCK from '../../data/teacherMockData.json';
-
-const { items: teacherClasses } = MOCK.teacherClasses;
+import mockTeacherService from '../../services/mockTeacherService';
+import { NotificationBell } from '../../components/shared/NotificationBell';
 
 export function TeacherDashboard() {
   const { user } = useRole();
@@ -14,10 +13,16 @@ export function TeacherDashboard() {
 
   const [rolloverBannerVisible, setRolloverBannerVisible] = React.useState(false);
   const [rolloverChanges, setRolloverChanges] = React.useState([]);
+  const [teacherClasses, setTeacherClasses] = React.useState([]);
 
   const staffId = user?.staffId || user?.id || 'unknown';
   const ROLLOVER_STORAGE_KEY = `maais_rollover_subjects.${staffId}`;
   const SESSION_SEEN_KEY = `maais_seen_rollover.${staffId}`;
+
+  React.useEffect(() => {
+    if (!staffId) return;
+    mockTeacherService.getClasses(staffId).then(setTeacherClasses);
+  }, [staffId]);
 
   React.useEffect(() => {
     if (!staffId || !teacherClasses || teacherClasses.length === 0) return;
@@ -135,6 +140,9 @@ export function TeacherDashboard() {
               <Layers size={10} className="text-gray-300" />
               Academic Workspace & Assessment Matrix
             </p>
+          </div>
+          <div className="flex items-center gap-4 text-[9px] font-black text-emerald-700 uppercase tracking-widest">
+            <NotificationBell />
           </div>
         </header>
 

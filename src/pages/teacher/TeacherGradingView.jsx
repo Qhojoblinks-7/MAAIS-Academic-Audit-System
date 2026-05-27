@@ -3,20 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, BookOpen, Percent, GraduationCap, Clock, ChevronRight, Star, PenLine, ClipboardCheck, X, ArrowLeft } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
-import MOCK from '../../data/teacherMockData.json';
 import { GradingSheet } from '../shared/GradingSheet';
+import mockTeacherService from '../../services/mockTeacherService';
+import { notification } from '../../services/notificationService';
+import { eventBus } from '../../services/eventBus';
 
-const {
-  skeletonGradingClasses,
-  gradingStatusMeta,
-  gradingFilterOptions,
-} = MOCK;
-
-const SKELETON_CLASSES = skeletonGradingClasses.items;
-const statusMeta = gradingStatusMeta.mapping;
-const filterOptions = gradingFilterOptions.options;
-
-// ── Subject config — drives GradingSheet column layout ────────────────────────
 const SUBJECT_CONFIG = {
   'General Agriculture': {
     sections: ['Paper 1 (50)', 'Paper 2-Agri (90)', 'Paper 3-Pract (60)'],
@@ -50,60 +41,47 @@ const SUBJECT_CONFIG = {
   },
 };
 
-// ── Mock student data keyed by subject+class ──────────────────────────────────
-const MOCK_STUDENTS_BY_CLASS = {
-  'General Agriculture|SHS 1 Agric B': [
-    { id: '001', name: 'Angela Owusu', index: '001', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture', 'English Language'], secA: 35, secB: 50, secC: 38, sba: 28.5, exam: 61.5, final: 90.0, grade: 'A1', auditStatus: 'MISSING', subjectType: 'Core' },
-    { id: '002', name: 'Kwame Mensah', index: '002', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture', 'English Language'], secA: 20, secB: 30, secC: 15, sba: 15.2, exam: 32.5, final: 47.7, grade: 'D7', auditStatus: 'MISSING', subjectType: 'Core' },
-    { id: '003', name: 'Yaw Boateng', index: '003', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture', 'English Language'], secA: 35, secB: 50, secC: 38, sba: 28.5, exam: 61.5, final: 90.0, grade: 'A1', auditStatus: 'COMPLETE', subjectType: 'Core' },
-    { id: '004', name: 'Esi Ansah', index: '004', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture', 'English Language'], secA: 32, secB: 48, secC: 35, sba: 26.0, exam: 55.0, final: 81.0, grade: 'A1', auditStatus: 'COMPLETE', subjectType: 'Core' },
-    { id: '005', name: 'Kofi Appiah', index: '005', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture', 'English Language'], secA: 28, secB: 42, secC: 32, sba: 22.0, exam: 46.0, final: 68.0, grade: 'B3', auditStatus: 'COMPLETE', subjectType: 'Core' },
-    { id: '009', name: 'Ama Serwaa', index: '009', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture', 'English Language'], secA: 30, secB: 40, secC: 35, sba: 25.0, exam: 50.0, final: 75.0, grade: 'A1', auditStatus: 'ACTIVE', subjectType: 'Core' },
-  ],
-  'Core Mathematics|SHS 1 Agric B': [
-    { id: '001', name: 'Angela Owusu', index: '001', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['Core Mathematics'], secA: 35, secB: 50, sba: 27, exam: 59.5, final: 86.5, grade: 'A1', auditStatus: 'MISSING' },
-    { id: '002', name: 'Kwame Mensah', index: '002', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['Core Mathematics'], secA: 18, secB: 28, sba: 12.5, exam: 32.2, final: 44.7, grade: 'E8', auditStatus: 'MISSING' },
-    { id: '003', name: 'Yaw Boateng', index: '003', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['Core Mathematics'], secA: 38, secB: 55, sba: 28, exam: 65.1, final: 93.1, grade: 'A1', auditStatus: 'COMPLETE' },
-    { id: '004', name: 'Esi Ansah', index: '004', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['Core Mathematics'], secA: 30, secB: 45, sba: 22, exam: 52.5, final: 74.5, grade: 'B2', auditStatus: 'COMPLETE' },
-  ],
-};
-
-const getMockStudentsForClass = (subject, className) => {
-  return MOCK_STUDENTS_BY_CLASS[`${subject}|${className}`] || MOCK_STUDENTS_BY_CLASS['General Agriculture|SHS 1 Agric B'];
-};
-
 export function TeacherGradingView() {
   const { user } = useRole();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
-
-  /* ── WAEC STP T-AR-4.2 — fetch live class list on mount ── */
-  const [gradingClasses, setGradingClasses] = useState(SKELETON_CLASSES);
+  const [gradingClasses, setGradingClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  /* ── Embedded sheet state ── */
   const [selectedClass, setSelectedClass] = useState(null);
+  const [gradingStudents, setGradingStudents] = useState([]);
+  const [statusMeta, setStatusMeta] = useState({});
+  const [filterOptions, setFilterOptions] = useState([]);
+
 
   useEffect(() => {
-    const fetchClasses = async () => {
-      if (!user?.id) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const response = await fetch(`/api/teacher/classes/${user.id}/analytics`);
-        if (!response.ok) throw new Error('Failed to fetch grading classes');
-        const data = await response.json();
-        setGradingClasses(data.classProgress || data || SKELETON_CLASSES);
-      } catch (err) {
-        setGradingClasses(SKELETON_CLASSES);
-        setError('Failed to load grading data');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchClasses = async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+    try {
+      const classes = await mockTeacherService.getClasses(user.id);
+      const meta = await mockTeacherService.getGradingStatusMeta();
+      const filters = await mockTeacherService.getGradingFilterOptions();
+      const students = await mockTeacherService.getGradingStudents();
+      const subjectConfig = await mockTeacherService.getSubjectConfig();
+      
+      setGradingClasses(classes || []);
+      setStatusMeta(meta || {});
+      setFilterOptions(filters || []);
+      setGradingStudents(students || []);
+    } catch (err) {
+      setError('Failed to load grading data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchClasses();
+  }, [user?.id]);
     fetchClasses();
   }, [user?.id]);
 
@@ -131,12 +109,15 @@ export function TeacherGradingView() {
   ];
 
   /* ── Class selection: no route change, just state ── */
-  const handleSelectClass = useCallback((cls) => {
+  const handleSelectClass = useCallback(async (cls) => {
     setSelectedClass(cls);
+    const students = await mockTeacherService.getGradingStudents(cls.subject, cls.className);
+    setGradingStudents(students || []);
   }, []);
 
   const handleCloseSheet = useCallback(() => {
     setSelectedClass(null);
+    setGradingStudents([]);
   }, []);
 
   if (loading) {
@@ -173,20 +154,23 @@ export function TeacherGradingView() {
         <div className="max-w-7xl mx-auto">
 
           {/* Header */}
-          <header className="mb-8 border-b border-gray-100 pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight leading-none">
-                Grading Summary
-              </h1>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2 flex items-center gap-1.5">
-                <ClipboardCheck size={10} className="text-gray-300" />
-                Score Entry · Progress Tracking · Submission Control
-              </p>
-            </div>
-            <div className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase tracking-widest">
-              <Clock size={11} /> Last Sync: just now
-            </div>
-          </header>
+           <header className="mb-8 border-b border-gray-100 pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+             <div>
+               <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight leading-none">
+                 Grading Summary
+               </h1>
+               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2 flex items-center gap-1.5">
+                 <ClipboardCheck size={10} className="text-gray-300" />
+                 Score Entry · Progress Tracking · Submission Control
+               </p>
+             </div>
+              <div className="flex items-center gap-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                <Clock size={11} /> Last Sync: just now
+                <div className="relative">
+                  <NotificationBell />
+                </div>
+              </div>
+           </header>
 
           {/* Stat cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -265,7 +249,7 @@ export function TeacherGradingView() {
             <div className="divide-y divide-gray-100">
               <AnimatePresence>
                 {filtered.map((cls, i) => {
-                  const sm = statusMeta[cls.status] || statusMeta['Not Started'];
+                  const sm = statusMeta[cls.status] || statusMeta['Not Started'] || {};
                   return (
                     <motion.div
                       key={cls.id}
@@ -356,26 +340,27 @@ export function TeacherGradingView() {
 
             {/* GradingSheet — fully controlled by this container */}
             <div className="flex-1 overflow-hidden">
-              <GradingSheet
-                classInfo={{
-                  id: selectedClass.id,
-                  subject: selectedClass.subject,
-                  className: selectedClass.className,
-                  programme: 'AGRICULTURE',
-                  studentCount: selectedClass.studentCount,
-                  form: 'SHS 1',
-                  academicYear: '2025/2026',
-                }}
-                students={getMockStudentsForClass(selectedClass.subject, selectedClass.className)}
-                subjectConfig={SUBJECT_CONFIG}
-                stpRules={[
-                  { check: (s) => s.final > 100, message: 'Final score exceeds 100%' },
-                  { check: (s) => s.sba > 30, message: 'SBA exceeds 30% limit' },
-                  { check: (s) => s.exam > 70, message: 'Exam exceeds 70% limit' },
-                  { check: (s) => s.auditStatus === 'MISSING', message: 'Missing behavioral observations' },
-                ]}
-                isTermFinalized={false}
-              />
+             <GradingSheet
+               classInfo={{
+                 id: selectedClass.id,
+                 subject: selectedClass.subject,
+                 className: selectedClass.className,
+                 programme: 'AGRICULTURE',
+                 studentCount: selectedClass.studentCount,
+                 form: 'SHS 1',
+                 academicYear: '2025/2026',
+               }}
+               teacherId={user?.id || user?.staffId}
+               students={gradingStudents}
+               subjectConfig={SUBJECT_CONFIG}
+               stpRules={[
+                 { check: (s) => s.final > 100, message: 'Final score exceeds 100%' },
+                 { check: (s) => s.sba > 30, message: 'SBA exceeds 30% limit' },
+                 { check: (s) => s.exam > 70, message: 'Exam exceeds 70% limit' },
+                 { check: (s) => s.auditStatus === 'MISSING', message: 'Missing behavioral observations' },
+               ]}
+               isTermFinalized={false}
+             />
             </div>
           </motion.div>
         )}

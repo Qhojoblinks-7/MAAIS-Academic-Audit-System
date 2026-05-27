@@ -27,15 +27,22 @@ const MOCK_SEARCH_RESULTS = [
     id: "stud001",
     type: "student",
     name: "Angela Owusu",
-    detail: "Agriculture • House: Green",
+    detail: "Agriculture • Index: 001",
     index: "001",
   },
   {
     id: "stud002",
     type: "student",
     name: "Ama Serwaa",
-    detail: "Agriculture • House: Blue",
+    detail: "Agriculture • Index: 009",
     index: "009",
+  },
+  {
+    id: "stud003",
+    type: "student",
+    name: "Kwame Mensah",
+    detail: "Agriculture • Index: 002",
+    index: "002",
   },
   {
     id: "c1",
@@ -104,7 +111,11 @@ export function Topbar() {
     setQuery("");
     setIsSearching(false);
     updateURLSearchParam("");
-    navigate("/grading");
+    if (result.type === 'student') {
+      navigate(`/student-profile?id=${result.id}`);
+    } else {
+      navigate("/grading");
+    }
   };
 
   const getBreadcrumbs = () => {
@@ -112,6 +123,7 @@ export function Topbar() {
     const crumbs = [{ label: "Home", path: "/" }];
 
     if (path === "/") crumbs.push({ label: "Dashboard", path: "/" });
+    else if (path === "/student-profile") crumbs.push({ label: "Student Profile", path: "/student-profile" });
     else if (path === "/revisions") crumbs.push({ label: "Correction Requests", path: "/revisions" });
     else if (path === "/missing-observations") crumbs.push({ label: "Compliance Observations", path: "/missing-observations" });
     else if (path === "/timetable") crumbs.push({ label: "Timetable", path: "/timetable" });

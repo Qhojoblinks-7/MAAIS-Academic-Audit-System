@@ -12,8 +12,8 @@ import { auditTrail } from '../../services/auditTrailService';
 import { notification } from '../../services/notificationService';
 import { eventBus } from '../../services/eventBus';
 import { HODCommentInput, ActionButtonGroup, StatusBadge, SubmissionProgressSparkline, ConfirmationDialog }
-  from '../../components/molecules';
-import { GradeComparisonView } from '../../components/organisms';
+    from '../../components/molecules';
+import { CurrentPreviousTermComparisonView } from '../../components/organisms';
 
 function SubjectRow({ subject, studentName, onAddRemark, onReject }) {
   const [remark, setRemark] = useState('');
@@ -330,10 +330,12 @@ export function HODReview() {
                         <AlertTriangle size={13} className="text-indigo-600" />
                         <h4 className="text-[11px] font-bold text-gray-900 uppercase tracking-wide">Comparative Evaluation Delta</h4>
                       </div>
-                      <GradeComparisonView
-                        subjects={selectedStudent.subjects.slice(0, 6)}
-                        className="w-full bg-white p-3 rounded-lg border border-gray-200/40 shadow-3xs"
-                      />
+                       <CurrentPreviousTermComparisonView
+                         subjects={selectedStudent.subjects.slice(0, 6)}
+                         currentTerm="Term 3"
+                         previousTerm="Term 2"
+                         className="w-full bg-white p-3 rounded-lg border border-gray-200/40 shadow-3xs"
+                       />
                     </div>
                   )}
 
@@ -351,14 +353,24 @@ export function HODReview() {
                     ))}
                   </div>
 
-                  {/* Overall Institutional Comment Node */}
-                  <div className="border-t border-gray-100 pt-4">
-                    <HODCommentInput
-                      onSubmit={(remark) => handleAddRemark({ studentId: selectedStudent.id, studentName: selectedStudent.name, remark })}
-                      placeholder={`Compile institutional HOD remark envelope for ${selectedStudent.name}...`}
-                      maxLength={500}
-                    />
-                  </div>
+                   {/* Overall Institutional Comment Node */}
+                   <div className="border-t border-gray-100 pt-4">
+                     <HODCommentInput
+                       onSubmit={(remark) => handleAddRemark({ studentId: selectedStudent.id, studentName: selectedStudent.name, remark })}
+                       placeholder={`Compile institutional HOD remark envelope for ${selectedStudent.name}...`}
+                       maxLength={500}
+                     />
+                   </div>
+                   {/* Grade Discussion Thread */}
+                   <div className="border-t border-gray-100 pt-6">
+                     <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">
+                       Grade Discussion
+                     </h4>
+                     <GradeDiscussionThread 
+                       subjectId={selectedStudent.subjects?.[0]?.id || 'unknown'} 
+                       studentId={selectedStudent.id} 
+                     />
+                   </div>
 
                 </div>
               </motion.div>

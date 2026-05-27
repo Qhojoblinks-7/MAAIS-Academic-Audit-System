@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 const auditLogs = [
   {
     id: '1',
-    studentName: 'Angela Efia Owusu',
+    studentName: 'Angela Owusu',
     subject: 'General Agric',
     action: 'UPDATE',
     oldValue: 45,

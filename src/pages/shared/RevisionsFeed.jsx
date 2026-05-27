@@ -9,85 +9,47 @@ import {
   Clock,
   User,
   BookOpen,
-  CornerDownRight,
-  MessageSquare,
   X,
   Sparkles,
   Inbox,
   Check,
-  Search
+  Search,
+  CornerDownRight,
+  MessageSquare,
+  ChevronDown,
+  ChevronUp,
+  Send
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { GradeDiscussionThread } from '../../components/organisms';
 
-const initialRevisions = [
-  { 
-    id: 'RE-2041', 
-    student: 'Angela Owusu', 
-    index: '001',
-    class: 'SHS 1 Agric B', 
-    subject: 'General Agric', 
-    issue: 'Section B mismatch — script total sums to 48 while system reads 40.', 
-    teacher: 'Marcus Eshun', 
-    time: '2 hours ago', 
-    status: 'AWAITING_APPROVAL',
-    severity: 'HIGH',
-    history: [
-      { id: 1, role: 'HOD', user: 'Principal K. Mensah', message: 'Script total sum does not align with input fields on terminal sheet. Recheck formula or scan script.', time: '2h ago' }
-    ]
-  },
-  { 
-    id: 'RE-1982', 
-    student: 'Kwame Mensah', 
-    index: '002',
-    class: 'SHS 1 Agric B', 
-    subject: 'General Agric', 
-    issue: 'Practical lab exam score variance (+4 points correction requested).', 
-    teacher: 'Rita Owusu', 
-    time: '5 hours ago', 
-    status: 'TEACHER_REPLIED',
-    severity: 'MEDIUM',
-    history: [
-      { id: 1, role: 'HOD', user: 'Principal K. Mensah', message: 'Please provide script validation for the sudden jump in practical metrics.', time: '1 day ago' },
-      { id: 2, role: 'TEACHER', user: 'Rita Owusu', message: 'Mistake caught on final entry lab book page 14. Added the missing physics checkmark scores.', time: '5h ago' }
-    ]
-  },
-  { 
-    id: 'RE-1950', 
-    student: 'Yaw Boateng', 
-    index: '003',
-    class: 'SHS 1 Agric B', 
-    subject: 'General Agric', 
-    issue: 'Section A boundary grade distribution discrepancy.', 
-    teacher: 'Esi Aidoo', 
-    time: '1 day ago', 
-    status: 'AWAITING_APPROVAL',
-    severity: 'LOW',
-    history: [
-      { id: 1, role: 'HOD', user: 'Principal K. Mensah', message: 'Grade boundaries overlapping between B2 and B3 bands inside spreadsheet array.', time: '1 day ago' }
-    ]
-  },
-];
-
-const statusStyles = {
+export const statusStyles = {
   AWAITING_APPROVAL: 'bg-amber-50/70 text-amber-800 border-amber-200/50 ring-2 ring-amber-500/5',
   TEACHER_REPLIED: 'bg-sky-50/70 text-sky-800 border-sky-200/50 ring-2 ring-sky-500/5',
   RESOLVED: 'bg-emerald-50/70 text-emerald-800 border-emerald-200/50 ring-2 ring-emerald-500/5',
 };
 
-const severityStyles = {
+export const severityStyles = {
   HIGH: 'text-rose-600 bg-rose-50 border-rose-100',
   MEDIUM: 'text-amber-600 bg-amber-50 border-amber-100',
   LOW: 'text-slate-500 bg-slate-50 border-slate-100',
 };
 
-export function RevisionsFeed() {
+export function RevisionsFeed({ revisions: propRevisions, onApprove, onReject, onSubmitResponse, role = 'shared' }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [revisions, setRevisions] = useState(initialRevisions);
+  const [revisions, setRevisions] = useState(propRevisions || []);
   const [activeTab, setActiveTab] = useState('pending');
   const [selected, setSelected] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [discussionExpanded, setDiscussionExpanded] = useState(false);
+  const [discussionInput, setDiscussionInput] = useState('');
+  const [isDiscussionLoading, setIsDiscussionLoading] = useState(false);
+
+  useEffect(() => {
+    if (propRevisions) setRevisions(propRevisions);
+  }, [propRevisions]);
 
   useEffect(() => {
     const queryId = searchParams.get('revision');
@@ -114,45 +76,44 @@ export function RevisionsFeed() {
     return matchesTab && matchesSearch;
   });
 
-  const appendAnnotation = () => {
-    if (!replyText.trim() || !selected) return;
+   const handleAction = () => {
+     if (!replyText.trim() || !selected) return;
+     if (onSubmitResponse) {
+       onSubmitResponse(selected.id, replyText);
+     }
+     setReplyText('');
+   };
 
-    const newNote = {
-      id: Date.now(),
-      role: 'REGISTRY',
-      user: 'You (Auditor)',
-      message: replyText,
-      time: 'Just now'
-    };
+   const sendDiscussionMessage = async () => {
+     if (!discussionInput.trim() || !selected) return;
 
-    setRevisions(prev => prev.map(item => {
-      if (item.id === selected.id) {
-        return {
-          ...item,
-          status: 'TEACHER_REPLIED',
-          history: [...item.history, newNote]
-        };
-      }
-      return item;
-    }));
-
-    setSelected(prev => ({
-      ...prev,
-      status: 'TEACHER_REPLIED',
-      history: [...prev.history, newNote]
-    }));
-    
-    setReplyText('');
-  };
+     try {
+       setIsDiscussionLoading(true);
+       
+       // In a real implementation, this would send to backend and notify via notification service
+       // For now, we'll just show a toast/alert
+       alert('Discussion message sent: ' + discussionInput);
+       
+       // Clear input
+       setDiscussionInput('');
+       
+       // In a real app, you would:
+       // 1. Send message to backend API to persist it
+       // 2. Use notificationService to alert the other party (HOD/Teacher)
+       // 3. Update the discussion thread with the new message
+     } catch (err) {
+       console.error('Failed to send discussion message:', err);
+       alert('Failed to send message');
+     } finally {
+       setIsDiscussionLoading(false);
+     }
+   };
 
   return (
-    /* FIXED: Using flex-1 h-full min-h-0 instead of raw h-screen prevents bottom clipping inside layout shells */
     <div className="flex-1 flex w-full h-full min-h-0 overflow-hidden bg-slate-50/40 font-sans antialiased">
       
-      {/* LEFT COLUMN: PRIMARY WORKFLOW DATA STREAM */}
       <div className="flex-1 flex flex-col min-w-0 h-full border-r border-slate-200/60 bg-white">
         
-        {/* Navigation & Header Block */}
         <div className="p-6 pb-4 border-b border-slate-100 shrink-0">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
@@ -206,7 +167,6 @@ export function RevisionsFeed() {
           </div>
         </div>
 
-        {/* Dynamic Card Scroll Layout */}
         <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30 space-y-3 min-h-0 no-scrollbar">
           {filteredData.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-slate-200 p-8 text-center">
@@ -283,7 +243,6 @@ export function RevisionsFeed() {
         </div>
       </div>
 
-      {/* RIGHT COLUMN: INSPECTOR FLYOUT / CONTEXT STREAM */}
       <AnimatePresence mode="wait">
         {selected ? (
           <motion.div
@@ -293,7 +252,6 @@ export function RevisionsFeed() {
             transition={{ duration: 0.15 }}
             className="w-[28rem] bg-white h-full border-l border-slate-200/70 flex flex-col shrink-0 shadow-2xl shadow-slate-900/5 hidden lg:flex min-h-0"
           >
-            {/* Inspector Topbar Panel */}
             <div className="p-6 border-b border-slate-100 flex items-start justify-between bg-slate-50/40 shrink-0">
               <div>
                 <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
@@ -310,15 +268,13 @@ export function RevisionsFeed() {
               </button>
             </div>
 
-            {/* Conversation Flow Stream & Timelines */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0 no-scrollbar">
               
-              {/* History Nodes */}
               <div className="space-y-3.5">
                 <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Communication Logs</h4>
                 
                 <div className="space-y-3 relative before:absolute before:top-2 before:bottom-2 before:left-[13px] before:w-0.5 before:bg-slate-100">
-                  {selected.history.map((node) => (
+                  {selected.history?.map((node) => (
                     <div key={node.id} className="flex gap-3 relative z-10">
                       <div className={cn(
                         "w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-sm ring-4 ring-white shrink-0 mt-0.5",
@@ -336,12 +292,95 @@ export function RevisionsFeed() {
                       </div>
                     </div>
                   ))}
-                </div>
-              </div>
-
-              {/* Dynamic Note Generation Target */}
-              <div className="space-y-2">
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Append System Annotation</label>
+                 </div>
+               </div>
+ 
+               {/* Grade Discussion Thread */}
+               <div className="border-t border-slate-100 pt-6">
+                 <div className="flex items-center justify-between mb-3">
+                   <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                     Grade Discussion
+                   </h4>
+                   <div className="flex items-center gap-2">
+                     <span className="text-sm text-slate-500">
+                       {selected.history?.length || 0} messages
+                     </span>
+                     <button
+                       onClick={() => setDiscussionExpanded(!discussionExpanded)}
+                       className="p-1 hover:bg-slate-100 rounded hover:text-slate-700 transition-colors"
+                     >
+                       {discussionExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                     </button>
+                   </div>
+                 </div>
+                 
+                 {discussionExpanded && (
+                   <div className="space-y-2">
+                     {selected.history?.length === 0 ? (
+                       <p className="text-center py-4 text-slate-500 italic">
+                         No discussion yet. Start the conversation!
+                       </p>
+                     ) : (
+                       <div className="space-y-2">
+                         {selected.history.map((msg) => (
+                           <div key={msg.id} className={cn(
+                             "flex gap-3",
+                             msg.role === 'TEACHER' ? 'flex-row' : 'flex-row-reverse'
+                           )}>
+                             <div className="w-8 h-8 flex items-center justify-center rounded-full 
+                               {msg.role === 'HOD' ? 'bg-amber-100 text-amber-600' : 'bg-sky-100 text-sky-600'}">
+                               {msg.role === 'HOD' ? 'H' : 'T'}
+                             </div>
+                             <div className="flex-1 max-w-[80%]">
+                               <div className={cn(
+                                 "px-3 py-2 rounded-xl",
+                                 msg.role === 'HOD' ? 'bg-amber-50 text-slate-800 rounded-tr-none' : 
+                                   'bg-sky-50 text-slate-800 rounded-tl-none'
+                               )}>
+                                 <p className="text-xs font-medium text-slate-500 mb-0.5">
+                                   {msg.user}
+                                 </p>
+                                 <p className="text-sm text-slate-800 whitespace-pre-wrap break-words">
+                                   {msg.message}
+                                 </p>
+                                 <p className="text-xs text-slate-400 mt-1">
+                                   {msg.time}
+                                 </p>
+                               </div>
+                             </div>
+                           </div>
+                         ))}
+                       </div>
+                     )}
+                   </div>
+                 )}
+                 
+                 <div className="mt-3 pt-2 border-t border-slate-200">
+                   <div className="flex items-center gap-2">
+                     <div className="flex-1">
+                       <textarea
+                         value={discussionInput}
+                         onChange={(e) => setDiscussionInput(e.target.value)}
+                         placeholder="Type your message..."
+                         rows={2}
+                         className="w-full p-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500/20"
+                         disabled={isDiscussionLoading}
+                       />
+                     </div>
+                     <button
+                       onClick={sendDiscussionMessage}
+                       disabled={isDiscussionLoading || !discussionInput.trim()}
+                       className="px-3 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-colors disabled:opacity-50"
+                     >
+                       {isDiscussionLoading ? 'Sending...' : 'Send'}
+                     </button>
+                   </div>
+                 </div>
+               </div>
+               {/* End Grade Discussion Thread */}
+ 
+               <div className="space-y-2">
+                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Append System Annotation</label>
                 <div className="relative">
                   <textarea
                     rows={4}
@@ -358,7 +397,6 @@ export function RevisionsFeed() {
 
             </div>
 
-            {/* Panel Sticky Footer Action Blocks */}
             <div className="p-4 border-t border-slate-100 bg-slate-50/40 space-y-2 shrink-0">
               <button
                 onClick={() => navigate(`/grading?revision=${selected.id}&student=${selected.index}`)}
@@ -370,7 +408,7 @@ export function RevisionsFeed() {
 
               <button
                 disabled={!replyText.trim()}
-                onClick={appendAnnotation}
+                onClick={handleAction}
                 className={cn(
                   "w-full py-2 rounded-xl text-xs font-semibold tracking-wide border transition-all flex items-center justify-center gap-1.5",
                   replyText.trim() 
@@ -382,7 +420,6 @@ export function RevisionsFeed() {
                 Save Internal Annotation
               </button>
             </div>
-
           </motion.div>
         ) : (
           <div className="w-[28rem] bg-slate-50/20 border-l border-slate-200/60 hidden lg:flex flex-col items-center justify-center p-8 text-center shrink-0">
@@ -394,7 +431,6 @@ export function RevisionsFeed() {
           </div>
         )}
       </AnimatePresence>
-
     </div>
   );
 }

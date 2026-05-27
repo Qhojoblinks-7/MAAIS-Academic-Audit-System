@@ -16,10 +16,17 @@ const sizes = {
   lg: 'px-6 py-3 text-base',
 };
 
-export function Button({ variant = 'primary', size = 'md', className, children, leftIcon, rightIcon, ...props }) {
+export function Button({ variant = 'primary', size = 'md', touchOptimized, className, children, leftIcon, rightIcon, ...props }) {
   return (
     <button
-      className={cn(baseClasses, variants[variant], sizes[size], className)}
+      className={cn(
+        baseClasses,
+        variants[variant],
+        sizes[size],
+        // Touch-optimized styles for tablet/smartphone use
+        touchOptimized && 'min-h-[44px] text-base active:scale-95 transition-transform sm:min-h-[auto] sm:text-sm',
+        className
+      )}
       {...props}
     >
       {leftIcon && <span className="mr-2 -ml-1">{leftIcon}</span>}

@@ -7,6 +7,7 @@ import {
   DEFAULT_STP_RULES,
   getSectionFieldName,
 } from './GradingSheet.constants';
+import { notification } from '../../services/notificationService';
 
 /**
  * useGradingSheetLogic — single custom hook owning all GradingSheet state.
@@ -32,6 +33,7 @@ export function useGradingSheetLogic({
   revisionId: revisionIdProp,
   targetStudentId: targetStudentIdProp,
   missingObsId: missingObsIdProp,
+  teacherId: teacherIdProp = null,
 }) {
   const { isTermFinalized: ctxTermFinalized } = useUI();
 
@@ -199,17 +201,45 @@ export function useGradingSheetLogic({
     setStpErrors(errors);
   }, [stpRules, students, isTermFinalized]);
 
-  const handleSaveDraft = useCallback(() => {
-    if (isTermFinalized) return;
-    setSubmissionStatus('DRAFT');
-    setStudents(prev => prev.map(s => ({ ...s, _draftStatus: 'DRAFT' })));
-  }, [isTermFinalized]);
+   const handleSaveDraft = useCallback(() => {
+     if (isTermFinalized) return;
+     setSubmissionStatus('DRAFT');
+     setStudents(prev => prev.map(s => ({ ...s, _draftStatus: 'DRAFT' })));
+     if (teacherId) {
+       notification.sendHODAlert(
+         teacherId,
+         'GRADE_DRAFT_SAVED',
+         {
+           classId: classInfo.id,
+           subject: classInfo.subject,
+           className: classInfo.className,
+           timestamp: new Date().toISOString(),
+         }
+       ).catch(err => {
+         console.error('Failed to send HOD alert for grade draft:', err);
+       });
+     }
+   }, [isTermFinalized, teacherId, classInfo, notification]);
 
-  const handleSubmitToHOD = useCallback(() => {
-    if (isTermFinalized || missingCount > 0) return;
-    setSubmissionStatus('SUBMITTED');
-    setStudents(prev => prev.map(s => ({ ...s, _submissionStatus: 'SUBMITTED' })));
-  }, [isTermFinalized, missingCount]);
+   const handleSubmitToHOD = useCallback(() => {
+     if (isTermFinalized || missingCount > 0) return;
+     setSubmissionStatus('SUBMITTED');
+     setStudents(prev => prev.map(s => ({ ...s, _submissionStatus: 'SUBMITTED' })));
+     if (teacherId) {
+       notification.sendHODAlert(
+         teacherId,
+         'GRADE_SUBMITTED_TO_HOD',
+         {
+           classId: classInfo.id,
+           subject: classInfo.subject,
+           className: classInfo.className,
+           timestamp: new Date().toISOString(),
+         }
+       ).catch(err => {
+         console.error('Failed to send HOD alert for grade submission:', err);
+       });
+     }
+   }, [isTermFinalized, missingCount, teacherId, classInfo, notification]);
 
   const handleSaveBehavioralRatings = useCallback(() => {
     if (isTermFinalized) return;

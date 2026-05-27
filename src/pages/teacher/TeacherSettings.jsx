@@ -5,11 +5,7 @@ import {
   User, BookOpen, Save, CheckCircle2, Clock, Shield, Bell, Smartphone, Fingerprint, Edit3, Eye, EyeOff, Phone, Plus, Calendar, Award, Users,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import MOCK from '../../data/teacherMockData.json';
-
-// settingsClasses / notificationPreferences sourced from centralized mock data
-const SETTINGS_CLASSES = MOCK.settingsClasses.items;
-const NOTIFICATION_PREFERENCES = MOCK.notificationPreferences.items;
+import mockTeacherService from '../../services/mockTeacherService';
 
 export function TeacherSettings() {
   const navigate = useNavigate();
@@ -26,24 +22,29 @@ export function TeacherSettings() {
 
   const [message, setMessage] = React.useState('');
   const [messageType, setMessageType] = React.useState(''); // 'success' or 'error'
+  const [settingsClasses, setSettingsClasses] = React.useState([]);
+  const [notificationPreferences, setNotificationPreferences] = React.useState([]);
 
-  // Fetch profile on mount
+  // Fetch data on mount
   React.useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('/api/teacher/profile');
-        if (!response.ok) throw new Error('Failed to fetch profile');
-        const data = await response.json();
-        setProfile(data);
-        setLoading(false);
+        const profileData = await mockTeacherService.getProfile();
+        const classes = await mockTeacherService.getSettingsClasses();
+        const prefs = await mockTeacherService.getNotificationPreferences();
+        
+        setProfile(profileData || {});
+        setSettingsClasses(classes || []);
+        setNotificationPreferences(prefs || []);
       } catch (err) {
-        setMessage('Failed to load profile');
+        setMessage('Failed to load settings');
         setMessageType('error');
+      } finally {
         setLoading(false);
       }
     };
 
-    fetchProfile();
+    fetchData();
   }, []);
 
   // Validation (client-side gate; backend remains the ultimate source of truth)
