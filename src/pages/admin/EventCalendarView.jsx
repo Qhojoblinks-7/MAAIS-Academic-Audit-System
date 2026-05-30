@@ -1,9 +1,13 @@
-﻿import React from 'react';
+﻿import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
-  Calendar as CalendarIcon, Plus, ChevronLeft, ChevronRight, Clock,
-  MapPin, Users, BookOpen, AlertCircle, Bell, GraduationCap,
+  Calendar as CalendarIcon,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  ChevronRight as ArrowRight,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -24,67 +28,128 @@ const typeColors = {
   CAREER: 'bg-amber-50 border-amber-200 text-amber-700',
 };
 
-function CalendarGrid() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth();
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const todayDate = today.getDate();
-
-  const blanks = Array.from({ length: firstDay }, (_, i) => React.createElement('div', { key: `blank-${i}` }));
-  const dayCells = Array.from({ length: daysInMonth }, (_, i) => {
-    const day = i + 1;
-    const isToday = day === todayDate;
-    const hasEvent = EVENTS.some(e => new Date(e.date).getDate() === day);
-    return React.createElement('div', { key: day, className: cn("aspect-square flex items-center justify-center text-sm font-black rounded-xl transition-all relative", isToday ? "bg-emerald-900 text-white" : "text-gray-700 hover:bg-gray-100") },
-      day,
-      hasEvent && React.createElement('div', { className: cn("absolute bottom-1 w-1 h-1 rounded-full", isToday ? "bg-white" : "bg-emerald-500") })
-    );
-  });
-
-  return React.createElement('div', { className: "grid grid-cols-7 gap-2" },
-    ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => React.createElement('div', { key: d, className: "text-center text-[9px] font-black text-gray-400 uppercase tracking-widest py-2" }, d)),
-    ...(blanks || []),
-    ...(dayCells || [])
-  );
-}
-
 export function EventCalendarView() {
   const navigate = useNavigate();
-  const [currentMonth, setCurrentMonth] = React.useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  const today = new Date();
+  const targetYear = currentMonth.getFullYear();
+  const targetMonth = currentMonth.getMonth();
+
+  // Calendar Grid Calculation Calculations
+  const firstDayOfWeek = new Date(targetYear, targetMonth, 1).getDay();
+  const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+
+  const handlePrevMonth = () => {
+    setCurrentMonth(new Date(targetYear, targetMonth - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentMonth(new Date(targetYear, targetMonth + 1, 1));
+  };
 
   const upcoming = EVENTS.slice(0, 4);
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#F9F9F7] p-8 lg:p-12">
       <div className="max-w-5xl mx-auto">
+        
+        {/* Header */}
         <header className="mb-10">
-          <h1 className="text-3xl font-black text-gray-900 tracking-tighter font-display italic mb-2">Academic Calendar</h1>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Term structure Â· event deadline Â· schedule overview</p>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tighter font-display italic mb-2">
+            Academic Calendar
+          </h1>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+            Term structure • event deadline • schedule overview
+          </p>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Calendar */}
+          
+          {/* Interactive Grid Card */}
           <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-sm">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-xl font-black text-gray-900 italic font-display">
                 {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </h2>
               <div className="flex gap-2">
-                <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))} className="p-2 hover:bg-gray-100 rounded-xl transition-all text-gray-400"><ChevronLeft size={18} /></button>
-                <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))} className="p-2 hover:bg-gray-100 rounded-xl transition-all text-gray-400"><ChevronRight size={18} /></button>
+                <button 
+                  onClick={handlePrevMonth} 
+                  className="p-2 hover:bg-gray-100 rounded-xl transition-all text-gray-400"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <button 
+                  onClick={handleNextMonth} 
+                  className="p-2 hover:bg-gray-100 rounded-xl transition-all text-gray-400"
+                >
+                  <ChevronRight size={18} />
+                </button>
               </div>
             </div>
-            <CalendarGrid />
+
+            {/* Rendered Grid */}
+            <div className="grid grid-cols-7 gap-2">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+                <div key={d} className="text-center text-[9px] font-black text-gray-400 uppercase tracking-widest py-2">
+                  {d}
+                </div>
+              ))}
+              
+              {/* Padding Blocks */}
+              {Array.from({ length: firstDayOfWeek }).map((_, i) => (
+                <div key={`blank-${i}`} />
+              ))}
+
+              {/* Day Cells */}
+              {Array.from({ length: daysInMonth }).map((_, i) => {
+                const day = i + 1;
+                const isToday = 
+                  day === today.getDate() && 
+                  targetMonth === today.getMonth() && 
+                  targetYear === today.getFullYear();
+                
+                const hasEvent = EVENTS.some((event) => {
+                  const eventDate = new Date(event.date);
+                  return (
+                    eventDate.getDate() === day &&
+                    eventDate.getMonth() === targetMonth &&
+                    eventDate.getFullYear() === targetYear
+                  );
+                });
+
+                return (
+                  <div
+                    key={day}
+                    className={cn(
+                      "aspect-square flex items-center justify-center text-sm font-black rounded-xl transition-all relative cursor-pointer",
+                      isToday 
+                        ? "bg-emerald-900 text-white" 
+                        : "text-gray-700 hover:bg-gray-100"
+                    )}
+                  >
+                    {day}
+                    {hasEvent && (
+                      <div 
+                        className={cn(
+                          "absolute bottom-1 w-1 h-1 rounded-full", 
+                          isToday ? "bg-white" : "bg-emerald-500"
+                        )} 
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Upcoming Events */}
+          {/* Upcoming Snapshot Container */}
           <div className="bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
               <CalendarIcon className="text-gray-900" size={20} />
               <h2 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">Upcoming</h2>
             </div>
+            
             <div className="space-y-3">
               {upcoming.map((event, i) => (
                 <motion.div
@@ -95,24 +160,27 @@ export function EventCalendarView() {
                   className="p-4 rounded-2xl border border-gray-100 hover:bg-gray-50 transition-all cursor-pointer"
                 >
                   <div className="flex items-center gap-3 mb-2">
-                    <span className={cn("text-[8px] font-black px-2 py-1 rounded uppercase tracking-widest", typeColors[event.type])}>{event.type}</span>
+                    <span className={cn("text-[8px] font-black px-2 py-1 rounded uppercase tracking-widest", typeColors[event.type])}>
+                      {event.type}
+                    </span>
                   </div>
                   <h4 className="text-sm font-black text-gray-900 mb-1">{event.title}</h4>
                   <p className="text-[10px] font-bold text-gray-400">
                     {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    {event.startTime && ` Â· ${event.startTime}`}
-                    {event.venue && ` Â· ${event.venue}`}
+                    {event.startTime && ` • ${event.startTime}`}
+                    {event.venue && ` • ${event.venue}`}
                   </p>
                 </motion.div>
               ))}
             </div>
+            
             <button className="w-full mt-6 py-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-100 transition-all">
               View Full Calendar
             </button>
           </div>
         </div>
 
-        {/* Event List */}
+        {/* Global Master Agenda List */}
         <div className="mt-8 bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -123,6 +191,7 @@ export function EventCalendarView() {
               <Plus size={14} /> New Event
             </button>
           </div>
+          
           <div className="grid gap-3">
             {EVENTS.map((event) => (
               <div key={event.id} className="flex items-center justify-between p-4 rounded-2xl hover:bg-gray-50 transition-all">
@@ -134,18 +203,20 @@ export function EventCalendarView() {
                     <p className="text-sm font-black text-gray-900">{event.title}</p>
                     <p className="text-[10px] font-bold text-gray-400">
                       {new Date(event.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                      {event.startTime && ` Â· ${event.startTime} - ${event.endTime}`}
-                      {event.venue && ` Â· ${event.venue}`}
+                      {event.startTime && ` • ${event.startTime} - ${event.endTime}`}
+                      {event.venue && ` • ${event.venue}`}
                     </p>
                   </div>
                 </div>
-                <span className={cn("text-[9px] font-black px-2 py-1 rounded uppercase tracking-widest", typeColors[event.type])}>{event.type}</span>
+                <span className={cn("text-[9px] font-black px-2 py-1 rounded uppercase tracking-widest", typeColors[event.type])}>
+                  {event.type}
+                </span>
               </div>
             ))}
           </div>
         </div>
+
       </div>
     </div>
   );
 }
-

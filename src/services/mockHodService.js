@@ -94,30 +94,48 @@ const createMockService = () => ({
     };
   },
 
-  lockDepartmentMatrix: async (termId) => {
-    await simulateDelay();
-    const term = mockData.lockedTerms.items.find((t) => t.id === termId);
-    if (term) {
-      term.status = "LOCKED";
-      term.lockedAt = new Date().toISOString();
-      term.lockedBy = "hod001";
-    }
-    return { success: true, message: "Department matrix locked successfully" };
-  },
+lockDepartmentMatrix: async (termId) => {
+     await simulateDelay();
+     // Lock all classes belonging to this term
+     mockData.departmentProgress.items.forEach((cls) => {
+       if (cls.termId === termId) {
+         cls.status = "LOCKED";
+         cls.lockedAt = new Date().toISOString();
+         cls.lockedBy = "hod001";
+       }
+     });
+     // Also update lockedTerms
+     const term = mockData.lockedTerms.items.find((t) => t.id === termId);
+     if (term) {
+       term.status = "LOCKED";
+       term.lockedAt = new Date().toISOString();
+       term.lockedBy = "hod001";
+     }
+     return { success: true, message: "Department matrix locked successfully" };
+   },
 
-  unlockDepartmentMatrix: async (termId) => {
-    await simulateDelay();
-    const term = mockData.lockedTerms.items.find((t) => t.id === termId);
-    if (term) {
-      term.status = "UNLOCKED";
-      term.lockedAt = null;
-      term.lockedBy = null;
-    }
-    return {
-      success: true,
-      message: "Department matrix unlocked successfully",
-    };
-  },
+unlockDepartmentMatrix: async (termId) => {
+     await simulateDelay();
+     // Unlock all classes belonging to this term
+     mockData.departmentProgress.items.forEach((cls) => {
+       if (cls.termId === termId) {
+         cls.status = "PENDING";
+         cls.lockedAt = null;
+         cls.lockedBy = null;
+       }
+     });
+     // Also update lockedTerms
+     const term = mockData.lockedTerms.items.find((t) => t.id === termId);
+     if (term) {
+       term.status = "UNLOCKED";
+       term.lockedAt = null;
+       term.lockedBy = null;
+     }
+     return {
+       success: true,
+       message: "Department matrix unlocked successfully",
+     };
+   },
 
   getGradeComparison: async (subjectId, termA, termB) => {
     await simulateDelay();
@@ -410,6 +428,9 @@ getActiveImpersonations: async () => {
     const pendingSubmissions = mockData.teacherSubmissions.items.filter(
       (s) => s.status === "DRAFT",
     ).length;
+    const totalSubmissions = mockData.teacherSubmissions.items.length || 1;
+    const submittedCount = mockData.teacherSubmissions.items.filter(s => s.status === "SUBMITTED").length;
+    const completionPct = Math.round((submittedCount / totalSubmissions) * 100);
     return {
       canLock: pendingSubmissions === 0,
       isLocked:
@@ -421,21 +442,31 @@ getActiveImpersonations: async () => {
           : [],
       warnings: [],
       pendingSubmissions,
+      completionPct,
     };
   },
 
   exportWAECCSV: async (termId, className) => {
     await simulateDelay();
     const rows = mockData.waecExport.studentRows;
-    const csv = ["Index,Student Name,SBA,Exam,Final,Grade,Roman"]
-      .concat(
-        rows.map(
-          (r) =>
-            `${r.index},"${r.name.replace(/"/g, '""')}",${r.sba},${r.exam},${r.final},${r.grade},${r.roman || ''}`,
-        ),
-      )
-      .join("\r\n");
-    return csv;
+    const headers = ['Index', 'Student Name', 'SBA', 'Exam', 'Final', 'Grade', 'Roman'];
+    const dataRows = rows.map(
+      (r) =>
+        `${r.index},"${(r.name ?? '').replace(/"/g, '""')}",${r.sba ?? 0},${r.exam ?? 0},${r.final ?? 0},${r.grade ?? ''},${r.roman || ''}`,
+    );
+    const csv = [headers, ...dataRows].join('\r\n');
+    const filename = `WAEC_${className || 'Subject'}_${termId || 'export'}.csv`;
+    
+    // Trigger download
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    return { success: true, message: "WAEC CSV exported", csv };
   },
 
   exportWAECPDF: async (termId) => {

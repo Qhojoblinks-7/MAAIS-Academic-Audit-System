@@ -17,3 +17,7 @@ export { ReportGeneratorView } from './ReportGeneratorView';
 export { SchedulingView } from './SchedulingView';
 export { StaffRegistry } from './StaffRegistry';
 export { StudentRegistry } from './StudentRegistry';
+export {NewApprovalRequestView} from './NewApprovalRequestView'
+export {ApprovalInspectView} from './ApprovalInspectView'
+export {ApprovalsView} from './ApprovalsView'
+export {SupportTicketDetailView} from './SupportTicketDetailView'

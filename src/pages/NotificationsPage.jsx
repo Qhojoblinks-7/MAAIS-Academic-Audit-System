@@ -36,8 +36,8 @@ export function NotificationsPage() {
       fetchNotifications();
     };
 
-    const unsubscribe1 = eventBus.subscribe('hod-comment-added', handleNotification);
-    const unsubscribe2 = eventBus.subscribe('grade-revision-rejected', handleNotification);
+    const unsubscribe1 = eventBus.on('hod-comment-added', handleNotification);
+    const unsubscribe2 = eventBus.on('grade-revision-rejected', handleNotification);
 
     return () => {
       unsubscribe1();

@@ -132,9 +132,23 @@ export function HODLockExport() {
   }, [sortedClasses, activeClassId]);
 
   const handleLock = async (clsId) => {
-    if (!clsId || typeof validateLock !== 'function') return;
+    if (!clsId) return;
+    
+    // Find the class to get its termId
+    const cls = departmentProgress.find(c => c.id === clsId);
+    const termId = cls?.termId || clsId;
+    
+    if (typeof validateLock !== 'function') {
+      setConfirmLock({ 
+        id: clsId, 
+        title: 'Seal Evaluation Payload?', 
+        message: 'All associated marks will freeze instantly. Proceed?', 
+      });
+      return;
+    }
+    
     try {
-      const validation = await validateLock(clsId);
+      const validation = await validateLock(termId);
       if (!validation.canLock) {
         alert(`Cannot lock: ${validation.blockingIssues?.join(', ') || 'Validation failed'}`);
         return;
@@ -159,10 +173,15 @@ export function HODLockExport() {
 
   const doLock = async (clsId) => {
     if (!clsId || typeof lockTermWithValidation !== 'function') return;
+    
+    // Find the class to get its termId
+    const cls = departmentProgress.find(c => c.id === clsId);
+    const termId = cls?.termId || clsId;
+    
     setLocking(clsId);
     try {
       const oldVal = typeof auditTrail?.captureSnapshot === 'function' ? auditTrail.captureSnapshot({ status: 'PENDING' }) : {};
-      await lockTermWithValidation(clsId);
+      await lockTermWithValidation(termId);
       const newVal = typeof auditTrail?.captureSnapshot === 'function' ? auditTrail.captureSnapshot({ status: 'LOCKED' }) : {};
       
       if (auditTrail?.logChange) {
@@ -193,9 +212,15 @@ export function HODLockExport() {
 
   const doUnlock = async (clsId) => {
     if (!clsId || typeof unlockTerm !== 'function') return;
+    
+    // Find the class to get its termId
+    const cls = departmentProgress.find(c => c.id === clsId) ||
+                lockedTerms.find(c => c.id === clsId);
+    const termId = cls?.termId || clsId;
+    
     try {
       const oldVal = typeof auditTrail?.captureSnapshot === 'function' ? auditTrail.captureSnapshot({ status: 'LOCKED' }) : {};
-      await unlockTerm(clsId);
+      await unlockTerm(termId);
       const newVal = typeof auditTrail?.captureSnapshot === 'function' ? auditTrail.captureSnapshot({ status: 'PENDING' }) : {};
       
       if (auditTrail?.logChange) {
@@ -214,11 +239,11 @@ export function HODLockExport() {
     }
   };
 
-  const handleExport = async (clsId) => {
+const handleExport = async (clsId) => {
     if (!clsId || typeof exportClassCSV !== 'function') return;
     
     // Find the class to check its validation status
-    const cls = departmentProgress.find(c => c.id === clsId) || 
+    const cls = departmentProgress.find(c => c.id === clsId) ||
                 lockedTerms.find(c => c.id === clsId);
                 
     if (!cls) return;
@@ -233,20 +258,7 @@ export function HODLockExport() {
     
     setExporting(clsId);
     try {
-      const blob = await exportClassCSV(clsId);
-      if (!(blob instanceof Blob)) return;
-      
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      // Use more descriptive filename with subject and class name if available
-      const subject = cls.subject || 'Subject';
-      const className = cls.className || cls.name || 'Class';
-      a.download = `WAEC_${subject}_${className}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      await exportClassCSV(clsId);
       
       if (auditTrail?.logChange) {
         await auditTrail.logChange('class_term', clsId, {}, { exported: true }, 'WAEC CSV dataset export compiled');

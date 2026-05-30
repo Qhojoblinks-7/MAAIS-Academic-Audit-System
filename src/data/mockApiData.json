@@ -82,15 +82,81 @@
     "description": "Academic departments in the school.",
     "items": [
       {
-        "id": "dept001",
-        "name": "Agriculture",
-        "code": "AGRIC",
-        "hodId": "hod001",
+        "id": "1",
+        "name": "Science",
+        "code": "SCI",
+        "hodId": "STF-003",
+        "teacherCount": 14,
+        "studentCount": 245,
+        "description": "Core and Elective Science nodes including Physics, Biology, and Chemistry.",
+        "validationStatus": 85,
+        "color": "bg-blue-500",
+        "iconColor": "text-blue-600",
+        "programs": ["General Science", "Agricultural Science"],
+        "staff": [
+          { "id": "STF-003", "name": "Samuel Boateng", "role": "Senior Physics Tutor", "isHOD": true },
+          { "id": "STF-010", "name": "Dr. Mensah", "role": "Biology Lead", "isHOD": false },
+          { "id": "STF-011", "name": "Kwadwo Asare", "role": "Chemistry Specialist", "isHOD": false }
+        ]
+      },
+      {
+        "id": "2",
+        "name": "Mathematics",
+        "code": "MATH",
+        "hodId": "STF-006",
         "teacherCount": 12,
-        "studentCount": 245
+        "studentCount": 198,
+        "description": "Core Mathematics and Elective Mathematics institutional units.",
+        "validationStatus": 100,
+        "color": "bg-emerald-500",
+        "iconColor": "text-emerald-600",
+        "programs": ["All Programs"],
+        "staff": [
+          { "id": "STF-006", "name": "Elizabeth Osei", "role": "Core Math Lead", "isHOD": true },
+          { "id": "STF-012", "name": "Isaac Tetteh", "role": "Elective Math Tutor", "isHOD": false }
+        ]
+      },
+      {
+        "id": "3",
+        "name": "Languages",
+        "code": "LANG",
+        "hodId": "STF-005",
+        "teacherCount": 18,
+        "studentCount": 210,
+        "description": "English, French, and local dialect linguistic nodes.",
+        "validationStatus": 45,
+        "color": "bg-purple-500",
+        "iconColor": "text-purple-600",
+        "programs": ["All Programs"],
+        "staff": [
+          { "id": "STF-005", "name": "John Mensah", "role": "English Literature Node", "isHOD": true }
+        ]
+      },
+      {
+        "id": "4",
+        "name": "Business",
+        "code": "BUS",
+        "hodId": "STF-001",
+        "teacherCount": 10,
+        "studentCount": 150,
+        "description": "Accounting, Business Management, and Costing nodes.",
+        "validationStatus": 70,
+        "color": "bg-amber-500",
+        "iconColor": "text-amber-600",
+        "programs": ["Business"],
+        "staff": [
+          { "id": "STF-001", "name": "Anthony Hackman", "role": "Accounting Lead", "isHOD": true }
+        ]
       }
     ]
   },
+  "departmentDistribution": [
+    { "name": "Science", "teachers": 14 },
+    { "name": "Math", "teachers": 12 },
+    { "name": "Languages", "teachers": 18 },
+    { "name": "Business", "teachers": 10 },
+    { "name": "Vocational", "teachers": 6 }
+  ],
   "students": {
     "description": "Student records for cross-subject visibility.",
     "items": [
@@ -184,6 +250,32 @@
         "resolved": false,
         "teacherId": "teacher002",
         "teacherName": "Dr. Yaw Boateng"
+      },
+      {
+        "id": "alert002",
+        "studentId": "stud006",
+        "studentName": "Kwame Mensah",
+        "studentIndex": "006",
+        "subject": "General Agriculture",
+        "reason": "Consistently low practical scores requiring support",
+        "severity": "MEDIUM",
+        "timestamp": "2025-03-10T09:00:00Z",
+        "resolved": true,
+        "teacherId": "teacher001",
+        "teacherName": "Mr. Kwame Mensah"
+      },
+      {
+        "id": "alert003",
+        "studentId": "stud003",
+        "studentName": "Yaw Boateng",
+        "studentIndex": "003",
+        "subject": "General Agriculture",
+        "reason": "At-risk performance identified - additional counseling",
+        "severity": "LOW",
+        "timestamp": "2024-08-15T14:00:00Z",
+        "resolved": true,
+        "teacherId": "teacher001",
+        "teacherName": "Mr. Kwame Mensah"
       }
     ]
   },
@@ -192,6 +284,7 @@
     "items": [
       {
         "id": "class001",
+        "termId": "term_2025_1",
         "className": "SHS 1 Agric A",
         "name": "SHS 1 Agric A",
         "subject": "General Agriculture",
@@ -200,6 +293,7 @@
         "studentIds": ["stud001", "stud002", "stud003", "stud004", "stud005"],
         "studentIndexRange": [1, 38],
         "submissionPct": 100,
+        "progress": 100,
         "status": "LOCKED",
         "form": "Form 1",
         "programme": "SHS",
@@ -220,6 +314,7 @@
       },
       {
         "id": "class002",
+        "termId": "term_2025_1",
         "className": "SHS 1 Agric B",
         "name": "SHS 1 Agric B",
         "subject": "General Agriculture",
@@ -227,7 +322,8 @@
         "studentCount": 42,
         "studentIds": ["stud006", "stud007", "stud008", "stud009", "stud010"],
         "studentIndexRange": [39, 80],
-        "submissionPct": 75,
+        "submissionPct": 100,
+        "progress": 100,
         "status": "PENDING",
         "form": "Form 1",
         "programme": "SHS",
@@ -248,6 +344,7 @@
       },
       {
         "id": "class002_fixed_leak", 
+        "termId": "term_2025_1",
         "className": "SHS 1 Agric C",
         "name": "SHS 1 Agric C",
         "subject": "General Agriculture",
@@ -256,6 +353,7 @@
         "studentIds": ["stud011", "stud012", "stud013", "stud014"],
         "studentIndexRange": [1, 38],
         "submissionPct": 100,
+        "progress": 100,
         "status": "LOCKED",
         "form": "Form 1",
         "programme": "SHS",
@@ -298,6 +396,7 @@
       },
       {
         "id": "class003",
+        "termId": "term_2025_2",
         "className": "SHS 2 Animal Hsb",
         "name": "SHS 2 Animal Hsb",
         "subject": "Animal Husbandry",
@@ -306,6 +405,7 @@
         "studentIds": ["stud021", "stud022", "stud023"],
         "studentIndexRange": [1, 28],
         "submissionPct": 62,
+        "progress": 62,
         "status": "PENDING",
         "form": "Form 2",
         "programme": "SHS",
@@ -327,6 +427,7 @@
       },
       {
         "id": "class004",
+        "termId": "term_2025_1",
         "className": "SHS 1 Crop Science",
         "name": "SHS 1 Crop Science",
         "subject": "Crop Science",
@@ -335,6 +436,7 @@
         "studentIds": ["stud031", "stud032", "stud033", "stud034"],
         "studentIndexRange": [1, 42],
         "submissionPct": 85,
+        "progress": 85,
         "status": "PENDING",
         "form": "Form 1",
         "programme": "SHS",
@@ -356,6 +458,7 @@
       },
       {
         "id": "class005",
+        "termId": "term_2025_2",
         "className": "SHS 2 Agric Econ",
         "name": "SHS 2 Agric Econ",
         "subject": "Agricultural Economics",
@@ -364,6 +467,7 @@
         "studentIds": ["stud041", "stud042", "stud043"],
         "studentIndexRange": [1, 35],
         "submissionPct": 40,
+        "progress": 40,
         "status": "PENDING",
         "form": "Form 2",
         "programme": "SHS",
@@ -479,12 +583,12 @@
         "academicYear": "2023/2024",
         "averageScore": 82,
         "status": "LOCKED",
-        "students": [
-          { "id": "stud001", "name": "Angela Owusu", "indexNumber": "001", "grade": "A1" },
-          { "id": "stud002", "name": "Kwame Mensah", "indexNumber": "002", "grade": "B2" },
-          { "id": "stud003", "name": "Yaw Boateng", "indexNumber": "003", "grade": "B3" },
-          { "id": "stud004", "name": "Esi Ansah", "indexNumber": "004", "grade": "C4" }
-        ],
+"students": [
+           { "id": "stud001", "name": "Angela Owusu", "indexNumber": "001", "grade": "A1", "index": "001", "graduationYear": "2024", "consistencyScore": "85%", "finalWassce": "A1", "currentClass": "SHS 3 Agric B", "history": [{ "term": "2023/24 Term 1", "finalGrade": 75 }, { "term": "2023/24 Term 2", "finalGrade": 82 }, { "term": "2023/24 Term 3", "finalGrade": 82 }], "observations": [{ "id": "o1", "type": "Behavioral", "date": "2023-05-15", "comment": "Excellent practical work", "teacherName": "Mr. Kwame Mensah" }], "interventions": [] },
+           { "id": "stud002", "name": "Kwame Mensah", "indexNumber": "002", "grade": "B2", "index": "002", "graduationYear": "2024", "consistencyScore": "72%", "finalWassce": "B2", "currentClass": "SHS 3 Agric B", "history": [{ "term": "2023/24 Term 1", "finalGrade": 70 }, { "term": "2023/24 Term 2", "finalGrade": 75 }, { "term": "2023/24 Term 3", "finalGrade": 78 }], "observations": [], "interventions": [] },
+           { "id": "stud003", "name": "Yaw Boateng", "indexNumber": "003", "grade": "B3", "index": "003", "graduationYear": "2024", "consistencyScore": "68%", "finalWassce": "B3", "currentClass": "SHS 3 Agric B", "history": [{ "term": "2023/24 Term 1", "finalGrade": 65 }, { "term": "2023/24 Term 2", "finalGrade": 68 }, { "term": "2023/24 Term 3", "finalGrade": 70 }], "observations": [], "interventions": [] },
+           { "id": "stud004", "name": "Esi Ansah", "indexNumber": "004", "grade": "C4", "index": "004", "graduationYear": "2024", "consistencyScore": "62%", "finalWassce": "C4", "currentClass": "SHS 3 Agric B", "history": [{ "term": "2023/24 Term 1", "finalGrade": 60 }, { "term": "2023/24 Term 2", "finalGrade": 62 }, { "term": "2023/24 Term 3", "finalGrade": 63 }], "observations": [], "interventions": [{ "id": "int1", "term": "2023/24 Term 2", "reason": "Low practical scores", "action": "Additional lab sessions", "outcome": "Improved to 62%" }] }
+         ],
         "locked": true
       },
       {
@@ -497,11 +601,11 @@
         "academicYear": "2024/2025",
         "averageScore": 78,
         "status": "ARCHIVED",
-        "students": [
-          { "id": "stud005", "name": "Ama Serwaa", "indexNumber": "005", "grade": "B2" },
-          { "id": "stud006", "name": "Kwame Ofori", "indexNumber": "006", "grade": "C5" },
-          { "id": "stud007", "name": "Efia Asante", "indexNumber": "007", "grade": "B3" }
-        ],
+"students": [
+           { "id": "stud005", "name": "Ama Serwaa", "indexNumber": "005", "grade": "B2", "index": "005", "graduationYear": "2025", "consistencyScore": "82%", "finalWassce": "B2", "currentClass": "SHS 1 Agric A", "history": [{ "term": "2024/25 Term 1", "finalGrade": 75 }, { "term": "2024/25 Term 2", "finalGrade": 82 }], "observations": [{ "id": "o2", "type": "Research", "date": "2024-02-15", "comment": "Exceptional research methodology", "teacherName": "Mr. Kofi Asare" }], "interventions": [] },
+           { "id": "stud006", "name": "Kwame Ofori", "indexNumber": "006", "grade": "C5", "index": "006", "graduationYear": "2025", "consistencyScore": "65%", "finalWassce": "C5", "currentClass": "SHS 1 Agric A", "history": [{ "term": "2024/25 Term 1", "finalGrade": 62 }, { "term": "2024/25 Term 2", "finalGrade": 65 }], "observations": [], "interventions": [] },
+           { "id": "stud007", "name": "Efia Asante", "indexNumber": "007", "grade": "B3", "index": "007", "graduationYear": "2025", "consistencyScore": "70%", "finalWassce": "B3", "currentClass": "SHS 1 Agric A", "history": [{ "term": "2024/25 Term 1", "finalGrade": 68 }, { "term": "2024/25 Term 2", "finalGrade": 70 }], "observations": [], "interventions": [] }
+         ],
         "locked": true
       },
       {
@@ -514,10 +618,10 @@
         "academicYear": "2025/2026",
         "averageScore": 85,
         "status": "LOCKED",
-        "students": [
-          { "id": "stud008", "name": "Yaw Amponsah", "indexNumber": "008", "grade": "A1" },
-          { "id": "stud009", "name": "Akua Mensah", "indexNumber": "009", "grade": "B2" }
-        ],
+"students": [
+           { "id": "stud008", "name": "Yaw Amponsah", "indexNumber": "008", "grade": "A1", "index": "008", "graduationYear": "2026", "consistencyScore": "88%", "finalWassce": "A1", "currentClass": "SHS 2 Agric B", "history": [{ "term": "2025/26 Term 1", "finalGrade": 85 }, { "term": "2025/26 Term 2", "finalGrade": 87 }], "observations": [{ "id": "o3", "type": "Practical", "date": "2024-01-20", "comment": "Outstanding practical assessment performance", "teacherName": "Mr. Kwame Mensah" }], "interventions": [] },
+           { "id": "stud009", "name": "Akua Mensah", "indexNumber": "009", "grade": "B2", "index": "009", "graduationYear": "2026", "consistencyScore": "75%", "finalWassce": "B2", "currentClass": "SHS 2 Agric B", "history": [{ "term": "2025/26 Term 1", "finalGrade": 72 }, { "term": "2025/26 Term 2", "finalGrade": 75 }], "observations": [], "interventions": [] }
+         ],
         "locked": true
       }
     ]
@@ -703,6 +807,48 @@
         ]
       },
       {
+        "studentId": "stud002",
+        "termHistory": [
+          { "term": "2023/24 Term 1", "gpa": 3.15, "credits": 6, "grade": "B2" },
+          { "term": "2023/24 Term 2", "gpa": 3.28, "credits": 6, "grade": "B2" },
+          { "term": "2023/24 Term 3", "gpa": 3.35, "credits": 6, "grade": "B2" },
+          { "term": "2024/25 Term 1", "gpa": 3.42, "credits": 6, "grade": "B2" },
+          { "term": "2024/25 Term 2", "gpa": 3.48, "credits": 6, "grade": "B2" },
+          { "term": "2025/26 Term 3", "gpa": 3.55, "credits": 6, "grade": "A1" }
+        ],
+        "subjectPerformance": [
+          { "subject": "General Agriculture", "grades": ["B2", "B2", "B2", "A1"], "trend": "improving" }
+        ]
+      },
+      {
+        "studentId": "stud003",
+        "termHistory": [
+          { "term": "2023/24 Term 1", "gpa": 2.95, "credits": 6, "grade": "B3" },
+          { "term": "2023/24 Term 2", "gpa": 3.05, "credits": 6, "grade": "B3" },
+          { "term": "2023/24 Term 3", "gpa": 3.12, "credits": 6, "grade": "B3" },
+          { "term": "2024/25 Term 1", "gpa": 3.22, "credits": 6, "grade": "B3" },
+          { "term": "2024/25 Term 2", "gpa": 3.28, "credits": 6, "grade": "B3" },
+          { "term": "2025/26 Term 3", "gpa": 3.35, "credits": 6, "grade": "B3" }
+        ],
+        "subjectPerformance": [
+          { "subject": "General Agriculture", "grades": ["B3", "B3", "B3", "B2"], "trend": "improving" }
+        ]
+      },
+      {
+        "studentId": "stud004",
+        "termHistory": [
+          { "term": "2023/24 Term 1", "gpa": 2.65, "credits": 6, "grade": "C4" },
+          { "term": "2023/24 Term 2", "gpa": 2.75, "credits": 6, "grade": "C4" },
+          { "term": "2023/24 Term 3", "gpa": 2.82, "credits": 6, "grade": "C4" },
+          { "term": "2024/25 Term 1", "gpa": 2.88, "credits": 6, "grade": "C4" },
+          { "term": "2024/25 Term 2", "gpa": 2.95, "credits": 6, "grade": "C4" },
+          { "term": "2025/26 Term 3", "gpa": 3.02, "credits": 6, "grade": "B3" }
+        ],
+        "subjectPerformance": [
+          { "subject": "General Agriculture", "grades": ["C4", "C4", "C4", "B3"], "trend": "improving" }
+        ]
+      },
+      {
         "studentId": "stud006",
         "termHistory": [
           { "term": "2023/24 Term 1", "gpa": 2.15, "credits": 6, "grade": "C5" },
@@ -714,6 +860,70 @@
         "subjectPerformance": [
           { "subject": "General Agriculture", "grades": ["D7", "D7", "D7", "C6"], "trend": "improving" },
           { "subject": "Mathematics", "grades": ["C6", "C5", "C4", "C5"], "trend": "improving" }
+        ]
+      },
+      {
+        "studentId": "stud008",
+        "termHistory": [
+          { "term": "2024/25 Term 1", "gpa": 3.75, "credits": 6, "grade": "A1" },
+          { "term": "2024/25 Term 2", "gpa": 3.82, "credits": 6, "grade": "A1" },
+          { "term": "2024/25 Term 3", "gpa": 3.78, "credits": 6, "grade": "A1" }
+        ],
+        "subjectPerformance": [
+          { "subject": "Animal Husbandry", "grades": ["A1", "A1", "A1"], "trend": "stable" }
+        ]
+      },
+      {
+        "studentId": "stud009",
+        "termHistory": [
+          { "term": "2024/25 Term 1", "gpa": 3.15, "credits": 6, "grade": "B2" },
+          { "term": "2024/25 Term 2", "gpa": 3.22, "credits": 6, "grade": "B2" },
+          { "term": "2024/25 Term 3", "gpa": 3.28, "credits": 6, "grade": "B2" }
+        ],
+        "subjectPerformance": [
+          { "subject": "Animal Husbandry", "grades": ["B2", "B2", "B2"], "trend": "stable" }
+        ]
+      },
+      {
+        "studentId": "stud002",
+        "termHistory": [
+          { "term": "2023/24 Term 1", "gpa": 3.15, "credits": 6, "grade": "B2" },
+          { "term": "2023/24 Term 2", "gpa": 3.28, "credits": 6, "grade": "B2" },
+          { "term": "2023/24 Term 3", "gpa": 3.35, "credits": 6, "grade": "B2" },
+          { "term": "2024/25 Term 1", "gpa": 3.42, "credits": 6, "grade": "B2" },
+          { "term": "2024/25 Term 2", "gpa": 3.48, "credits": 6, "grade": "B2" },
+          { "term": "2025/26 Term 3", "gpa": 3.55, "credits": 6, "grade": "A1" }
+        ],
+        "subjectPerformance": [
+          { "subject": "General Agriculture", "grades": ["B2", "B2", "B2", "A1"], "trend": "improving" }
+        ]
+      },
+      {
+        "studentId": "stud003",
+        "termHistory": [
+          { "term": "2023/24 Term 1", "gpa": 2.95, "credits": 6, "grade": "B3" },
+          { "term": "2023/24 Term 2", "gpa": 3.05, "credits": 6, "grade": "B3" },
+          { "term": "2023/24 Term 3", "gpa": 3.12, "credits": 6, "grade": "B3" },
+          { "term": "2024/25 Term 1", "gpa": 3.22, "credits": 6, "grade": "B3" },
+          { "term": "2024/25 Term 2", "gpa": 3.28, "credits": 6, "grade": "B3" },
+          { "term": "2025/26 Term 3", "gpa": 3.35, "credits": 6, "grade": "B3" }
+        ],
+        "subjectPerformance": [
+          { "subject": "General Agriculture", "grades": ["B3", "B3", "B3", "B2"], "trend": "improving" }
+        ]
+      },
+      {
+        "studentId": "stud004",
+        "termHistory": [
+          { "term": "2023/24 Term 1", "gpa": 2.65, "credits": 6, "grade": "C4" },
+          { "term": "2023/24 Term 2", "gpa": 2.75, "credits": 6, "grade": "C4" },
+          { "term": "2023/24 Term 3", "gpa": 2.82, "credits": 6, "grade": "C4" },
+          { "term": "2024/25 Term 1", "gpa": 2.88, "credits": 6, "grade": "C4" },
+          { "term": "2024/25 Term 2", "gpa": 2.95, "credits": 6, "grade": "C4" },
+          { "term": "2025/26 Term 3", "gpa": 3.02, "credits": 6, "grade": "B3" }
+        ],
+        "subjectPerformance": [
+          { "subject": "General Agriculture", "grades": ["C4", "C4", "C4", "B3"], "trend": "improving" }
         ]
       },
       {
@@ -766,13 +976,33 @@
           { "term": "2024/25 Term 1", "gpa": 2.95, "credits": 6, "grade": "B3" },
           { "term": "2024/25 Term 2", "gpa": 3.02, "credits": 6, "grade": "B3" }
         ],
-"subjectPerformance": [
-            { "subject": "General Agriculture", "grades": ["B3", "B3", "B3", "B3"], "trend": "stable" },
-            { "subject": "Mathematics", "grades": ["C4", "C5", "C4", "C5"], "trend": "stable" }
-          ]
-        }
-      ]
-   },
+        "subjectPerformance": [
+          { "subject": "General Agriculture", "grades": ["B3", "B3", "B3", "B3"], "trend": "stable" },
+          { "subject": "Mathematics", "grades": ["C4", "C5", "C4", "C5"], "trend": "stable" }
+        ]
+      },
+      {
+        "studentId": "stud005",
+        "termHistory": [
+          { "term": "2024/25 Term 1", "gpa": 3.28, "credits": 6, "grade": "B2" },
+          { "term": "2024/25 Term 2", "gpa": 3.35, "credits": 6, "grade": "B2" }
+        ],
+        "subjectPerformance": [
+          { "subject": "General Agriculture", "grades": ["B2", "B2"], "trend": "stable" }
+        ]
+      },
+      {
+        "studentId": "stud007",
+        "termHistory": [
+          { "term": "2024/25 Term 1", "gpa": 2.85, "credits": 6, "grade": "B3" },
+          { "term": "2024/25 Term 2", "gpa": 2.92, "credits": 6, "grade": "B3" }
+        ],
+        "subjectPerformance": [
+          { "subject": "General Agriculture", "grades": ["B3", "B3"], "trend": "stable" }
+        ]
+      }
+    ]
+  },
    "teacher": {
     "gradeRevisions": {
       "items": [
@@ -808,8 +1038,14 @@
     },
     "observations": {
       "items": [
-        { "id": "o1", "type": "Behavioral", "student": "Angela Owusu", "index": "001", "class": "SHS 1 Agric B", "date": "2026-05-14", "comment": "Exhibited high safety protocol compliance.", "status": "Active" },
-        { "id": "o2", "type": "Collaboration", "student": "Kwame Mensah", "index": "017", "class": "SHS 1 Agric B", "date": "2026-05-08", "comment": "Led the workshop group effectively.", "status": "Active" }
+        { "id": "o1", "type": "Behavioral", "student": "Angela Owusu", "index": "001", "class": "SHS 1 Agric B", "date": "2026-05-14", "comment": "Exhibited high safety protocol compliance.", "teacherName": "Mr. Kwame Mensah", "status": "Active" },
+        { "id": "o2", "type": "Collaboration", "student": "Kwame Mensah", "index": "006", "class": "SHS 1 Agric B", "date": "2026-05-08", "comment": "Led the workshop group effectively.", "teacherName": "Mr. Kwame Mensah", "status": "Active" },
+        { "id": "o3", "type": "Leadership", "student": "Kwame Mensah", "index": "006", "class": "SHS 1 Agric B", "date": "2025-03-15", "comment": "Demonstrated excellent team collaboration during farm practical.", "teacherName": "Dr. Yaw Boateng", "status": "Active" },
+        { "id": "o4", "type": "Attendance", "student": "Angela Owusu", "index": "001", "class": "SHS 1 Agric B", "date": "2025-11-22", "comment": "Consistent attendance and active participation.", "teacherName": "Mr. Kwame Mensah", "status": "Active" },
+        { "id": "o5", "type": "Practical", "student": "Yaw Boateng", "index": "003", "class": "SHS 3 Agric B", "date": "2024-10-30", "comment": "Outstanding practical assessment performance.", "teacherName": "Mr. Kwame Mensah", "status": "Active" },
+        { "id": "o6", "type": "Progress", "student": "Esi Ansah", "index": "004", "class": "SHS 3 Agric B", "date": "2024-09-12", "comment": "Significant improvement in crop management skills.", "teacherName": "Dr. Yaw Boateng", "status": "Active" },
+        { "id": "o7", "type": "Research", "student": "Ama Serwaa", "index": "005", "class": "SHS 1 Agric A", "date": "2025-01-20", "comment": "Exceptional research methodology in project work.", "teacherName": "Mr. Kwame Mensah", "status": "Active" },
+        { "id": "o8", "type": "Theory", "student": "Kwame Ofori", "index": "006", "class": "SHS 1 Agric A", "date": "2025-02-15", "comment": "Strong theoretical foundation in agricultural concepts.", "teacherName": "Mr. Kofi Asare", "status": "Active" }
       ]
     }
   },

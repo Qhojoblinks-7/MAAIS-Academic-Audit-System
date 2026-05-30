@@ -7,10 +7,9 @@ import {
   CheckCircle2, AlertTriangle, Layers,
   Trash2, Copy, Save, MapPin
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
 
-// --- Types ---
+// --- Types & Constants ---
 
 const TIME_SLOTS = [
   { id: '1', start: '08:00', end: '08:40', label: 'Period 1' },
@@ -28,77 +27,121 @@ const TIME_SLOTS = [
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
 const UNASSIGNED_LESSONS = [
-  { id: 'L1', subject: 'Elective Physics', class: 'SHS 3 Sci 1', teacher: 'Mr. Boateng', color: 'bg-blue-500' },
-  { id: 'L2', subject: 'Core Mathematics', class: 'SHS 1 Sci 2', teacher: 'Mrs. Mensah', color: 'bg-emerald-500' },
-  { id: 'L3', subject: 'English Language', class: 'SHS 2 Arts 1', teacher: 'Ms. Lamptey', color: 'bg-amber-500' },
-  { id: 'L4', subject: 'Integrated Science', class: 'SHS 1 Bus 1', teacher: 'Mrs. Owusu', color: 'bg-rose-500' },
-  { id: 'L5', subject: 'Cost Accounting', class: 'SHS 2 Bus 2', teacher: 'Mr. Appiah', color: 'bg-indigo-500' },
+  { id: 'L1', subject: 'Elective Physics', class: 'SHS 3 Science 1', teacher: 'Mr. Boateng', color: 'bg-blue-500' },
+  { id: 'L2', subject: 'Core Mathematics', class: 'SHS 3 Science 1', teacher: 'Mrs. Mensah', color: 'bg-emerald-500' },
+  { id: 'L3', subject: 'English Language', class: 'SHS 2 General Arts', teacher: 'Ms. Lamptey', color: 'bg-amber-500' },
+  { id: 'L4', subject: 'Integrated Science', class: 'SHS 1 General Science', teacher: 'Mrs. Owusu', color: 'bg-rose-500' },
+  { id: 'L5', subject: 'Cost Accounting', class: 'SHS 3 Science 1', teacher: 'Mr. Boateng', color: 'bg-blue-500' }, // Intentional teacher conflict test
 ];
 
 export const MasterTimetable = () => {
   const [activeTrack, setActiveTrack] = useState('Gold');
   const [selectedClass, setSelectedClass] = useState('SHS 3 Science 1');
+  
+  // Global school schedule organized by Class Name
   const [schedule, setSchedule] = useState({
-    'Monday-1': UNASSIGNED_LESSONS[0],
-    'Tuesday-2': UNASSIGNED_LESSONS[1],
-    'Wednesday-3': UNASSIGNED_LESSONS[2],
+    'SHS 3 Science 1': {
+      'Monday-1': UNASSIGNED_LESSONS[0], // Mr. Boateng
+    },
+    'SHS 3 Science 2': {
+      'Monday-1': { id: 'L99', subject: 'Core Math', class: 'SHS 3 Science 2', teacher: 'Mr. Boateng', color: 'bg-blue-500' }, // Clashes with L1
+    },
+    'SHS 2 General Arts': {
+      'Wednesday-3': UNASSIGNED_LESSONS[2],
+    }
   });
+  
   const [dragOverSlot, setDragOverSlot] = useState(null);
 
+  // --- Drag and Drop Handlers ---
   const handleDragStart = (e, lesson) => {
     e.dataTransfer.setData('lessonId', lesson.id);
   };
 
-  const handleDragOver = (e, key) => {
+  const handleDragOver = (e, slotKey) => {
     e.preventDefault();
-    setDragOverSlot(key);
+    setDragOverSlot(slotKey);
   };
 
   const handleDragLeave = () => {
     setDragOverSlot(null);
   };
 
-  const handleDrop = (e, key) => {
+  const handleDrop = (e, slotKey) => {
     e.preventDefault();
     setDragOverSlot(null);
+    
     const lessonId = e.dataTransfer.getData('lessonId');
     const lesson = UNASSIGNED_LESSONS.find(l => l.id === lessonId);
+    
     if (lesson) {
       setSchedule(prev => ({
         ...prev,
-        [key]: lesson
+        [selectedClass]: {
+          ...(prev[selectedClass] || {}),
+          [slotKey]: lesson
+        }
       }));
     }
   };
 
-  const removeLesson = (key) => {
+  const removeLesson = (slotKey) => {
     setSchedule(prev => {
-      const next = { ...prev };
-      delete next[key];
-      return next;
+      const classSchedule = { ...(prev[selectedClass] || {}) };
+      delete classSchedule[slotKey];
+      return {
+        ...prev,
+        [selectedClass]: classSchedule
+      };
     });
   };
 
+  // --- Real-Time Cross-Class Conflict Validation Engine ---
   const conflicts = useMemo(() => {
-    const teacherUsage = {};
-    const conflictMap = {};
+    const teacherTimeRegistry = {}; // Format: { "TeacherName-Day-Period": ["Class1", "Class2"] }
+    const conflictMap = {};         // Format: { "ClassName-Day-Period": "Error Message" }
 
-    Object.entries(schedule).forEach(([key, lesson]) => {
-      const teacherSlot = `${lesson.teacher}-${key.split('-')[1]}-${key.split('-')[0]}`;
-      if (teacherUsage[teacherSlot]) {
-        conflictMap[key] = { type: 'TEACHER', msg: `Teacher Conflict: ${lesson.teacher} already assigned.` };
-      }
-      teacherUsage[teacherSlot] = [...(teacherUsage[teacherSlot] || []), lesson.class];
+    // Phase 1: Populate registry across ALL classes
+    Object.entries(schedule).forEach(([className, classSlots]) => {
+      Object.entries(classSlots).forEach(([slotKey, lesson]) => {
+        if (!lesson) return;
+        const registryKey = `${lesson.teacher}-${slotKey}`; // e.g. "Mr. Boateng-Monday-1"
+        
+        if (!teacherTimeRegistry[registryKey]) {
+          teacherTimeRegistry[registryKey] = [];
+        }
+        teacherTimeRegistry[registryKey].push(className);
+      });
+    });
+
+    // Phase 2: Identify collisions where a teacher is booked in > 1 class simultaneously
+    Object.entries(schedule).forEach(([className, classSlots]) => {
+      Object.entries(classSlots).forEach(([slotKey, lesson]) => {
+        if (!lesson) return;
+        const registryKey = `${lesson.teacher}-${slotKey}`;
+        const assignedClasses = teacherTimeRegistry[registryKey] || [];
+
+        if (assignedClasses.length > 1) {
+          const conflictingClasses = assignedClasses.filter(c => c !== className);
+          conflictMap[`${className}-${slotKey}`] = {
+            type: 'TEACHER',
+            msg: `Teacher Conflict: ${lesson.teacher} is simultaneously assigned to ${conflictingClasses.join(', ')}.`
+          };
+        }
+      });
     });
 
     return conflictMap;
   }, [schedule]);
 
+  // Read current class timeline slices safely
+  const currentClassSchedule = schedule[selectedClass] || {};
+
   return (
     <div className="flex flex-col h-full bg-slate-50 overflow-hidden">
       <div className="p-8 space-y-8 flex-1 overflow-y-auto">
         
-        {/* controls */}
+        {/* Top Control Bar */}
         <div className="flex flex-col xl:flex-row gap-6 justify-between items-start">
            <div className="flex items-center gap-2 p-1 bg-white border border-slate-200 rounded-2xl shadow-sm">
               <button 
@@ -132,7 +175,7 @@ export const MasterTimetable = () => {
                 <option>SHS 2 General Arts</option>
                 <option>SHS 1 General Science</option>
               </select>
-              <button className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all font-sans">
+              <button className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all">
                 <Share2 size={14} /> Distribute to Apps
               </button>
               <button className="flex items-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 hover:bg-black transition-all">
@@ -143,16 +186,16 @@ export const MasterTimetable = () => {
 
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
           
-          {/* Smart Sidebar: Unassigned Lessons */}
+          {/* Smart Sidebar: Unassigned Lessons Block */}
           <div className="xl:col-span-3 space-y-6">
             <div className="bg-white rounded-[2.5rem] border border-slate-200 p-8 shadow-sm h-full flex flex-col">
               <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-                <Layers size={18} className="text-brand-teal" />
+                <Layers size={18} className="text-teal-500" />
                 Unassigned Logic
               </h3>
               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-6">Subject Mapping Backlog</p>
               
-              <div className="flex-1 space-y-3 overflow-y-auto pr-2 scrollbar-hide">
+              <div className="flex-1 space-y-3 overflow-y-auto pr-2">
                 {UNASSIGNED_LESSONS.map((lesson) => (
                   <div 
                     key={lesson.id}
@@ -162,7 +205,7 @@ export const MasterTimetable = () => {
                   >
                     <div className={cn("absolute left-0 top-0 bottom-0 w-1", lesson.color)} />
                     <div className="flex justify-between items-start mb-2">
-                      <p className="text-[12px] font-black italic font-display text-slate-900">{lesson.subject}</p>
+                      <p className="text-[12px] font-black italic text-slate-900">{lesson.subject}</p>
                       <GripVertical size={14} className="text-slate-300 group-hover:text-slate-900 transition-colors" />
                     </div>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{lesson.class}</p>
@@ -187,7 +230,7 @@ export const MasterTimetable = () => {
             </div>
           </div>
 
-          {/* Master Grid */}
+          {/* Master Grid Area */}
           <div className="xl:col-span-9">
             <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
                <div className="overflow-x-auto">
@@ -208,15 +251,16 @@ export const MasterTimetable = () => {
                        return (
                          <tr key={slot.id} className={cn(isBreak ? "bg-slate-50/50" : "")}>
                            <td className="px-6 py-8 border-r border-slate-200 sticky left-0 z-10 bg-white">
-                              <p className="text-[12px] font-black text-slate-900 italic font-display leading-none mb-1">{slot.label}</p>
+                              <p className="text-[12px] font-black text-slate-900 italic leading-none mb-1">{slot.label}</p>
                               <div className="flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase">
                                 <Clock size={10} /> {slot.start} - {slot.end}
                               </div>
                            </td>
                            {DAYS.map(day => {
-                             const key = `${day}-${slot.id}`;
-                             const lesson = schedule[key];
-                             const conflict = conflicts[key];
+                             const slotKey = `${day}-${slot.id}`;
+                             const lesson = currentClassSchedule[slotKey];
+                             const conflictLookupKey = `${selectedClass}-${slotKey}`;
+                             const conflict = conflicts[conflictLookupKey];
                              
                              if (isBreak) {
                                return (
@@ -234,40 +278,40 @@ export const MasterTimetable = () => {
                                <td 
                                  key={day} 
                                  className="px-3 py-3 relative min-h-[140px]"
-                                 onDragOver={(e) => handleDragOver(e, key)}
+                                 onDragOver={(e) => handleDragOver(e, slotKey)}
                                  onDragLeave={handleDragLeave}
-                                 onDrop={(e) => handleDrop(e, key)}
+                                 onDrop={(e) => handleDrop(e, slotKey)}
                                >
                                   <div 
                                     className={cn(
                                       "w-full h-full min-h-[100px] border-2 border-dashed border-slate-100 rounded-[1.5rem] flex items-center justify-center transition-all group",
                                       lesson ? "border-transparent bg-slate-50 p-4" : "hover:border-slate-300 hover:bg-slate-50/50 cursor-pointer",
                                       conflict ? "bg-rose-50 border-rose-100 ring-4 ring-rose-500/10" : "",
-                                      dragOverSlot === key ? "bg-slate-200 border-slate-400 scale-[1.02]" : ""
+                                      dragOverSlot === slotKey ? "bg-slate-200 border-slate-400 scale-[1.02]" : ""
                                     )}
                                   >
                                     {lesson ? (
                                       <div className="w-full relative">
                                         <div className={cn("absolute -left-4 top-0 bottom-0 w-1", lesson.color)} />
                                         <div className="flex justify-between items-start mb-1">
-                                          <p className="text-[13px] font-black italic font-display text-slate-900 leading-tight">{lesson.subject}</p>
+                                          <p className="text-[13px] font-black italic text-slate-900 leading-tight">{lesson.subject}</p>
                                           <button 
-                                            onClick={() => removeLesson(key)}
+                                            onClick={() => removeLesson(slotKey)}
                                             className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-slate-300 hover:text-rose-500"
                                           >
                                             <Trash2 size={12} />
                                           </button>
                                         </div>
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{lesson.class}</p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{lesson.class}</p>
                                         <div className="flex items-center gap-1.5 mt-2">
                                           <MapPin size={10} className="text-slate-300" />
                                           <span className="text-[8px] font-black text-slate-500 uppercase">Room B3</span>
                                         </div>
                                         
                                         {conflict && (
-                                          <div className="mt-3 p-2 bg-rose-500 text-white rounded-lg flex items-center gap-2 animate-pulse" title={conflict.msg}>
-                                            <AlertTriangle size={10} />
-                                            <span className="text-[8px] font-black uppercase tracking-tighter">Clash Detected</span>
+                                          <div className="mt-3 p-2 bg-rose-500 text-white rounded-lg flex items-center gap-2" title={conflict.msg}>
+                                            <AlertTriangle size={10} className="shrink-0" />
+                                            <span className="text-[8px] font-black uppercase tracking-tighter truncate">Clash: {lesson.teacher}</span>
                                           </div>
                                         )}
                                       </div>

@@ -52,11 +52,11 @@ export function BroadsheetGenerator() {
     
     try {
       const freshData = await refreshArchivedClasses();
+      const rawClasses = freshData || [];
       
-      const processedData = (freshData || []).map(classItem => {
+      const processedData = rawClasses.map(classItem => {
         const studentsArray = Array.isArray(classItem.students) ? classItem.students : [];
         
-        // Generate baseline GPA variables safely
         const studentsWithGPAs = studentsArray.map(student => {
           const studentIndex = student.indexNumber || student.index || '';
           const subjects = generateMockSubjectGrades(student.grade);
@@ -75,14 +75,20 @@ export function BroadsheetGenerator() {
           };
         });
         
-        // Dynamic matching dictionary to protect metrics ordering anomalies
-        const rankingInfo = calculateClassRanking(studentsWithGPAs);
+        const rankingInfo = calculateClassRanking(studentsWithGPAs) || [];
         const rankingMap = new Map(
-          (rankingInfo || []).map(item => [item.index || item.indexNumber, item])
+          rankingInfo.map(item => [item.index || item.indexNumber, item])
         );
         
+        let totalStudentsCount = studentsWithGPAs.length;
+        let sumGpa = 0;
+        let sumCgpa = 0;
+
         const studentsWithRankings = studentsWithGPAs.map((student, idx) => {
           const matchedRank = rankingMap.get(student.index);
+          sumGpa += student.gpa;
+          sumCgpa += student.cgpa;
+
           return {
             ...student,
             rank: matchedRank?.rank || idx + 1,
@@ -90,14 +96,8 @@ export function BroadsheetGenerator() {
           };
         });
         
-        const totalStudentsCount = studentsWithRankings.length;
-        const classAverageGPA = totalStudentsCount > 0 
-          ? studentsWithRankings.reduce((sum, s) => sum + s.gpa, 0) / totalStudentsCount 
-          : 0;
-        
-        const classAverageCGPA = totalStudentsCount > 0
-          ? studentsWithRankings.reduce((sum, s) => sum + s.cgpa, 0) / totalStudentsCount
-          : 0;
+        const classAverageGPA = totalStudentsCount > 0 ? sumGpa / totalStudentsCount : 0;
+        const classAverageCGPA = totalStudentsCount > 0 ? sumCgpa / totalStudentsCount : 0;
         
         return {
           ...classItem,
@@ -117,7 +117,6 @@ export function BroadsheetGenerator() {
     }
   }, [refreshArchivedClasses]);
 
-  // Executive summary analytics calculations
   const systemMetrics = useMemo(() => {
     if (!broadsheetData.length) return { totalStudents: 0, globalAvgGpa: '0.00', topClass: 'N/A' };
     
@@ -126,14 +125,14 @@ export function BroadsheetGenerator() {
     let highestClassGpa = 0;
     let topClassName = 'N/A';
 
-    broadsheetData.forEach(c => {
+    for (const c of broadsheetData) {
       totalStudents += c.students?.length || 0;
       sumGpa += c.classAverageGPA;
       if (c.classAverageGPA > highestClassGpa) {
         highestClassGpa = c.classAverageGPA;
         topClassName = c.className;
       }
-    });
+    }
 
     return {
       totalStudents,
@@ -189,11 +188,9 @@ export function BroadsheetGenerator() {
     URL.revokeObjectURL(url);
   };
 
-  // Run only once layout is established safely
   useEffect(() => {
     generateBroadSheet();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [generateBroadSheet]);
 
   if (isGenerating) {
     return (
@@ -229,14 +226,15 @@ export function BroadsheetGenerator() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Broadsheet Analyzer</h1>
         </div>
         
-        <div className="flex items-center gap-2.5 self-end md:self-auto">
+        <div className="flex items-center gap-2.5 self-stretch md:self-auto justify-end">
           <button
             onClick={generateBroadSheet}
             disabled={isGenerating}
             className="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl hover:bg-slate-50 active:scale-98 transition-all flex items-center gap-2 shadow-sm disabled:opacity-60"
           >
             <RefreshCw size={14} className={cn(isGenerating && "animate-spin")} />
-            <span>Re-compile Metrics</span>
+            <span className="hidden sm:inline">Re-compile Metrics</span>
+            <span className="sm:hidden">Sync</span>
           </button>
           
           <button
@@ -245,7 +243,7 @@ export function BroadsheetGenerator() {
             className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-xl hover:bg-slate-800 active:scale-98 transition-all flex items-center gap-2 shadow-sm disabled:opacity-40 disabled:pointer-events-none"
           >
             <Download size={14} />
-            <span>Export Clean Ledger (.CSV)</span>
+            <span>Export Ledger</span>
           </button>
         </div>
       </div>
@@ -347,17 +345,67 @@ export function BroadsheetGenerator() {
                 </div>
               </div>
 
-              {/* Functional Data Layout */}
-              <div className="overflow-x-auto">
+              {/* MOBILE RESPONSIVE CARD GRID */}
+              <div className="block md:hidden divide-y divide-slate-100">
+                {(classItem.students || []).map((student, studentIdx) => {
+                  const isTopPercentile = (student.percentile || 0) >= 90;
+                  return (
+                    <div key={student.id || student.index || studentIdx} className="p-4 space-y-3 bg-white hover:bg-slate-50/30 transition-colors">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={cn(
+                            "inline-flex items-center justify-center min-w-[32px] h-5 px-1.5 rounded-md text-[10px] font-bold shrink-0",
+                            student.rank === 1 ? "bg-amber-50 text-amber-700 border border-amber-100/60" :
+                            student.rank === 2 ? "bg-slate-100 text-slate-700" :
+                            student.rank === 3 ? "bg-orange-50 text-orange-700 border border-orange-100/40" :
+                            "text-slate-500 bg-slate-50 font-medium"
+                          )}>
+                            #{student.rank}
+                          </span>
+                          <span className="text-xs font-bold text-slate-900 truncate">{student.name || 'Anonymous Student'}</span>
+                          {isTopPercentile && (
+                            <span className="text-[8px] font-extrabold bg-indigo-50 border border-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded shrink-0 uppercase tracking-wide">Top 10%</span>
+                          )}
+                        </div>
+                        <span className="bg-slate-100 text-slate-700 font-mono text-[11px] font-bold px-2 py-0.5 rounded shrink-0">{student.grade || 'N/A'}</span>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-50 text-xs">
+                        <div>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Index Number</p>
+                          <p className="font-mono font-semibold text-slate-600 mt-0.5 truncate">{student.index || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Term GPA</p>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <span className="font-bold text-slate-900">{student.gpa?.toFixed(2) || '0.00'}</span>
+                            <span className="text-[9px] font-bold font-mono px-1 rounded bg-slate-100 text-slate-600">{student.letterGrade}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Cum. CGPA</p>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <span className="font-semibold text-slate-700">{student.cgpa?.toFixed(2) || '0.00'}</span>
+                            <span className="text-[8px] font-bold font-mono px-1 rounded bg-slate-50 text-slate-500">{student.cgpaLetterGrade}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* DESKTOP DATA TABLE */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="min-w-full divide-y divide-slate-100">
                   <thead className="bg-slate-50/50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider w-20">Rank</th>
-                      <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Index Number</th>
-                      <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Full Name</th>
-                      <th className="px-6 py-3 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider w-24">Main Grade</th>
-                      <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider w-28">Term GPA</th>
-                      <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider w-28">Cum. CGPA</th>
+                      <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider w-20 whitespace-nowrap">Rank</th>
+                      <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Index Number</th>
+                      <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Full Name</th>
+                      <th className="px-6 py-3 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider w-24 whitespace-nowrap">Main Grade</th>
+                      <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider w-28 whitespace-nowrap">Term GPA</th>
+                      <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider w-28 whitespace-nowrap">Cum. CGPA</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-slate-100">
@@ -412,7 +460,7 @@ export function BroadsheetGenerator() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-xs">
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold text-slate-700 text-sm tracking-tight">{student.cgpa?.toFixed(2) || '0.00'}</span>
+                              <span className="font-semibold text-slate-700 text-sm tracking-tight">{student.gpa?.toFixed(2) || '0.00'}</span>
                               <span className={cn(
                                 'px-1.5 py-0.2 rounded text-[9px] font-bold border font-mono uppercase tracking-tight',
                                 student.cgpaLetterGrade === 'A1' ? 'bg-emerald-50/60 text-emerald-600 border-emerald-100/40' :
@@ -438,9 +486,19 @@ export function BroadsheetGenerator() {
   );
 }
 
+// FORCE OVERRIDE CONTAINER FOR EXACT VERTICAL SCROLLING INDEPENDENT OF HIGHER APP WRAPPERS
 export default function BroadsheetGeneratorPage() {
   return (
-    <div className="flex-1 overflow-y-auto bg-slate-50/40 p-6 md:p-8">
+    <div 
+      className="w-full bg-slate-50/40 p-4 sm:p-6 md:p-8"
+      style={{
+        height: '100%',
+        minHeight: '100vh',
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        position: 'relative'
+      }}
+    >
       <BroadsheetGenerator />
     </div>
   );

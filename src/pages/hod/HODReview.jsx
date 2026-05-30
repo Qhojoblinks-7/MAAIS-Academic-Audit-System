@@ -13,7 +13,7 @@ import { notification } from '../../services/notificationService';
 import { eventBus } from '../../services/eventBus';
 import { HODCommentInput, ActionButtonGroup, StatusBadge, SubmissionProgressSparkline, ConfirmationDialog }
     from '../../components/molecules';
-import { CurrentPreviousTermComparisonView } from '../../components/organisms';
+import { CurrentPreviousTermComparisonView, GradeDiscussionThread } from '../../components/organisms';
 
 function SubjectRow({ subject, studentName, onAddRemark, onReject }) {
   const [remark, setRemark] = useState('');

@@ -1,121 +1,21 @@
 ﻿import React, { useState, useMemo } from 'react';
 import { 
-  Users, Search, Download, Plus, 
-  ChevronRight, ArrowRight, TrendingUp, 
-  Trash2, X, Lock, 
+  Search, Download, Plus, 
+  ChevronRight, TrendingUp,
+  Trash2, X, Lock,
   FileText, FileUp, 
   MoreVertical, GraduationCap,
-  HeartPulse, UserPlus, Fingerprint,
-  Phone, MessageSquare, Activity,
-  BarChart3, AlertCircle
+  HeartPulse, Phone, MessageSquare, Activity,
+  BarChart3, AlertCircle, Users
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { 
-  ResponsiveContainer, PieChart as RePieChart, Pie, Cell, 
+  ResponsiveContainer, PieChart as RePieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, 
   LineChart as ReLineChart, Line, CartesianGrid
 } from 'recharts';
-
-// --- Mock Data ---
-const MOCK_STUDENTS = [
-  {
-    id: 'STU001',
-    name: 'Kofi Mensah',
-    indexNumber: '2024-SCI-001',
-    dob: '2008-05-12',
-    program: 'Science',
-    batch: 'Class of 2026',
-    residentialStatus: 'Boarder',
-    house: 'Guggisberg',
-    gender: 'Male',
-    averageGrade: 82.4,
-    beceAggregate: 8,
-    beceResidency: 'Public',
-    placementType: 'Merit',
-    feesStatus: 'Paid',
-    atRisk: false,
-    emergencyContact: { name: 'Yaw Mensah', phone: '+233 24 555 0101', relation: 'Father' },
-    healthNotes: 'No known allergies.'
-  },
-  {
-    id: 'STU002',
-    name: 'Abena Osei',
-    indexNumber: '2024-ART-042',
-    dob: '2009-02-28',
-    program: 'General Arts',
-    batch: 'Class of 2026',
-    residentialStatus: 'Day',
-    house: 'Aggrey',
-    gender: 'Female',
-    averageGrade: 38.5,
-    beceAggregate: 12,
-    beceResidency: 'Private',
-    placementType: 'Socio-Economic',
-    feesStatus: 'Arrears',
-    atRisk: true,
-    emergencyContact: { name: 'Esi Osei', phone: '+233 27 555 0102', relation: 'Mother' },
-    healthNotes: 'Asthmatic. Carries inhaler.'
-  },
-  {
-    id: 'STU003',
-    name: 'Kwame Boateng',
-    indexNumber: '2025-BUS-015',
-    dob: '2010-11-05',
-    program: 'Business',
-    batch: 'Class of 2027',
-    residentialStatus: 'Boarder',
-    house: 'Nkrumah',
-    gender: 'Male',
-    averageGrade: 74.2,
-    beceAggregate: 15,
-    beceResidency: 'Public',
-    placementType: 'Merit',
-    feesStatus: 'Partial',
-    atRisk: false,
-    emergencyContact: { name: 'Kojo Boateng', phone: '+233 20 555 0103', relation: 'Uncle' }
-  },
-  {
-    id: 'STU004',
-    name: 'Ama Serwaa',
-    indexNumber: '2025-HEC-088',
-    dob: '2010-08-14',
-    program: 'Home Economics',
-    batch: 'Class of 2027',
-    residentialStatus: 'Boarder',
-    house: 'Aggrey',
-    gender: 'Female',
-    averageGrade: 68.9,
-    beceAggregate: 18,
-    beceResidency: 'Public',
-    placementType: 'Equity',
-    feesStatus: 'Paid',
-    atRisk: false,
-    emergencyContact: { name: 'Grace Serwaa', phone: '+233 24 555 0104', relation: 'Mother' }
-  },
-  {
-    id: 'STU005',
-    name: 'Yaw Ofori',
-    indexNumber: '2024-SCI-112',
-    dob: '2009-12-01',
-    program: 'Science',
-    batch: 'Class of 2026',
-    residentialStatus: 'Day',
-    house: 'Guggisberg',
-    gender: 'Male',
-    averageGrade: 32.1,
-    beceAggregate: 10,
-    beceResidency: 'Public',
-    placementType: 'Merit',
-    feesStatus: 'Paid',
-    atRisk: true,
-    emergencyContact: { name: 'Isaac Ofori', phone: '+233 55 555 0105', relation: 'Father' }
-  }
-];
-
-const PROGRAMS = ['Science', 'General Arts', 'Business', 'Home Economics', 'Visual Arts'];
-const HOUSES = ['Guggisberg', 'Aggrey', 'Nkrumah', 'Casely Hayford'];
-const BATCHES = ['Class of 2025', 'Class of 2026', 'Class of 2027'];
+import { MOCK_STUDENTS, PROGRAMS, HOUSES, BATCHES } from './data';
 
 const StudentDossier = ({ 
   student, 
@@ -152,7 +52,7 @@ const StudentDossier = ({
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           {[
             { id: 'Academic', label: 'Academic', icon: BarChart3 },
-            { id: 'BioData', label: 'Bio-Data', icon: Fingerprint },
+            { id: 'BioData', label: 'Bio-Data', icon: FileText },
             { id: 'Log', label: 'Welfare', icon: Activity },
             { id: 'Guardian', label: 'Guardian', icon: Phone },
           ].map(tab => (
@@ -223,34 +123,34 @@ const StudentDossier = ({
             <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Institutional Identity</p>
               <div className="space-y-4">
-                 {[
-                   { label: 'Index Number', value: student.indexNumber },
-                   { label: 'Date of Birth', value: student.dob },
-                   { label: 'Batch ID', value: student.batch },
-                   { label: 'Program Node', value: student.program },
-                   { label: 'Residential Node', value: student.residentialStatus },
-                   { label: 'House Cluster', value: student.house },
-                 ].map((item, i) => (
-                   <div key={i} className="flex justify-between items-center py-3 border-b border-slate-50">
-                     <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">{item.label}</span>
-                     <span className="text-[12px] font-black text-slate-900 italic font-display">{item.value}</span>
-                   </div>
-                 ))}
+                  {[
+                    { label: 'Index Number', value: student.indexNumber },
+                    { label: 'Date of Birth', value: student.dob },
+                    { label: 'Batch ID', value: student.batch },
+                    { label: 'Program Node', value: student.program },
+                    { label: 'Residential Node', value: student.residentialStatus },
+                    { label: 'House Cluster', value: student.house },
+                  ].map((item, i) => (
+                    <div key={i} className="flex justify-between items-center py-3 border-b border-slate-50">
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">{item.label}</span>
+                      <span className="text-[12px] font-black text-slate-900 italic font-display">{item.value}</span>
+                    </div>
+                  ))}
               </div>
             </div>
             <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">BECE Placement Dossier</p>
               <div className="space-y-4">
-                 {[
-                   { label: 'Placement Aggregate', value: student.beceAggregate },
-                   { label: 'Primary Residency', value: student.beceResidency },
-                   { label: 'Placement Protocol', value: student.placementType },
-                 ].map((item, i) => (
-                   <div key={i} className="flex justify-between items-center py-3 border-b border-slate-50">
-                     <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">{item.label}</span>
-                     <span className="text-[12px] font-black text-indigo-600 italic font-display">{item.value}</span>
-                   </div>
-                 ))}
+                  {[
+                    { label: 'Placement Aggregate', value: student.beceAggregate },
+                    { label: 'Primary Residency', value: student.beceResidency },
+                    { label: 'Placement Protocol', value: student.placementType },
+                  ].map((item, i) => (
+                    <div key={i} className="flex justify-between items-center py-3 border-b border-slate-50">
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">{item.label}</span>
+                      <span className="text-[12px] font-black text-indigo-600 italic font-display">{item.value}</span>
+                    </div>
+                  ))}
               </div>
             </div>
           </div>

@@ -34,13 +34,13 @@ export function ObservationSidebar({
   const activeSafety = onSafetyCheckChange ? safetyChecked : localSafetyChecked;
 
   const toggleFlag = () => {
-    if (onFlagChange) onFlagChange(!isFlagged);
+    if (onFlagChange) onFlagChange(!activeFlagged);
     else setLocalIsFlagged(!localIsFlagged);
   };
 
   const toggleSafety = (checked) => {
-    if (onSafetyCheckChange) onSafetyCheckChange(checked);
-    else setLocalSafetyChecked(checked);
+    if (onSafetyCheckChange) onSafetyCheckChange(!activeSafety);
+    else setLocalSafetyChecked(!localSafetyChecked);
   };
 
   const ratingsList = [
@@ -143,25 +143,28 @@ export function ObservationSidebar({
                 ))}
               </div>
 
-              {/* Safety Guidelines Form Control */}
-              <div className="pt-3 border-t border-gray-100">
-                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Safety & Status</h4>
-                <div className="flex flex-col gap-3">
-                  <label className="flex items-center gap-3 cursor-pointer select-none group">
-                    <input
-                      type="checkbox"
-                      checked={activeSafety}
-                      onChange={(e) => toggleSafety(e.target.checked)}
-                      className="sr-only"
-                    />
-                    <div className={cn(
-                      "w-6 h-6 border-2 border-emerald-600 rounded flex items-center justify-center transition-all shrink-0 group-hover:scale-105",
-                      activeSafety ? "bg-emerald-600" : "bg-white"
-                    )}>
-                      {activeSafety && <ShieldCheck size={16} className="text-white" />}
-                    </div>
-                    <span className="text-xs font-bold text-gray-700">Followed Lab Safety Guidelines</span>
-                  </label>
+{/* Safety Guidelines Form Control */}
+               <div className="pt-3 border-t border-gray-100">
+                 <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Safety & Status</h4>
+                 <div className="flex flex-col gap-3">
+<label 
+                    className="flex items-center gap-3 cursor-pointer select-none group"
+                    onClick={() => toggleSafety()}
+                  >
+                     <input
+                       type="checkbox"
+                       checked={activeSafety}
+                       onChange={(e) => toggleSafety(e.target.checked)}
+                       className="sr-only"
+                     />
+                     <div className={cn(
+                       "w-6 h-6 border-2 border-emerald-600 rounded flex items-center justify-center transition-all shrink-0 group-hover:scale-105",
+                       activeSafety ? "bg-emerald-600" : "bg-white"
+                     )}>
+                       {activeSafety && <ShieldCheck size={16} className="text-white" />}
+                     </div>
+                     <span className="text-xs font-bold text-gray-700">Followed Lab Safety Guidelines</span>
+                   </label>
 
                   {/* Flag Switch Mechanism */}
                   <div className="flex items-center justify-between pt-1">

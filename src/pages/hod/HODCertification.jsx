@@ -46,11 +46,11 @@ export function HODCertification() {
     }
   };
 
-  const handleExport = async (termId, classId) => {
+  const handleExport = async (classId) => {
     setExportingId(classId);
     try {
       if (typeof exportClassCSV === 'function') {
-        await exportClassCSV(termId, classId);
+        await exportClassCSV(classId);
       }
     } finally {
       setExportingId(null);
@@ -141,7 +141,7 @@ export function HODCertification() {
                         </button>
                       ) : (
                         <button
-                          onClick={() => handleExport(cls.termId, cls.id)}
+                          onClick={() => handleExport(cls.id)}
                           disabled={exportingId === cls.id}
                           className="px-3.5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 flex items-center gap-1.5 shadow-2xs transition-colors disabled:opacity-40"
                         >

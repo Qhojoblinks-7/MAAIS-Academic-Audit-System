@@ -52,7 +52,7 @@ export function DirectMessaging({ userId, userRole, counterpartRole = 'HOD' }) {
       }
     };
 
-    const unsubscribe = eventBus.subscribe('direct-message', handleNewMessage);
+    const unsubscribe = eventBus.on('direct-message', handleNewMessage);
 
     return () => {
       unsubscribe();

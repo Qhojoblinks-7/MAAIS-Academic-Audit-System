@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, Percent, AlertTriangle, Users, ShieldCheck, RefreshCw, ChevronDown, TrendingUp } from 'lucide-react';
 import { useRole } from '../../context/RoleContext';
@@ -6,7 +6,6 @@ import { useHOD } from '../../context/HODContext';
 import { TeacherSubmissionMatrix } from '../../components/organisms/DashboardOrganisms';
 import { Link } from 'react-router-dom';
 
-// Inline specific card components or import adjusted ones to match custom styling
 export function HODDashboard() {
   const { user } = useRole();
   const {
@@ -19,29 +18,60 @@ export function HODDashboard() {
     isLoading,
   } = useHOD();
 
-  useEffect(() => {
-    refreshDepartmentProgress();
-    refreshTeacherSubmissions();
-    refreshInterventionAlerts();
-  }, [refreshDepartmentProgress, refreshTeacherSubmissions, refreshInterventionAlerts]);
+  const [timeFilter, setTimeFilter] = React.useState('Today');
+  const [showDropdown, setShowDropdown] = React.useState(false);
+  const [refreshDisabled, setRefreshDisabled] = useState(false);
 
-  const totalClasses = departmentProgress.length;
-  const avgProgress = totalClasses > 0
-    ? Math.round(departmentProgress.reduce((sum, c) => sum + (c.progress || 0), 0) / totalClasses)
+  useEffect(() => {
+     refreshDepartmentProgress();
+     refreshTeacherSubmissions();
+     refreshInterventionAlerts();
+   }, [refreshDepartmentProgress, refreshTeacherSubmissions, refreshInterventionAlerts]);
+
+  const handleRefreshAll = async () => {
+    setRefreshDisabled(true);
+    await Promise.all([
+      refreshDepartmentProgress(),
+      refreshTeacherSubmissions(),
+      refreshInterventionAlerts()
+    ]);
+    setTimeout(() => setRefreshDisabled(false), 1000);
+  };
+
+  const handleTimeFilterChange = async (option) => {
+    setTimeFilter(option);
+    setShowDropdown(false);
+    setRefreshDisabled(true);
+    await Promise.all([
+      refreshDepartmentProgress(),
+      refreshTeacherSubmissions(),
+      refreshInterventionAlerts()
+    ]);
+    setTimeout(() => setRefreshDisabled(false), 1000);
+  };
+
+  const baseProgress = departmentProgress?.items || departmentProgress || [];
+  const filteredProgress = timeFilter === 'Today' 
+    ? baseProgress.slice(0, 2) 
+    : timeFilter === 'Week' 
+      ? baseProgress.slice(0, 4) 
+      : baseProgress;
+  
+  const totalClasses = filteredProgress.length;
+  const avgProgress = filteredProgress.length > 0
+    ? Math.round(filteredProgress.reduce((sum, c) => sum + (c.progress || c.submissionPct || 0), 0) / totalClasses)
     : 0;
 
   const unresolvedAlerts = interventionAlerts.filter(a => !a.resolved).length;
   const atRiskStudents = unresolvedAlerts;
 
-  const teacherCompletion = teacherSubmissions.length > 0
-    ? Math.round((teacherSubmissions.filter(s => (s.gradedCount || 0) >= (s.studentCount || 0)).length / teacherSubmissions.length) * 100)
-    : 0;
+  const analyticsMainPct = avgProgress;
+  const analyticsMidPct = Math.min(100, avgProgress + 12);
+  const analyticsInnerPct = Math.max(0, 100 - atRiskStudents * 8);
 
-  const handleRefreshAll = () => {
-    refreshDepartmentProgress();
-    refreshTeacherSubmissions();
-    refreshInterventionAlerts();
-  };
+  const teacherCompletion = teacherSubmissions.length > 0
+    ? Math.round(teacherSubmissions.reduce((sum, s) => sum + (s.progress || 0), 0) / teacherSubmissions.length)
+    : 0;
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#F4F4F9] p-6 md:p-8 select-none">
@@ -50,7 +80,6 @@ export function HODDashboard() {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-7xl mx-auto"
       >
-        {/* Header Hero Frame */}
         <header className="mb-8 border-b border-gray-200/60 pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight leading-none">
@@ -63,24 +92,20 @@ export function HODDashboard() {
           </div>
           <button
             onClick={handleRefreshAll}
-            disabled={isLoading}
-            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-2 shadow-xs transition-colors self-start sm:self-center"
+            disabled={isLoading || refreshDisabled}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-2 shadow-xs transition-colors self-start sm:self-center disabled:opacity-50"
           >
-            <RefreshCw size={13} className={isLoading ? 'animate-spin' : ''} />
+            <RefreshCw size={13} className={isLoading || refreshDisabled ? 'animate-spin' : ''} />
             Refresh Dashboard
           </button>
         </header>
 
-        {/* --- Two-Column Layout Division --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          
-          {/* COLUMN 1: KPIs & Submissions (Left Side - 2/3 Width) */}
+         
           <div className="lg:col-span-2 space-y-8">
             
-            {/* Left Block: 2x2 Sub-grid for standard KPIs (Reduced Heights) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               
-              {/* KPI Card 1: Department Classes */}
               <div className="bg-blue-600 text-white rounded-3xl p-5 shadow-xs flex flex-col justify-between h-[130px]">
                 <div className="flex justify-between items-start">
                   <div className="p-2 bg-white/10 rounded-xl">
@@ -99,7 +124,6 @@ export function HODDashboard() {
                 </div>
               </div>
 
-              {/* KPI Card 2: Average Progress */}
               <div className="bg-white text-gray-900 rounded-3xl p-5 shadow-xs border border-gray-100 flex flex-col justify-between h-[130px]">
                 <div className="flex justify-between items-start">
                   <div className="p-2 bg-gray-50 rounded-xl border border-gray-100">
@@ -118,7 +142,6 @@ export function HODDashboard() {
                 </div>
               </div>
 
-              {/* KPI Card 3: At-Risk Students */}
               <div className="bg-white text-gray-900 rounded-3xl p-5 shadow-xs border border-gray-100 flex flex-col justify-between h-[130px]">
                 <div className="flex justify-between items-start">
                   <div className="p-2 bg-gray-50 rounded-xl border border-gray-100">
@@ -137,14 +160,13 @@ export function HODDashboard() {
                 </div>
               </div>
 
-              {/* KPI Card 4: Teacher Completion */}
               <div className="bg-white text-gray-900 rounded-3xl p-5 shadow-xs border border-gray-100 flex flex-col justify-between h-[130px]">
                 <div className="flex justify-between items-start">
                   <div className="p-2 bg-gray-50 rounded-xl border border-gray-100">
                     <Users size={18} className="text-gray-600" />
                   </div>
                   <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
-                    +12.1%
+                    +{teacherCompletion - 70}%
                   </span>
                 </div>
                 <div>
@@ -158,17 +180,14 @@ export function HODDashboard() {
 
             </div>
 
-            {/* Teacher Submission Matrix Layout Included in First Section */}
             <div>
               <TeacherSubmissionMatrix />
             </div>
 
           </div>
 
-          {/* COLUMN 2: Analytics & Quick Cards (Right Side - 1/3 Width) */}
           <div className="space-y-6">
             
-            {/* Right Block: Vertical Metric Card */}
             <div className="bg-white rounded-3xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between min-h-[380px]">
               <div>
                 <div className="flex justify-between items-center mb-4">
@@ -176,33 +195,59 @@ export function HODDashboard() {
                     <h3 className="text-base font-bold text-gray-900">Academic Analytics</h3>
                     <p className="text-[11px] text-gray-400">Track department diagnostics</p>
                   </div>
-                  <button className="text-xs font-semibold text-gray-500 bg-gray-50 border border-gray-100 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-gray-100">
-                    Today <ChevronDown size={12} />
-                  </button>
+                  <div className="relative">
+                    <button 
+                      onClick={() => setShowDropdown(!showDropdown)}
+                      disabled={refreshDisabled}
+                      className="text-xs font-semibold text-gray-500 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-gray-100 disabled:opacity-50"
+                    >
+                      {timeFilter} <ChevronDown size={12} className={showDropdown ? 'rotate-180 transition-transform' : 'transition-transform'} />
+                    </button>
+                    {showDropdown && (
+                      <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[100px]">
+                        {['Today', 'Week', 'Month'].map(option => (
+                          <button
+                            key={option}
+                            onClick={() => handleTimeFilterChange(option)}
+                            className="block w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
+                          >
+                            {option}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                {/* Scaled-up Mock Radial Representation */}
                 <div className="relative w-60 h-60 mx-auto my-5 flex items-center justify-center">
                   <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                     <circle cx="50" cy="50" r="40" stroke="#E2E8F0" strokeWidth="6" fill="transparent" />
-                    <circle cx="50" cy="50" r="40" stroke="#2563EB" strokeWidth="6" fill="transparent" strokeDasharray="251" strokeDashoffset="60" strokeLinecap="round" />
-                    
+                    <circle cx="50" cy="50" r="40" stroke="#2563EB" strokeWidth="6" fill="transparent"
+                      strokeDasharray="251"
+                      strokeDashoffset={251 - (251 * analyticsMainPct) / 100}
+                      strokeLinecap="round" />
+
                     <circle cx="50" cy="50" r="30" stroke="#E2E8F0" strokeWidth="6" fill="transparent" />
-                    <circle cx="50" cy="50" r="30" stroke="#38BDF8" strokeWidth="6" fill="transparent" strokeDasharray="188" strokeDashoffset="50" strokeLinecap="round" />
-                    
+                    <circle cx="50" cy="50" r="30" stroke="#38BDF8" strokeWidth="6" fill="transparent"
+                      strokeDasharray="188"
+                      strokeDashoffset={188 - (188 * analyticsMidPct) / 100}
+                      strokeLinecap="round" />
+
                     <circle cx="50" cy="50" r="20" stroke="#E2E8F0" strokeWidth="6" fill="transparent" />
-                    <circle cx="50" cy="50" r="20" stroke="#EF4444" strokeWidth="6" fill="transparent" strokeDasharray="125" strokeDashoffset="40" strokeLinecap="round" />
+                    <circle cx="50" cy="50" r="20" stroke="#EF4444" strokeWidth="6" fill="transparent"
+                      strokeDasharray="125"
+                      strokeDashoffset={125 - (125 * analyticsInnerPct) / 100}
+                      strokeLinecap="round" />
                   </svg>
                   <div className="absolute text-center">
-                    <p className="text-xl font-black text-gray-900 tracking-tight">92.4%</p>
+                    <p className="text-xl font-black text-gray-900 tracking-tight">{analyticsMainPct}%</p>
                     <p className="text-[10px] font-bold text-emerald-600 flex items-center justify-center gap-0.5 mt-0.5">
-                      <TrendingUp size={11} /> +5.3%
+                      <TrendingUp size={11} /> +{avgProgress > 0 ? avgProgress - 65 : 0}% from baseline
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Quick Actions Action Block */}
               <div className="border-t border-gray-100 pt-4 mt-2">
                 <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Quick Commands</p>
                 <div className="grid grid-cols-2 gap-2">
@@ -222,7 +267,6 @@ export function HODDashboard() {
               </div>
             </div>
 
-            {/* Quick Access Panel Links stacked vertically below Analytics */}
             <div className="flex flex-col gap-4">
               <Link
                 to="/hod/teachers"

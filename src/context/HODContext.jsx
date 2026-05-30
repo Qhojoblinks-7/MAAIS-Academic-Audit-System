@@ -786,31 +786,57 @@ const refreshPromotionRecommendations = useCallback(async () => {
 
   const lockTerm = useCallback(async (termId) => {
     if (!isHod) throw new Error('Not authorized');
-    return hodService.lockDepartmentMatrix(termId);
-  }, [isHod]);
+    const result = await hodService.lockDepartmentMatrix(termId);
+    // Update local state - lock all classes belonging to this term
+    setDepartmentProgress((prev) =>
+      prev.map((cls) =>
+        cls.termId === termId ? { ...cls, status: 'LOCKED' } : cls,
+      ),
+    );
+    return result;
+  }, [isHod, setDepartmentProgress]);
 
-  const lockTermWithValidation = useCallback(async (termId) => {
+const unlockTerm = useCallback(async (termId) => {
+    if (!isHod) throw new Error('Not authorized');
+    const result = await hodService.unlockDepartmentMatrix(termId);
+    // Update local state - unlock all classes belonging to this term
+    setDepartmentProgress((prev) =>
+      prev.map((cls) =>
+        cls.termId === termId ? { ...cls, status: 'PENDING' } : cls,
+      ),
+    );
+    return result;
+  }, [isHod, setDepartmentProgress]);
+
+   const lockTermWithValidation = useCallback(async (termId) => {
     if (!isHod) throw new Error('Not authorized');
     const validation = await hodService.validateLock(termId);
     if (!validation.canLock) {
       throw new Error(`Cannot lock: ${validation.blockingIssues?.join(', ') || '100% completion required'}`);
     }
     const result = await hodService.lockDepartmentMatrix(termId);
+    // Update local state - lock all classes belonging to this term
+    setDepartmentProgress((prev) =>
+      prev.map((cls) =>
+        cls.termId === termId ? { ...cls, status: 'LOCKED' } : cls,
+      ),
+    );
     if (validation.completionPct < 100) {
       console.warn(`Locking with ${validation.completionPct}% completion`);
     }
     return result;
-  }, [isHod]);
+  }, [isHod, setDepartmentProgress]);
 
-  const unlockTerm = useCallback(async (termId) => {
+  const exportClassCSV = useCallback(async (classId) => {
     if (!isHod) throw new Error('Not authorized');
-    return hodService.unlockDepartmentMatrix(termId);
-  }, [isHod]);
-
-  const exportClassCSV = useCallback(async (termId, classId) => {
-    if (!isHod) throw new Error('Not authorized');
-    return hodService.exportWAECCSV(termId, classId);
-  }, [isHod]);
+    const cls = departmentProgress.find((c) => c.id === classId);
+    if (!cls) {
+      throw new Error('Class not found');
+    }
+    const termId = cls.termId || classId;
+    const className = cls?.className || cls?.name || 'Unknown';
+    return hodService.exportWAECCSV(termId, className);
+  }, [isHod, departmentProgress]);
 
 const rejectRevision = useCallback(async (recordId, reason) => {
     if (!isHod) throw new Error('Not authorized');

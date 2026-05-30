@@ -1,11 +1,11 @@
 ﻿import React, { useState } from 'react';
 import { 
-  Settings2, Hash, BookOpen, Clock, 
+  Settings2, BookOpen, Clock, 
   ShieldCheck, AlertTriangle, Save, 
   Plus, Trash2, Edit3, Lock, Unlock,
   HelpCircle, ChevronRight, Gauge,
   Palette, History, Info, ShieldAlert,
-  Sparkles, List
+  Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
@@ -19,15 +19,15 @@ const DEFAULT_REMARK_POOL = {
 };
 
 const DEFAULT_BOUNDARIES = [
-  { id: '1', min: 80, max: 100, grade: 'A1', remark: 'Excellent: Exceptional performance in all components.', suggestionPool: DEFAULT_REMARK_POOL.Distinction },
-  { id: '2', min: 70, max: 79, grade: 'B2', remark: 'Very Good: Highly commendable effort and focus.', suggestionPool: DEFAULT_REMARK_POOL.Distinction },
-  { id: '3', min: 65, max: 69, grade: 'B3', remark: 'Good: Solid understanding of core concepts.', suggestionPool: DEFAULT_REMARK_POOL.Credit },
-  { id: '4', min: 60, max: 64, grade: 'C4', remark: 'Credit: Satisfactory performance with consistent results.', suggestionPool: DEFAULT_REMARK_POOL.Credit },
-  { id: '5', min: 55, max: 59, grade: 'C5', remark: 'Credit: Can do better with more effort.', suggestionPool: DEFAULT_REMARK_POOL.Credit },
-  { id: '6', min: 50, max: 54, grade: 'C6', remark: 'Credit: Average performance; needs steady improvement.', suggestionPool: DEFAULT_REMARK_POOL.Credit },
-  { id: '7', min: 45, max: 49, grade: 'D7', remark: 'Pass: Meeting minimum standards for the subject.', suggestionPool: DEFAULT_REMARK_POOL.Pass },
-  { id: '8', min: 40, max: 44, grade: 'E8', remark: 'Pass: Weak performance; requires reinforcement.', suggestionPool: DEFAULT_REMARK_POOL.Pass },
-  { id: '9', min: 0, max: 39, grade: 'F9', remark: 'Fail: Poor performance; remedial sessions highly recommended.', suggestionPool: DEFAULT_REMARK_POOL.Fail },
+  { id: 'b-1', min: 80, max: 100, grade: 'A1', remark: 'Excellent: Exceptional performance in all components.', suggestionPool: DEFAULT_REMARK_POOL.Distinction },
+  { id: 'b-2', min: 70, max: 79, grade: 'B2', remark: 'Very Good: Highly commendable effort and focus.', suggestionPool: DEFAULT_REMARK_POOL.Distinction },
+  { id: 'b-3', min: 65, max: 69, grade: 'B3', remark: 'Good: Solid understanding of core concepts.', suggestionPool: DEFAULT_REMARK_POOL.Credit },
+  { id: 'b-4', min: 60, max: 64, grade: 'C4', remark: 'Credit: Satisfactory performance with consistent results.', suggestionPool: DEFAULT_REMARK_POOL.Credit },
+  { id: 'b-5', min: 55, max: 59, grade: 'C5', remark: 'Credit: Can do better with more effort.', suggestionPool: DEFAULT_REMARK_POOL.Credit },
+  { id: 'b-6', min: 50, max: 54, grade: 'C6', remark: 'Credit: Average performance; needs steady improvement.', suggestionPool: DEFAULT_REMARK_POOL.Credit },
+  { id: 'b-7', min: 45, max: 49, grade: 'D7', remark: 'Pass: Meeting minimum standards for the subject.', suggestionPool: DEFAULT_REMARK_POOL.Pass },
+  { id: 'b-8', min: 40, max: 44, grade: 'E8', remark: 'Pass: Weak performance; requires reinforcement.', suggestionPool: DEFAULT_REMARK_POOL.Pass },
+  { id: 'b-9', min: 0, max: 39, grade: 'F9', remark: 'Fail: Poor performance; remedial sessions highly recommended.', suggestionPool: DEFAULT_REMARK_POOL.Fail },
 ];
 
 export const GradingRulesView = () => {
@@ -36,7 +36,8 @@ export const GradingRulesView = () => {
   const [examWeight, setExamWeight] = useState(70);
   const [boundaries, setBoundaries] = useState(DEFAULT_BOUNDARIES);
   const [normalizationEnabled, setNormalizationEnabled] = useState(true);
-  const [deadlineDate, setDeadlineDate] = useState('2026-05-15');
+  
+  const [deadlineDate, setDeadlineDate] = useState('2026-07-15');
   const [deadlineTime, setDeadlineTime] = useState('23:59');
   const [showSealConfirm, setShowSealConfirm] = useState(false);
 
@@ -47,8 +48,29 @@ export const GradingRulesView = () => {
 
   const handleWeightChange = (newCa) => {
     if (isTermFinalized) return;
-    setCaWeight(newCa);
-    setExamWeight(100 - newCa);
+    const cleanCa = Math.max(0, Math.min(100, newCa));
+    setCaWeight(cleanCa);
+    setExamWeight(100 - cleanCa);
+  };
+
+  const handleAddBoundary = () => {
+    if (isTermFinalized) return;
+    // Safe Unique ID Generation to prevent Key collisions
+    const newId = `b-custom-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+    const newRow = {
+      id: newId,
+      min: '', // Left blank to allow smooth raw entry without hitting 0 fallback bugs
+      max: '',
+      grade: 'NEW',
+      remark: 'Satisfactory performance.',
+      suggestionPool: DEFAULT_REMARK_POOL.Pass
+    };
+    setBoundaries(prev => [...prev, newRow]);
+  };
+
+  const handleDeleteBoundary = (id) => {
+    if (isTermFinalized) return;
+    setBoundaries(prev => prev.filter(b => b.id !== id));
   };
 
   const getTimeRemaining = () => {
@@ -84,7 +106,7 @@ export const GradingRulesView = () => {
              >
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-rose-600" />
                 <div className="w-20 h-20 bg-rose-50 rounded-[2rem] flex items-center justify-center mb-8 mx-auto">
-                   <ShieldAlert size={40} className="text-rose-600" />
+                    <ShieldAlert size={40} className="text-rose-600" />
                 </div>
                 
                 <h3 className="text-2xl font-black text-slate-900 text-center italic font-display mb-4">Execute Final Seal?</h3>
@@ -105,17 +127,17 @@ export const GradingRulesView = () => {
 
                 <div className="flex gap-4">
                    <button 
-                    onClick={() => setShowSealConfirm(false)}
-                    className="flex-1 py-4 text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors"
+                     onClick={() => setShowSealConfirm(false)}
+                     className="flex-1 py-4 text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors"
                    >
                      Abort
                    </button>
                    <button 
-                    onClick={() => {
-                      setIsTermFinalized(true);
-                      setShowSealConfirm(false);
-                    }}
-                    className="flex-1 py-4 bg-rose-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-rose-900/20 hover:bg-rose-700 transition-all"
+                     onClick={() => {
+                       setIsTermFinalized(true);
+                       setShowSealConfirm(false);
+                     }}
+                     className="flex-1 py-4 bg-rose-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-rose-900/20 hover:bg-rose-700 transition-all"
                    >
                      Finalize Term
                    </button>
@@ -128,7 +150,7 @@ export const GradingRulesView = () => {
       <div className="max-w-7xl mx-auto space-y-10 pb-20">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.25em] text-slate-400 mb-2">
+            <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">
               <span>Academic Engine</span>
               <ChevronRight size={10} />
               <span className="text-slate-900">Grading & Assessment Rules</span>
@@ -167,7 +189,7 @@ export const GradingRulesView = () => {
               <div className="flex justify-between items-center mb-8">
                 <div>
                   <h3 className="text-[13px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
-                    <Settings2 size={16} className="text-brand-teal" />
+                    <Settings2 size={16} className="text-emerald-600" />
                     The Global Weighting Toggle
                   </h3>
                   <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest leading-relaxed">
@@ -198,11 +220,12 @@ export const GradingRulesView = () => {
                       min="0" 
                       max="100" 
                       value={caWeight}
-                      onChange={(e) => handleWeightChange(parseInt(e.target.value))}
+                      disabled={isTermFinalized}
+                      onChange={(e) => handleWeightChange(parseInt(e.target.value) || 0)}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     />
                     <div 
-                      className="absolute left-0 top-0 h-full bg-brand-teal rounded-l-full transition-all duration-300" 
+                      className="absolute left-0 top-0 h-full bg-emerald-500 rounded-l-full transition-all duration-300" 
                       style={{ width: `${caWeight}%` }}
                     />
                     <div 
@@ -227,6 +250,7 @@ export const GradingRulesView = () => {
                           type="checkbox" 
                           className="sr-only" 
                           checked={normalizationEnabled}
+                          disabled={isTermFinalized}
                           onChange={(e) => setNormalizationEnabled(e.target.checked)}
                         />
                       </div>
@@ -236,11 +260,11 @@ export const GradingRulesView = () => {
                       </div>
                     </label>
                   </div>
-                  <div className="p-4 bg-brand-teal/5 rounded-2xl border border-brand-teal/10">
+                  <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-500/10">
                      <div className="flex items-start gap-3">
-                        <Info size={16} className="text-brand-teal mt-0.5" />
+                        <Info size={16} className="text-emerald-600 mt-0.5" />
                         <div>
-                           <p className="text-[11px] font-black text-brand-teal uppercase tracking-widest">Departmental Override</p>
+                           <p className="text-[11px] font-black text-emerald-600 uppercase tracking-widest">Departmental Override</p>
                            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter mt-0.5">Allow Tech/Voc to use 40/60 split.</p>
                         </div>
                      </div>
@@ -252,16 +276,16 @@ export const GradingRulesView = () => {
             {/* 2. Grade Boundary Configuration (The WAEC Scale) */}
             <section className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
                <div className="p-10 border-b border-slate-100 flex justify-between items-center">
-                  <div>
-                    <h3 className="text-[13px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
-                       <Palette size={16} className="text-brand-teal" />
+                 <div>
+                   <h3 className="text-[13px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
+                       <Palette size={16} className="text-emerald-600" />
                        WAEC Scale Calibration
-                    </h3>
-                    <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Mapping Percentage Thresholds to Terminal Grades</p>
-                  </div>
-                  <button className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:text-slate-900 transition-colors">
-                    <HelpCircle size={18} />
-                  </button>
+                   </h3>
+                   <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Mapping Percentage Thresholds to Terminal Grades</p>
+                 </div>
+                 <button className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:text-slate-900 transition-colors">
+                   <HelpCircle size={18} />
+                 </button>
                </div>
                
                <div className="overflow-x-auto">
@@ -282,15 +306,18 @@ export const GradingRulesView = () => {
                               <input 
                                 type="number" 
                                 value={b.min}
-                                onChange={(e) => handleBoundaryChange(b.id, 'min', parseInt(e.target.value))}
-                                className="w-16 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-[12px] font-black font-mono text-center outline-none focus:ring-2 focus:ring-brand-teal/20 transition-all"
+                                disabled={isTermFinalized}
+                                // Safe input handling: string allows backspacing clean fields
+                                onChange={(e) => handleBoundaryChange(b.id, 'min', e.target.value === '' ? '' : parseInt(e.target.value))}
+                                className="w-16 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-[12px] font-black font-mono text-center outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
                               />
                               <span className="text-slate-300 font-black">—</span>
                               <input 
                                 type="number" 
                                 value={b.max}
-                                onChange={(e) => handleBoundaryChange(b.id, 'max', parseInt(e.target.value))}
-                                className="w-16 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-[12px] font-black font-mono text-center outline-none focus:ring-2 focus:ring-brand-teal/20 transition-all"
+                                disabled={isTermFinalized}
+                                onChange={(e) => handleBoundaryChange(b.id, 'max', e.target.value === '' ? '' : parseInt(e.target.value))}
+                                className="w-16 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-[12px] font-black font-mono text-center outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
                               />
                            </div>
                          </td>
@@ -308,42 +335,52 @@ export const GradingRulesView = () => {
                          <td className="px-10 py-6">
                            <div className="relative flex items-center gap-2">
                              <div className="relative flex-1">
-                               <Edit3 size={12} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-hover:text-brand-teal transition-colors" />
+                               <Edit3 size={12} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-hover:text-emerald-600 transition-colors" />
                                <input 
                                  type="text"
                                  value={b.remark}
+                                 disabled={isTermFinalized}
                                  onChange={(e) => handleBoundaryChange(b.id, 'remark', e.target.value)}
-                                 className="w-full pl-10 pr-4 py-3 bg-transparent border border-transparent hover:border-slate-200 rounded-xl text-[12px] font-bold text-slate-600 outline-none focus:bg-white focus:ring-2 focus:ring-brand-teal/20 transition-all font-sans"
+                                 className="w-full pl-10 pr-4 py-3 bg-transparent border border-transparent hover:border-slate-200 rounded-xl text-[12px] font-bold text-slate-600 outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 transition-all font-sans"
                                />
                              </div>
                              
                              {/* Smart Suggestion Dropdown */}
                              <div className="relative group/suggest">
-                               <button className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-brand-teal hover:text-white transition-all border border-slate-100">
+                               <button 
+                                 disabled={isTermFinalized}
+                                 className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-emerald-500 hover:text-white disabled:hover:bg-slate-50 disabled:hover:text-slate-400 transition-all border border-slate-100"
+                               >
                                  <Sparkles size={14} />
                                </button>
-                               <div className="absolute right-0 bottom-full mb-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 hidden group-hover/suggest:block z-50">
-                                  <div className="px-3 py-2 border-b border-slate-50 mb-1">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Smart Suggestions</p>
-                                  </div>
-                                  {b.suggestionPool?.map((suggestion, idx) => (
-                                    <button 
-                                      key={idx}
-                                      onClick={() => handleBoundaryChange(b.id, 'remark', suggestion)}
-                                      className="w-full text-left px-3 py-2 text-[10px] font-bold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors leading-tight"
-                                    >
-                                      {suggestion}
-                                    </button>
-                                  ))}
-                                  {(!b.suggestionPool || b.suggestionPool.length === 0) && (
-                                    <div className="px-3 py-2 text-[10px] font-medium text-slate-400 italic">No templates for this category.</div>
-                                  )}
-                               </div>
+                               {!isTermFinalized && (
+                                 <div className="absolute right-0 bottom-full mb-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 hidden group-hover/suggest:block z-50">
+                                    <div className="px-3 py-2 border-b border-slate-50 mb-1">
+                                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Smart Suggestions</p>
+                                    </div>
+                                    {b.suggestionPool?.map((suggestion, idx) => (
+                                      <button 
+                                        key={idx}
+                                        onClick={() => handleBoundaryChange(b.id, 'remark', suggestion)}
+                                        className="w-full text-left px-3 py-2 text-[10px] font-bold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors leading-tight"
+                                      >
+                                        {suggestion}
+                                      </button>
+                                    ))}
+                                    {(!b.suggestionPool || b.suggestionPool.length === 0) && (
+                                      <div className="px-3 py-2 text-[10px] font-medium text-slate-400 italic">No templates for this category.</div>
+                                    )}
+                                 </div>
+                               )}
                              </div>
                            </div>
                          </td>
                          <td className="px-10 py-6 text-right">
-                            <button className="text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
+                            <button 
+                              disabled={isTermFinalized}
+                              onClick={() => handleDeleteBoundary(b.id)}
+                              className="text-slate-300 hover:text-rose-500 disabled:hover:text-slate-300 transition-colors opacity-0 group-hover:opacity-100"
+                            >
                               <Trash2 size={16} />
                             </button>
                          </td>
@@ -354,7 +391,11 @@ export const GradingRulesView = () => {
                </div>
                
                <div className="p-8 bg-slate-50 border-t border-slate-100">
-                  <button className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center gap-3 text-slate-400 hover:text-slate-600 hover:border-slate-300 transition-all">
+                  <button 
+                    disabled={isTermFinalized}
+                    onClick={handleAddBoundary}
+                    className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center gap-3 text-slate-400 hover:text-slate-600 hover:border-slate-300 disabled:opacity-50 disabled:pointer-events-none transition-all"
+                  >
                     <Plus size={16} />
                     <span className="text-[10px] font-black uppercase tracking-widest">Insert New Threshold</span>
                   </button>
@@ -394,7 +435,7 @@ export const GradingRulesView = () => {
                         <input 
                           type="date" 
                           value={deadlineDate}
-                          readOnly={isTermFinalized}
+                          disabled={isTermFinalized}
                           onChange={(e) => setDeadlineDate(e.target.value)}
                           className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-xs font-black italic font-display outline-none focus:ring-2 focus:ring-white/20 transition-all active:bg-white/10"
                         />
@@ -403,7 +444,7 @@ export const GradingRulesView = () => {
                         <input 
                           type="time" 
                           value={deadlineTime}
-                          readOnly={isTermFinalized}
+                          disabled={isTermFinalized}
                           onChange={(e) => setDeadlineTime(e.target.value)}
                           className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-xs font-black italic font-display outline-none focus:ring-2 focus:ring-white/20 transition-all active:bg-white/10"
                         />

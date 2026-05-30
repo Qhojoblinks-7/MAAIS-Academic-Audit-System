@@ -47,31 +47,17 @@ export function HODSidebar() {
     },
     { 
       icon: AlertCircle, 
-      label: 'Revision Approvals', 
-      id: 'hod-revisions', 
-      path: '/revisions',
-      badge: 3 
-    },
-    { 
-      icon: ClipboardCheck, 
-      label: 'Compliance Watch', 
-      id: 'hod-compliance', 
-      path: '/missing-observations',
-      badge: 5, 
-      badgeColor: 'bg-amber-500' 
-    },
-    { 
-      icon: GraduationCap, 
-      label: 'Grades Audit', 
-      id: 'hod-grading', 
-      path: '/grading' 
-    },
-    { 
-      icon: FileText, 
-      label: 'Audit Log', 
-      id: 'hod-audit', 
-      path: '/hod/audit' 
-    },
+       label: 'Revision Approvals', 
+       id: 'hod-revisions', 
+       path: '/revisions',
+       badge: 3 
+     },
+     { 
+       icon: FileText, 
+       label: 'Audit Log', 
+       id: 'hod-audit', 
+       path: '/hod/audit' 
+     },
     { 
       icon: Users, 
       label: 'Teachers', 

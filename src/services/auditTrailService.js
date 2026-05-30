@@ -1,6 +1,7 @@
 import { getAuthToken } from './auth';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const USE_MOCK = !BASE_URL || import.meta.env.VITE_USE_MOCK_API === 'true';
 
 function getHeaders() {
   const token = getAuthToken();
@@ -11,6 +12,9 @@ function getHeaders() {
 }
 
 async function request(method, path, body) {
+  if (USE_MOCK) {
+    return { success: true, id: Date.now() };
+  }
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
     headers: getHeaders(),

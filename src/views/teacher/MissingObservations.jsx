@@ -15,7 +15,7 @@ const mockObservations = [
   { id: 'o5', student: 'Kofi Appiah', index: '005', class: 'SHS 1 Agric B', type: 'Lab Safety', teacher: 'S. K. Mensah', status: 'Missing', date: '2026-01-08' },
 ];
 
-export function MissingObservations() {
+export function TeacherMissingObservations() {
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('missing');
   const [searchQuery, setSearchQuery] = useState('');
@@ -70,18 +70,18 @@ export function MissingObservations() {
       <header className="p-6 lg:p-8 bg-white border-b border-slate-200/60 shrink-0">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-11 h-11 bg-slate-900 rounded-xl flex items-center justify-center shadow-md shadow-slate-900/10 shrink-0">
-              <AlertTriangle size={20} className="text-amber-400" />
+            <div className="w-11 h-11 bg-emerald-900 rounded-xl flex items-center justify-center shadow-md shadow-emerald-900/10 shrink-0">
+              <AlertTriangle size={20} className="text-emerald-400" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900 tracking-tight">Compliance Tracking Hub</h1>
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight">Teacher Observation Hub</h1>
               <p className="text-xs font-medium text-slate-400 mt-0.5">Audit data sheets and enforce term entry verification guidelines</p>
             </div>
           </div>
           
           <div className="flex items-center gap-2 self-start md:self-center">
-            <div className="flex items-center gap-1.5 bg-amber-50 text-amber-800 border border-amber-200/40 px-3 py-1.5 rounded-xl text-xs font-semibold">
-              <Sparkles size={13} className="text-amber-600 animate-pulse" />
+            <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200/40 px-3 py-1.5 rounded-xl text-xs font-semibold">
+              <Sparkles size={13} className="text-emerald-600 animate-pulse" />
               <span>{missingCount} Entries Outstanding</span>
             </div>
           </div>
@@ -105,8 +105,8 @@ export function MissingObservations() {
                 className={cn(
                   "px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200",
                   activeTab === tab.id
-                    ? "bg-white text-slate-900 shadow-sm font-bold"
-                    : "text-slate-500 hover:text-slate-800"
+                    ? "bg-white text-emerald-900 shadow-sm font-bold"
+                    : "text-emerald-400 hover:text-emerald-600"
                 )}
               >
                 {tab.label}
@@ -139,7 +139,7 @@ export function MissingObservations() {
             <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/40 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
                 <SlidersHorizontal size={13} />
-                Compliance Record Logs
+                Observation Logs
               </div>
               <span className="text-[11px] font-medium text-slate-400">
                 Showing {filteredObservations.length} of {mockObservations.length} logs
@@ -179,7 +179,7 @@ export function MissingObservations() {
                           <div className={cn(
                             "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border mt-0.5 shadow-sm",
                             isMissing 
-                              ? "bg-amber-50/80 border-amber-200/50 text-amber-600" 
+                              ? "bg-emerald-50/80 border-emerald-200/50 text-emerald-600" 
                               : "bg-emerald-50/80 border-emerald-200/50 text-emerald-600"
                           )}>
                             {isMissing ? <AlertTriangle size={15} /> : <CheckCircle2 size={15} />}
@@ -211,7 +211,7 @@ export function MissingObservations() {
                             <span className={cn(
                               "text-[10px] font-bold px-2 py-0.5 rounded border tracking-wide",
                               isMissing 
-                                ? "bg-amber-50 text-amber-800 border-amber-200/60" 
+                                ? "bg-emerald-50 text-emerald-800 border-emerald-200/60" 
                                 : "bg-emerald-50 text-emerald-800 border-emerald-200/60"
                             )}>
                               {obs.status}
@@ -223,17 +223,17 @@ export function MissingObservations() {
                             </div>
                           </div>
 
-<div className="w-8 flex justify-end">
-                             {isMissing ? (
-                               <button
-                                 onClick={() => window.location.href = `/grading?missing=${obs.id}&student=${obs.index}`}
-                                 className="p-1.5 bg-slate-50 hover:bg-slate-900 border border-slate-200 rounded-lg text-slate-500 hover:text-white transition-all shadow-sm flex items-center justify-center group-hover:translate-x-0.5"
-                                 title="Resolve observation entry window"
-                               >
-                                 <ArrowRight size={13} />
-                               </button>
-                             ) : (
-                              <ChevronRight size={14} className="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity pr-1" />
+                          <div className="w-8 flex justify-end">
+                            {isMissing ? (
+                              <button
+                                onClick={() => window.location.href = `/grading?missing=${obs.id}&student=${obs.index}`}
+                                className="p-1.5 bg-emerald-50 hover:bg-emerald-900 border border-emerald-200 rounded-lg text-emerald-500 hover:text-white transition-all shadow-sm flex items-center justify-center group-hover:translate-x-0.5"
+                                title="Resolve observation entry window"
+                              >
+                                <ArrowRight size={13} />
+                              </button>
+                            ) : (
+                              <ChevronRight size={14} className="text-emerald-300 opacity-0 group-hover:opacity-100 transition-opacity pr-1" />
                             )}
                           </div>
 

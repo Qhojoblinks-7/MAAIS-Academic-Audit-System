@@ -4,6 +4,7 @@ export { notification } from './notificationService';
 export { reportEngine } from './reportEngine';
 export { cacheLayer } from './cacheLayer';
 export { eventBus } from './eventBus';
+export { departmentService } from './departmentService';
 
 // Mock services (for development/testing)
 export { mockHodService } from './mockHodService';

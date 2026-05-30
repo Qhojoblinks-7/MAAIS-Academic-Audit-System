@@ -42,6 +42,7 @@ export function useGradingSheetLogic({
   const classInfo = classInfoProp || DEFAULT_CLASS_INFO;
   const subjectConfigData = subjectConfigProp || {};
   const stpRules = stpRulesProp || DEFAULT_STP_RULES;
+  const teacherId = teacherIdProp || null;
 
   // ── Derived config (memoised to prevent deep-diff churn in table body) ─────
   const DISPLAY_CLASS_INFO = useMemo(() => {
@@ -69,6 +70,21 @@ export function useGradingSheetLogic({
     }
     return studentsProp?.[0] || null;
   });
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  // Auto-select first MISSING student and open sidebar in missing-obs mode
+  useEffect(() => {
+    if (isMissingObsMode && !targetStudentIdProp && students.length > 0) {
+      const missingStudent = students.find(s => s.auditStatus === 'MISSING');
+      if (missingStudent) {
+        setSelectedStudent(missingStudent);
+        setIsSidebarOpen(true);
+      }
+    }
+    if (isCorrectionMode) {
+      setIsSidebarOpen(true);
+    }
+  }, [isMissingObsMode, isCorrectionMode, targetStudentIdProp, students]);
 
   // Sync when container supplies new students (class switch / API refetch)
   useEffect(() => {
@@ -92,7 +108,6 @@ export function useGradingSheetLogic({
   // ── UI state ────────────────────────────────────────────────────────────────
   const [submissionStatus, setSubmissionStatus] = useState('DRAFT');
   const [isExamExpanded, setIsExamExpanded] = useState(!!revisionIdProp);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [tempMark, setTempMark] = useState('');
   const [showSTPOverlay, setShowSTPOverlay] = useState(false);
   const [stpErrors, setStpErrors] = useState([]);

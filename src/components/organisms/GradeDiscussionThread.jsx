@@ -55,7 +55,7 @@ export function GradeDiscussionThread({ subjectId, studentId }) {
       }
     };
 
-    const unsubscribe = eventBus.subscribe('grade-discussion-message', handleNewMessage);
+    const unsubscribe = eventBus.on('grade-discussion-message', handleNewMessage);
 
     return () => {
       unsubscribe();

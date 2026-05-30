@@ -4,7 +4,6 @@ import {
   Search, 
   UserPlus, 
   MoreVertical, 
-  ChevronRight, 
   Mail, 
   Phone, 
   ShieldCheck, 
@@ -13,29 +12,106 @@ import {
   X,
   Filter,
   Download,
-  CheckCircle2,
-  Clock,
-  AlertCircle
+  ChevronDown,
+  RotateCcw,
+  ArrowRight,
+  Trash2
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-
-const mockStaff = [
-  { id: '1', name: 'Anthony Hackman', employeeId: 'STF-001', department: 'Science', role: 'Teacher', status: 'Active', email: 'a.hackman@vault.edu', phone: '+233 24 555 0101', joinedDate: '2018-09-12' },
-  { id: '2', name: 'Martha Baah', employeeId: 'STF-002', department: 'Home Economics', role: 'HOD', status: 'Active', email: 'm.baah@vault.edu', phone: '+233 20 555 0202', joinedDate: '2015-01-20' },
-  { id: '3', name: 'Samuel Boateng', employeeId: 'STF-003', department: 'Science', role: 'Teacher', status: 'On Leave', email: 's.boateng@vault.edu', phone: '+233 55 555 0303', joinedDate: '2020-11-05' },
-  { id: '4', name: 'Gladys Owusu', employeeId: 'STF-004', department: 'Administration', role: 'Accountant', status: 'Active', email: 'g.owusu@vault.edu', phone: '+233 24 555 0404', joinedDate: '2012-06-15' },
-  { id: '5', name: 'John Mensah', employeeId: 'STF-005', department: 'Languages', role: 'Teacher', status: 'Retired', email: 'j.mensah@vault.edu', phone: '+233 27 555 0505', joinedDate: '1998-09-01' },
-  { id: '6', name: 'Elizabeth Osei', employeeId: 'STF-006', department: 'Mathematics', role: 'Teacher', status: 'Active', email: 'e.osei@vault.edu', phone: '+233 54 555 0606', joinedDate: '2021-02-14' },
-];
+import { mockStaff, DEPARTMENTS, ROLES } from './data';
 
 export function StaffRegistry() {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedStaff, setSelectedStaff] = React.useState(null);
   const [isResettingPassword, setIsResettingPassword] = React.useState(false);
+  const [openKebabId, setOpenKebabId] = React.useState(null);
+  const [showFilters, setShowFilters] = React.useState(false);
+  const [showOnboardModal, setShowOnboardModal] = React.useState(false);
+  const [selectedDepartment, setSelectedDepartment] = React.useState('All');
+  const [selectedRole, setSelectedRole] = React.useState('All');
+  const [selectedStatus, setSelectedStatus] = React.useState('All');
+  const [onboardForm, setOnboardForm] = React.useState({
+    name: '',
+    email: '',
+    phone: '',
+    department: DEPARTMENTS[0] || '',
+    role: ROLES[0] || ''
+  });
+
+  const toggleKebab = (e, id) => {
+    e.stopPropagation();
+    setOpenKebabId(openKebabId === id ? null : id);
+  };
+
+  React.useEffect(() => {
+    const closeMenu = () => setOpenKebabId(null);
+    window.addEventListener('click', closeMenu);
+    return () => window.removeEventListener('click', closeMenu);
+  }, []);
+
+  const handleExportCSV = () => {
+    const headers = ['Name', 'Employee ID', 'Department', 'Role', 'Status', 'Email', 'Phone', 'Joined Date'];
+    const csvContent = [
+      headers.join(','),
+      ...filteredStaff.map(s => [
+        `"${s.name}"`,
+        `"${s.employeeId}"`,
+        `"${s.department}"`,
+        `"${s.role}"`,
+        `"${s.status}"`,
+        `"${s.email}"`,
+        `"${s.phone}"`,
+        `"${s.joinedDate || 'Recent'}"`
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'staff-registry.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleOnboardStaff = () => {
+    setShowOnboardModal(true);
+  };
+
+  const handleOnboardSubmit = () => {
+    if (!onboardForm.name || !onboardForm.email) {
+      alert('Name and Email are required fields.');
+      return;
+    }
+    const newId = String(mockStaff.length + 1);
+    const newStaff = {
+      id: newId,
+      name: onboardForm.name,
+      employeeId: `STF-${String(mockStaff.length + 1).padStart(3, '0')}`,
+      department: onboardForm.department,
+      role: onboardForm.role,
+      status: 'Active',
+      email: onboardForm.email,
+      phone: onboardForm.phone,
+      joinedDate: new Date().toISOString().split('T')[0]
+    };
+    mockStaff.push(newStaff);
+    setOnboardForm({
+      name: '',
+      email: '',
+      phone: '',
+      department: DEPARTMENTS[0] || '',
+      role: ROLES[0] || ''
+    });
+    setShowOnboardModal(false);
+  };
 
   const filteredStaff = mockStaff.filter(s => 
-    s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.employeeId.toLowerCase().includes(searchQuery.toLowerCase())
+    (s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+     s.employeeId.toLowerCase().includes(searchQuery.toLowerCase())) &&
+    (selectedDepartment === 'All' || s.department === selectedDepartment) &&
+    (selectedRole === 'All' || s.role === selectedRole) &&
+    (selectedStatus === 'All' || s.status === selectedStatus)
   );
 
   return (
@@ -50,11 +126,17 @@ export function StaffRegistry() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-200 hover:bg-slate-100 transition-all">
+          <button 
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-200 hover:bg-slate-100 transition-all"
+          >
             <Download size={14} />
             Export CSV
           </button>
-          <button className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-slate-900/10">
+          <button 
+            onClick={handleOnboardStaff}
+            className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-slate-900/10"
+          >
             <UserPlus size={16} />
             Onboard Staff
           </button>
@@ -75,14 +157,98 @@ export function StaffRegistry() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-slate-900 transition-all">
-            <Filter size={18} />
-          </button>
+          <div className="relative">
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowFilters(!showFilters);
+              }}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all"
+            >
+              <Filter size={14} />
+              Filters
+              <ChevronDown size={12} className={cn("transition-transform", showFilters && "rotate-180")} />
+            </button>
+
+            <AnimatePresence>
+              {showFilters && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                  className="absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl z-[150] overflow-hidden"
+                >
+                  <div className="p-4 border-b border-slate-100">
+                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Filter Registry</p>
+                  </div>
+                  <div className="p-4 space-y-4">
+                    <div>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Department</p>
+                      <select
+                        value={selectedDepartment}
+                        onChange={(e) => setSelectedDepartment(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                      >
+                        <option value="All">All Departments</option>
+                        {DEPARTMENTS.map(dept => (
+                          <option key={dept} value={dept}>{dept}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Role</p>
+                      <select
+                        value={selectedRole}
+                        onChange={(e) => setSelectedRole(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                      >
+                        <option value="All">All Roles</option>
+                        {ROLES.map(role => (
+                          <option key={role} value={role}>{role}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Status</p>
+                      <select
+                        value={selectedStatus}
+                        onChange={(e) => setSelectedStatus(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                      >
+                        <option value="All">All Statuses</option>
+                        <option value="Active">Active</option>
+                        <option value="On Leave">On Leave</option>
+                        <option value="Retired">Retired</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-2">
+                    <button
+                      onClick={() => {
+                        setSelectedDepartment('All');
+                        setSelectedRole('All');
+                        setSelectedStatus('All');
+                      }}
+                      className="flex-1 py-2 bg-white border border-slate-200 text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all"
+                    >
+                      Reset
+                    </button>
+                    <button
+                      onClick={() => setShowFilters(false)}
+                      className="flex-1 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
       {/* Registry Table */}
-      <div className="flex-1 overflow-x-auto">
+      <div className="flex-1 overflow-auto">
         <table className="w-full border-collapse">
           <thead className="sticky top-0 z-10">
             <tr className="bg-slate-50/80 backdrop-blur-md border-b border-slate-200">
@@ -102,7 +268,7 @@ export function StaffRegistry() {
               >
                 <td className="px-8 py-5">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-[0.75rem] bg-slate-100 flex items-center justify-center text-slate-900 font-bold text-sm border border-slate-200 group-hover:bg-white transition-colors uppercase">
+                    <div className="w-10 h-10 rounded-[0.75rem] bg-slate-100 flex items-center justify-center text-slate-900 font-bold text-sm border border-slate-200 group-hover:bg-white transition-colors uppercase select-none">
                       {staff.name.split(' ').map(n => n[0]).join('')}
                     </div>
                     <div>
@@ -137,9 +303,57 @@ export function StaffRegistry() {
                   </div>
                 </td>
                 <td className="px-8 py-5 text-right">
-                  <button className="p-2 text-slate-300 hover:text-slate-900 transition-colors">
-                    <MoreVertical size={16} />
-                  </button>
+                  <div className="relative">
+                    <button 
+                      onClick={(e) => toggleKebab(e, staff.id)}
+                      className={cn(
+                        "p-2 rounded-xl transition-all",
+                        openKebabId === staff.id ? "bg-slate-900 text-white" : "text-slate-300 hover:text-slate-900 hover:bg-slate-50"
+                      )}
+                    >
+                      <MoreVertical size={16} />
+                    </button>
+
+                    <AnimatePresence>
+                      {openKebabId === staff.id && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                          className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-2xl z-[150] overflow-hidden"
+                        >
+                          <div className="p-2 border-b border-slate-50">
+                            <p className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 px-3 py-1">Advanced Node Operations</p>
+                          </div>
+                          <div className="p-1.5">
+                            {[
+                              { label: 'Registry Transfer', icon: ArrowRight, color: 'hover:text-blue-600 hover:bg-blue-50' },
+                              { label: 'Credential Reset', icon: RotateCcw, color: 'hover:text-amber-600 hover:bg-amber-50' },
+                            ].map((item) => (
+                              <button
+                                key={item.label}
+                                className={cn(
+                                  "w-full flex items-center gap-3 px-4 py-2.5 text-[11px] font-bold text-slate-600 rounded-xl transition-all text-left",
+                                  item.color
+                                )}
+                              >
+                                <item.icon size={14} />
+                                {item.label}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="p-1.5 bg-slate-50 border-t border-slate-100 italic">
+                            <button 
+                              className="w-full flex items-center gap-3 px-4 py-2.5 text-[11px] font-bold text-slate-400 hover:text-slate-900 rounded-xl transition-all text-left"
+                            >
+                              <Trash2 size={14} />
+                              Deep Archive Node
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -148,7 +362,7 @@ export function StaffRegistry() {
 
         {filteredStaff.length === 0 && (
           <div className="py-32 flex flex-col items-center justify-center text-center">
-            <div className="w-20 h-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-200 mb-6 font-display italic text-4xl">
+            <div className="w-20 h-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-200 mb-6 font-display italic text-4xl select-none">
               ?
             </div>
             <h3 className="text-xl font-black text-slate-900 mb-2">No Nodes Identified</h3>
@@ -175,32 +389,38 @@ export function StaffRegistry() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300, mass: 0.8 }}
-              className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col border-l border-slate-200"
+              className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col border-l border-slate-200 z-10"
             >
               {/* Profile Header */}
               <div className="p-8 bg-slate-900 text-white relative overflow-hidden shrink-0">
-                <div className="absolute top-0 right-0 p-12 opacity-[0.05] pointer-events-none">
+                <div className="absolute top-0 right-0 p-12 opacity-[0.05] pointer-events-none text-white">
                   <ShieldCheck size={200} />
                 </div>
                 
-                <div className="flex justify-between items-center mb-10 relative">
+                <div className="flex justify-between items-center mb-10 relative z-10">
                   <button onClick={() => setSelectedStaff(null)} className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl transition-all">
                     <ArrowLeft size={20} />
                   </button>
-                  <button className="p-2.5 bg-white/10 hover:bg-rose-500 rounded-xl transition-all">
-                    <X size={20} onClick={() => setSelectedStaff(null)} />
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedStaff(null);
+                    }}
+                    className="p-2.5 bg-white/10 hover:bg-rose-500 hover:text-white text-white rounded-xl transition-all"
+                  >
+                    <X size={20} />
                   </button>
                 </div>
 
-                <div className="relative">
-                  <div className="w-24 h-24 rounded-[2rem] bg-white text-slate-900 flex items-center justify-center text-3xl font-black italic font-display shadow-2xl mb-6 ring-4 ring-white/10">
+                <div className="relative z-10">
+                  <div className="w-24 h-24 rounded-[2rem] bg-white text-slate-900 flex items-center justify-center text-3xl font-black italic font-display shadow-2xl mb-6 ring-4 ring-white/10 select-none">
                     {selectedStaff.name.split(' ').map(n => n[0]).join('')}
                   </div>
                   <h3 className="text-3xl font-black italic font-display tracking-tight mb-2 leading-none">{selectedStaff.name}</h3>
                   <div className="flex items-center gap-3">
                     <span className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-400">{selectedStaff.employeeId}</span>
                     <div className="w-1 h-1 rounded-full bg-white/30" />
-                    <span className="text-[11px] font-bold text-white/60">Joined {selectedStaff.joinedDate}</span>
+                    <span className="text-[11px] font-bold text-white/60">Joined {selectedStaff.joinedDate || 'Recent'}</span>
                   </div>
                 </div>
               </div>
@@ -241,7 +461,7 @@ export function StaffRegistry() {
                         </div>
                         <div>
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Primary Email</p>
-                          <p className="text-[13px] font-bold text-slate-900">{selectedStaff.email}</p>
+                          <p className="text-[13px] font-bold text-slate-900 break-all">{selectedStaff.email}</p>
                         </div>
                       </div>
                     </div>
@@ -277,7 +497,8 @@ export function StaffRegistry() {
                     </div>
                     
                     <button 
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setIsResettingPassword(true);
                         setTimeout(() => {
                           setIsResettingPassword(false);
@@ -286,8 +507,8 @@ export function StaffRegistry() {
                       }}
                       disabled={isResettingPassword}
                       className={cn(
-                        "w-full py-4.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-lg shadow-black/20",
-                        isResettingPassword ? "bg-white/5 text-white/40" : "bg-white text-slate-900 hover:bg-slate-100"
+                        "w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-lg shadow-black/20",
+                        isResettingPassword ? "bg-white/5 text-white/40 cursor-not-allowed" : "bg-white text-slate-900 hover:bg-slate-100"
                       )}
                     >
                       <Lock size={16} />
@@ -302,7 +523,7 @@ export function StaffRegistry() {
               </div>
 
               {/* Panel Footer */}
-              <div className="p-8 bg-slate-50 border-t border-slate-200">
+              <div className="p-8 bg-slate-50 border-t border-slate-200 shrink-0">
                 <button className="w-full py-4 bg-white border border-slate-200 text-slate-900 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center justify-center gap-3">
                   Commit Registry Updates
                 </button>
@@ -311,6 +532,122 @@ export function StaffRegistry() {
           </div>
         )}
       </AnimatePresence>
+
+       {/* Onboard Staff Modal */}
+       <AnimatePresence>
+         {showOnboardModal && (
+           <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+             <motion.div 
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               exit={{ opacity: 0 }}
+               onClick={() => setShowOnboardModal(false)}
+               className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+             />
+             <motion.div 
+               initial={{ scale: 0.9, opacity: 0, y: 20 }}
+               animate={{ scale: 1, opacity: 1, y: 0 }}
+               exit={{ scale: 0.9, opacity: 0, y: 20 }}
+               className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+             >
+               <div className="p-10">
+                 <header className="flex items-center justify-between mb-8">
+                   <div className="flex items-center gap-4">
+                     <div className="w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center">
+                       <UserPlus size={24} />
+                     </div>
+                     <div>
+                       <h3 className="text-xl font-black italic font-display text-slate-900 leading-none mb-1">Onboard Staff Node</h3>
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Institutional Registry Registration</p>
+                     </div>
+                   </div>
+                   <button onClick={() => setShowOnboardModal(false)} className="p-2 text-slate-300 hover:text-slate-900 transition-all">
+                     <X size={24} />
+                   </button>
+                 </header>
+
+                 <div className="space-y-6">
+                   <div>
+                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Full Name</p>
+                     <input
+                       type="text"
+                       value={onboardForm.name}
+                       onChange={(e) => setOnboardForm({...onboardForm, name: e.target.value})}
+                       placeholder="Enter staff full name..."
+                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-900/5"
+                     />
+                   </div>
+
+                   <div>
+                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Primary Email</p>
+                     <input
+                       type="email"
+                       value={onboardForm.email}
+                       onChange={(e) => setOnboardForm({...onboardForm, email: e.target.value})}
+                       placeholder="Enter staff email..."
+                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-900/5"
+                     />
+                   </div>
+
+                   <div>
+                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Secure Line</p>
+                     <input
+                       type="tel"
+                       value={onboardForm.phone}
+                       onChange={(e) => setOnboardForm({...onboardForm, phone: e.target.value})}
+                       placeholder="Enter staff phone number..."
+                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-900/5"
+                     />
+                   </div>
+
+                   <div className="grid grid-cols-2 gap-4">
+                     <div>
+                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Department</p>
+                       <select
+                         value={onboardForm.department}
+                         onChange={(e) => setOnboardForm({...onboardForm, department: e.target.value})}
+                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-900/5"
+                       >
+                         {DEPARTMENTS.map(dept => (
+                           <option key={dept} value={dept}>{dept}</option>
+                         ))}
+                       </select>
+                     </div>
+
+                     <div>
+                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Job Role</p>
+                       <select
+                         value={onboardForm.role}
+                         onChange={(e) => setOnboardForm({...onboardForm, role: e.target.value})}
+                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-900/5"
+                       >
+                         {ROLES.map(role => (
+                           <option key={role} value={role}>{role}</option>
+                         ))}
+                       </select>
+                     </div>
+                   </div>
+
+                   <div className="flex gap-3 pt-4">
+                     <button 
+                       onClick={() => setShowOnboardModal(false)}
+                       className="flex-1 py-4 bg-slate-50 text-slate-900 font-black rounded-2xl text-[11px] uppercase tracking-widest border border-slate-200 hover:bg-slate-100 transition-all"
+                     >
+                       Cancel
+                     </button>
+                     <button 
+                       onClick={handleOnboardSubmit}
+                       className="flex-1 py-4 bg-slate-900 text-white font-black rounded-2xl text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-slate-900/10"
+                     >
+                       Register Node
+                     </button>
+                   </div>
+                 </div>
+               </div>
+             </motion.div>
+           </div>
+         )}
+       </AnimatePresence>
     </div>
   );
 }

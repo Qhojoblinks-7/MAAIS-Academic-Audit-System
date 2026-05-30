@@ -10,11 +10,15 @@ import {
   ExtendedLogsView, AdminSettings, AdminSupport,
   SchedulingView, FinanceView, CommsView, MasterTimetable, EventCalendarView,
   AcademicArchitect, ReportGeneratorView, GradingRulesView,
+  ApprovalsView, ApprovalInspectView, NewApprovalRequestView,
+  SupportTicketDetailView
 } from './pages/admin';
 import { HODDashboard, HODAudit, HODInterventions, HODReview, HODLockExport, HODSettings, HODSettingsPage, HODSupportPage, HODTeachers, HODAnalytics, HODArchiveView, HODArchiveDetailView, Unauthorized, BroadsheetGenerator, HODCertification, HODRevisionsFeed } from './pages/hod';
 import {StudentTimetable, StudentSettings, StudentSupport, StudentPortal, StudentProfile } from './pages/student';
 import { TeacherTimetableView, TeacherDashboard, TeacherGradingView, TeacherObservationsView, TeacherAnalyticsView, TeacherArchiveView, TeacherArchiveDetailView, TeacherSettings, TeacherSupport, TeacherRevisionsFeed } from './pages/teacher';
-import { HOD_JourneyHistoryAudit, MissingObservations, SettingsView, SupportView } from './pages/shared';
+import { HOD_JourneyHistoryAudit, SettingsView, SupportView } from './pages/shared';
+import { TeacherMissingObservations } from './views/teacher/MissingObservations';
+import { HODMissingObservations } from './views/hod/MissingObservations';
 import { UIProvider, useUI } from './context/UIContext';
 import { useRole, RoleProvider } from './context/RoleContext';
 import { HODProvider } from './context/HODContext';
@@ -23,10 +27,20 @@ import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {NotificationsPage} from './pages/NotificationsPage';
 
+function RoleBasedMissingObservations() {
+  const { user } = useRole();
+  return user?.role === 'TEACHER' ? <TeacherMissingObservations /> : <HODMissingObservations />;
+}
+
 // ── Standalone wrapper for /grading route ─────────────────────────────────────
 // Provides the default data sources (mock students, SUBJECT_CONFIG) that
 // GradingSheet requires when accessed directly without a container.
 function StandaloneGradingWrapper() {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const getMissingObsId = searchParams.get('missing');
+  const getTargetStudentIndex = searchParams.get('student');
+  
   const SUBJECT_CONFIG_STANDALONE = {
     'General Agriculture': {
       sections: ['Paper 1 (50)', 'Paper 2-Agri (90)', 'Paper 3-Pract (60)'],
@@ -51,8 +65,11 @@ function StandaloneGradingWrapper() {
     { id: 'stud003', name: 'Yaw Boateng', index: '003', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 35, secB: 50, secC: 38, sba: 28.5, exam: 61.5, final: 90.0, grade: 'A1', auditStatus: 'COMPLETE' },
     { id: 'stud004', name: 'Esi Ansah', index: '004', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 32, secB: 48, secC: 35, sba: 26.0, exam: 55.0, final: 81.0, grade: 'A1', auditStatus: 'COMPLETE' },
     { id: 'stud005', name: 'Kofi Appiah', index: '005', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 28, secB: 42, secC: 32, sba: 22.0, exam: 46.0, final: 68.0, grade: 'B3', auditStatus: 'COMPLETE' },
-    { id: 'stud009', name: 'Ama Serwaa', index: '009', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 30, secB: 40, secC: 35, sba: 25.0, exam: 50.0, final: 75.0, grade: 'A1', auditStatus: 'ACTIVE' },
+    { id: 'stud006', name: 'Yaw Boateng', index: '006', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 30, secB: 40, secC: 35, sba: 25.0, exam: 50.0, final: 75.0, grade: 'A1', auditStatus: 'ACTIVE' },
   ];
+
+  // Map index to student ID (e.g., "001" -> "stud001")
+  const targetStudentId = getTargetStudentIndex ? `stud${getTargetStudentIndex}` : null;
 
   const DEFAULT_STANDALONE_CLASSINFO = {
     id: 'STANDALONE-CLASS',
@@ -78,6 +95,8 @@ function StandaloneGradingWrapper() {
       subjectConfig={SUBJECT_CONFIG_STANDALONE}
       stpRules={STP_STANDALONE}
       isTermFinalized={false}
+      missingObsId={getMissingObsId}
+      targetStudentId={targetStudentId}
     />
   );
 }
@@ -181,11 +200,11 @@ function AppContent() {
                  user?.role === 'ADMIN' ? <SchedulingView /> : <TeacherTimetableView />}
               </RequireRole>
             } />
-            <Route path="/grading" element={
-              <RequireRole allowedRoles={['TEACHER', 'HOD', 'ADMIN']}>
-                {user?.role === 'ADMIN' ? <GradingRulesView /> : <StandaloneGradingWrapper />}
-              </RequireRole>
-            } />
+             <Route path="/grading" element={
+               <RequireRole allowedRoles={['TEACHER', 'ADMIN']}>
+                 {user?.role === 'ADMIN' ? <GradingRulesView /> : <StandaloneGradingWrapper />}
+               </RequireRole>
+             } />
             <Route path="/teacher-dashboard" element={
               <RequireRole allowedRoles={['TEACHER']}><TeacherDashboard /></RequireRole>
             } />
@@ -244,15 +263,15 @@ function AppContent() {
             <Route path="/audit/extended" element={
               <RequireRole allowedRoles={['ADMIN']}><ExtendedLogsView /></RequireRole>
             } />
-<Route path="/archive" element={
-              <RequireRole allowedRoles={['ADMIN', 'TEACHER', 'HOD']}><RoleBasedArchiveView /></RequireRole>
-            } />
-            <Route path="/missing-observations" element={
-              <RequireRole allowedRoles={['TEACHER', 'HOD']}><MissingObservations /></RequireRole>
-            } />
-            <Route path="/journey-audit" element={
-              <RequireRole allowedRoles={['HOD']}><HOD_JourneyHistoryAudit /></RequireRole>
-            } />
+              <Route path="/archive" element={
+                <RequireRole allowedRoles={['ADMIN', 'TEACHER', 'HOD']}><RoleBasedArchiveView /></RequireRole>
+              } />
+              <Route path="/missing-observations" element={
+                <RequireRole allowedRoles={['TEACHER']}><RoleBasedMissingObservations /></RequireRole>
+              } />
+              <Route path="/journey-audit" element={
+                <RequireRole allowedRoles={['HOD']}><HOD_JourneyHistoryAudit /></RequireRole>
+              } />
             <Route path="/unauthorized" element={<Unauthorized />} />
             <Route path="/identity/staff" element={
               <RequireRole allowedRoles={['ADMIN']}><StaffRegistry /></RequireRole>
@@ -266,20 +285,49 @@ function AppContent() {
             <Route path="/identity/parents" element={
               <RequireRole allowedRoles={['ADMIN']}><ParentRegistry /></RequireRole>
             } />
-            <Route path="/settings" element={
-              <RequireRole allowedRoles={['STUDENT', 'HOD', 'ADMIN', 'TEACHER']}>
-                {user?.role === 'STUDENT' ? <StudentSettings /> :
-                 user?.role === 'HOD' ? <HODSettings /> :
-                 user?.role === 'ADMIN' ? <AdminSettings /> : <TeacherSettings />}
-              </RequireRole>
-            } />
-            <Route path="/support" element={
-              <RequireRole allowedRoles={['STUDENT', 'HOD', 'ADMIN', 'TEACHER']}>
-                {user?.role === 'STUDENT' ? <StudentSupport /> :
-                 user?.role === 'HOD' ? <HODSupportPage /> :
-                 user?.role === 'ADMIN' ? <AdminSupport /> : <TeacherSupport />}
-              </RequireRole>
-            } />
+             <Route path="/settings" element={
+               <RequireRole allowedRoles={['STUDENT', 'HOD', 'ADMIN', 'TEACHER']}>
+                 {user?.role === 'STUDENT' ? <StudentSettings /> :
+                  user?.role === 'HOD' ? <HODSettings /> :
+                  user?.role === 'ADMIN' ? <AdminSettings /> : <TeacherSettings />}
+               </RequireRole>
+             } />
+             <Route path="/support" element={
+               <RequireRole allowedRoles={['STUDENT', 'HOD', 'ADMIN', 'TEACHER']}>
+                 {user?.role === 'STUDENT' ? <StudentSupport /> :
+                  user?.role === 'HOD' ? <HODSupportPage /> :
+                  user?.role === 'ADMIN' ? <AdminSupport /> : <TeacherSupport />}
+               </RequireRole>
+             } />
+             <Route path="/support/new" element={
+               <RequireRole allowedRoles={['STUDENT', 'HOD', 'ADMIN', 'TEACHER']}>
+                 {user?.role === 'STUDENT' ? <StudentSupport /> :
+                  user?.role === 'HOD' ? <HODSupportPage /> :
+                  user?.role === 'ADMIN' ? <AdminSupport /> : <TeacherSupport />}
+               </RequireRole>
+             } />
+             <Route path="/support/ticket/:id" element={
+               <RequireRole allowedRoles={['ADMIN', 'HOD']}>
+                 <SupportTicketDetailView />
+               </RequireRole>
+             } />
+             
+             {/* Approvals Management Routes */}
+             <Route path="/approvals/all" element={
+               <RequireRole allowedRoles={['ADMIN', 'HOD']}>
+                 <ApprovalsView />
+               </RequireRole>
+             } />
+             <Route path="/approvals/inspect/:id" element={
+               <RequireRole allowedRoles={['ADMIN', 'HOD']}>
+                 <ApprovalInspectView />
+               </RequireRole>
+             } />
+             <Route path="/approvals/new" element={
+               <RequireRole allowedRoles={['ADMIN', 'HOD']}>
+                 <NewApprovalRequestView />
+               </RequireRole>
+             } />
           </Routes>
 
           {isDashboard && user?.role !== 'ADMIN' && (

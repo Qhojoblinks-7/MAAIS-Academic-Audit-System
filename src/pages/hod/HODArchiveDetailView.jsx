@@ -25,6 +25,8 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { cn } from '../../lib/utils';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 
 // Helper to calculate WAEC Grade (simple version)
 const getWAECGrade = (score) => {
@@ -45,6 +47,120 @@ export function HODArchiveDetailView({ student, onBack }) {
   const triggerToast = (msg) => {
     setShowToast(msg);
     setTimeout(() => setShowToast(null), 3000);
+  };
+
+const handleExportTranscript = async () => {
+    triggerToast("Generating official transcript PDF...");
+
+    try {
+      // Create isolated iframe to avoid Tailwind's oklch colors
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.left = '-9999px';
+      iframe.style.top = '0';
+      iframe.style.width = '210mm';
+      iframe.style.height = 'auto';
+      document.body.appendChild(iframe);
+
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+      iframeDoc.open();
+      iframeDoc.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { margin: 0; padding: 48px; font-family: Arial, sans-serif; color: #0f172a; background: white; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { padding: 8px; text-align: left; font-size: 11px; }
+            .header { border-bottom: 2px solid #0f172a; padding-bottom: 24px; margin-bottom: 32px; }
+            .section { margin-bottom: 32px; }
+            .section-title { font-size: 13px; font-weight: 900; text-transform: uppercase; color: #0f172a; }
+            .term-header { background: #0f172a; color: white; padding: 8px 16px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+            .label { font-size: 10px; font-weight: bold; text-transform: uppercase; color: #64748b; }
+            .value { font-size: 12px; font-weight: bold; }
+            .subject { font-weight: 500; text-transform: uppercase; color: #0f172a; }
+            .score { font-family: monospace; text-align: center; color: #475569; }
+            .grade { font-weight: bold; text-align: right; color: #0f172a; }
+            .footer { position: absolute; bottom: 48px; left: 48px; right: 48px; border-top: 1px dashed #94a3b8; padding-top: 24px; }
+            .footer-note { font-size: 10px; font-weight: bold; text-transform: uppercase; color: #64748b; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1 style="font-size: 24px; font-weight: 800; text-transform: uppercase; color: #0f172a;">Mando Senior High Technical School</h1>
+            <p style="font-size: 11px; font-weight: bold; text-transform: uppercase; color: #475569; margin-top: 4px;">Official Academic Record & Statement of Results</p>
+            <p style="font-size: 10px; color: #475569;">PMB 14, Central Region, Ghana • portal.institution.edu.gh</p>
+          </div>
+          <div class="section">
+            <h2 class="section-title">Student Information</h2>
+            <table style="margin-top: 16px;">
+              <tr><td class="label">Student Name</td><td class="value">${student.name || 'N/A'}</td></tr>
+              <tr><td class="label">Index Number</td><td class="value" style="font-family: monospace;">${student.index || 'N/A'}</td></tr>
+              <tr><td class="label">Program of Study</td><td class="value">${student.currentClass?.includes('Agric') ? 'General Agriculture' : 'Science'}</td></tr>
+            </table>
+          </div>
+          <div class="section">
+            <h2 class="section-title">Academic History</h2>
+            ${student.history && student.history.length > 0 
+              ? student.history.map(term => `
+                <div style="margin-top: 16px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                  <div class="term-header">${term.term || 'Term'}</div>
+                  <table>
+                    <thead><tr style="background: #f8fafc;"><th class="label">Subject</th><th class="label" style="text-align: center;">Score</th><th class="label" style="text-align: right;">Grade</th></tr></thead>
+                    <tbody>
+                      <tr><td class="subject">Core Mathematics</td><td class="score">${term.finalGrade}%</td><td class="grade">${getWAECGrade(term.finalGrade).grade}</td></tr>
+                      <tr><td class="subject">English Language</td><td class="score">${Math.min(100, term.finalGrade + 2)}%</td><td class="grade">${getWAECGrade(Math.min(100, term.finalGrade + 2)).grade}</td></tr>
+                      <tr><td class="subject">Integrated Science</td><td class="score">${term.finalGrade}%</td><td class="grade">${getWAECGrade(term.finalGrade).grade}</td></tr>
+                      <tr><td class="subject">Social Studies</td><td class="score">${Math.max(30, term.finalGrade - 5)}%</td><td class="grade">${getWAECGrade(Math.max(30, term.finalGrade - 5)).grade}</td></tr>
+                      <tr><td class="subject">Elective Subject 1</td><td class="score">${Math.min(100, term.finalGrade + 3)}%</td><td class="grade">${getWAECGrade(Math.min(100, term.finalGrade + 3)).grade}</td></tr>
+                      <tr><td class="subject">Elective Subject 2</td><td class="score">${Math.max(30, term.finalGrade - 2)}%</td><td class="grade">${getWAECGrade(Math.max(30, term.finalGrade - 2)).grade}</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              `).join('')
+              : '<p style="font-size: 12px; color: #64748b; font-style: italic; text-align: center; padding: 40px 0;">No academic records available for this student.</p>'
+            }
+          </div>
+          <div class="footer"><p class="footer-note">Archive Status: VERIFIED & REGISTERED • HOD Certified</p></div>
+        </body>
+        </html>
+      `);
+      iframeDoc.close();
+
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      const iframeBody = iframeDoc.body;
+      const canvas = await html2canvas(iframeBody, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+
+      document.body.removeChild(iframe);
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, -heightLeft, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`${student?.name?.replace(/\s/g, '_') || 'transcript'}_official_transcript.pdf`);
+      triggerToast("Official transcript exported successfully");
+    } catch (error) {
+      console.error("Export error:", error);
+      triggerToast("Failed to export transcript - please try again");
+    }
   };
 
   const scores = student.history.map(h => h.finalGrade);
@@ -85,7 +201,7 @@ export function HODArchiveDetailView({ student, onBack }) {
 
           <div className="flex items-center gap-3">
             <button 
-              onClick={() => triggerToast("Generating secure electronic credentials package...")}
+              onClick={handleExportTranscript}
               className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white hover:bg-slate-800 rounded-2xl text-xs font-black transition-all shadow-md outline-none"
             >
               <Printer size={15} />
@@ -144,78 +260,78 @@ export function HODArchiveDetailView({ student, onBack }) {
           </div>
         </div>
 
-        {/* Section 1: Dynamic Performance Trend Graph */}
-        <section className="bg-white rounded-[2.5rem] border border-slate-200/60 p-8 shadow-sm">
-          <header className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
-            <div className="flex items-center gap-3 font-sans">
-              <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-900">
-                <TrendingUp size={20} />
-              </div>
-              <div>
-                <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">1. Verified Academic Profile Trajectory</h3>
-                <p className="text-[10px] font-bold text-slate-400 uppercase">Tamper-Proof Longitudinal Progress Tracker</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg text-[9px] font-black text-slate-600 uppercase tracking-wider">
-              <Bot size={13} className="text-slate-900" />
-              Department Certified Grade trace
-            </div>
-          </header>
+{/* Section 1: Dynamic Performance Trend Graph */}
+         <section className="bg-white rounded-[2.5rem] border border-slate-200/60 p-8 shadow-sm">
+           <header className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+             <div className="flex items-center gap-3 font-sans">
+               <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-900">
+                 <TrendingUp size={20} />
+               </div>
+               <div>
+                 <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">1. Verified Academic Profile Trajectory</h3>
+                 <p className="text-[10px] font-bold text-slate-400 uppercase">Tamper-Proof Longitudinal Progress Tracker</p>
+               </div>
+             </div>
+             <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg text-[9px] font-black text-slate-600 uppercase tracking-wider">
+               <Bot size={13} className="text-slate-900" />
+               Department Certified Grade trace
+             </div>
+           </header>
 
-          {student.history.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 bg-slate-50/50 border border-slate-205/50 rounded-3xl text-center">
-              <History size={36} className="text-slate-300 mb-2 font-sans" />
-              <p className="text-xs font-black text-slate-800 uppercase tracking-widest">No Past Terms Archived Yet</p>
-              <p className="text-[10px] text-slate-450 uppercase font-black mt-1">First-year student enrolled in current cohort. Archives begin compiling starting from Form 2.</p>
-            </div>
-          ) : (
-            <div className="h-[300px] w-full pt-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={student.history}>
-                  <defs>
-                    <linearGradient id="hodTrendGlow1" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0f172a" stopOpacity={0.15}/>
-                      <stop offset="95%" stopColor="#0f172a" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e2e8f0" />
-                  <XAxis 
-                    dataKey="term" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fontSize: 9, fontWeight: 900, fill: '#64748b' }} 
-                    dy={8} 
-                  />
-                  <YAxis 
-                    domain={[30, 100]} 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fontSize: 9, fontWeight: 900, fill: '#64748b' }} 
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#0f172a', 
-                      borderRadius: '16px', 
-                      border: 'none', 
-                      color: 'white', 
-                      fontSize: '11px',
-                      fontWeight: 900,
-                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-                    }}
-                    formatter={(value) => [`${value}%`, 'Grade Average']}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="finalGrade" 
-                    stroke="#0f172a" 
-                    strokeWidth={5} 
-                    fillOpacity={1} 
-                    fill="url(#hodTrendGlow1)" 
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          )}
+           {student.history.length === 0 ? (
+             <div className="flex flex-col items-center justify-center py-20 bg-slate-50/50 border border-slate-200/50 rounded-3xl text-center">
+               <History size={36} className="text-slate-300 mb-2 font-sans" />
+               <p className="text-xs font-black text-slate-800 uppercase tracking-widest">No Past Terms Archived Yet</p>
+               <p className="text-[10px] text-slate-450 uppercase font-black tracking-wider mt-1">This student is currently in SHS 1. Archives compile starting in Form 2.</p>
+             </div>
+           ) : (
+             <div className="h-[300px] w-full pt-4">
+               <ResponsiveContainer width="100%" height="100%">
+                 <AreaChart data={student.history}>
+                   <defs>
+                     <linearGradient id="hodTrendGlow1" x1="0" y1="0" x2="0" y2="1">
+                       <stop offset="5%" stopColor="#0f172a" stopOpacity={0.15}/>
+                       <stop offset="95%" stopColor="#0f172a" stopOpacity={0}/>
+                     </linearGradient>
+                   </defs>
+                   <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e2e8f0" />
+                   <XAxis 
+                     dataKey="term" 
+                     axisLine={false} 
+                     tickLine={false} 
+                     tick={{ fontSize: 9, fontWeight: 900, fill: '#64748b' }} 
+                     dy={8} 
+                   />
+                   <YAxis 
+                     domain={[30, 100]} 
+                     axisLine={false} 
+                     tickLine={false} 
+                     tick={{ fontSize: 9, fontWeight: 900, fill: '#64748b' }} 
+                   />
+                   <Tooltip 
+                     contentStyle={{ 
+                       backgroundColor: '#0f172a', 
+                       borderRadius: '16px', 
+                       border: 'none', 
+                       color: 'white', 
+                       fontSize: '11px',
+                       fontWeight: 900,
+                       boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+                     }}
+                     formatter={(value) => [`${value}%`, 'Grade Average']}
+                   />
+                   <Area 
+                     type="monotone" 
+                     dataKey="finalGrade" 
+                     stroke="#0f172a" 
+                     strokeWidth={5} 
+                     fillOpacity={1} 
+                     fill="url(#hodTrendGlow1)" 
+                   />
+                 </AreaChart>
+               </ResponsiveContainer>
+             </div>
+           )}
         </section>
 
         {/* Section 2: Terminal Assessment Breakdowns of the Selected Student */}

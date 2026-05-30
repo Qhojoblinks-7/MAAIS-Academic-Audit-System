@@ -402,7 +402,7 @@ export function CommsView() {
                 {DAYS.map(day => (
                   <button
                     key={day}
-                    onClick={() => setSelectedDay(day)}
+                    onClick={() => saetSelectedDay(day)}
                     className={cn(
                       "px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap",
                       selectedDay === day ? "bg-emerald-800 text-white shadow-lg" : "bg-white text-gray-500 hover:bg-gray-50"
