@@ -1,16 +1,21 @@
 ﻿import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldAlert, UserPlus, Search, Edit2, Trash2 } from 'lucide-react';
+import { ShieldAlert, Users, Server, Globe } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { adminTabs, adminUsers, computeNodes, backupSnapshots, serviceHealth } from './data';
-import { RegistryView } from './components/RegistryView';
+import { StaffRegistry } from './StaffRegistry';
 import { InfrastructureView } from './components/InfrastructureView';
 import { ProtocolsView } from './components/ProtocolsView';
+import mockApiData from '../../data/mockApiData.json';
+
+const iconMap = { Users, Server, Globe };
 
 export function AdminManagement() {
   const [activeTab, setActiveTab] = React.useState('registry');
 
-  const tabs = adminTabs;
+  const tabs = (mockApiData.engineRoom?.adminTabs || []).map(tab => ({
+    ...tab,
+    icon: iconMap[tab.icon] || Users
+  }));
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#F9F9F7] p-6 lg:p-12 pb-32 lg:pb-24">
@@ -48,19 +53,19 @@ export function AdminManagement() {
           </div>
         </header>
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
-          >
-            {activeTab === 'registry' && <RegistryView />}
-            {activeTab === 'infrastructure' && <InfrastructureView />}
-            {activeTab === 'protocols' && <ProtocolsView />}
-          </motion.div>
-        </AnimatePresence>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              {activeTab === 'registry' && <StaffRegistry />}
+              {activeTab === 'infrastructure' && <InfrastructureView />}
+              {activeTab === 'protocols' && <ProtocolsView />}
+            </motion.div>
+          </AnimatePresence>
       </motion.div>
     </div>
   );

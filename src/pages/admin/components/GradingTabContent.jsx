@@ -1,9 +1,12 @@
 import React from 'react';
 import { TrendingUp, FileText } from 'lucide-react';
 import { cn } from '../../../lib/utils';
+import mockApiData from '../../../data/mockApiData.json';
 
 export function GradingTabContent({ dept, handleNodeOperation }) {
   if (!dept) return null;
+  
+  const gradingRules = mockApiData.engineRoom?.gradingRules || [];
 
   const handleAuthorizeClick = (e) => {
     e.stopPropagation();
@@ -45,16 +48,12 @@ export function GradingTabContent({ dept, handleNodeOperation }) {
         </h4>
         
         <div className="space-y-1.5">
-          {[
-            { label: 'Lab Practical Component', value: '30%', active: dept.name === 'Science' },
-            { label: 'Oral Assessment Component', value: '30%', active: dept.name === 'Languages' },
-            { label: 'Project Portfolio', value: '20%', active: dept.name === 'Business' },
-          ].map((rule, i) => (
+{gradingRules.map((rule, i) => (
             <div 
               key={i} 
               className={cn(
                 "p-2.5 rounded-xl border transition-all flex items-center justify-between gap-4",
-                rule.active 
+                rule.activeDepts?.includes(dept.name)
                   ? "bg-white border-emerald-100 shadow-xs" 
                   : "bg-slate-50/60 border-slate-100/70 opacity-40"
               )}
@@ -69,7 +68,7 @@ export function GradingTabContent({ dept, handleNodeOperation }) {
               </div>
               <div className={cn(
                 "px-2 py-0.5 rounded-md text-[10px] font-black shrink-0 font-mono",
-                rule.active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"
+                rule.activeDepts?.includes(dept.name) ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"
               )}>
                 {rule.value}
               </div>

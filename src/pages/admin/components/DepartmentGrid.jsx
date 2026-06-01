@@ -22,6 +22,7 @@ import {
 } from 'recharts';
 import { cn } from '../../../lib/utils';
 import { buildDistribution } from '../hooks/useDepartments';
+import mockApiData from '../../../data/mockApiData.json';
 
 export function DepartmentGrid({ departments, viewType, setViewType, setSelectedDeptId, onSpawnClick }) {
   return (
@@ -74,23 +75,16 @@ export function DepartmentGrid({ departments, viewType, setViewType, setSelected
         </div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto">
-            <section>
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-[11px] sm:text-[12px] font-black text-slate-900 uppercase tracking-[0.25em] flex items-center gap-3">
-                  <div className="w-6 sm:w-10 h-[1.5px] bg-slate-900" />
-                  Institutional Clusters
-                </h3>
-              </div>
-
-              <div className={cn(
-                "grid gap-4 sm:gap-5",
-                viewType === 'grid' 
-                  ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" 
-                  : "grid-cols-1"
-              )}>
+       <div className="flex-1 flex overflow-hidden">
+         <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+           <div className="max-w-7xl mx-auto">
+             <section>
+               <div className={cn(
+                 "grid gap-4 sm:gap-5",
+                 viewType === 'grid' 
+                   ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" 
+                   : "grid-cols-1"
+               )}>
                 {departments.map((dept, i) => (
                   <motion.div
                     key={dept.id}

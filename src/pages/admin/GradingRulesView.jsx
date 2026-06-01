@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { 
   Settings2, BookOpen, Clock, 
   ShieldCheck, AlertTriangle, Save, 
@@ -10,6 +10,9 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { useUI } from '../../context/UIContext';
+import { useNavigate } from 'react-router-dom';
+import { auditTrail } from '../../services/auditTrailService';
+
 
 const DEFAULT_REMARK_POOL = {
   Distinction: ['Exceptional performance.', 'Outstanding academic rigor.', 'A masterclass in the subject.'],
@@ -37,55 +40,116 @@ export const GradingRulesView = () => {
   const [boundaries, setBoundaries] = useState(DEFAULT_BOUNDARIES);
   const [normalizationEnabled, setNormalizationEnabled] = useState(true);
   
-  const [deadlineDate, setDeadlineDate] = useState('2026-07-15');
-  const [deadlineTime, setDeadlineTime] = useState('23:59');
-  const [showSealConfirm, setShowSealConfirm] = useState(false);
+   const [deadlineDate, setDeadlineDate] = useState('2026-07-15');
+   const [deadlineTime, setDeadlineTime] = useState('23:59');
+   const [showSealConfirm, setShowSealConfirm] = useState(false);
+   const [initialState, setInitialState] = useState({});
+   
+   const navigate = useNavigate();
 
-  const handleBoundaryChange = (id, field, value) => {
-    if (isTermFinalized) return;
-    setBoundaries(prev => prev.map(b => b.id === id ? { ...b, [field]: value } : b));
-  };
+    useEffect(() => {
+      setInitialState({
+        caWeight,
+        examWeight,
+        boundaries,
+        normalizationEnabled,
+        deadlineDate,
+        deadlineTime
+      });
+    }, []);
 
-  const handleWeightChange = (newCa) => {
-    if (isTermFinalized) return;
-    const cleanCa = Math.max(0, Math.min(100, newCa));
-    setCaWeight(cleanCa);
-    setExamWeight(100 - cleanCa);
-  };
-
-  const handleAddBoundary = () => {
-    if (isTermFinalized) return;
-    // Safe Unique ID Generation to prevent Key collisions
-    const newId = `b-custom-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
-    const newRow = {
-      id: newId,
-      min: '', // Left blank to allow smooth raw entry without hitting 0 fallback bugs
-      max: '',
-      grade: 'NEW',
-      remark: 'Satisfactory performance.',
-      suggestionPool: DEFAULT_REMARK_POOL.Pass
+    const handleWeightChange = (value) => {
+      setCaWeight(value);
+      setExamWeight(100 - value);
     };
-    setBoundaries(prev => [...prev, newRow]);
-  };
 
-  const handleDeleteBoundary = (id) => {
-    if (isTermFinalized) return;
-    setBoundaries(prev => prev.filter(b => b.id !== id));
-  };
+    const handleBoundaryChange = (id, field, value) => {
+      setBoundaries(prevBoundaries =>
+        prevBoundaries.map(b =>
+          b.id === id ? { ...b, [field]: value } : b
+        )
+      );
+    };
 
-  const getTimeRemaining = () => {
-    const deadline = new Date(`${deadlineDate}T${deadlineTime}`);
-    const now = new Date();
-    const diff = deadline.getTime() - now.getTime();
-    
-    if (diff <= 0) return 'DEADLINE PASSED';
-    
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    return `${days}d ${hours}h remaining`;
-  };
+    const handleDeleteBoundary = (id) => {
+      setBoundaries(prevBoundaries => prevBoundaries.filter(b => b.id !== id));
+    };
 
-  return (
+    const handleAddBoundary = () => {
+      const newId = `b-${Date.now()}`;
+      const newBoundary = {
+        id: newId,
+        min: 0,
+        max: 0,
+        grade: 'PLC',
+        remark: '',
+        suggestionPool: []
+      };
+      setBoundaries(prevBoundaries => [...prevBoundaries, newBoundary]);
+    };
+
+    const handleAuditTrailClick = () => {
+      navigate('/audit');
+    };
+
+   const handleCommitChanges = async () => {
+     if (isTermFinalized) return;
+
+     try {
+       const currentState = {
+         caWeight,
+         examWeight,
+         boundaries,
+         normalizationEnabled,
+         deadlineDate,
+         deadlineTime
+       };
+
+       await auditTrail.logChange(
+         'grading_rules',
+         'current_term',
+         initialState,
+         currentState,
+         'Grading rules updated via Commit Changes'
+       );
+
+       // Update initialState to currentState after successful commit
+       setInitialState(currentState);
+
+       alert('Changes committed successfully!');
+     } catch (error) {
+       console.error('Failed to commit changes:', error);
+       alert('Failed to commit changes. Please try again.');
+     }
+    };
+
+    const getTimeRemaining = () => {
+      const deadline = new Date(`${deadlineDate}T${deadlineTime}:00`);
+      const now = new Date();
+      const diff = deadline - now;
+
+      if (diff <= 0) {
+        return 'DEADLINE PASSED';
+      }
+
+      const seconds = Math.floor(diff / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
+
+      const remainingHours = hours % 24;
+      const remainingMinutes = minutes % 60;
+
+      // Format as e.g., "5d 3h 2m"
+      let parts = [];
+      if (days > 0) parts.push(`${days}d`);
+      if (remainingHours > 0) parts.push(`${remainingHours}h`);
+      if (remainingMinutes > 0) parts.push(`${remainingMinutes}m`);
+
+      return parts.join(' ');
+    };
+
+    return (
     <div className="flex-1 p-8 bg-slate-50 overflow-y-auto relative">
       {/* Final Seal Confirmation Modal */}
       <AnimatePresence>
@@ -163,14 +227,20 @@ export const GradingRulesView = () => {
             </p>
           </div>
           <div className="flex gap-3">
-             <button className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all">
+              <button 
+                onClick={handleAuditTrailClick}
+                className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all"
+              >
                 <History size={14} /> Audit Trail
-             </button>
-             {!isTermFinalized && (
-               <button className="flex items-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 hover:bg-black transition-all">
+              </button>
+              {!isTermFinalized && (
+                <button 
+                  onClick={handleCommitChanges}
+                  className="flex items-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 hover:bg-black transition-all"
+                >
                   <Save size={14} /> Commit Changes
-               </button>
-             )}
+                </button>
+              )}
           </div>
         </header>
 

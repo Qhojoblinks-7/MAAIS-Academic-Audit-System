@@ -1,6 +1,10 @@
 ﻿import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
+import { Database, FileText, Filter, Calendar, Search, ShieldCheck, User, TrendingUp, History } from 'lucide-react';
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer
+} from 'recharts';
 
 import { SubTabSelector } from './components/SubTabSelector';
 import { PromotionTab, MaintenanceTab } from './components/ArchiveTabs';

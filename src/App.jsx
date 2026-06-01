@@ -20,7 +20,7 @@ import { HOD_JourneyHistoryAudit, SettingsView, SupportView } from './pages/shar
 import { TeacherMissingObservations } from './views/teacher/MissingObservations';
 import { HODMissingObservations } from './views/hod/MissingObservations';
 import { UIProvider, useUI } from './context/UIContext';
-import { useRole, RoleProvider } from './context/RoleContext';
+import { useRole } from './context/RoleContext';
 import { HODProvider } from './context/HODContext';
 import { RequireRole } from './components/auth/RequireRole';
 import { X } from 'lucide-react';
@@ -263,6 +263,9 @@ function AppContent() {
             <Route path="/audit/extended" element={
               <RequireRole allowedRoles={['ADMIN']}><ExtendedLogsView /></RequireRole>
             } />
+              <Route path="/system" element={
+                <RequireRole allowedRoles={['ADMIN']}><AdminSettings /></RequireRole>
+              } />
               <Route path="/archive" element={
                 <RequireRole allowedRoles={['ADMIN', 'TEACHER', 'HOD']}><RoleBasedArchiveView /></RequireRole>
               } />
@@ -366,13 +369,11 @@ function AppContent() {
 export default function App() {
   return (
     <Router>
-      <RoleProvider>
-        <UIProvider>
-          <HODProvider>
-            <AppContent />
-          </HODProvider>
-        </UIProvider>
-      </RoleProvider>
+      <UIProvider>
+        <HODProvider>
+          <AppContent />
+        </HODProvider>
+      </UIProvider>
     </Router>
   );
 }

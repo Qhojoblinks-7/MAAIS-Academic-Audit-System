@@ -1,8 +1,10 @@
 import React from 'react';
 import { cn } from '../../../lib/utils'; 
-import { securityPolicies } from '../data';
+import mockApiData from '../../../data/mockApiData.json';
 
 export function ProtocolsView() {
+  const securityPolicies = mockApiData.engineRoom?.securityPolicies || [];
+
   return (
     <div className="max-w-3xl mx-auto space-y-3 px-1 sm:px-0">
       {/* Parameter Adjustment Card */}

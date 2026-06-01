@@ -186,9 +186,142 @@
             "trend": "improving",
             "lastGrade": "C5",
             "hodComment": null
-          }
-        }
-      }
+}
+   },
+   "student": {
+     "portalStudents": [
+       { "id": "stud001", "studentName": "Angela Owusu", "indexNumber": "001", "program": "Agriculture", "cgpa": 2.86, "approvalStatus": "LOCKED" }
+     ]
+   },
+   "yearGroups": {
+     "description": "Year group and program structure for academic architect.",
+     "items": [
+       {
+         "id": "YG1",
+         "name": "SHS 1",
+         "programs": [
+           {
+             "id": "P1-SCI",
+             "name": "Science",
+             "classrooms": [
+               { "id": "C1-S1", "name": "1 Science 1", "capacity": 45, "studentsCount": 42, "houseDistribution": { "Guggisberg": 12, "Aggrey": 10, "Nkrumah": 20 } },
+               { "id": "C1-S2", "name": "1 Science 2", "capacity": 45, "studentsCount": 46, "houseDistribution": { "Guggisberg": 15, "Aggrey": 15, "Nkrumah": 16 } }
+             ]
+           },
+           {
+             "id": "P1-ART",
+             "name": "General Arts",
+             "classrooms": [
+               { "id": "C1-A1", "name": "1 Arts 1", "capacity": 50, "studentsCount": 48, "houseDistribution": { "Guggisberg": 22, "Aggrey": 26 } }
+             ]
+           }
+         ]
+       },
+       {
+         "id": "YG2",
+         "name": "SHS 2",
+         "programs": [
+           {
+             "id": "P2-BUS",
+             "name": "Business",
+             "classrooms": [
+               { "id": "C2-B1", "name": "2 Business 1", "capacity": 40, "studentsCount": 38, "houseDistribution": { "Nkrumah": 38 } }
+             ]
+           }
+         ]
+       },
+       {
+         "id": "YG3",
+         "name": "SHS 3",
+         "programs": [
+           {
+             "id": "P3-SCI",
+             "name": "Science",
+             "classrooms": [
+               { "id": "C3-S1", "name": "3 Science 1", "capacity": 45, "studentsCount": 44, "houseDistribution": { "Guggisberg": 10, "Aggrey": 10, "Nkrumah": 24 } }
+             ]
+           }
+         ]
+       }
+     ]
+   },
+   "subjectCatalog": {
+     "description": "Subject catalog for the school.",
+     "items": [
+       { "id": "S1", "code": "CORE-MT", "name": "Core Mathematics", "type": "Core", "creditHours": 4 },
+       { "id": "S2", "code": "CORE-EN", "name": "English Language", "type": "Core", "creditHours": 4 },
+       { "id": "S3", "code": "CORE-SC", "name": "Integrated Science", "type": "Core", "creditHours": 3 },
+       { "id": "S4", "code": "ELEC-PHY", "name": "Elective Physics", "type": "Elective", "creditHours": 4, "applicablePrograms": ["Science"] },
+       { "id": "S5", "code": "ELEC-ACC", "name": "Cost Accounting", "type": "Elective", "creditHours": 4, "applicablePrograms": ["Business"] },
+       { "id": "S6", "code": "ELEC-LIT", "name": "Lit-In-English", "type": "Elective", "creditHours": 3, "applicablePrograms": ["General Arts"] }
+     ]
+   },
+   "engineRoom": {
+     "description": "Engine Room core controls and infrastructure data.",
+     "adminTabs": [
+       { "id": "registry", "label": "Command Registry", "icon": "Users" },
+       { "id": "infrastructure", "label": "Infrastructure Hub", "icon": "Server" },
+       { "id": "protocols", "label": "Institutional Protocols", "icon": "Globe" }
+     ],
+     "adminUsers": [
+       { "id": "1", "name": "Martha Baah", "role": "HOD", "dept": "Home Ec", "status": "ACTIVE", "lastLogin": "1h ago" },
+       { "id": "2", "name": "Anthony Hackman", "role": "ADMIN", "dept": "Administration", "status": "ACTIVE", "lastLogin": "Now" },
+       { "id": "3", "name": "Angela Owusu", "role": "STUDENT", "dept": "Agric", "status": "ACTIVE", "lastLogin": "5h ago" },
+       { "id": "4", "name": "Samuel Boateng", "role": "TEACHER", "dept": "Science", "status": "INACTIVE", "lastLogin": "2d ago" }
+     ],
+     "computeNodes": [
+       { "label": "CPU Cluster B", "value": "14%", "icon": "Cpu", "color": "text-emerald-600" },
+       { "label": "RAM Verification", "value": "3.2 GB", "icon": "Activity", "color": "text-blue-600" },
+       { "label": "SSD Throughput", "value": "450 MB/s", "icon": "HardDrive", "color": "text-purple-600" },
+       { "label": "Active Requests", "value": "42 ops", "icon": "RefreshCw", "color": "text-amber-600" }
+     ],
+     "backupSnapshots": [
+       { "id": "snap_0x1", "time": "2026-04-21 04:00", "size": "1.2 GB", "type": "Automated" },
+       { "id": "snap_0x2", "time": "2026-04-20 04:00", "size": "1.1 GB", "type": "Automated" },
+       { "id": "snap_0x3", "time": "2026-04-19 04:00", "size": "1.1 GB", "type": "Manual" }
+     ],
+     "serviceHealth": [
+       { "label": "Auth Gateway", "status": "Optimal" },
+       { "label": "PDF Engine", "status": "Stable" },
+       { "label": "Report Generator", "status": "Optimal" },
+       { "label": "Email Relay", "status": "Degraded" }
+     ],
+     "securityPolicies": [
+       { "label": "Multi-Factor Biometric Auth", "desc": "Enforce fingerprint/face unlock for all HOD certifications.", "active": true },
+       { "label": "Cryptographic Audit Trail", "desc": "Seal every mark entry with a unique institutional hash.", "active": true },
+       { "label": "Automated Variance Flagging", "desc": "Alert admins if grade swings exceed 30% per term.", "active": false },
+       { "label": "Dark Mode Enforcement", "desc": "Force low-light UI scaling for mobile nodes.", "active": false }
+     ],
+     "registryStats": [
+       { "label": "Authorized Units", "value": "1,240", "sub": "+12 this week" },
+       { "label": "Active Sessions", "value": "86", "sub": "Nominal" },
+       { "label": "Pending Access", "value": "0", "sub": "Clean Registry" },
+       { "label": "Escalation Flags", "value": "3", "sub": "Review Required" }
+     ],
+     "gradingRules": [
+       { "label": "Lab Practical Component", "value": "30%", "activeDepts": ["Science"] },
+       { "label": "Oral Assessment Component", "value": "30%", "activeDepts": ["Languages"] },
+       { "label": "Project Portfolio", "value": "20%", "activeDepts": ["Business"] }
+     ],
+     "vaultFiles": [
+       { "name": "Minutes_Week_04.pdf", "date": "Oct 12, 2026", "size": "2.4 MB" },
+       { "name": "Academic_Curriculum_Reshuffle.pdf", "date": "Sep 28, 2026", "size": "1.2 MB" }
+     ],
+     "strategicMappings": [
+       { "name": "Technical Stream", "depts": ["Mathematics", "Vocational"], "color": "text-indigo-600" },
+       { "name": "Medical Path", "depts": ["Science", "Languages"], "color": "text-rose-600" },
+       { "name": "Global Commerce", "depts": ["Business", "Math", "Languages"], "color": "text-amber-600" }
+     ],
+     "institutionalMetrics": {
+       "totalClassUnits": 24,
+       "avgOccupancy": "92%",
+       "topProgramLoad": { "name": "Science", "value": 12, "trend": "improving" },
+       "capacityAnomalies": [
+         { "className": "1 Science 2", "students": 46, "capacity": 45, "status": "Overflow" }
+       ]
+     }
+   }
+}
     ]
   },
   "auditLogs": {
@@ -1052,5 +1185,74 @@
     "portalStudents": [
       { "id": "stud001", "studentName": "Angela Owusu", "indexNumber": "001", "program": "Agriculture", "cgpa": 2.86, "approvalStatus": "LOCKED" }
     ]
+  },
+  "vitalSigns": {
+    "description": "Admin dashboard KPI cards.",
+    "items": [
+      { "icon": "Users", "value": "22", "label": "Active Teachers", "trend": "#3b82f6", "bg": "bg-blue-50", "color": "text-blue-600", "progress": 78, "subtext": "Across 4 departments" },
+      { "icon": "GraduationCap", "value": "12", "label": "Departments", "trend": "#10b981", "bg": "bg-emerald-50", "color": "text-emerald-600", "progress": 100, "subtext": "All operational" },
+      { "icon": "TrendingUp", "value": "85%", "label": "Avg Score", "trend": "#f59e0b", "bg": "bg-amber-50", "color": "text-amber-600", "progress": 85, "subtext": "+12% from last term" },
+      { "icon": "AlertCircle", "value": "17", "label": "Flagged Activities", "trend": "#ef4444", "bg": "bg-rose-50", "color": "text-rose-600", "progress": 32, "subtext": "Review required" }
+    ]
+  },
+  "activityLog": {
+    "description": "Live audit trail for admin home.",
+    "items": [
+      { "id": "a1", "time": "09:42", "event": "System backup completed - 2.4GB archived", "type": "system" },
+      { "id": "a2", "time": "08:15", "event": "Grade import validated for Mathematics", "type": "system" },
+      { "id": "a3", "time": "Yesterday", "event": "Emergency access granted to HOD - Agriculture", "type": "security" }
+    ]
+  },
+  "pendingApprovals": {
+    "description": "Pending approval requests for admin.",
+    "items": [
+      { "id": "1", "teacher": "Mr. Kwame Mensah", "detail": "Grade revision for Angela Owusu - Agri practical", "time": "2h ago" },
+      { "id": "2", "teacher": "Ms. Esi Broni", "detail": "Late submission for Animal Husbandry scores", "time": "4h ago" },
+      { "id": "3", "teacher": "Mr. Kofi Asare", "detail": "New observation entry for Crop Science", "time": "1d ago" }
+    ]
+  },
+  "fabActions": {
+    "description": "Floating action button options.",
+    "items": [
+      { "icon": "UserPlus", "label": "Register Node", "color": "bg-blue-600 text-white", "hover": "hover:bg-blue-700" },
+      { "icon": "Radio", "label": "Broadcast Pulse", "color": "bg-emerald-600 text-white", "hover": "hover:bg-emerald-700" },
+      { "icon": "Lock", "label": "Emergency Freeze", "color": "bg-rose-600 text-white", "hover": "hover:bg-rose-700" }
+    ]
+  },
+  "registerNodeProtocols": {
+    "description": "Node registration protocol options.",
+    "items": [
+      { "icon": "GraduationCap", "label": "HOD", "desc": "For academic department heads", "path": "/registry/hod" },
+      { "icon": "UserPlus", "label": "Teacher", "desc": "For classroom instructors", "path": "/registry/teacher" },
+      { "icon": "Users", "label": "Student", "desc": "For learner accounts", "path": "/registry/student" }
+    ]
+  },
+  "broadcastChannels": {
+    "description": "Available channels for broadcast.",
+    "items": ["System", "All Departments", "HODs", "Teachers", "Custom"]
+  },
+  "notepadContent": {
+    "description": "Strategic memo content.",
+    "value": "Review Q3 validation metrics for Agriculture and Languages departments. Follow-up needed on escalation flags."
+  },
+  "notepadPlaceholder": {
+    "description": "Placeholder text for notepad.",
+    "value": "Enter strategic memo..."
+  },
+  "academicYearDisplay": {
+    "description": "Current academic year display.",
+    "value": "2025/2026"
+  },
+  "formLevelDisplay": {
+    "description": "Current form level.",
+    "value": "TERM 1"
+  },
+  "currentAcademicYear": {
+    "description": "Current academic year.",
+    "value": "2025/2026"
+  },
+  "currentTerm": {
+    "description": "Current term.",
+    "value": "TERM_1"
   }
 }

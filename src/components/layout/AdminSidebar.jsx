@@ -6,8 +6,6 @@ import {
   Users, 
   Cpu, 
   Clock, 
-  Wallet, 
-  MessageSquare, 
   ShieldCheck, 
   LifeBuoy, 
   Settings, 
@@ -65,7 +63,6 @@ export function AdminSidebar() {
       label: 'Engine Room', 
       id: 'architect', 
       subItems: [
-        { label: 'Class/Form Manager', path: '/identity/classes' },
         { label: 'Subject Curriculum', path: '/academic-architect' },
         { label: 'Grading Rules', path: '/grading' }
       ]
@@ -74,22 +71,7 @@ export function AdminSidebar() {
       icon: Clock, 
       label: 'Scheduling', 
       id: 'scheduling', 
-      subItems: [
-        { label: 'Master Timetable', path: '/timetable' },
-        { label: 'Event Calendar', path: '/calendar' }
-      ]
-    },
-    { 
-      icon: Wallet, 
-      label: 'Finance', 
-      id: 'finance', 
-      path: '/finance'
-    },
-    { 
-      icon: MessageSquare, 
-      label: 'Comms', 
-      id: 'comms', 
-      path: '/comms'
+      path: '/timetable'
     },
     { 
       icon: ShieldCheck, 

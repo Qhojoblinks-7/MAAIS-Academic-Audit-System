@@ -1,9 +1,18 @@
 import React from 'react';
-import { ShieldAlert, RefreshCw } from 'lucide-react';
+import { ShieldAlert, RefreshCw, Cpu, Activity, HardDrive } from 'lucide-react';
 import { cn } from '../../../lib/utils';
-import { computeNodes, backupSnapshots, serviceHealth } from '../data';
+import mockApiData from '../../../data/mockApiData.json';
+
+const iconMap = { Cpu, Activity, HardDrive, RefreshCw };
 
 export function InfrastructureView() {
+  const { computeNodes, backupSnapshots, serviceHealth } = mockApiData.engineRoom || {};
+  
+  const computeNodesWithIcons = (computeNodes || []).map(node => ({
+    ...node,
+    icon: iconMap[node.icon] || Cpu
+  }));
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 px-1 sm:px-0">
       <div className="lg:col-span-2 space-y-3">
@@ -15,8 +24,8 @@ export function InfrastructureView() {
               Sync: OK
             </span>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            {computeNodes.map((node, i) => (
+<div className="grid grid-cols-2 gap-2">
+             {computeNodesWithIcons.map((node, i) => (
               <div key={i} className="p-2.5 bg-gray-50/60 border border-gray-100/70 rounded-xl flex items-center gap-3 min-w-0">
                 <div className={cn("w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center shrink-0", node.color)}>
                   <node.icon size={14} />

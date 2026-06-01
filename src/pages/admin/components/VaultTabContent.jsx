@@ -1,13 +1,11 @@
 import React from 'react';
 import { cn } from '../../../lib/utils';
 import { FileUp, FileText, Download } from 'lucide-react';
+import mockApiData from '../../../data/mockApiData.json';
 
-export function VaultTabContent({ 
-  files = [
-    { name: 'Minutes_Week_04.pdf', date: 'Oct 12, 2026', size: '2.4 MB' },
-    { name: 'Academic_Curriculum_Reshuffle.pdf', date: 'Sep 28, 2026', size: '1.2 MB' },
-  ] 
-}) {
+export function VaultTabContent({ files }) {
+  const vaultFiles = files || mockApiData.engineRoom?.vaultFiles || [];
+  
   return (
     <div className="space-y-4 sm:space-y-6 w-full">
       {/* Upload Drag & Drop Area */}
