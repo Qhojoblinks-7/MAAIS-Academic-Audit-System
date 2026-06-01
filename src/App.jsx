@@ -8,7 +8,7 @@ import {
   AuditLogsView, ArchiveView, AdminManagement, StaffRegistry,
   DepartmentManagement, StudentRegistry, ParentRegistry,
   ExtendedLogsView, AdminSettings, AdminSupport,
-  SchedulingView, FinanceView, CommsView, MasterTimetable, EventCalendarView,
+  SchedulingView, CommsView, MasterTimetable, EventCalendarView,
   AcademicArchitect, ReportGeneratorView, GradingRulesView,
   ApprovalsView, ApprovalInspectView, NewApprovalRequestView,
   SupportTicketDetailView
@@ -248,9 +248,7 @@ function AppContent() {
                  {user?.role === 'HOD' ? <HODRevisionsFeed /> : <TeacherRevisionsFeed />}
                </RequireRole>
              } />
-            <Route path="/finance" element={
-              <RequireRole allowedRoles={['ADMIN']}><FinanceView /></RequireRole>
-            } />
+            
             <Route path="/comms" element={
               <RequireRole allowedRoles={['ADMIN']}><CommsView /></RequireRole>
             } />

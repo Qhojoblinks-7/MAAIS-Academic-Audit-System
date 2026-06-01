@@ -9,7 +9,6 @@ export { CommsView } from './CommsView';
 export { DepartmentManagement } from './DepartmentManagement';
 export { EventCalendarView } from './EventCalendarView';
 export { ExtendedLogsView } from './ExtendedLogsView';
-export { FinanceView } from './FinanceView';
 export { GradingRulesView } from './GradingRulesView';
 export { MasterTimetable } from './MasterTimetable';
 export { ParentRegistry } from './ParentRegistry';
