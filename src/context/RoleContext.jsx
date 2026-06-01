@@ -11,7 +11,7 @@ const getHODUser = () => {
     username: hodUser?.username || 'hod.agric',
     name: hodUser?.name || 'Mr. Kwame Asante',
     role: 'HOD',
-    departmentId: department?.id || 'dept001',
+    departmentId: department?.id || '1',
     departmentName: department?.name || 'Agriculture',
     avatar: hodUser?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=HOD',
     currentTerm: '2026',
@@ -25,7 +25,7 @@ const getTeacherUser = () => {
     username: teacher?.username || 'mensah.agric',
     name: teacher?.name || 'Mr. Kwame Mensah',
     role: 'TEACHER',
-    departmentId: teacher?.departmentId || 'dept001',
+    departmentId: teacher?.departmentId || '1',
     avatar: teacher?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Hackman',
     currentTerm: '2026',
   };
@@ -52,7 +52,7 @@ const getStudentUser = () => {
     username: student?.index || '001',
     name: student?.name || 'Angela Owusu',
     role: 'STUDENT',
-    departmentId: department?.id || 'dept001',
+    departmentId: department?.id || '1',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Angela',
     currentTerm: '2026',
   };

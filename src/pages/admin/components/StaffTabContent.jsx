@@ -153,10 +153,10 @@ export function StaffTabContent({
                          ].map((item) => (
                            <button
                              key={item.label}
-                             onClick={(e) => {
-                               e.stopPropagation();
-                               handleNodeOperation(item.label, item.useDeptId ? dept.id : member.id, member.name, dept.id);
-                             }}
+onClick={(e) => {
+                                e.stopPropagation();
+                                handleNodeOperation(item.label, dept.id, dept.name, dept.id);
+                              }}
                              className={cn(
                                "w-full flex items-center gap-2 px-2 py-1.5 text-[10px] font-bold text-slate-600 rounded-lg transition-all text-left cursor-pointer",
                                item.color
@@ -168,16 +168,16 @@ export function StaffTabContent({
                          ))}
                       </div>
                       <div className="p-1 bg-slate-50/60 border-t border-slate-100">
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleNodeOperation('Deep Archive', member.id, member.name);
-                          }}
-                          className="w-full flex items-center gap-2 px-2 py-1.5 text-[10px] font-bold text-slate-400 hover:text-rose-600 hover:bg-rose-50/80 rounded-lg transition-all text-left cursor-pointer"
-                        >
-                          <Trash2 size={11} className="shrink-0" />
-                          <span className="truncate">Deep Archive</span>
-                        </button>
+<button 
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             handleNodeOperation('Deep Archive', member.id, member.name, dept.id);
+                           }}
+                           className="w-full flex items-center gap-2 px-2 py-1.5 text-[10px] font-bold text-slate-400 hover:text-rose-600 hover:bg-rose-50/80 rounded-lg transition-all text-left cursor-pointer"
+                         >
+                           <Trash2 size={11} className="shrink-0" />
+                           <span className="truncate">Deep Archive</span>
+                         </button>
                       </div>
                     </motion.div>
                   )}

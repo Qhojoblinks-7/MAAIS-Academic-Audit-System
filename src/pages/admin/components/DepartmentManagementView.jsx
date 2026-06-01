@@ -86,9 +86,9 @@ export function DepartmentManagementView({
                   <h3 className="text-xl font-black italic font-display text-slate-900 leading-none mb-1">
                     {type}
                   </h3>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic leading-none">
-                    Node: {staffName}
-                  </p>
+<p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic leading-none">
+                     {type === "Authorize Template Update" ? "Target:" : "Node:"} {staffName}
+                   </p>
                 </div>
               </div>
               <button
@@ -223,17 +223,17 @@ export function DepartmentManagementView({
                   >
                     Cancel
                   </button>
-                  <button
-                    onClick={handleRevokeAuthority}
-                    className="flex-1 py-4 bg-rose-600 text-white font-black rounded-2xl text-[11px] uppercase tracking-widest hover:bg-rose-700 shadow-xl shadow-rose-600/20 cursor-pointer"
-                  >
-                    Revoke Authority
-                  </button>
-                </div>
-              </div>
-            )}
+<button
+                     onClick={handleRevokeAuthority}
+                     className="flex-1 py-4 bg-rose-600 text-white font-black rounded-2xl text-[11px] uppercase tracking-widest hover:bg-rose-700 shadow-xl shadow-rose-600/20 cursor-pointer"
+                   >
+                     Revoke Authority
+                   </button>
+                 </div>
+               </div>
+             )}
 
-{type === "Deep Archive" && (
+             {type === "Deep Archive" && (
                <div className="space-y-8 text-center">
                  <div className="p-6 bg-slate-900 text-white rounded-[2rem] text-left">
                    <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-3">
@@ -278,7 +278,7 @@ export function DepartmentManagementView({
                    <p className="text-sm font-medium text-blue-900 leading-relaxed">
                      Authorize template updates for{" "}
                      <span className="font-black italic underline">
-                       {staffName}
+                       {selectedDept?.name || staffName}
                      </span>{" "}
                      at the 20% threshold level. This will permit limited template modifications while maintaining audit trail integrity.
                    </p>

@@ -5,4 +5,3 @@ export * from './mockParents';
 export * from './mockGradingRules';
 export * from './mockAdminManagement';
 export * from './departmentData';
-export * from './departmentData';

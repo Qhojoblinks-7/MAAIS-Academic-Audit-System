@@ -36,13 +36,14 @@ export function DepartmentDetailsView({
                 onTransferTeacher={openTransferModal}
               />
             )}
-            {(activeTab === "grading" || activeTab === "vault") && (
-              <DepartmentTabs
-                selectedDept={selectedDept}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-              />
-            )}
+{(activeTab === "grading" || activeTab === "vault") && (
+               <DepartmentTabs
+                 selectedDept={selectedDept}
+                 activeTab={activeTab}
+                 setActiveTab={setActiveTab}
+                 handleNodeOperation={handleNodeOperation}
+               />
+             )}
           </motion.div>
         </AnimatePresence>
       </div>

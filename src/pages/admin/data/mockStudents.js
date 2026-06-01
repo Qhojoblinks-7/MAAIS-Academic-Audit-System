@@ -16,7 +16,13 @@ export const MOCK_STUDENTS = [
     feesStatus: 'Paid',
     atRisk: false,
     emergencyContact: { name: 'Yaw Mensah', phone: '+233 24 555 0101', relation: 'Father' },
-    healthNotes: 'No known allergies.'
+    healthNotes: 'No known allergies.',
+    disciplinaryNotes: null,
+    subjects: [
+      { subject: 'Elective Physics', grade: 'A1', score: 85 },
+      { subject: 'Elective Chemistry', grade: 'B2', score: 72 },
+      { subject: 'Elective Biology', grade: 'A1', score: 88 },
+    ]
   },
   {
     id: 'STU002',
@@ -35,7 +41,13 @@ export const MOCK_STUDENTS = [
     feesStatus: 'Arrears',
     atRisk: true,
     emergencyContact: { name: 'Esi Osei', phone: '+233 27 555 0102', relation: 'Mother' },
-    healthNotes: 'Asthmatic. Carries inhaler.'
+    healthNotes: 'Asthmatic. Carries inhaler.',
+    disciplinaryNotes: null,
+    subjects: [
+      { subject: 'English Language', grade: 'B2', score: 72 },
+      { subject: 'Mathematics', grade: 'B3', score: 68 },
+      { subject: 'History', grade: 'C4', score: 64 },
+    ]
   },
   {
     id: 'STU003',
@@ -53,7 +65,14 @@ export const MOCK_STUDENTS = [
     placementType: 'Merit',
     feesStatus: 'Partial',
     atRisk: false,
-    emergencyContact: { name: 'Kojo Boateng', phone: '+233 20 555 0103', relation: 'Uncle' }
+    emergencyContact: { name: 'Kojo Boateng', phone: '+233 20 555 0103', relation: 'Uncle' },
+    healthNotes: null,
+    disciplinaryNotes: 'Late submission of assignment on 2 occasions.',
+    subjects: [
+      { subject: 'Business Management', grade: 'B2', score: 72 },
+      { subject: 'Financial Accounting', grade: 'A1', score: 85 },
+      { subject: 'Economics', grade: 'B3', score: 68 },
+    ]
   },
   {
     id: 'STU004',
@@ -71,7 +90,14 @@ export const MOCK_STUDENTS = [
     placementType: 'Equity',
     feesStatus: 'Paid',
     atRisk: false,
-    emergencyContact: { name: 'Grace Serwaa', phone: '+233 24 555 0104', relation: 'Mother' }
+    emergencyContact: { name: 'Grace Serwaa', phone: '+233 24 555 0104', relation: 'Mother' },
+    healthNotes: null,
+    disciplinaryNotes: 'Institutional conduct threshold maintained.',
+    subjects: [
+      { subject: 'Food Preparation', grade: 'A1', score: 88 },
+      { subject: 'Nutrition', grade: 'B2', score: 72 },
+      { subject: 'Textiles', grade: 'C4', score: 64 },
+    ]
   },
   {
     id: 'STU005',
@@ -89,7 +115,14 @@ export const MOCK_STUDENTS = [
     placementType: 'Merit',
     feesStatus: 'Paid',
     atRisk: true,
-    emergencyContact: { name: 'Isaac Ofori', phone: '+233 55 555 0105', relation: 'Father' }
+    emergencyContact: { name: 'Isaac Ofori', phone: '+233 55 555 0105', relation: 'Father' },
+    healthNotes: null,
+    disciplinaryNotes: null,
+    subjects: [
+      { subject: 'Elective Mathematics', grade: 'D7', score: 42 },
+      { subject: 'Physics', grade: 'C6', score: 55 },
+      { subject: 'Chemistry', grade: 'D8', score: 38 },
+    ]
   }
 ];
 

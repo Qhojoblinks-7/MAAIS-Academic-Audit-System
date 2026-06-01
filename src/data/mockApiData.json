@@ -42,30 +42,30 @@
   },
   "users": {
     "description": "User accounts for authentication and authorization.",
-    "hodUsers": [
-      {
-        "id": "hod001",
-        "username": "hod.agric",
-        "name": "Mr. Kwame Asante",
-        "role": "HOD",
-        "departmentId": "dept001",
-        "email": "kwame.asante@atu.edu.gh",
-        "phone": "+233244567890",
-        "avatar": null
-      }
-    ],
-    "teacherUsers": [
-      {
-        "id": "teacher001",
-        "username": "mensah.agric",
-        "name": "Mr. Kwame Mensah",
-        "role": "TEACHER",
-        "departmentId": "dept001",
-        "email": "kwame.mensah@atu.edu.gh",
-        "phone": "+233244111111",
-        "avatar": null
-      }
-    ],
+"hodUsers": [
+       {
+         "id": "hod001",
+         "username": "hod.agric",
+         "name": "Mr. Kwame Asante",
+         "role": "HOD",
+         "departmentId": "1",
+         "email": "kwame.asante@atu.edu.gh",
+         "phone": "+233244567890",
+         "avatar": null
+       }
+     ],
+"teacherUsers": [
+       {
+         "id": "teacher001",
+         "username": "mensah.agric",
+         "name": "Mr. Kwame Mensah",
+         "role": "TEACHER",
+         "departmentId": "1",
+         "email": "kwame.mensah@atu.edu.gh",
+         "phone": "+233244111111",
+         "avatar": null
+       }
+     ],
     "adminUsers": [
       {
         "id": "admin001",
@@ -83,20 +83,19 @@
     "items": [
       {
         "id": "1",
-        "name": "Science",
-        "code": "SCI",
-        "hodId": "STF-003",
+        "name": "Agriculture",
+        "code": "AGRIC",
+        "hodId": "hod001",
         "teacherCount": 14,
         "studentCount": 245,
-        "description": "Core and Elective Science nodes including Physics, Biology, and Chemistry.",
+        "description": "Agricultural Science and crop/livestock production nodes.",
         "validationStatus": 85,
         "color": "bg-blue-500",
         "iconColor": "text-blue-600",
-        "programs": ["General Science", "Agricultural Science"],
+        "programs": ["Agricultural Science"],
         "staff": [
-          { "id": "STF-003", "name": "Samuel Boateng", "role": "Senior Physics Tutor", "isHOD": true },
-          { "id": "STF-010", "name": "Dr. Mensah", "role": "Biology Lead", "isHOD": false },
-          { "id": "STF-011", "name": "Kwadwo Asare", "role": "Chemistry Specialist", "isHOD": false }
+          { "id": "hod001", "name": "Mr. Kwame Asante", "role": "HOD", "isHOD": true },
+          { "id": "teacher001", "name": "Mr. Kwame Mensah", "role": "Agri Tutor", "isHOD": false }
         ]
       },
       {
@@ -674,7 +673,7 @@
         "description": "Three students from last academic year appear to be missing from the archive",
         "status": "OPEN",
         "priority": "HIGH",
-        "departmentId": "dept001",
+        "departmentId": "1",
         "createdAt": "2026-05-20T09:30:00Z",
         "updatedAt": "2026-05-21T14:00:00Z",
         "createdBy": "hod001"
@@ -682,7 +681,7 @@
     ],
     "total": 3,
     "page": 1,
-    "pageSize": 10
+"pageSize": 10
   },
   "systemHealth": {
     "description": "System health metrics for monitoring platform status.",
@@ -712,8 +711,8 @@
         "status": "OPEN",
         "createdAt": "2026-05-19T14:00:00Z",
         "createdBy": "stud002",
-        "departmentId": "dept001"
-      }
+"departmentId": "1"
+       }
     ]
   },
   "contactChannels": {

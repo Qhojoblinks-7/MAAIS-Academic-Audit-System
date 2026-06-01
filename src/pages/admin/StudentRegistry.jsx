@@ -1,6 +1,6 @@
 ﻿import React, { useState, useMemo } from 'react';
 import { 
-  Search, Download, Plus, 
+  Search, Download, 
   ChevronRight, TrendingUp,
   Trash2, X, Lock,
   FileText, FileUp, 
@@ -25,9 +25,9 @@ const StudentDossier = ({
   const [activeTab, setActiveTab] = useState('Academic');
 
   const performanceData = [
-    { term: 'SHS1 T1', grade: 75 },
-    { term: 'SHS1 T2', grade: 78 },
-    { term: 'SHS1 T3', grade: 82 },
+    { term: 'SHS1 T1', grade: Math.round(student.averageGrade - 7) },
+    { term: 'SHS1 T2', grade: Math.round(student.averageGrade - 4) },
+    { term: 'SHS1 T3', grade: Math.round(student.averageGrade - 2) },
     { term: 'SHS2 T1', grade: student.averageGrade },
   ];
 
@@ -89,30 +89,28 @@ const StudentDossier = ({
               </div>
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Historical Subject Ledger</h4>
               <div className="space-y-2">
-                {[
-                  { subject: 'Elective Physics', grade: 'A1', score: 85 },
-                  { subject: 'Elective Chemistry', grade: 'B2', score: 72 },
-                  { subject: 'Elective Biology', grade: 'A1', score: 88 },
-                  { subject: 'Further Mathematics', grade: 'C4', score: 64 },
-                ].map((sub, i) => (
-                  <div key={i} className="flex justify-between items-center p-3 hover:bg-slate-50 rounded-2xl transition-all border border-transparent hover:border-slate-100">
-                    <div className="flex items-center gap-3">
-                       <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
-                          <FileText size={14} />
-                       </div>
-                       <span className="text-[12px] font-bold text-slate-700">{sub.subject}</span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                       <span className="text-[11px] font-black italic font-display text-slate-400">{sub.score}%</span>
-                       <span className={cn(
-                         "px-2.5 py-1 rounded-lg text-[10px] font-black italic font-display",
-                         sub.grade === 'A1' ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-600"
-                       )}>
-                         {sub.grade}
-                       </span>
-                    </div>
-                  </div>
-                ))}
+                {student.subjects && student.subjects.length > 0 
+                  ? student.subjects.map((sub, i) => (
+                      <div key={i} className="flex justify-between items-center p-3 hover:bg-slate-50 rounded-2xl transition-all border border-transparent hover:border-slate-100">
+                        <div className="flex items-center gap-3">
+                           <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
+                              <FileText size={14} />
+                           </div>
+                           <span className="text-[12px] font-bold text-slate-700">{sub.subject}</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                           <span className="text-[11px] font-black italic font-display text-slate-400">{sub.score}%</span>
+                           <span className={cn(
+                             "px-2.5 py-1 rounded-lg text-[10px] font-black italic font-display",
+                             sub.grade.startsWith('A') ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-600"
+                           )}>
+                             {sub.grade}
+                           </span>
+                        </div>
+                      </div>
+                    ))
+                  : <p className="text-[13px] font-bold text-slate-400 italic">No subject records available.</p>
+                }
               </div>
             </div>
           </div>
@@ -267,6 +265,15 @@ export const StudentRegistry = () => {
     [students]
   );
 
+  const housePerformanceData = useMemo(() => {
+    return HOUSES.map(house => ({
+      name: house,
+      average: students.filter(s => s.house === house).length > 0
+        ? Math.round(students.filter(s => s.house === house).reduce((sum, s) => sum + s.averageGrade, 0) / students.filter(s => s.house === house).length)
+        : 0
+    }));
+  }, [students]);
+
   const confirmVerification = () => {
     if (verificationPassword === 'admin123') {
       const action = showReverification.action;
@@ -300,13 +307,13 @@ export const StudentRegistry = () => {
           </div>
           <div className="flex items-center gap-3">
              <button onClick={() => executeSensitiveAction('batch-reports')} className="flex items-center gap-2 px-5 py-2.5 bg-white text-slate-900 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm">
-                <FileText size={16} /> Bulk Reports
+               <FileText size={16} /> Bulk Reports
              </button>
              <button onClick={() => setIsBatchUploading(true)} className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 text-slate-900 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest">
-                <FileUp size={16} /> CSSPS Upload
+               <FileUp size={16} /> CSSPS Upload
              </button>
              <button onClick={() => setIsPromoting(true)} className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20">
-                <TrendingUp size={16} /> Promotion Engine
+               <TrendingUp size={16} /> Promotion Engine
              </button>
           </div>
         </div>
@@ -337,24 +344,17 @@ export const StudentRegistry = () => {
             </div>
           </div>
           <div className="md:col-span-1 xl:col-span-2 bg-slate-50 p-5 rounded-[2rem] border border-slate-100 flex items-center gap-8">
-             <div className="flex-1 space-y-3">
+            {housePerformanceData.slice(0, 2).map(house => (
+              <div key={house.name} className="flex-1 space-y-3">
                 <div className="flex justify-between items-center">
-                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Aggrey House</p>
-                   <p className="text-[10px] font-black text-slate-900">98%</p>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{house.name}</p>
+                  <p className="text-[10px] font-black text-slate-900">{house.average}%</p>
                 </div>
                 <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                   <motion.div initial={{ width: 0 }} animate={{ width: '98%' }} transition={{ duration: 1 }} className="h-full bg-slate-900" />
+                  <motion.div initial={{ width: 0 }} animate={{ width: `${house.average}%` }} transition={{ duration: 1 }} className="h-full bg-slate-900" />
                 </div>
-             </div>
-             <div className="flex-1 space-y-3">
-                <div className="flex justify-between items-center">
-                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Guggisberg</p>
-                   <p className="text-[10px] font-black text-slate-900">92%</p>
-                </div>
-                <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                   <motion.div initial={{ width: 0 }} animate={{ width: '92%' }} transition={{ duration: 1 }} className="h-full bg-slate-400" />
-                </div>
-             </div>
+              </div>
+            ))}
           </div>
         </div>
       </header>
@@ -372,6 +372,15 @@ export const StudentRegistry = () => {
            <select value={selectedProgram} onChange={(e) => setSelectedProgram(e.target.value)} className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-[11px] font-black uppercase tracking-widest outline-none">
              <option value="All">All Programs</option>
              {PROGRAMS.map(p => <option key={p} value={p}>{p}</option>)}
+           </select>
+           <select value={selectedHouse} onChange={(e) => setSelectedHouse(e.target.value)} className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-[11px] font-black uppercase tracking-widest outline-none">
+             <option value="All">All Houses</option>
+             {HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
+           </select>
+           <select value={selectedResidence} onChange={(e) => setSelectedResidence(e.target.value)} className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-[11px] font-black uppercase tracking-widest outline-none">
+             <option value="All">All Residencies</option>
+             <option value="Boarder">Boarder</option>
+             <option value="Day">Day</option>
            </select>
          </div>
          <div className="flex items-center gap-3">

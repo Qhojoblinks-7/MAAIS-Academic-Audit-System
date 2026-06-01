@@ -1,9 +1,16 @@
 import React from 'react';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, FileText } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 
-export function GradingTabContent({ dept }) {
+export function GradingTabContent({ dept, handleNodeOperation }) {
   if (!dept) return null;
+
+  const handleAuthorizeClick = (e) => {
+    e.stopPropagation();
+    if (handleNodeOperation) {
+      handleNodeOperation('Authorize Template Update', dept.id, dept.name);
+    }
+  };
 
   return (
     <div className="space-y-4 px-1 sm:px-0">
@@ -71,7 +78,11 @@ export function GradingTabContent({ dept }) {
         </div>
 
         {/* Global Action Button */}
-        <button className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[9px] font-bold uppercase tracking-wider shadow-sm active:scale-[0.99] transition-all mt-3">
+        <button 
+          onClick={handleAuthorizeClick}
+          className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[9px] font-bold uppercase tracking-wider shadow-sm active:scale-[0.99] transition-all mt-3 flex items-center justify-center gap-1.5"
+        >
+          <FileText size={14} />
           Authorize Template Update
         </button>
       </div>
