@@ -1,0 +1,292 @@
+{
+  "students": [
+    {
+      "id": "stud001",
+      "studentName": "Angela Owusu",
+      "indexNumber": "001",
+      "program": "Agriculture",
+      "dateOfBirth": "2008-03-15",
+      "gender": "Female",
+      "yearForm": "SHS 3",
+      "semester": "2nd",
+      "enrollmentDate": "2024-01-15",
+      "completionDate": "2027-07-30",
+      "house": "Green House",
+      "approvalStatus": "LOCKED",
+      "cgpa": 2.86,
+      "classRank": 7,
+      "attendance": 92,
+      "lastSeen": "2026-05-20T14:30:00Z",
+      
+      "/* ======================================================================== */": "",
+      "/* 1. TERMINAL REPORT DATA (Single Term Breakdown with SBA & Exam Details)  */": "",
+      "/* ======================================================================== */": "",
+      "terminalResults": [
+        {
+          "subject": "Core Mathematics",
+          "caScore": 25,
+          "examScore": 55,
+          "totalScore": 80,
+          "grade": "B2",
+          "points": 6,
+          "remarks": "Good"
+        },
+        {
+          "subject": "English Language",
+          "caScore": 28,
+          "examScore": 52,
+          "totalScore": 80,
+          "grade": "B2",
+          "points": 6,
+          "remarks": "Good"
+        },
+        {
+          "subject": "General Agriculture",
+          "caScore": 30,
+          "examScore": 60,
+          "totalScore": 90,
+          "grade": "A1",
+          "points": 7,
+          "remarks": "Excellent"
+        },
+        {
+          "subject": "Elective Mathematics",
+          "caScore": 22,
+          "examScore": 48,
+          "totalScore": 70,
+          "grade": "B3",
+          "points": 5,
+          "remarks": "Good"
+        },
+        {
+          "subject": "Integrated Science",
+          "caScore": 26,
+          "examScore": 50,
+          "totalScore": 76,
+          "grade": "B2",
+          "points": 6,
+          "remarks": "Good"
+        },
+        {
+          "subject": "Social Studies",
+          "caScore": 24,
+          "examScore": 45,
+          "totalScore": 69,
+          "grade": "B3",
+          "points": 5,
+          "remarks": "Good"
+        },
+        {
+          "subject": "Chemistry",
+          "caScore": 23,
+          "examScore": 47,
+          "totalScore": 70,
+          "grade": "B3",
+          "points": 5,
+          "remarks": "Good"
+        },
+        {
+          "subject": "Physics",
+          "caScore": 20,
+          "examScore": 40,
+          "totalScore": 60,
+          "grade": "C4",
+          "points": 4,
+          "remarks": "Fair"
+        }
+      ],
+
+      "notifications": [
+        {
+          "id": "notif001",
+          "type": "intervention",
+          "message": "Parent-teacher conference scheduled for next week regarding academic performance.",
+          "timestamp": "2026-05-18T10:30:00Z",
+          "read": false
+        },
+        {
+          "id": "notif002",
+          "type": "achievement",
+          "message": "Congratulations! You have been selected for the Science Mentorship Program.",
+          "timestamp": "2026-05-15T14:00:00Z",
+          "read": true
+        }
+      ],
+      "terminalExamDate": "2026-05-20",
+      "behaviorComments": "Consistent improvement and excellent class participation.",
+      "behavioralLogs": [
+        {
+          "trait": "Discipline",
+          "rating": 4,
+          "remark": "Consistent and punctual. Follows classroom rules."
+        }
+      ],
+      "characterTraits": {
+        "characterQualities": 4,
+        "leadership": 3,
+        "discipline": 4,
+        "teamwork": 4,
+        "ethics": 5
+      },
+
+      "/* ======================================================================== */": "",
+      "/* 2. SCHOLASTIC REPORT DATA (Multi-Year Accumulation Transcript History)   */": "",
+      "/* ======================================================================== */": "",
+      "academicHistory": [
+        {
+          "year": "SHS 1",
+          "term": "Term 1",
+          "subjects": [
+            { "name": "Core Mathematics", "score": 65, "grade": "B3" },
+            { "name": "English Language", "score": 61, "grade": "C4" },
+            { "name": "General Agriculture", "score": 70, "grade": "B3" },
+            { "name": "Integrated Science", "score": 68, "grade": "B3" },
+            { "name": "Social Studies", "score": 64, "grade": "B3" },
+            { "name": "Elective Mathematics", "score": 62, "grade": "C4" },
+            { "name": "Chemistry", "score": 63, "grade": "B3" },
+            { "name": "Physics", "score": 60, "grade": "C4" }
+          ]
+        },
+        {
+          "year": "SHS 2",
+          "term": "Term 2",
+          "subjects": [
+            { "name": "Core Mathematics", "score": 78, "grade": "B2" },
+            { "name": "General Agriculture", "score": 90, "grade": "A1" },
+            { "name": "English Language", "score": 75, "grade": "B2" },
+            { "name": "Integrated Science", "score": 80, "grade": "B2" },
+            { "name": "Social Studies", "score": 72, "grade": "B2" },
+            { "name": "Elective Mathematics", "score": 68, "grade": "B3" },
+            { "name": "Chemistry", "score": 70, "grade": "B3" },
+            { "name": "Physics", "score": 65, "grade": "B3" }
+          ]
+        },
+        {
+          "year": "SHS 3",
+          "term": "Term 1",
+          "subjects": [
+            { "name": "Core Mathematics", "score": 66, "grade": "B3" },
+            { "name": "General Agriculture", "score": 85, "grade": "A2" },
+            { "name": "English Language", "score": 70, "grade": "B3" },
+            { "name": "Integrated Science", "score": 75, "grade": "B2" },
+            { "name": "Social Studies", "score": 68, "grade": "B3" },
+            { "name": "Elective Mathematics", "score": 65, "grade": "B3" },
+            { "name": "Chemistry", "score": 68, "grade": "B3" },
+            { "name": "Physics", "score": 62, "grade": "C4" }
+          ]
+        }
+      ],
+      "wassceResults": []
+    },
+    {
+      "id": "stud002",
+      "studentName": "Ama Serwaa",
+      "indexNumber": "009",
+      "program": "Agriculture",
+      "dateOfBirth": "2007-08-22",
+      "gender": "Female",
+      "yearForm": "SHS 3",
+      "semester": "2nd",
+      "enrollmentDate": "2024-01-15",
+      "completionDate": "2027-07-30",
+      "house": "Blue House",
+      "approvalStatus": "VERIFIED",
+      "cgpa": 3.21,
+      "classRank": 2,
+      "attendance": 96,
+      "lastSeen": "2026-05-22T11:15:00Z",
+
+      "/* ======================================================================== */": "",
+      "/* 1. TERMINAL REPORT DATA (Single Term Breakdown with SBA & Exam Details)  */": "",
+      "/* ======================================================================== */": "",
+      "terminalResults": [
+        {
+          "subject": "Core Mathematics",
+          "caScore": 26,
+          "examScore": 62,
+          "totalScore": 88,
+          "grade": "A1",
+          "points": 8,
+          "remarks": "Outstanding"
+        },
+        {
+          "subject": "English Language",
+          "caScore": 24,
+          "examScore": 55,
+          "totalScore": 79,
+          "grade": "B2",
+          "points": 7,
+          "remarks": "Very Good"
+        },
+        {
+          "subject": "General Agriculture",
+          "caScore": 27,
+          "examScore": 62,
+          "totalScore": 89,
+          "grade": "A1",
+          "points": 8,
+          "remarks": "Outstanding"
+        },
+        {
+          "subject": "Elective Mathematics",
+          "caScore": 24,
+          "examScore": 58,
+          "totalScore": 82,
+          "grade": "A1",
+          "points": 8,
+          "remarks": "Outstanding"
+        }
+      ],
+      "notifications": [
+        {
+          "id": "notif003",
+          "type": "counseling",
+          "message": "Career guidance session booked for next semester orientation.",
+          "timestamp": "2026-05-19T09:00:00Z",
+          "read": false
+        }
+      ],
+      "terminalExamDate": "2026-05-20",
+      "behaviorComments": "Outstanding behavior and leadership in peer study groups.",
+      "behavioralLogs": [
+        {
+          "trait": "Respect",
+          "rating": 5,
+          "remark": "Shows respect to teachers and classmates."
+        }
+      ],
+      "characterTraits": {
+        "characterQualities": 5,
+        "leadership": 5,
+        "discipline": 4,
+        "teamwork": 5,
+        "ethics": 5
+      },
+
+      "/* ======================================================================== */": "",
+      "/* 2. SCHOLASTIC REPORT DATA (Multi-Year Accumulation Transcript History)   */": "",
+      "/* ======================================================================== */": "",
+      "academicHistory": [
+        {
+          "year": "SHS 1",
+          "term": "Term 2",
+          "subjects": [
+            { "name": "Core Mathematics", "score": 85, "grade": "A1" },
+            { "name": "General Agriculture", "score": 88, "grade": "A1" },
+            { "name": "English Language", "score": 80, "grade": "B2" },
+            { "name": "Integrated Science", "score": 82, "grade": "A1" },
+            { "name": "Social Studies", "score": 78, "grade": "B2" },
+            { "name": "Elective Mathematics", "score": 84, "grade": "A1" },
+            { "name": "Chemistry", "score": 82, "grade": "A1" },
+            { "name": "Physics", "score": 79, "grade": "B2" }
+          ]
+        }
+      ],
+      "wassceResults": [
+        { "subject": "Core Mathematics", "grade": "A1" },
+        { "subject": "English Language", "grade": "B2" },
+        { "subject": "General Agriculture", "grade": "A1" }
+      ]
+    }
+  ]
+}

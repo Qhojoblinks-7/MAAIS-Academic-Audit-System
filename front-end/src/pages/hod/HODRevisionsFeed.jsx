@@ -1,0 +1,478 @@
+import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  AlertTriangle,
+  Hourglass,
+  ArrowRight,
+  Clock,
+  User,
+  BookOpen,
+  X,
+  ShieldCheck,
+  ThumbsUp,
+  ThumbsDown,
+  Search,
+  Inbox,
+  Check,
+  MessageSquare,
+  ChevronDown,
+  ChevronUp,
+  Send
+} from 'lucide-react';
+import { cn } from '../../lib/utils';
+import { useHOD } from '../../context/HODContext';
+import { statusStyles, severityStyles } from '../shared/RevisionsFeed';
+import { hodService } from '../../services/hodService';
+import { auditTrail } from '../../services/auditTrailService';
+import { notification } from '../../services/notificationService';
+import { eventBus } from '../../services/eventBus';
+
+const HODRevisionsFeed = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { revisions = [], refreshRevisions, isLoading } = useHOD();
+  const [activeTab, setActiveTab] = useState('pending');
+  const [selected, setSelected] = useState(null);
+  const [hodComment, setHodComment] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [discussionExpanded, setDiscussionExpanded] = useState(false);
+  const [discussionInput, setDiscussionInput] = useState('');
+  const [isDiscussionLoading, setIsDiscussionLoading] = useState(false);
+
+  useEffect(() => {
+    if (typeof refreshRevisions === 'function') {
+      refreshRevisions();
+    }
+  }, [refreshRevisions]);
+
+  useEffect(() => {
+    const queryId = searchParams.get('revision');
+    if (queryId) {
+      const match = revisions.find(r => r.id === queryId);
+      if (match) setSelected(match);
+    } else if (revisions.length > 0 && !selected) {
+      setSelected(revisions[0]);
+    }
+  }, [searchParams, revisions]);
+
+  const filteredData = revisions.filter(item => {
+    const matchesTab = activeTab === 'all' 
+      ? true 
+      : activeTab === 'pending' 
+        ? item.status !== 'RESOLVED' 
+        : item.status === 'RESOLVED';
+        
+    const matchesSearch = 
+      item.student.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.subject.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesTab && matchesSearch;
+  });
+
+  const handleApprove = async () => {
+    if (!selected || !hodComment.trim()) return;
+    
+    try {
+      const oldVal = auditTrail?.captureSnapshot?.({ status: selected.status }) || {};
+      await hodService.updateHODComment(selected.id, hodComment);
+      await hodService.approveGradeRevision?.(selected.id, hodComment);
+      
+      if (auditTrail?.logChange) {
+        await auditTrail.logChange('grade_revision', selected.id, oldVal, { status: 'RESOLVED', comment: hodComment }, hodComment);
+      }
+      if (eventBus?.emit) {
+        eventBus.emit('grade-revision-approved', { recordId: selected.id, studentName: selected.student });
+      }
+      if (notification?.notifyTeacherOfHODAction) {
+        await notification.notifyTeacherOfHODAction(selected.id, 'GRADE_REVISION_APPROVED', selected.id, hodComment);
+      }
+      
+      refreshRevisions?.();
+      setHodComment('');
+    } catch (e) {
+      console.error('Approval failed:', e);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!selected) return;
+    
+    try {
+      const oldVal = auditTrail?.captureSnapshot?.({ rejected: false }) || {};
+      await hodService.rejectGradeRevision(selected.id, hodComment || 'No reason provided');
+      
+      if (auditTrail?.logChange) {
+        await auditTrail.logChange('grade_revision', selected.id, oldVal, { rejected: true }, `HOD rejected revision: ${hodComment}`);
+      }
+      if (eventBus?.emit) {
+        eventBus.emit('grade-revision-rejected', { recordId: selected.id, studentName: selected.student, reason: hodComment });
+      }
+      
+       refreshRevisions?.();
+       setHodComment('');
+     } catch (e) {
+       console.error('Rejection failed:', e);
+     }
+   };
+ 
+   const sendDiscussionMessage = async () => {
+     if (!discussionInput.trim() || !selected) return;
+ 
+     try {
+       setIsDiscussionLoading(true);
+       
+       // In a real implementation, this would send to backend and notify via notification service
+       // For now, we'll just show a toast/alert
+       alert('Discussion message sent: ' + discussionInput);
+       
+       // Clear input
+       setDiscussionInput('');
+       
+       // In a real app, you would:
+       // 1. Send message to backend API to persist it
+       // 2. Use notificationService to alert the other party (HOD/Teacher)
+       // 3. Update the discussion thread with the new message
+     } catch (err) {
+       console.error('Failed to send discussion message:', err);
+       alert('Failed to send message');
+     } finally {
+       setIsDiscussionLoading(false);
+     }
+   };
+
+  return (
+    <div className="flex-1 flex w-full h-full min-h-0 overflow-hidden bg-slate-50/40 font-sans antialiased">
+      
+      <div className="flex-1 flex flex-col min-w-0 h-full border-r border-slate-200/60 bg-white">
+        
+        <div className="p-6 pb-4 border-b border-slate-100 shrink-0">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-sm shadow-slate-900/10">
+                <AlertTriangle size={18} className="text-amber-400" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-slate-900 tracking-tight">HOD Revision Review</h1>
+                <p className="text-xs text-slate-500 font-medium">Approve or reject grade revision requests from teachers</p>
+              </div>
+            </div>
+
+            <div className="hidden sm:flex items-center gap-1.5 bg-amber-50 text-amber-800 px-2.5 py-1 rounded-lg border border-amber-200/30 text-[11px] font-semibold">
+              <AlertTriangle size={12} className="text-amber-600 animate-pulse" />
+              <span>{revisions.filter(r => r.status !== 'RESOLVED').length} Pending Approvals</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+            <div className="flex p-0.5 bg-slate-100 rounded-lg border border-slate-200/40">
+              {['pending', 'resolved', 'all'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => {
+                    setActiveTab(tab);
+                    const nextList = revisions.filter(r => tab === 'all' ? true : tab === 'pending' ? r.status !== 'RESOLVED' : r.status === 'RESOLVED');
+                    setSelected(nextList[0] || null);
+                  }}
+                  className={cn(
+                    "px-4 py-1.5 text-xs font-semibold capitalize rounded-md transition-all duration-150",
+                    activeTab === tab 
+                      ? "bg-white text-slate-900 shadow-sm border border-slate-200/20 font-bold" 
+                      : "text-slate-500 hover:text-slate-800"
+                  )}
+                >
+                  {tab === 'pending' ? 'Needs Approval' : tab}
+                </button>
+              ))}
+            </div>
+
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search student, code, course..."
+                className="w-full pl-9 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-950/5 focus:border-slate-400 transition-all placeholder:text-slate-400"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30 space-y-3 min-h-0 no-scrollbar">
+          {filteredData.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-slate-200 p-8 text-center">
+              <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center mb-3">
+                <Inbox size={20} className="text-slate-400" />
+              </div>
+              <p className="text-xs font-semibold text-slate-700">No revisions matched filter</p>
+              <p className="text-[11px] text-slate-400 max-w-[220px] mt-0.5">Modify parameters or check the resolution log directories.</p>
+            </div>
+          ) : (
+            filteredData.map((job, idx) => {
+              const isSelected = selected?.id === job.id;
+              return (
+                <motion.div
+                  key={job.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.15, delay: idx * 0.02 }}
+                  onClick={() => setSelected(job)}
+                  className={cn(
+                    "p-5 rounded-xl border transition-all duration-200 cursor-pointer relative group bg-white",
+                    isSelected 
+                      ? "border-slate-900 shadow-sm ring-1 ring-slate-900/5" 
+                      : "border-slate-200/70 hover:border-slate-350 hover:shadow-sm"
+                  )}
+                >
+                  {isSelected && (
+                    <div className="absolute top-0 bottom-0 left-0 w-1 bg-slate-900 rounded-l-xl" />
+                  )}
+
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded border tracking-wide", statusStyles[job.status])}>
+                        {job.status === 'AWAITING_APPROVAL' ? 'Awaiting Approval' : job.status === 'TEACHER_REPLIED' ? 'Teacher Replied' : 'Resolved'}
+                      </span>
+                      <span className={cn("text-[9px] font-extrabold px-1.5 py-0.5 rounded border tracking-wider", severityStyles[job.severity])}>
+                        {job.severity}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-slate-400 text-[11px] font-medium">
+                      <Clock size={12} />
+                      <span>{job.time}</span>
+                    </div>
+                  </div>
+
+                  <p className="text-[13px] font-medium text-slate-700 leading-relaxed mb-4 bg-slate-50 border border-slate-100 p-3 rounded-lg font-mono tracking-tight">
+                    {job.issue}
+                  </p>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                    <div className="flex items-center gap-4 text-[12px] font-medium text-slate-600">
+                      <div className="flex items-center gap-1.5">
+                        <User size={13} className="text-slate-400" />
+                        <span className="font-semibold text-slate-800">{job.student}</span>
+                      </div>
+                      <div className="w-1 h-1 bg-slate-300 rounded-full" />
+                      <div className="flex items-center gap-1.5">
+                        <BookOpen size={13} className="text-slate-400" />
+                        <span>{job.class} <span className="text-slate-300 mx-1">/</span> <span className="text-slate-400 font-normal">{job.subject}</span></span>
+                      </div>
+                    </div>
+                    <ArrowRight size={14} className={cn(
+                      "transition-all duration-200",
+                      isSelected ? "text-slate-900 translate-x-0.5" : "text-slate-300 group-hover:text-slate-500 group-hover:translate-x-0.5"
+                    )} />
+                  </div>
+                </motion.div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      <AnimatePresence mode="wait">
+        {selected ? (
+          <motion.div
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 12 }}
+            transition={{ duration: 0.15 }}
+            className="w-[28rem] bg-white h-full border-l border-slate-200/70 flex flex-col shrink-0 shadow-2xl shadow-slate-900/5 hidden lg:flex min-h-0"
+          >
+            <div className="p-6 border-b border-slate-100 flex items-start justify-between bg-slate-50/40 shrink-0">
+              <div>
+                <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                  <Hourglass size={12} className="text-slate-400" /> Grade Revision Request
+                </div>
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">{selected.student}</h3>
+                <p className="text-xs font-medium text-slate-500 mt-0.5">{selected.class} • <span className="text-slate-400">{selected.subject}</span></p>
+              </div>
+              <button
+                onClick={() => setSelected(null)}
+                className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded-lg transition-all"
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0 no-scrollbar">
+              
+              <div className="space-y-3.5">
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Teacher Communication</h4>
+                
+                <div className="space-y-3 relative before:absolute before:top-2 before:bottom-2 before:left-[13px] before:w-0.5 before:bg-slate-100">
+                  {selected.history?.map((node) => (
+                    <div key={node.id} className="flex gap-3 relative z-10">
+                      <div className={cn(
+                        "w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-sm ring-4 ring-white shrink-0 mt-0.5",
+                        node.role === 'HOD' ? 'bg-amber-600' : node.role === 'TEACHER' ? 'bg-sky-600' : 'bg-slate-800'
+                      )}>
+                        {node.role[0]}
+                      </div>
+                      
+                      <div className="flex-1 bg-slate-50 border border-slate-200/60 rounded-xl p-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[11px] font-bold text-slate-800">{node.user}</span>
+                          <span className="text-[10px] text-slate-400">{node.time}</span>
+                        </div>
+                        <p className="text-xs text-slate-600 leading-relaxed font-mono">"{node.message}"</p>
+                      </div>
+                    </div>
+                  ))}
+                 </div>
+               </div>
+ 
+               {/* Grade Discussion Thread */}
+               <div className="border-t border-slate-100 pt-6">
+                 <div className="flex items-center justify-between mb-3">
+                   <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                     Grade Discussion
+                   </h4>
+                   <div className="flex items-center gap-2">
+                     <span className="text-sm text-slate-500">
+                       {selected.history?.length || 0} messages
+                     </span>
+                     <button
+                       onClick={() => setDiscussionExpanded(!discussionExpanded)}
+                       className="p-1 hover:bg-slate-100 rounded hover:text-slate-700 transition-colors"
+                     >
+                       {discussionExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                     </button>
+                   </div>
+                 </div>
+                 
+                 {discussionExpanded && (
+                   <div className="space-y-2">
+                     {selected.history?.length === 0 ? (
+                       <p className="text-center py-4 text-slate-500 italic">
+                         No discussion yet. Start the conversation!
+                       </p>
+                     ) : (
+                       <div className="space-y-2">
+                         {selected.history.map((msg) => (
+                           <div key={msg.id} className={cn(
+                             "flex gap-3",
+                             msg.role === 'TEACHER' ? 'flex-row' : 'flex-row-reverse'
+                           )}>
+                             <div className="w-8 h-8 flex items-center justify-center rounded-full 
+                               {msg.role === 'HOD' ? 'bg-amber-100 text-amber-600' : 'bg-sky-100 text-sky-600'}">
+                               {msg.role === 'HOD' ? 'H' : 'T'}
+                             </div>
+                             <div className="flex-1 max-w-[80%]">
+                               <div className={cn(
+                                 "px-3 py-2 rounded-xl",
+                                 msg.role === 'HOD' ? 'bg-amber-50 text-slate-800 rounded-tr-none' : 
+                                   'bg-sky-50 text-slate-800 rounded-tl-none'
+                               )}>
+                                 <p className="text-xs font-medium text-slate-500 mb-0.5">
+                                   {msg.user}
+                                 </p>
+                                 <p className="text-sm text-slate-800 whitespace-pre-wrap break-words">
+                                   {msg.message}
+                                 </p>
+                                 <p className="text-xs text-slate-400 mt-1">
+                                   {msg.time}
+                                 </p>
+                               </div>
+                             </div>
+                           </div>
+                         ))}
+                       </div>
+                     )}
+                   </div>
+                 )}
+                 
+                 <div className="mt-3 pt-2 border-t border-slate-200">
+                   <div className="flex items-center gap-2">
+                     <div className="flex-1">
+                       <textarea
+                         value={discussionInput}
+                         onChange={(e) => setDiscussionInput(e.target.value)}
+                         placeholder="Type your message..."
+                         rows={2}
+                         className="w-full p-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500/20"
+                         disabled={isDiscussionLoading}
+                       />
+                     </div>
+                     <button
+                       onClick={sendDiscussionMessage}
+                       disabled={isDiscussionLoading || !discussionInput.trim()}
+                       className="px-3 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-colors disabled:opacity-50"
+                     >
+                       {isDiscussionLoading ? 'Sending...' : 'Send'}
+                     </button>
+                   </div>
+                 </div>
+               </div>
+               {/* End Grade Discussion Thread */}
+ 
+               {selected.status !== 'RESOLVED' && (
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">HOD Review Comment</label>
+                  <div className="relative">
+                    <textarea
+                      rows={4}
+                      value={hodComment}
+                      onChange={(e) => setHodComment(e.target.value)}
+                      placeholder="Add your approval or rejection reason..."
+                      className="w-full p-3 bg-slate-50/60 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/5 focus:border-slate-500 placeholder-slate-400 resize-none transition-all leading-relaxed"
+                    />
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            <div className="p-4 border-t border-slate-100 bg-slate-50/40 space-y-2 shrink-0">
+              
+              {selected.status !== 'RESOLVED' ? (
+                <>
+                  <button
+                    onClick={handleApprove}
+                    disabled={!hodComment.trim()}
+                    className={cn(
+                      "w-full py-2.5 rounded-xl text-xs font-semibold tracking-wide border transition-all flex items-center justify-center gap-1.5",
+                      hodComment.trim() 
+                        ? "bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700 cursor-pointer shadow-sm" 
+                        : "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60"
+                    )}
+                  >
+                    <ThumbsUp size={13} />
+                    Approve Revision
+                  </button>
+
+                  <button
+                    onClick={handleReject}
+                    className="w-full py-2.5 bg-white text-slate-700 rounded-xl text-xs font-semibold tracking-wide border border-slate-200 hover:bg-slate-100 cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
+                  >
+                    <ThumbsDown size={13} />
+                    Reject Request
+                  </button>
+                </>
+              ) : (
+                <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-3 py-2 rounded-lg">
+                  <ShieldCheck size={14} />
+                  Revision Approved & Resolved
+                </div>
+              )}
+            </div>
+          </motion.div>
+        ) : (
+          <div className="w-[28rem] bg-slate-50/20 border-l border-slate-200/60 hidden lg:flex flex-col items-center justify-center p-8 text-center shrink-0">
+            <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center mb-3 text-slate-400">
+              <Check size={16} />
+            </div>
+            <p className="text-xs font-semibold text-slate-700">No Request Selected</p>
+            <p className="text-[11px] text-slate-400 mt-0.5 max-w-[200px]">Choose a grade revision request from the feed to review and approve.</p>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+export { HODRevisionsFeed };
+export default HODRevisionsFeed;
