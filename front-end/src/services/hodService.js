@@ -1,5 +1,5 @@
 import { getAuthToken } from './auth';
-import { calcRoman } from '../pages/shared/GradingSheet.constants';
+import { calcRoman } from '../constants/grading';
 import mockHodService from './mockHodService';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';

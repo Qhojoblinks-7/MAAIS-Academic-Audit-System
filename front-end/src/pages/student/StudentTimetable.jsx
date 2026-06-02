@@ -57,34 +57,34 @@ const DAY_SCHEDULES = [
 ];
 
 const DAY_TYPE_STYLES = {
-  CLASS: 'bg-blue-50 border-blue-200/60 text-blue-900',
-  LAB: 'bg-purple-50 border-purple-200/60 text-purple-900',
-  BREAK: 'bg-gray-50 border-gray-200/60 text-gray-500',
-  SPORTS: 'bg-emerald-50 border-emerald-200/60 text-emerald-800',
-  STUDY: 'bg-slate-50 border-slate-200 text-slate-600',
-  ASSEMBLY: 'bg-amber-50 border-amber-200/60 text-amber-800',
+  CLASS: 'bg-brand-primary/10 border-brand-primary/20 text-brand-primary',
+  LAB: 'bg-brand-secondary/10 border-brand-secondary/20 text-brand-secondary',
+  BREAK: 'bg-border/40 text-text-secondary',
+  SPORTS: 'bg-success/10 border-success/20 text-success',
+  STUDY: 'bg-text-secondary/10 border-text-secondary/20 text-text-secondary',
+  ASSEMBLY: 'bg-warning/10 border-warning/20 text-warning',
 };
 
 export function StudentTimetable() {
-  return (
-    <div className="flex-1 overflow-y-auto bg-[#F9F9F7] p-4 sm:p-6 md:p-8 lg:p-12 pb-24">
-      <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
-        
-        {/* Module Title Area */}
-        <header className="flex items-center gap-3 sm:gap-4">
-          <div className="w-11 h-11 sm:w-12 sm:h-12 bg-gray-900 rounded-xl sm:rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-gray-900/10">
-            <Calendar size={24} className="sm:hidden" />
-            <Calendar size={28} className="hidden sm:block" />
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight uppercase italic">
-              My Timetable
-            </h1>
-            <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5 truncate">
-              Weekly class &amp; lab schedule
-            </p>
-          </div>
-        </header>
+   return (
+     <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 md:p-8 lg:p-12 pb-24 no-scrollbar">
+       <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 no-scrollbar">
+         
+         {/* Module Title Area */}
+         <header className="flex items-center gap-3 sm:gap-4">
+           <div className="w-11 h-11 sm:w-12 sm:h-12 bg-brand-dark rounded-xl sm:rounded-2xl flex items-center justify-center text-surface shrink-0 shadow-lg shadow-brand-dark/10">
+             <Calendar size={24} className="sm:hidden" />
+             <Calendar size={28} className="hidden sm:block" />
+           </div>
+           <div className="min-w-0">
+             <h1 className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight uppercase italic">
+               My Timetable
+             </h1>
+             <p className="text-[9px] sm:text-[10px] font-black text-text-secondary uppercase tracking-widest mt-0.5 truncate">
+               Weekly class &amp; lab schedule
+             </p>
+           </div>
+         </header>
 
         {/* Schedule List */}
         <div className="space-y-4 sm:space-y-6">
@@ -94,23 +94,23 @@ export function StudentTimetable() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: dIdx * 0.04 }}
-              className="bg-white rounded-2xl sm:rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden"
+              className="bg-surface rounded-2xl sm:rounded-[2rem] border border-border shadow-sm overflow-hidden"
             >
               {/* Day Section Header */}
-              <div className="bg-gray-50/50 px-4 sm:px-6 py-3.5 border-b border-gray-100 flex items-center justify-between gap-4">
+              <div className="bg-background/50 px-4 sm:px-6 py-3.5 border-b border-border flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
-                  <Clock size={14} className="text-gray-400 shrink-0" />
-                  <span className="text-sm font-black text-gray-900 uppercase tracking-wide italic">
+                  <Clock size={14} className="text-text-secondary shrink-0" />
+                  <span className="text-sm font-black text-text-primary uppercase tracking-wide italic">
                     {day}
                   </span>
                 </div>
-                <span className="text-[9px] font-black text-gray-400 bg-white border border-gray-200/60 px-2 py-0.5 rounded-md uppercase tracking-wider shrink-0">
+                <span className="text-[9px] font-black text-text-secondary bg-surface border border-border/60 px-2 py-0.5 rounded-md uppercase tracking-wider shrink-0">
                   {items.filter(i => i.type !== 'BREAK' && i.type !== 'ASSEMBLY').length} Sessions
                 </span>
               </div>
 
               {/* Day Card Timings Rows */}
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-border/40">
                 {items.map((item, idx) => {
                   const isBreak = item.type === 'BREAK';
                   
@@ -118,11 +118,11 @@ export function StudentTimetable() {
                     return (
                       <div 
                         key={idx} 
-                        className="flex flex-col xs:flex-row xs:items-center gap-1.5 xs:gap-4 px-4 sm:px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-wider bg-gray-50/30 min-w-0"
+                        className="flex flex-col xs:flex-row xs:items-center gap-1.5 xs:gap-4 px-4 sm:px-6 py-3 text-[10px] font-black text-text-secondary uppercase tracking-wider bg-background/40 min-w-0"
                       >
-                        <span className="font-mono text-gray-400 shrink-0">{item.time}</span>
-                        <span className="text-gray-500 truncate">{item.subject}</span>
-                        {item.room !== '-' && <span className="text-gray-400 font-normal normal-case truncate xs:ml-auto">@{item.room}</span>}
+                        <span className="font-mono text-text-secondary shrink-0">{item.time}</span>
+                        <span className="text-text-secondary truncate">{item.subject}</span>
+                        {item.room !== '-' && <span className="text-border font-normal normal-case truncate xs:ml-auto">@{item.room}</span>}
                       </div>
                     );
                   }
@@ -130,10 +130,10 @@ export function StudentTimetable() {
                   return (
                     <div 
                       key={idx} 
-                      className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 sm:px-6 py-4 hover:bg-gray-50/30 transition-all min-w-0"
+                      className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 sm:px-6 py-4 hover:bg-background/40 transition-all min-w-0"
                     >
                       {/* Period Clock Component Block */}
-                      <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider font-mono shrink-0 sm:min-w-[75px]">
+                      <div className="text-[10px] font-black text-text-secondary uppercase tracking-wider font-mono shrink-0 sm:min-w-[75px]">
                         {item.time}
                       </div>
                       
@@ -155,7 +155,7 @@ export function StudentTimetable() {
                         </div>
                         
                         <div className="shrink-0 self-start xs:self-center">
-                          <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 bg-white/60 border border-current/10 rounded-md">
+                          <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 bg-surface border border-current/10 rounded-md">
                             {item.type}
                           </span>
                         </div>

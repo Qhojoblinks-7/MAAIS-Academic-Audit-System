@@ -146,9 +146,9 @@ export function Sidebar() {
     <>
 <aside 
           ref={sidebarRef}
-          className="w-20 h-screen bg-slate-50 border-r border-slate-200/60 flex flex-col items-center py-8 gap-8 z-[60] select-none shrink-0 print:hidden"
+          className="w-20 h-screen bg-background border-r border-border flex flex-col items-center py-8 gap-8 z-[60] select-none shrink-0 print:hidden"
         >
-        <Link to="/" className="w-12 h-12 bg-brand-teal rounded-2xl flex items-center justify-center text-white font-semibold text-xl shadow-lg shadow-brand-teal/20 transition-transform active:scale-95">
+        <Link to="/" className="w-12 h-12 bg-brand-primary rounded-2xl flex items-center justify-center text-surface font-semibold text-xl shadow-lg shadow-brand-primary/20 transition-transform active:scale-95">
           M
         </Link>
 

@@ -15,10 +15,10 @@ import {
 } from './pages/admin';
 import { HODDashboard, HODAudit, HODInterventions, HODReview, HODLockExport, HODSettings, HODSettingsPage, HODSupportPage, HODTeachers, HODAnalytics, HODArchiveView, HODArchiveDetailView, Unauthorized, BroadsheetGenerator, HODCertification, HODRevisionsFeed } from './pages/hod';
 import {StudentTimetable, StudentSettings, StudentSupport, StudentPortal, StudentProfile } from './pages/student';
-import { TeacherTimetableView, TeacherDashboard, TeacherGradingView, TeacherObservationsView, TeacherAnalyticsView, TeacherArchiveView, TeacherArchiveDetailView, TeacherSettings, TeacherSupport, TeacherRevisionsFeed } from './pages/teacher';
+import { TeacherTimetableView, TeacherDashboard, TeacherGradingView, TeacherObservationsView, TeacherAnalyticsView, TeacherArchiveView, TeacherArchiveDetailView, TeacherSettings, TeacherSupport, TeacherRevisionsFeed, TeacherMissingObservations } from './pages/teacher';
 import { HOD_JourneyHistoryAudit, SettingsView, SupportView } from './pages/shared';
-import { TeacherMissingObservations } from './views/teacher/MissingObservations';
-import { HODMissingObservations } from './views/hod/MissingObservations';
+import { HODMissingObservations } from './pages/hod';
+import { TooltipProvider } from './components/ui/tooltip';
 import { UIProvider, useUI } from './context/UIContext';
 import { useRole } from './context/RoleContext';
 import { HODProvider } from './context/HODContext';
@@ -111,23 +111,23 @@ function Modal({ isOpen, onClose, title, children }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-brand-dark/60 backdrop-blur-sm"
           />
           <motion.div
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+            className="relative w-full max-w-4xl bg-surface rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
           >
-            <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-white shrink-0">
-              <h3 className="text-xl font-black text-gray-900">{title}</h3>
-              <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition-all text-gray-400 hover:text-gray-600">
+            <div className="px-8 py-6 border-b border-border flex justify-between items-center bg-surface shrink-0">
+              <h3 className="text-xl font-black text-text-primary">{title}</h3>
+              <button onClick={onClose} className="p-2 hover:bg-background rounded-xl transition-all text-text-secondary hover:text-text-primary">
                 <X size={24} />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-8">
-              {children}
-            </div>
+<div className="flex-1 overflow-y-auto p-8 no-scrollbar">
+               {children}
+             </div>
           </motion.div>
         </div>
       )}
@@ -174,7 +174,7 @@ function AppContent() {
   }, []);
 
   return (
-    <div className="flex h-screen bg-[#F9F9F7] font-sans selection:bg-emerald-100 selection:text-emerald-900">
+    <div className="flex h-screen bg-background font-sans selection:bg-success/20 selection:text-success">
 <div className="hidden lg:block">
            {user?.role === 'STUDENT' ? <StudentSidebar /> :
             user?.role === 'HOD' ? <HODSidebar /> :
@@ -368,9 +368,11 @@ export default function App() {
   return (
     <Router>
       <UIProvider>
-        <HODProvider>
-          <AppContent />
-        </HODProvider>
+        <TooltipProvider>
+          <HODProvider>
+            <AppContent />
+          </HODProvider>
+        </TooltipProvider>
       </UIProvider>
     </Router>
   );

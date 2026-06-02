@@ -4,16 +4,16 @@ import { useRole } from '../../context/RoleContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import studentPortalMockDataDefault from '../../data/studentPortalMockData.json';
-import { TranscriptPrintTemplate } from './components/studentPortal/print/TranscriptPrintTemplate';
-import { TerminalPrintTemplate } from './components/studentPortal/print/TerminalPrintTemplate';
-import { StudentPortalHeader } from './components/studentPortal/StudentPortalHeader';
-import { OverviewPanel } from './components/studentPortal/panels/OverviewPanel';
-import { AcademicPanel } from './components/studentPortal/panels/AcademicPanel';
-import { InterventionsPanel } from './components/studentPortal/panels/InterventionsPanel';
-import { HistoryPanel } from './components/studentPortal/panels/HistoryPanel';
-import { GradingScalePanel } from './components/studentPortal/panels/GradingScalePanel';
-import { AcademicJourneyPanel } from './components/studentPortal/panels/AcademicJourneyPanel';
-import { BroadsheetComparisonPanel } from './components/studentPortal/panels/BroadsheetComparisonPanel';
+import { TranscriptPrintTemplate } from './portal/print/TranscriptPrintTemplate';
+import { TerminalPrintTemplate } from './portal/print/TerminalPrintTemplate';
+import { StudentPortalHeader } from './portal/StudentPortalHeader';
+import { OverviewPanel } from './portal/panels/OverviewPanel';
+import { AcademicPanel } from './portal/panels/AcademicPanel';
+import { InterventionsPanel } from './portal/panels/InterventionsPanel';
+import { HistoryPanel } from './portal/panels/HistoryPanel';
+import { GradingScalePanel } from './portal/panels/GradingScalePanel';
+import { AcademicJourneyPanel } from './portal/panels/AcademicJourneyPanel';
+import { BroadsheetComparisonPanel } from './portal/panels/BroadsheetComparisonPanel';
 
 // Unified valid routing tabs lookup configuration
 const VALID_TABS = ['overview', 'academic', 'interventions', 'history', 'gradingScale', 'academicJourney', 'broadsheetComparison'];
@@ -174,9 +174,9 @@ export function StudentPortal({ studentPortalMockData = studentPortalMockDataDef
 
   if (loading) {
     return (
-      <div className="flex-1 overflow-y-auto bg-[#F9F9F7] p-4 sm:p-8 flex items-center justify-center min-h-[400px]">
+      <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-8 flex items-center justify-center min-h-[400px]">
         <div className="text-center animate-pulse px-4">
-          <p className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-gray-400">
+          <p className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-text-secondary">
             Loading academic ledger matrices...
           </p>
         </div>
@@ -186,11 +186,11 @@ export function StudentPortal({ studentPortalMockData = studentPortalMockDataDef
 
   if (error || !studentData) {
     return (
-      <div className="flex-1 overflow-y-auto bg-[#F9F9F7] p-4 sm:p-8 flex items-center justify-center min-h-[400px]">
-        <div className="w-full max-w-md bg-white border border-gray-100 rounded-2xl p-5 sm:p-6 shadow-sm text-center mx-auto">
-          <AlertTriangle className="mx-auto text-amber-500 mb-2" size={24} />
-          <p className="text-sm font-bold text-gray-800">{error || 'No profile context matches found.'}</p>
-          <p className="text-[11px] text-gray-400 mt-1">Please reach out to administration if this condition persists.</p>
+      <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-8 flex items-center justify-center min-h-[400px]">
+        <div className="w-full max-w-md bg-surface border border-slate-100 rounded-2xl p-5 sm:p-6 shadow-sm text-center mx-auto">
+          <AlertTriangle className="mx-auto text-warning mb-2" size={24} />
+          <p className="text-sm font-bold text-text-primary">{error || 'No profile context matches found.'}</p>
+          <p className="text-[11px] text-text-secondary mt-1">Please reach out to administration if this condition persists.</p>
         </div>
       </div>
     );
@@ -248,8 +248,8 @@ export function StudentPortal({ studentPortalMockData = studentPortalMockDataDef
   const activePrintPayload = singlePrintData || globalTranscriptDataset;
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#F9F9F7] p-4 sm:p-6 md:p-8 print:bg-white print:p-0">
-      <div className="w-full max-w-5xl mx-auto print:hidden space-y-4 sm:space-y-6">
+    <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 md:p-8 print:bg-surface print:p-0 no-scrollbar">
+      <div className="w-full max-w-5xl mx-auto print:hidden space-y-4 sm:space-y-6 no-scrollbar">
         
         {/* Core Subcomponent Portal Header */}
         <StudentPortalHeader 
@@ -295,14 +295,14 @@ export function StudentPortal({ studentPortalMockData = studentPortalMockDataDef
       {/* Mobile Print Confirmation Modal */}
       {showPrintConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 sm:hidden">
-          <div className="bg-white rounded-2xl p-5 mx-4 w-full max-w-sm">
-            <h3 className="text-sm font-black text-gray-900 mb-2">View or Download?</h3>
-            <p className="text-xs text-gray-500 mb-4">How would you like to access this result?</p>
+          <div className="bg-surface rounded-2xl p-5 mx-4 w-full max-w-sm">
+            <h3 className="text-sm font-black text-text-primary mb-2">View or Download?</h3>
+            <p className="text-xs text-text-secondary mb-4">How would you like to access this result?</p>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => setShowPrintConfirm(false)}
-                className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-[10px] font-black uppercase tracking-wider"
+                className="flex-1 px-3 py-2 bg-background text-text-primary border border-slate-100 rounded-lg text-[10px] font-black uppercase tracking-wider"
               >
                 Cancel
               </button>
@@ -312,7 +312,7 @@ export function StudentPortal({ studentPortalMockData = studentPortalMockDataDef
                   setShowPrintConfirm(false);
                   triggerHistoryPrint(pendingHistoryItem);
                 }}
-                className="flex-1 px-3 py-2 bg-gray-900 text-white rounded-lg text-[10px] font-black uppercase tracking-wider"
+                className="flex-1 px-3 py-2 bg-brand-primary text-surface rounded-lg text-[10px] font-black uppercase tracking-wider"
               >
                 View PDF
               </button>

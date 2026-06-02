@@ -2,13 +2,13 @@ import React from 'react';
 import { ObservationSidebar } from '../../components/shared/ObservationSidebar';
 import { JustificationPopup } from '../../components/shared/CorrectionMode';
 import { useGradingSheetLogic } from './useGradingSheetLogic';
-import { GradingSheetHeader } from './components/GradingSheetHeader';
-import { StpErrorBanner } from './components/StpErrorBanner';
-import { GradingSheetTableHeader } from './components/GradingSheetTableHeader';
-import { GradingSheetTableBody } from './components/GradingSheetTableBody';
-import { GradingSheetFooter } from './components/GradingSheetFooter';
-import { TermSealBanner } from './components/TermSealBanner';
-import { GRADE_SCALE } from './GradingSheet.constants';
+import { GradingSheetHeader } from '../../components/ui/grading-sheet/GradingSheetHeader';
+import { StpErrorBanner } from '../../components/ui/grading-sheet/StpErrorBanner';
+import { GradingSheetTableHeader } from '../../components/ui/grading-sheet/GradingSheetTableHeader';
+import { GradingSheetTableBody } from '../../components/ui/grading-sheet/GradingSheetTableBody';
+import { GradingSheetFooter } from '../../components/ui/grading-sheet/GradingSheetFooter';
+import { TermSealBanner } from '../../components/ui/grading-sheet/TermSealBanner';
+import { GRADE_SCALE } from '../../constants/grading';
 
 // ── Prop-types-free JSdoc for documentation only ─────────────────────────────
 /**
@@ -208,6 +208,3 @@ export function GradingSheet(props) {
     </div>
   );
 }
-
-// ── Re-export constants for callers / tests ──────────────────────────────────
-export { GRADE_SCALE } from './GradingSheet.constants';

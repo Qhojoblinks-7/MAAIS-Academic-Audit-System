@@ -6,6 +6,3 @@ export { RevisionsFeed } from './RevisionsFeed';
 export { SettingsView } from './SettingsView';
 export { SupportView } from './SupportView';
 export { Timetable } from './Timetable';
-
-// Named re-exports from sub-modules for convenience
-export { GRADE_SCALE } from './GradingSheet.constants';
