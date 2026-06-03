@@ -4,6 +4,14 @@ import { cn } from '../../lib/utils';
 import { LoadingSpinner } from '../../components/molecules/LoadingSpinner';
 import { calculateGPA, calculateCGPA, gpaToLetterGrade, calculateClassRanking } from '../../lib/gpaUtils';
 import { useHOD } from '../../context/HODContext';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '../../components/ui/table';
 
 const SUBJECT_GRADES = {
   'General Agriculture': ['B3', 'B2', 'A1', 'C4'],
@@ -395,92 +403,92 @@ export function BroadsheetGenerator() {
                 })}
               </div>
 
-              {/* DESKTOP DATA TABLE */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-100">
-                  <thead className="bg-slate-50/50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider w-20 whitespace-nowrap">Rank</th>
-                      <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Index Number</th>
-                      <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Full Name</th>
-                      <th className="px-6 py-3 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider w-24 whitespace-nowrap">Main Grade</th>
-                      <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider w-28 whitespace-nowrap">Term GPA</th>
-                      <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider w-28 whitespace-nowrap">Cum. CGPA</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-slate-100">
-                    {(classItem.students || []).map((student, studentIdx) => {
-                      const isTopPercentile = (student.percentile || 0) >= 90;
-                      
-                      return (
-                        <tr key={student.id || student.index || studentIdx} className="hover:bg-slate-50/40 group transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap text-xs font-bold text-slate-900">
-                            <span className={cn(
-                              "inline-flex items-center justify-center px-2 py-0.5 rounded-md text-[11px]",
-                              student.rank === 1 ? "bg-amber-50 text-amber-700 border border-amber-100/60" :
-                              student.rank === 2 ? "bg-slate-100 text-slate-700" :
-                              student.rank === 3 ? "bg-orange-50 text-orange-700 border border-orange-100/40" :
-                              "text-slate-500 font-medium"
-                            )}>
-                              #{student.rank}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-xs font-semibold text-slate-600 font-mono tracking-tight">
-                            {student.index || 'N/A'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-xs font-bold text-slate-900">
-                            <div className="flex items-center gap-2">
-                              <span>{student.name || 'Anonymous Student'}</span>
-                              {isTopPercentile && (
-                                <span className="text-[8px] font-extrabold bg-indigo-50 border border-indigo-100 text-indigo-700 px-1.5 py-0.2 rounded-sm uppercase tracking-wide">
-                                  Top 10%
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-xs text-center font-bold text-slate-500">
-                            <span className="bg-slate-100/80 px-2 py-0.5 rounded-sm font-mono text-slate-700 border border-slate-200/40">
-                              {student.grade || 'N/A'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-xs">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-slate-900 text-sm tracking-tight">{student.gpa?.toFixed(2) || '0.00'}</span>
-                              <span className={cn(
-                                'px-2 py-0.5 rounded-md text-[10px] font-bold border font-mono tracking-wide',
-                                student.letterGrade === 'A1' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                                student.letterGrade === 'B2' || student.letterGrade === 'B3' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                                student.letterGrade === 'C4' || student.letterGrade === 'C5' || student.letterGrade === 'C6' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                                student.letterGrade === 'D7' ? 'bg-rose-50 text-rose-700 border-rose-100' :
-                                'bg-slate-50 text-slate-500 border-slate-200/60'
-                              )}>
-                                {student.letterGrade}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-xs">
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold text-slate-700 text-sm tracking-tight">{student.gpa?.toFixed(2) || '0.00'}</span>
-                              <span className={cn(
-                                'px-1.5 py-0.2 rounded text-[9px] font-bold border font-mono uppercase tracking-tight',
-                                student.cgpaLetterGrade === 'A1' ? 'bg-emerald-50/60 text-emerald-600 border-emerald-100/40' :
-                                student.cgpaLetterGrade === 'B2' || student.cgpaLetterGrade === 'B3' ? 'bg-blue-50/60 text-blue-600 border-blue-100/40' :
-                                student.cgpaLetterGrade === 'C4' || student.cgpaLetterGrade === 'C5' || student.cgpaLetterGrade === 'C6' ? 'bg-amber-50/60 text-amber-600 border-amber-100/40' :
-                                'bg-slate-50 text-slate-400 border-slate-100'
-                              )}>
-                                {student.cgpaLetterGrade}
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ))}
-        </div>
+{/* DESKTOP DATA TABLE */}
+               <div className="hidden md:block overflow-x-auto">
+                 <Table className="min-w-full divide-y divide-slate-100">
+                   <TableHeader className="bg-slate-50/50">
+                     <TableRow>
+                       <TableHead className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider w-20 whitespace-nowrap">Rank</TableHead>
+                       <TableHead className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Index Number</TableHead>
+                       <TableHead className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Full Name</TableHead>
+                       <TableHead className="px-6 py-3 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider w-24 whitespace-nowrap">Main Grade</TableHead>
+                       <TableHead className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider w-28 whitespace-nowrap">Term GPA</TableHead>
+                       <TableHead className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider w-28 whitespace-nowrap">Cum. CGPA</TableHead>
+                     </TableRow>
+                   </TableHeader>
+                   <TableBody className="bg-white divide-y divide-slate-100">
+                     {(classItem.students || []).map((student, studentIdx) => {
+                       const isTopPercentile = (student.percentile || 0) >= 90;
+                       
+                       return (
+                         <TableRow key={student.id || student.index || studentIdx} className="hover:bg-slate-50/40 group transition-colors">
+                           <TableCell className="px-6 py-4 whitespace-nowrap text-xs font-bold text-slate-900">
+                             <span className={cn(
+                               "inline-flex items-center justify-center px-2 py-0.5 rounded-md text-[11px]",
+                               student.rank === 1 ? "bg-amber-50 text-amber-700 border border-amber-100/60" :
+                               student.rank === 2 ? "bg-slate-100 text-slate-700" :
+                               student.rank === 3 ? "bg-orange-50 text-orange-700 border border-orange-100/40" :
+                               "text-slate-500 font-medium"
+                             )}>
+                               #{student.rank}
+                             </span>
+                           </TableCell>
+                           <TableCell className="px-6 py-4 whitespace-nowrap text-xs font-semibold text-slate-600 font-mono tracking-tight">
+                             {student.index || 'N/A'}
+                           </TableCell>
+                           <TableCell className="px-6 py-4 whitespace-nowrap text-xs font-bold text-slate-900">
+                             <div className="flex items-center gap-2">
+                               <span>{student.name || 'Anonymous Student'}</span>
+                               {isTopPercentile && (
+                                 <span className="text-[8px] font-extrabold bg-indigo-50 border border-indigo-100 text-indigo-700 px-1.5 py-0.2 rounded-sm uppercase tracking-wide">
+                                   Top 10%
+                                 </span>
+                               )}
+                             </div>
+                           </TableCell>
+                           <TableCell className="px-6 py-4 whitespace-nowrap text-xs text-center font-bold text-slate-500">
+                             <span className="bg-slate-100/80 px-2 py-0.5 rounded-sm font-mono text-slate-700 border border-slate-200/40">
+                               {student.grade || 'N/A'}
+                             </span>
+                           </TableCell>
+                           <TableCell className="px-6 py-4 whitespace-nowrap text-xs">
+                             <div className="flex items-center gap-2">
+                               <span className="font-bold text-slate-900 text-sm tracking-tight">{student.gpa?.toFixed(2) || '0.00'}</span>
+                               <span className={cn(
+                                 'px-2 py-0.5 rounded-md text-[10px] font-bold border font-mono tracking-wide',
+                                 student.letterGrade === 'A1' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                 student.letterGrade === 'B2' || student.letterGrade === 'B3' ? 'bg-blue-50 text-blue-700 border-blue-100' :
+                                 student.letterGrade === 'C4' || student.letterGrade === 'C5' || student.letterGrade === 'C6' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                                 student.letterGrade === 'D7' ? 'bg-rose-50 text-rose-700 border-rose-100' :
+                                 'bg-slate-50 text-slate-500 border-slate-200/60'
+                               )}>
+                                 {student.letterGrade}
+                               </span>
+                             </div>
+                           </TableCell>
+                           <TableCell className="px-6 py-4 whitespace-nowrap text-xs">
+                             <div className="flex items-center gap-2">
+                               <span className="font-semibold text-slate-700 text-sm tracking-tight">{student.gpa?.toFixed(2) || '0.00'}</span>
+                               <span className={cn(
+                                 'px-1.5 py-0.2 rounded text-[9px] font-bold border font-mono uppercase tracking-tight',
+                                 student.cgpaLetterGrade === 'A1' ? 'bg-emerald-50/60 text-emerald-600 border-emerald-100/40' :
+                                 student.cgpaLetterGrade === 'B2' || student.cgpaLetterGrade === 'B3' ? 'bg-blue-50/60 text-blue-600 border-blue-100/40' :
+                                 student.cgpaLetterGrade === 'C4' || student.cgpaLetterGrade === 'C5' || student.cgpaLetterGrade === 'C6' ? 'bg-amber-50/60 text-amber-600 border-amber-100/40' :
+                                 'bg-slate-50 text-slate-400 border-slate-100'
+                               )}>
+                                 {student.cgpaLetterGrade}
+                               </span>
+                             </div>
+                           </TableCell>
+                         </TableRow>
+                       );
+                     })}
+                   </TableBody>
+                 </Table>
+               </div>
+             </div>
+         ))}
+       </div>
       )}
     </div>
   );

@@ -7,7 +7,7 @@ import {
   Mail, 
   Phone, 
   ShieldCheck, 
-  Lock, 
+  Lock,
   ArrowLeft,
   X,
   Filter,
@@ -19,6 +19,14 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { mockStaff, DEPARTMENTS, ROLES } from './data';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '../../components/ui/table';
 
 export function StaffRegistry() {
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -249,24 +257,24 @@ export function StaffRegistry() {
 
       {/* Registry Table */}
       <div className="flex-1 overflow-auto">
-        <table className="w-full border-collapse">
-          <thead className="sticky top-0 z-10">
-            <tr className="bg-slate-50/80 backdrop-blur-md border-b border-slate-200">
-              <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Full Name / ID</th>
-              <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Department</th>
-              <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Job Role</th>
-              <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Registry Status</th>
-              <th className="px-8 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Operations</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 bg-white">
+        <Table>
+          <TableHeader className="sticky top-0 z-10">
+            <TableRow className="bg-slate-50/80 backdrop-blur-md border-b border-slate-200">
+              <TableHead className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Full Name / ID</TableHead>
+              <TableHead className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Department</TableHead>
+              <TableHead className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Job Role</TableHead>
+              <TableHead className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Registry Status</TableHead>
+              <TableHead className="px-8 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Operations</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {filteredStaff.map((staff) => (
-              <tr 
+              <TableRow 
                 key={staff.id} 
                 onClick={() => setSelectedStaff(staff)}
                 className="group hover:bg-slate-50/50 transition-colors cursor-pointer"
               >
-                <td className="px-8 py-5">
+                <TableCell className="px-8 py-5">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-[0.75rem] bg-slate-100 flex items-center justify-center text-slate-900 font-bold text-sm border border-slate-200 group-hover:bg-white transition-colors uppercase select-none">
                       {staff.name.split(' ').map(n => n[0]).join('')}
@@ -276,17 +284,17 @@ export function StaffRegistry() {
                       <p className="text-[11px] font-bold text-slate-400 font-mono tracking-tighter">{staff.employeeId}</p>
                     </div>
                   </div>
-                </td>
-                <td className="px-8 py-5">
+                </TableCell>
+                <TableCell className="px-8 py-5">
                   <span className="text-[13px] font-bold text-slate-600">{staff.department}</span>
-                </td>
-                <td className="px-8 py-5">
+                </TableCell>
+                <TableCell className="px-8 py-5">
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
                     <span className="text-[11px] font-black text-slate-900 uppercase tracking-widest">{staff.role}</span>
                   </div>
-                </td>
-                <td className="px-8 py-5">
+                </TableCell>
+                <TableCell className="px-8 py-5">
                   <div className={cn(
                     "inline-flex items-center gap-2 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest",
                     staff.status === 'Active' ? "bg-emerald-50 border-emerald-100 text-emerald-700" :
@@ -301,8 +309,8 @@ export function StaffRegistry() {
                     )} />
                     {staff.status}
                   </div>
-                </td>
-                <td className="px-8 py-5 text-right">
+                </TableCell>
+                <TableCell className="px-8 py-5 text-right">
                   <div className="relative">
                     <button 
                       onClick={(e) => toggleKebab(e, staff.id)}
@@ -354,11 +362,11 @@ export function StaffRegistry() {
                       )}
                     </AnimatePresence>
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
 
         {filteredStaff.length === 0 && (
           <div className="py-32 flex flex-col items-center justify-center text-center">

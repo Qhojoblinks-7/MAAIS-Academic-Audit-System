@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from './cn';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 
 const GRADES = [
   { label: 'A1', range: '75-100%', interpretation: 'Excellent' },
@@ -54,33 +55,33 @@ export function WAECGradingScale() {
         })}
       </div>
 
-      {/* 2. Desktop View Mode: Standard table grid layout activated smoothly above mobile break margins */}
-      <div className="hidden sm:block overflow-x-auto">
-        <table className="min-w-full divide-y divide-border">
-          <thead>
-            <tr className="bg-background rounded-lg">
-              <th scope="col" className="px-5 py-3 text-left text-xs font-black text-text-secondary uppercase tracking-widest rounded-l-xl">
-                Grade
-              </th>
-              <th scope="col" className="px-5 py-3 text-left text-xs font-black text-text-secondary uppercase tracking-widest">
-                Score Range
-              </th>
-              <th scope="col" className="px-5 py-3 text-left text-xs font-black text-text-secondary uppercase tracking-widest rounded-r-xl">
-                Interpretation
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border bg-surface">
-            {GRADES.map((grade, index) => (
-              <tr key={index} className="transition-colors hover:bg-background/40">
-                <td className="px-5 py-3.5 text-sm font-black text-text-primary">{grade.label}</td>
-                <td className="px-5 py-3.5 text-sm font-medium text-text-secondary">{grade.range}</td>
-                <td className="px-5 py-3.5 text-sm font-medium text-text-secondary">{grade.interpretation}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+{/* 2. Desktop View Mode: Standard table grid layout activated smoothly above mobile break margins */}
+       <div className="hidden sm:block overflow-x-auto">
+         <Table className="min-w-full divide-y divide-border">
+           <TableHeader>
+             <TableRow className="bg-background rounded-lg">
+               <TableHead scope="col" className="px-5 py-3 text-left text-xs font-black text-text-secondary uppercase tracking-widest rounded-l-xl">
+                 Grade
+               </TableHead>
+               <TableHead scope="col" className="px-5 py-3 text-left text-xs font-black text-text-secondary uppercase tracking-widest">
+                 Score Range
+               </TableHead>
+               <TableHead scope="col" className="px-5 py-3 text-left text-xs font-black text-text-secondary uppercase tracking-widest rounded-r-xl">
+                 Interpretation
+               </TableHead>
+             </TableRow>
+           </TableHeader>
+           <TableBody className="divide-y divide-border bg-surface">
+             {GRADES.map((grade, index) => (
+               <TableRow key={index} className="transition-colors hover:bg-background/40">
+                 <TableCell className="px-5 py-3.5 text-sm font-black text-text-primary">{grade.label}</TableCell>
+                 <TableCell className="px-5 py-3.5 text-sm font-medium text-text-secondary">{grade.range}</TableCell>
+                 <TableCell className="px-5 py-3.5 text-sm font-medium text-text-secondary">{grade.interpretation}</TableCell>
+               </TableRow>
+             ))}
+           </TableBody>
+         </Table>
+       </div>
 
     </div>
   );

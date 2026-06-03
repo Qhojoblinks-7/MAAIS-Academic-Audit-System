@@ -9,6 +9,13 @@ import { GradingSheetTableBody } from '../../components/ui/grading-sheet/Grading
 import { GradingSheetFooter } from '../../components/ui/grading-sheet/GradingSheetFooter';
 import { TermSealBanner } from '../../components/ui/grading-sheet/TermSealBanner';
 import { GRADE_SCALE } from '../../constants/grading';
+import {
+  Table,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '../../components/ui/table';
 
 // ── Prop-types-free JSdoc for documentation only ─────────────────────────────
 /**
@@ -121,38 +128,38 @@ export function GradingSheet(props) {
             onClose={() => setShowSTPOverlay(false)}
           />
 
-          {/* HTML table */}
-          <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[800px]">
-              <GradingSheetTableHeader
-                DISPLAY_CLASS_INFO={DISPLAY_CLASS_INFO}
-                isExamExpanded={isExamExpanded}
-                setIsExamExpanded={setIsExamExpanded}
-                isTermFinalized={isTermFinalized}
-              />
-              <GradingSheetTableBody
-                students={students}
-                selectedStudent={selectedStudent}
-                isCorrectionMode={isCorrectionMode}
-                isMissingObsMode={isMissingObsMode}
-                isTermFinalized={isTermFinalized}
-                targetStudentId={props.targetStudentId}
-                tempMark={tempMark}
-                setTempMark={setTempMark}
-                originalMark={originalMark}
-                updateMark={updateMark}
-                DISPLAY_CLASS_INFO={DISPLAY_CLASS_INFO}
-                showSTPOverlay={showSTPOverlay}
-                isExamExpanded={isExamExpanded}
-                getSmartRemark={(g) => GRADE_SCALE[g]?.label || ''}
-                submissionStatus={submissionStatus}
-                onStudentClick={(student) => {
-                  setSelectedStudent(student);
-                  setIsSidebarOpen(true);
-                }}
-              />
-            </table>
-          </div>
+{/* HTML table */}
+           <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-x-auto">
+             <Table className="min-w-[800px]">
+               <GradingSheetTableHeader
+                 DISPLAY_CLASS_INFO={DISPLAY_CLASS_INFO}
+                 isExamExpanded={isExamExpanded}
+                 setIsExamExpanded={setIsExamExpanded}
+                 isTermFinalized={isTermFinalized}
+               />
+               <GradingSheetTableBody
+                 students={students}
+                 selectedStudent={selectedStudent}
+                 isCorrectionMode={isCorrectionMode}
+                 isMissingObsMode={isMissingObsMode}
+                 isTermFinalized={isTermFinalized}
+                 targetStudentId={props.targetStudentId}
+                 tempMark={tempMark}
+                 setTempMark={setTempMark}
+                 originalMark={originalMark}
+                 updateMark={updateMark}
+                 DISPLAY_CLASS_INFO={DISPLAY_CLASS_INFO}
+                 showSTPOverlay={showSTPOverlay}
+                 isExamExpanded={isExamExpanded}
+                 getSmartRemark={(g) => GRADE_SCALE[g]?.label || ''}
+                 submissionStatus={submissionStatus}
+                 onStudentClick={(student) => {
+                   setSelectedStudent(student);
+                   setIsSidebarOpen(true);
+                 }}
+               />
+             </Table>
+           </div>
 
           {/* Footer controls */}
           <GradingSheetFooter

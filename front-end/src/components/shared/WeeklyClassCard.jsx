@@ -9,7 +9,7 @@ export function WeeklyClassCard({ entry, hoveredId, setHoveredId }) {
   const isHovered = hoveredId === entry.id;
   const isMicroSlot = entry._height && entry._height < 8;
 
-  return (
+return (
     <motion.div
       layout
       onMouseEnter={() => setHoveredId(entry.id)}
@@ -21,31 +21,30 @@ export function WeeklyClassCard({ entry, hoveredId, setHoveredId }) {
         height: isHovered ? 'auto' : '100%'
       }}
       className={cn(
-        "w-full h-full rounded-xl border shadow-sm cursor-pointer transition-all flex flex-col p-2 select-none text-left bg-white",
-        entry.type === 'LAB' && "bg-emerald-50 border-emerald-200",
-        entry.type === 'SUBSTITUTION' && "bg-blue-50 border-blue-200",
-        entry.type !== 'LAB' && entry.type !== 'SUBSTITUTION' && "bg-white border-gray-200",
-        entry.isClash && "border-red-500 ring-2 ring-red-100",
-        // FIXED: Added absolute position popout styling on hover with a white background override
-        isHovered ? "absolute top-0 left-0 right-0 shadow-2xl ring-2 ring-emerald-500/20 bg-white p-3 min-h-[220px] overflow-visible" : "overflow-hidden"
+        "w-full h-full rounded-xl border shadow-sm cursor-pointer transition-all flex flex-col p-2 select-none text-left bg-card",
+        entry.type === 'LAB' && "bg-success/5 border-success/20",
+        entry.type === 'SUBSTITUTION' && "bg-brand-secondary/5 border-brand-secondary/20",
+        entry.type !== 'LAB' && entry.type !== 'SUBSTITUTION' && "bg-card border-border",
+        entry.isClash && "border-destructive ring-2 ring-destructive/20",
+        isHovered ? "absolute top-0 left-0 right-0 shadow-2xl ring-2 ring-brand-primary/20 bg-card p-3 min-h-[220px] overflow-visible" : "overflow-hidden"
       )}
     >
       {/* 1. BADGE ROW */}
       <div className="flex justify-between items-center w-full mb-1 shrink-0">
         <span className={cn(
           "text-[6px] md:text-[7px] font-black uppercase tracking-wider px-1 py-0.5 rounded leading-none shrink-0",
-          entry.type === 'LAB' && "bg-emerald-200 text-emerald-800",
-          entry.type === 'SUBSTITUTION' && "bg-blue-200 text-blue-800",
-          entry.type !== 'LAB' && entry.type !== 'SUBSTITUTION' && "bg-gray-100 text-gray-600"
+          entry.type === 'LAB' && "bg-success/20 text-success",
+          entry.type === 'SUBSTITUTION' && "bg-brand-secondary/20 text-brand-secondary",
+          entry.type !== 'LAB' && entry.type !== 'SUBSTITUTION' && "bg-muted text-muted-foreground"
         )}>
           {entry.type}
         </span>
         <div className="flex gap-0.5 items-center shrink-0">
           {entry.missingObservations && (
-            <AlertCircle size={8} className="text-amber-500 fill-amber-500 shrink-0" />
+            <AlertCircle size={8} className="text-warning fill-warning" />
           )}
           {entry.isClash && (
-            <AlertTriangle size={8} className="text-red-500 shrink-0" />
+            <AlertTriangle size={8} className="text-destructive" />
           )}
         </div>
       </div>
@@ -53,14 +52,14 @@ export function WeeklyClassCard({ entry, hoveredId, setHoveredId }) {
       {/* 2. SUBJECT NAME BLOCK */}
       <div className={cn("w-full min-h-0 text-left", !isHovered ? "block" : "flex-1 flex flex-col justify-start")}>
         <h4 className={cn(
-          "font-black text-gray-900 leading-tight tracking-tight text-left break-words block",
+          "font-black text-foreground leading-tight tracking-tight text-left break-words block",
           isHovered ? "text-[11px] whitespace-normal" : "text-[8px] md:text-[9px] line-clamp-2"
         )}>
           {entry.subjectName}
         </h4>
         
         {isHovered && (
-          <p className="font-bold text-gray-500 text-[8px] whitespace-normal leading-none mt-1 text-left">
+          <p className="font-bold text-muted-foreground text-[8px] whitespace-normal leading-none mt-1 text-left">
             {entry.className}
           </p>
         )}
@@ -73,10 +72,10 @@ export function WeeklyClassCard({ entry, hoveredId, setHoveredId }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="w-full flex flex-col gap-2 mt-2 pt-2 border-t border-gray-100 text-left"
+            className="w-full flex flex-col gap-2 mt-2 pt-2 border-t border-border text-left"
           >
             {/* Venue */}
-            <div className="flex items-center gap-0.5 text-gray-400 uppercase font-black text-[7px] shrink-0 text-left">
+            <div className="flex items-center gap-0.5 text-muted-foreground uppercase font-black text-[7px] shrink-0 text-left">
               <MapPin size={7} className="shrink-0" /> 
               <span className="truncate">{entry.venue}</span>
             </div>
@@ -86,8 +85,8 @@ export function WeeklyClassCard({ entry, hoveredId, setHoveredId }) {
               <div className="space-y-1">
                 {entry.tasks.slice(0, 2).map((task, i) => (
                   <div key={i} className="flex items-center gap-1">
-                    <div className="w-1 h-1 bg-emerald-500 rounded-full shrink-0" />
-                    <span className="text-[8px] font-bold text-gray-600 truncate">{task}</span>
+                    <div className="w-1 h-1 bg-success rounded-full shrink-0" />
+                    <span className="text-[8px] font-bold text-muted-foreground">{task}</span>
                   </div>
                 ))}
               </div>
@@ -103,7 +102,7 @@ export function WeeklyClassCard({ entry, hoveredId, setHoveredId }) {
                       e.stopPropagation();
                       navigate('/grading');
                     }}
-                    className="flex items-center gap-1 px-2 py-1 bg-emerald-800 text-white text-[7px] font-black rounded-lg hover:bg-emerald-900 transition-all cursor-pointer"
+                    className="flex items-center gap-1 px-2 py-1 bg-brand-primary text-primary-foreground text-[7px] font-black rounded-lg hover:bg-brand-primary/90 transition-all cursor-pointer"
                   >
                     <BookOpen size={8} />
                     {action}
@@ -116,7 +115,7 @@ export function WeeklyClassCard({ entry, hoveredId, setHoveredId }) {
             {entry.materials?.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {entry.materials.slice(0, 2).map((mat, i) => (
-                  <span key={i} className="flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-500 text-[7px] font-bold rounded-full max-w-full truncate">
+                  <span key={i} className="flex items-center gap-1 px-2 py-0.5 bg-muted text-muted-foreground text-[7px] font-bold rounded-full max-w-full truncate">
                     {mat.type === 'PDF' ? <FileText size={8} className="shrink-0" /> : <LinkIcon size={8} className="shrink-0" />}
                     <span className="truncate">{mat.title}</span>
                   </span>
@@ -127,5 +126,5 @@ export function WeeklyClassCard({ entry, hoveredId, setHoveredId }) {
         )}
       </AnimatePresence>
     </motion.div>
-  );
+   );
 }

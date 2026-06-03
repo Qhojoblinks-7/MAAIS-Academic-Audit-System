@@ -14,6 +14,14 @@ import { motion } from "framer-motion";
 import { cn } from "../../lib/utils";
 import { CardLayout as Card } from "../../components/templates/CardLayout";
 import { useHOD } from "../../context/HODContext";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "../../components/ui/table";
 
 // Explicit Sub-layout wrappers
 const CardHeader = ({ children, className }) => (
@@ -32,11 +40,11 @@ const getLocalDateString = () => {
 // Memoized Sub-Row to prevent layout rendering drop frames across large datasets
 const CoursePerformanceRow = React.memo(({ subject, average, passRate }) => {
   return (
-    <tr className="hover:bg-slate-50/60 transition-colors group">
-      <td className="py-3 px-5 font-bold text-gray-900 group-hover:text-indigo-950 transition-colors">
+    <TableRow className="hover:bg-slate-50/60 transition-colors group">
+      <TableCell className="py-3 px-5 font-bold text-gray-900 group-hover:text-indigo-950 transition-colors">
         {subject}
-      </td>
-      <td className="py-3 px-5">
+      </TableCell>
+      <TableCell className="py-3 px-5">
         <div className="flex items-center gap-3">
           <span className="w-10 shrink-0 text-gray-700 font-bold">
             {average}%
@@ -55,11 +63,11 @@ const CoursePerformanceRow = React.memo(({ subject, average, passRate }) => {
             />
           </div>
         </div>
-      </td>
-      <td className="py-3 px-5 text-right font-bold text-slate-600">
+      </TableCell>
+      <TableCell className="py-3 px-5 text-right font-bold text-slate-600">
         {passRate}%
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 });
 
@@ -410,27 +418,27 @@ const unresolvedAlerts = interventionAlerts?.filter((a) => !a?.resolved).length 
               Course Tracking Profiles
             </h3>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/20 border-b border-slate-100 text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-                  <th className="py-3 px-5">Subject Header</th>
-                  <th className="py-3 px-5">Performance Mean</th>
-                  <th className="py-3 px-5 text-right">Pass Parameter Quota</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-xs text-gray-700 font-medium">
-                {dataMetrics.subjectPerformance.map((subject, index) => (
-                  <CoursePerformanceRow
-                    key={index}
-                    subject={subject.subject}
-                    average={subject.average}
-                    passRate={subject.passRate}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
+<div className="overflow-x-auto">
+             <Table>
+               <TableHeader>
+                 <TableRow className="bg-slate-50/20 border-b border-slate-100 text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                   <TableHead className="py-3 px-5">Subject Header</TableHead>
+                   <TableHead className="py-3 px-5">Performance Mean</TableHead>
+                   <TableHead className="py-3 px-5 text-right">Pass Parameter Quota</TableHead>
+                 </TableRow>
+               </TableHeader>
+               <TableBody className="divide-y divide-slate-100 text-xs text-gray-700 font-medium">
+                 {dataMetrics.subjectPerformance.map((subject, index) => (
+                   <CoursePerformanceRow
+                     key={index}
+                     subject={subject.subject}
+                     average={subject.average}
+                     passRate={subject.passRate}
+                   />
+                 ))}
+               </TableBody>
+             </Table>
+           </div>
         </div>
 
         {/* Right Column Section: Meta Analytics Ledger Panels */}

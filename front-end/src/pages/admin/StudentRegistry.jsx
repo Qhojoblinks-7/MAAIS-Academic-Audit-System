@@ -16,6 +16,14 @@ import {
   LineChart as ReLineChart, Line, CartesianGrid
 } from 'recharts';
 import { MOCK_STUDENTS, PROGRAMS, HOUSES, BATCHES } from './data';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '../../components/ui/table';
 
 const StudentDossier = ({ 
   student, 
@@ -393,22 +401,22 @@ export const StudentRegistry = () => {
          </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-8 relative">
+<div className="flex-1 overflow-y-auto p-8 relative">
         <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-100">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Index / Name</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Program</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">House</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">{viewMode === 'Academic' ? 'Performance' : 'Fees'}</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Protocol</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-slate-50/80 border-b border-slate-100">
+                <TableHead className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Index / Name</TableHead>
+                <TableHead className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Program</TableHead>
+                <TableHead className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">House</TableHead>
+                <TableHead className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">{viewMode === 'Academic' ? 'Performance' : 'Fees'}</TableHead>
+                <TableHead className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Protocol</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredStudents.map((stu) => (
-                <tr key={stu.id} className="group hover:bg-slate-50 cursor-pointer transition-all" onClick={() => setSelectedStudentId(stu.id)}>
-                  <td className="px-8 py-5">
+                <TableRow key={stu.id} className="group hover:bg-slate-50 cursor-pointer transition-all" onClick={() => setSelectedStudentId(stu.id)}>
+                  <TableCell className="px-8 py-5">
                     <div className="flex items-center gap-4">
                        <div className="w-11 h-11 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all"><GraduationCap size={18} /></div>
                        <div>
@@ -416,27 +424,27 @@ export const StudentRegistry = () => {
                           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{stu.indexNumber}</p>
                        </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-5">
+                  </TableCell>
+                  <TableCell className="px-6 py-5">
                      <span className="text-[12px] font-black text-slate-900">{stu.program}</span>
-                  </td>
-                  <td className="px-6 py-5">
+                  </TableCell>
+                  <TableCell className="px-6 py-5">
                      <span className="text-[12px] font-black text-slate-900">{stu.house}</span>
-                  </td>
-                  <td className="px-6 py-5 text-center">
-                       {viewMode === 'Academic' ? (
-                          <div className={cn("inline-block px-4 py-1.5 rounded-full text-[11px] font-black italic font-display", stu.averageGrade >= 75 ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600")}>{stu.averageGrade}%</div>
-                       ) : (
-                          <div className={cn("inline-block px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest", stu.feesStatus === 'Paid' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600")}>{stu.feesStatus}</div>
-                       )}
-                  </td>
-                  <td className="px-8 py-5 text-right">
+                  </TableCell>
+                  <TableCell className="px-6 py-5 text-center">
+                     {viewMode === 'Academic' ? (
+                        <div className={cn("inline-block px-4 py-1.5 rounded-full text-[11px] font-black italic font-display", stu.averageGrade >= 75 ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600")}>{stu.averageGrade}%</div>
+                     ) : (
+                        <div className={cn("inline-block px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest", stu.feesStatus === 'Paid' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600")}>{stu.feesStatus}</div>
+                     )}
+                  </TableCell>
+                  <TableCell className="px-8 py-5 text-right">
                      <button className="p-3 bg-slate-50 text-slate-400 hover:bg-slate-900 hover:text-white rounded-xl transition-all"><MoreVertical size={18} /></button>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </div>
 

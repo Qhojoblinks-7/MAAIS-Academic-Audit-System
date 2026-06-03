@@ -18,11 +18,11 @@ export function WeeklyTimetableView({
       <div className="min-w-[1000px] flex-1 flex flex-col">
         
         {/* 1. DAYS HEADER */}
-        <div className="flex border-b border-gray-200 pb-4">
+        <div className="flex border-b border-border pb-4">
           <div className="w-20" />
           {DAYS.map(day => (
             <div key={day} className="flex-1 text-center">
-              <span className="text-sm font-black text-gray-900 uppercase tracking-widest">
+              <span className="text-sm font-black text-foreground uppercase tracking-widest">
                 {day}
               </span>
             </div>
@@ -35,8 +35,8 @@ export function WeeklyTimetableView({
           {/* Time indicator grid lines */}
           <div className="absolute inset-0 flex flex-col pointer-events-none">
             {HOURS.map(hour => (
-              <div key={hour} className="flex-1 border-t border-gray-100 relative">
-                <span className="absolute -left-16 -top-2.5 text-[10px] font-black text-gray-400">
+              <div key={hour} className="flex-1 border-t border-border relative">
+                <span className="absolute -left-16 -top-2.5 text-[10px] font-black text-muted-foreground">
                   {hour.toString().padStart(2, '0')}:00
                 </span>
               </div>
@@ -60,8 +60,8 @@ export function WeeklyTimetableView({
           <div className="absolute inset-0 flex">
             <div className="w-20" /> {/* Time column spacing buffer */}
             
-            {DAYS.map(day => (
-              <div key={day} className="flex-1 border-r border-gray-100 relative last:border-r-0">
+{DAYS.map(day => (
+              <div key={day} className="flex-1 border-r border-border last:border-r-0 relative"> 
                 
                 {timetable.filter(e => e.day === day).map(entry => {
                   const topPosition = getTimePosition(entry.startTime);

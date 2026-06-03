@@ -2,6 +2,14 @@
 import { ShieldCheck, User, Clock, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '../../components/ui/table';
 
 const auditLogs = [
   {
@@ -78,56 +86,56 @@ export function AuditLogsView() {
         {/* Audit Log Table */}
         <div className="bg-white rounded-[2.5rem] border border-gray-100 overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-50/30 border-b border-gray-100">
-                  <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Timestamp</th>
-                  <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Custodian</th>
-                  <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Biological Node</th>
-                  <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Action Protocol</th>
-                  <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Delta</th>
-                  <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Justification</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50/30 border-b border-gray-100">
+                  <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Timestamp</TableHead>
+                  <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Custodian</TableHead>
+                  <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Biological Node</TableHead>
+                  <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Action Protocol</TableHead>
+                  <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Delta</TableHead>
+                  <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Justification</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-gray-50">
                 {auditLogs.map((log) => (
-                  <tr key={log.id} className="hover:bg-gray-50/50 transition-colors group">
+                  <TableRow key={log.id} className="hover:bg-gray-50/50 transition-colors group">
                     
                     {/* Timestamp */}
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <TableCell className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400">
                         <Clock size={12} className="opacity-40" />
                         {format(new Date(log.timestamp), 'MMM d, HH:mm')}
                       </div>
-                    </td>
+                    </TableCell>
 
                     {/* Custodian User */}
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <TableCell className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 group-hover:bg-emerald-50 group-hover:text-emerald-700 transition-colors">
                           <User size={12} />
                         </div>
                         <span className="text-[12px] font-black text-gray-900 tracking-tight">{log.userId}</span>
                       </div>
-                    </td>
+                    </TableCell>
 
                     {/* Target Node (Student/Subject) */}
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <TableCell className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col">
                         <span className="text-[12px] font-black text-gray-900 tracking-tight">{log.studentName}</span>
                         <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest leading-none mt-0.5">{log.subject}</span>
                       </div>
-                    </td>
+                    </TableCell>
 
                     {/* Action Type */}
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <TableCell className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-0.5 rounded border text-[9px] font-black uppercase tracking-widest ${actionBadgeStyles[log.action] || 'bg-gray-50 text-gray-700 border-gray-100'}`}>
                         {log.action}
                       </span>
-                    </td>
+                    </TableCell>
 
                     {/* Delta Difference */}
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <TableCell className="px-6 py-4 whitespace-nowrap">
                       {log.action === 'UPDATE' ? (
                         <div className="flex items-center gap-2 text-[11px] font-black">
                           <span className="text-gray-300 line-through">{log.oldValue}</span>
@@ -139,21 +147,21 @@ export function AuditLogsView() {
                       ) : (
                         <span className="text-[10px] text-gray-200 font-bold tracking-widest">NONE</span>
                       )}
-                    </td>
+                    </TableCell>
 
                     {/* Context Justification */}
-                    <td className="px-6 py-4">
+                    <TableCell className="px-6 py-4">
                       <div className="flex items-start gap-2 max-w-xs">
                         <p className="text-[11px] text-gray-500 font-medium leading-relaxed italic opacity-70 group-hover:opacity-100 transition-opacity">
                           "{log.justification}"
                         </p>
                       </div>
-                    </td>
+                    </TableCell>
 
-                  </tr>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       </motion.div>

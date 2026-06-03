@@ -3,7 +3,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Users, ChevronRight } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
-export function ClassCard({ subject, className, status, progress, studentCount, color = "#10b981" }) {
+export function ClassCard({ subject, className, status, progress, studentCount, color = "hsl(162 78% 41%)" }) {
   const data = [
     { value: progress },
     { value: Math.max(0, 100 - progress) },
@@ -15,8 +15,8 @@ export function ClassCard({ subject, className, status, progress, studentCount, 
     <div className={cn(
       "p-6 rounded-2xl border transition-all duration-300 group select-none text-left flex flex-col justify-between h-full min-h-[220px]",
       isComplete 
-        ? "bg-emerald-600 border-emerald-500 text-white shadow-md shadow-emerald-600/10 hover:shadow-xl hover:shadow-emerald-600/20" 
-        : "bg-white border-gray-100 text-gray-900 shadow-sm hover:shadow-xl hover:border-gray-200"
+        ? "bg-success border-success text-background shadow-md shadow-success/10 hover:shadow-xl hover:shadow-success/20" 
+        : "bg-card border-border text-foreground shadow-sm hover:shadow-xl hover:border-border/50"
     )}>
       
       {/* 1. Header Information Area */}
@@ -26,7 +26,7 @@ export function ClassCard({ subject, className, status, progress, studentCount, 
         </h3>
         <p className={cn(
           "text-[10px] font-black mt-1 uppercase tracking-widest text-left truncate opacity-90", 
-          isComplete ? "text-emerald-200" : "text-gray-400"
+          isComplete ? "text-success-foreground/80" : "text-muted-foreground"
         )}>
           {className} • Grading Sheet
         </p>
@@ -40,14 +40,14 @@ export function ClassCard({ subject, className, status, progress, studentCount, 
           <div>
             <p className={cn(
               "text-xs font-black uppercase tracking-wider mb-2 truncate text-left", 
-              isComplete ? "text-emerald-100" : "text-emerald-600"
+              isComplete ? "text-success-foreground" : "text-success"
             )}>
               {status}
             </p>
 
             <div className="flex items-center gap-1.5 mb-4 text-left">
-              <Users size={12} className={isComplete ? "text-emerald-200" : "text-gray-400"} />
-              <span className={cn("text-xs font-bold tracking-tight", isComplete ? "text-emerald-50" : "text-gray-600")}>
+              <Users size={12} className={isComplete ? "text-success-foreground" : "text-muted-foreground"} />
+              <span className={cn("text-xs font-bold tracking-tight", isComplete ? "text-success-foreground" : "text-foreground")}>
                 {studentCount} Enrolled Students
               </span>
             </div>
@@ -56,8 +56,8 @@ export function ClassCard({ subject, className, status, progress, studentCount, 
           <button className={cn(
             "w-full py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-1 cursor-pointer shrink-0 border border-transparent active:scale-[0.98]",
             isComplete
-              ? "bg-white/15 hover:bg-white/25 text-white backdrop-blur-sm hover:border-white/10"
-              : "bg-gray-50 hover:bg-emerald-50 text-gray-700 hover:text-emerald-700 hover:border-emerald-100"
+              ? "bg-background/15 hover:bg-background/25 text-background backdrop-blur-sm hover:border-background/10"
+              : "bg-muted hover:bg-success/10 text-foreground hover:text-success hover:border-success/20"
           )}>
             <span>Enter Marks</span>
             <ChevronRight size={14} className="transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -81,8 +81,8 @@ export function ClassCard({ subject, className, status, progress, studentCount, 
                 stroke="none"
                 animationDuration={800}
               >
-                <Cell fill={isComplete ? "#ffffff" : color} />
-                <Cell fill={isComplete ? "rgba(255,255,255,0.15)" : "#f3f4f6"} />
+                <Cell fill={isComplete ? "hsl(0 0% 100%)" : color} />
+                <Cell fill={isComplete ? "hsla(0 0% 100% / 0.15)" : "hsl(210 40% 98%)"} />
               </Pie>
             </PieChart>
           </ResponsiveContainer>
@@ -94,7 +94,7 @@ export function ClassCard({ subject, className, status, progress, studentCount, 
             </span>
             <span className={cn(
               "text-[7px] font-black uppercase tracking-widest leading-none mt-0.5 scale-90",
-              isComplete ? "text-emerald-200" : "text-gray-400"
+              isComplete ? "text-success-foreground" : "text-muted-foreground"
             )}>
               Done
             </span>

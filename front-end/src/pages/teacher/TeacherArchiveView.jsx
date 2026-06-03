@@ -13,6 +13,9 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { TeacherArchiveDetailView } from './TeacherArchiveDetailView';
+import { Button } from '../../components/ui/button';
+import { Card } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
 
 import mockApiData from '../../data/mockApiData.json';
 
@@ -146,22 +149,22 @@ export function TeacherArchiveView() {
    */
   const rowGridStructure = "grid grid-cols-[1.5fr_1fr_0.5fr] md:grid-cols-[2fr_1.2fr_1fr_1.3fr_1.2fr_0.4fr] gap-4 items-center";
 
-  return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#F9F9F7] relative">
+return (
+    <div className="flex-1 flex flex-col overflow-hidden bg-muted relative">
       
       {/* Header & Sub-Tab Bar */}
-      <div className="bg-white border-b border-slate-200/80 px-8 py-4 flex flex-col sm:flex-row justify-between items-center z-20 gap-4">
+      <div className="bg-card border-b border-border px-8 py-4 flex flex-col sm:flex-row justify-between items-center z-20 gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-9 h-9 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-md">
+          <div className="w-9 h-9 bg-foreground text-background rounded-xl flex items-center justify-center shadow-md">
             <Database size={18} />
           </div>
           <div>
-            <h1 className="text-sm font-black text-slate-900 uppercase tracking-widest font-sans">Instructor Archives</h1>
-            <p className="text-[10px] font-bold text-slate-450 uppercase leading-none mt-0.5">Academic Cohorts & Alumni Ledger / Applied Sciences Division</p>
+            <h1 className="text-sm font-black text-foreground uppercase tracking-widest font-sans">Instructor Archives</h1>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase leading-none mt-0.5">Academic Cohorts & Alumni Ledger / Applied Sciences Division</p>
           </div>
         </div>
 
-        <div className="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/50 overflow-x-auto max-w-full">
+        <div className="flex bg-muted p-0.5 rounded-xl border border-border overflow-x-auto max-w-full">
           {[
             { id: 'REGISTRY', label: 'Archived Dossiers', icon: Database },
             { id: 'INTERVENTIONS', label: 'Historical Interventions', icon: Award },
@@ -175,7 +178,7 @@ export function TeacherArchiveView() {
               }}
               className={cn(
                 "flex items-center gap-2 px-5 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all outline-none whitespace-nowrap",
-                activeSubTab === tab.id ? "bg-white text-slate-900 shadow-sm font-bold" : "text-slate-400 hover:text-slate-600"
+                activeSubTab === tab.id ? "bg-card text-foreground shadow-sm font-bold" : "text-muted-foreground hover:text-foreground"
               )}
             >
               <tab.icon size={13} />
@@ -183,11 +186,12 @@ export function TeacherArchiveView() {
             </button>
           ))}
         </div>
+
       </div>
 
       {/* Global Watermark */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.01] select-none z-0">
-        <h1 className="text-[14vw] font-black rotate-[-20deg] text-slate-950 uppercase">PAST ARCHIVE</h1>
+        <h1 className="text-[14vw] font-black rotate-[-20deg] text-foreground uppercase">PAST ARCHIVE</h1>
       </div>
 
       <div className="flex-1 overflow-hidden flex flex-col relative z-10 w-full">
@@ -227,78 +231,78 @@ export function TeacherArchiveView() {
                       { title: 'Cryptographic Seals', val: sealedCount, note: 'Tamper-proof department seals', icon: ShieldCheck },
                       { title: 'Database Security', val: 'Active', note: 'Secure Level 4 Vault Integrity', icon: Lock }
                     ].map((card, idx) => (
-                      <div key={idx} className="bg-white rounded-[2rem] border border-slate-200/60 p-6 flex items-center justify-between shadow-sm">
+                      <Card key={idx} className="p-6 flex items-center justify-between">
                         <div className="space-y-1">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{card.title}</p>
-                          <p className="text-2xl font-black text-slate-900 tracking-tight">{card.val}</p>
-                          <p className="text-[10px] font-semibold text-slate-450 uppercase">{card.note}</p>
+                          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{card.title}</p>
+                          <p className="text-2xl font-black text-foreground tracking-tight">{card.val}</p>
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase">{card.note}</p>
                         </div>
-                        <div className="w-12 h-12 rounded-[1.25rem] flex items-center justify-center text-white shrink-0 bg-slate-900">
+                        <div className="w-12 h-12 rounded-[1.25rem] flex items-center justify-center text-background shrink-0 bg-foreground">
                           <card.icon size={20} />
                         </div>
-                      </div>
+                      </Card>
                     ))}
                   </div>
 
-                  {/* Filter Row */}
-                  <div className="bg-white border border-slate-200/60 rounded-[2rem] p-6 shadow-sm space-y-4">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                      <div className="flex items-center gap-2 self-start md:self-auto">
-                        <span className="w-2.5 h-2.5 bg-slate-900 rounded-full animate-pulse" />
-                        <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">ARCHIVE STORAGE FILTER MATRIX</h3>
-                      </div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase self-start md:self-auto">Frozen Record Search Directory</span>
-                    </div>
+{/* Filter Row */}
+                   <div className="bg-card border border-border rounded-[2rem] p-6 shadow-sm space-y-4">
+                     <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                       <div className="flex items-center gap-2 self-start md:self-auto">
+                         <span className="w-2.5 h-2.5 bg-foreground rounded-full animate-pulse" />
+                         <h3 className="text-xs font-black text-foreground uppercase tracking-widest">ARCHIVE STORAGE FILTER MATRIX</h3>
+                       </div>
+                       <span className="text-[10px] font-bold text-muted-foreground uppercase self-start md:self-auto">Frozen Record Search Directory</span>
+                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {/* Search Index Input */}
-                      <div className="relative flex items-center h-12 bg-slate-50 border border-slate-200 rounded-xl px-4">
-                        <Search className="text-slate-400 mr-2 shrink-0" size={16} />
-                        <input 
-                          type="text" 
-                          placeholder="Search index, name or matric..." 
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="bg-transparent border-none text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none w-full"
-                        />
-                      </div>
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                       {/* Search Index Input */}
+                       <div className="relative flex items-center h-12 bg-muted border border-border rounded-xl px-4">
+                         <Search className="text-muted-foreground mr-2 shrink-0" size={16} />
+                         <input 
+                           type="text" 
+                           placeholder="Search index, name or matric..." 
+                           value={searchTerm}
+                           onChange={(e) => setSearchTerm(e.target.value)}
+                           className="bg-transparent border-none text-xs text-foreground placeholder:text-muted-foreground focus:outline-none w-full"
+                         />
+                       </div>
 
-                      {/* Filter Class */}
-                      <div className="relative flex items-center h-12 bg-slate-50 border border-slate-200 rounded-xl px-4">
-                        <span className="text-[10px] font-bold text-slate-400 mr-2 shrink-0">GROUP:</span>
-                        <select 
-                          value={selectedClass}
-                          onChange={(e) => setSelectedClass(e.target.value)}
-                          className="bg-transparent border-none text-xs text-slate-800 font-extrabold focus:outline-none cursor-pointer w-full"
-                        >
-                          <option value="ALL">All Cohort Divisions</option>
-                          <option value="SHS 1 Agric B">SHS 1 Agric B (Current Form 1)</option>
-                          <option value="SHS 2 Science B">SHS 2 Science B (Current Form 2)</option>
-                          <option value="SHS 3 Science A">SHS 3 Science A (Current Form 3)</option>
-                          <option value="Class of 2024 (Science)">Class of 2024 (Science Alumni)</option>
-                          <option value="Class of 2023 (Science)">Class of 2023 (Science Alumni)</option>
-                          <option value="Class of 2023 (Agric Science)">Class of 2023 (Agric Alumni)</option>
-                        </select>
-                      </div>
+                       {/* Filter Class */}
+                       <div className="relative flex items-center h-12 bg-muted border border-border rounded-xl px-4">
+                         <span className="text-[10px] font-bold text-muted-foreground mr-2 shrink-0">GROUP:</span>
+                         <select 
+                           value={selectedClass}
+                           onChange={(e) => setSelectedClass(e.target.value)}
+                           className="bg-transparent border-none text-xs text-foreground font-extrabold focus:outline-none cursor-pointer w-full"
+                         >
+                           <option value="ALL">All Cohort Divisions</option>
+                           <option value="SHS 1 Agric B">SHS 1 Agric B (Current Form 1)</option>
+                           <option value="SHS 2 Science B">SHS 2 Science B (Current Form 2)</option>
+                           <option value="SHS 3 Science A">SHS 3 Science A (Current Form 3)</option>
+                           <option value="Class of 2024 (Science)">Class of 2024 (Science Alumni)</option>
+                           <option value="Class of 2023 (Science)">Class of 2023 (Science Alumni)</option>
+                           <option value="Class of 2023 (Agric Science)">Class of 2023 (Agric Alumni)</option>
+                         </select>
+                       </div>
 
-                      {/* Filter Year */}
-                      <div className="relative flex items-center h-12 bg-slate-50 border border-slate-200 rounded-xl px-4">
-                        <span className="text-[10px] font-bold text-slate-405 mr-2 shrink-0">YEAR:</span>
-                        <select 
-                          value={selectedCohortYear}
-                          onChange={(e) => setSelectedCohortYear(e.target.value)}
-                          className="bg-transparent border-none text-xs text-slate-800 font-extrabold focus:outline-none cursor-pointer w-full"
-                        >
-                          <option value="ALL">All Graduation/Cohort Years</option>
-                          <option value="2028">Form 1 (Class of 2028)</option>
-                          <option value="2027">Form 2 (Class of 2027)</option>
-                          <option value="2026">Form 3 (Class of 2026)</option>
-                          <option value="2024">Class of 2024</option>
-                          <option value="2023">Class of 2023</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
+                       {/* Filter Year */}
+                       <div className="relative flex items-center h-12 bg-muted border border-border rounded-xl px-4">
+                         <span className="text-[10px] font-bold text-muted-foreground mr-2 shrink-0">YEAR:</span>
+                         <select 
+                           value={selectedCohortYear}
+                           onChange={(e) => setSelectedCohortYear(e.target.value)}
+                           className="bg-transparent border-none text-xs text-foreground font-extrabold focus:outline-none cursor-pointer w-full"
+                         >
+                           <option value="ALL">All Graduation/Cohort Years</option>
+                           <option value="2028">Form 1 (Class of 2028)</option>
+                           <option value="2027">Form 2 (Class of 2027)</option>
+                           <option value="2026">Form 3 (Class of 2026)</option>
+                           <option value="2024">Class of 2024</option>
+                           <option value="2023">Class of 2023</option>
+                         </select>
+                       </div>
+                     </div>
+                   </div>
 
                   {/* Student Registry Frame */}
                   <div className="bg-white border border-slate-200/60 rounded-[2.5rem] overflow-hidden shadow-sm">

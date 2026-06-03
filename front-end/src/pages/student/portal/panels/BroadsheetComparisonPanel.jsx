@@ -1,4 +1,5 @@
 import React from 'react';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 
 export function BroadsheetComparisonPanel({ studentData }) {
   if (!studentData || !studentData.academicHistory || studentData.academicHistory.length === 0) {
@@ -86,79 +87,79 @@ export function BroadsheetComparisonPanel({ studentData }) {
         <h3 className="text-base sm:text-lg font-black text-text-primary mb-4">
           Broadsheet Comparison: {previousTerm.year} {previousTerm.term} vs {currentYearForm} {currentSemester}
         </h3>
-        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-          <table className="min-w-full divide-y divide-border">
-            <thead className="bg-background">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider rounded-l-xl">
-                  Subject Profile
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">
-                  Prev ({previousTerm.term})
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">
-                  Curr ({currentSemester})
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">
-                  Absolute Change
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider rounded-r-xl">
-                  Trend Vectors
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-surface divide-y divide-border/60">
-              {allSubjectNames.map((subjectName, index) => {
-                const currentScore = currentSubjects.get(subjectName);
-                const previousScore = previousSubjects.get(subjectName);
-                
-                // Skip row extraction if data segment is missing in either term
-                if (currentScore === undefined || previousScore === undefined) {
-                  return null;
-                }
+<div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+           <Table className="min-w-full divide-y divide-border">
+             <TableHeader className="bg-background">
+               <TableRow>
+                 <TableHead className="px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider rounded-l-xl">
+                   Subject Profile
+                 </TableHead>
+                 <TableHead className="px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">
+                   Prev ({previousTerm.term})
+                 </TableHead>
+                 <TableHead className="px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">
+                   Curr ({currentSemester})
+                 </TableHead>
+                 <TableHead className="px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">
+                   Absolute Change
+                 </TableHead>
+                 <TableHead className="px-4 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider rounded-r-xl">
+                   Trend Vectors
+                 </TableHead>
+               </TableRow>
+             </TableHeader>
+             <TableBody className="bg-surface divide-y divide-border/60">
+               {allSubjectNames.map((subjectName, index) => {
+                 const currentScore = currentSubjects.get(subjectName);
+                 const previousScore = previousSubjects.get(subjectName);
+                 
+                 // Skip row extraction if data segment is missing in either term
+                 if (currentScore === undefined || previousScore === undefined) {
+                   return null;
+                 }
 
-                const change = currentScore - previousScore;
-                const percentChange = previousScore !== 0 
-                  ? ((change / previousScore) * 100).toFixed(1) 
-                  : change > 0 ? '100.0' : '0.0';
-                const isImprovement = change >= 0;
+                 const change = currentScore - previousScore;
+                 const percentChange = previousScore !== 0 
+                   ? ((change / previousScore) * 100).toFixed(1) 
+                   : change > 0 ? '100.0' : '0.0';
+                 const isImprovement = change >= 0;
 
-                return (
-                  <tr key={`${subjectName}-${index}`} className="hover:bg-background/40 transition-colors">
-                    <td className="px-4 py-3.5 whitespace-nowrap text-sm font-bold text-text-primary">
-                      {formatSubjectTitle(subjectName)}
-                    </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap text-sm font-medium text-text-secondary">
-                      {previousScore}%
-                    </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap text-sm font-bold text-text-primary">
-                      {currentScore}%
-                    </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap text-sm">
-                      <span className={`${isImprovement ? 'text-success' : 'text-error'} font-semibold`}>
-                        {change >= 0 ? `+${change}` : change} ({change >= 0 ? '+' : ''}{percentChange}%)
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap text-sm">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                        isImprovement ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
-                      }`}>
-                        {isImprovement ? '▲ Improved' : '▼ Declined'}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-              {allSubjectNames.length === 0 && (
-                <tr>
-                  <td colSpan="5" className="px-4 py-6 text-center text-sm text-text-secondary">
-                    No matching subjects found between sequential target profiles.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                 return (
+                   <TableRow key={`${subjectName}-${index}`} className="hover:bg-background/40 transition-colors">
+                     <TableCell className="px-4 py-3.5 whitespace-nowrap text-sm font-bold text-text-primary">
+                       {formatSubjectTitle(subjectName)}
+                     </TableCell>
+                     <TableCell className="px-4 py-3.5 whitespace-nowrap text-sm font-medium text-text-secondary">
+                       {previousScore}%
+                     </TableCell>
+                     <TableCell className="px-4 py-3.5 whitespace-nowrap text-sm font-bold text-text-primary">
+                       {currentScore}%
+                     </TableCell>
+                     <TableCell className="px-4 py-3.5 whitespace-nowrap text-sm">
+                       <span className={`${isImprovement ? 'text-success' : 'text-error'} font-semibold`}>
+                         {change >= 0 ? `+${change}` : change} ({change >= 0 ? '+' : ''}{percentChange}%)
+                       </span>
+                     </TableCell>
+                     <TableCell className="px-4 py-3.5 whitespace-nowrap text-sm">
+                       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                         isImprovement ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
+                       }`}>
+                         {isImprovement ? '▲ Improved' : '▼ Declined'}
+                       </span>
+                     </TableCell>
+                   </TableRow>
+                 );
+               })}
+               {allSubjectNames.length === 0 && (
+                 <TableRow>
+                   <TableCell colSpan="5" className="px-4 py-6 text-center text-sm text-text-secondary">
+                     No matching subjects found between sequential target profiles.
+                   </TableCell>
+                 </TableRow>
+               )}
+             </TableBody>
+           </Table>
+         </div>
       </div>
 
       {/* Summary of significant progress shifts */}

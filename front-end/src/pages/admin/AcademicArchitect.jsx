@@ -1,4 +1,4 @@
-﻿﻿import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { 
   Building2, School, BookOpen, Layers, 
   ChevronRight, ChevronDown, Plus, MoreVertical,
@@ -10,6 +10,14 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { GradingRulesView } from './GradingRulesView';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '../../components/ui/table';
 
 // --- Mock Data ---
 
@@ -391,78 +399,78 @@ export function AcademicArchitect() {
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-auto">
-                  <table className="w-full text-left border-collapse min-w-[1200px]">
-                    <thead className="sticky top-0 z-20 bg-slate-50 border-b border-slate-200">
-                      <tr>
-                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] w-[250px] bg-slate-50 border-r border-slate-200 sticky left-0 z-30">Subject Logic Unit</th>
-                        <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center w-[100px]">Credits</th>
-                        {MOCK_YEARS.flatMap(y => y.programs.flatMap(p => p.classrooms)).map(cls => (
-                          <th key={cls.id} className="px-4 py-5 text-[10px] font-black text-slate-900 uppercase tracking-tighter text-center min-w-[100px] hover:bg-slate-100 transition-colors">
-                            <span className="italic font-display">{cls.name.split(' ')[0]}</span>
-                            <span className="block text-[8px] opacity-40 font-black mt-0.5">{cls.name.split(' ').slice(1).join(' ')}</span>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {MOCK_SUBJECTS.map((sub) => (
-                        <tr key={sub.id} className="group hover:bg-slate-50/50">
-                          <td className="px-8 py-5 border-r border-slate-100 bg-white sticky left-0 z-10 group-hover:bg-slate-50 shadow-[5px_0_15px_rgba(0,0,0,0.02)]">
-                            <div className="flex items-center gap-4">
-                              <div className={cn(
-                                "w-8 h-8 rounded-lg flex items-center justify-center shadow-sm",
-                                sub.type === 'Core' ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"
-                              )}>
-                                {sub.type === 'Core' ? <ShieldCheck size={16} /> : <BookMarked size={16} />}
-                              </div>
-                              <div>
-                                <p className="text-[13px] font-black italic font-display text-slate-900 leading-none mb-1">{sub.name}</p>
-                                <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{sub.code}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-5 text-center border-r border-slate-100">
-                            <div className="flex items-center justify-center gap-1.5">
-                              <span className="text-sm font-black italic font-display text-slate-900">{sub.creditHours}</span>
-                              <Clock size={10} className="text-slate-300" />
-                            </div>
-                          </td>
-                          {MOCK_YEARS.flatMap(y => y.programs.flatMap(p => p.classrooms)).map(cls => {
-                            const isCore = sub.type === 'Core';
-                            const progName = cls.name.toLowerCase().includes('science') ? 'Science' : 
-                                            cls.name.toLowerCase().includes('arts') ? 'General Arts' : 
-                                            cls.name.toLowerCase().includes('bus') ? 'Business' : '';
-                            const isProgramMatch = sub.applicablePrograms.includes(progName);
-                            const isRecommended = isCore || isProgramMatch;
+<div className="flex-1 overflow-auto">
+                   <Table className="min-w-[1200px]">
+                     <TableHeader className="sticky top-0 z-20 bg-slate-50 border-b border-slate-200">
+                       <TableRow>
+                         <TableHead className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] w-[250px] bg-slate-50 border-r border-slate-200 sticky left-0 z-30">Subject Logic Unit</TableHead>
+                         <TableHead className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center w-[100px]">Credits</TableHead>
+                         {MOCK_YEARS.flatMap(y => y.programs.flatMap(p => p.classrooms)).map(cls => (
+                           <TableHead key={cls.id} className="px-4 py-5 text-[10px] font-black text-slate-900 uppercase tracking-tighter text-center min-w-[100px] hover:bg-slate-100 transition-colors">
+                             <span className="italic font-display">{cls.name.split(' ')[0]}</span>
+                             <span className="block text-[8px] opacity-40 font-black mt-0.5">{cls.name.split(' ').slice(1).join(' ')}</span>
+                           </TableHead>
+                         ))}
+                       </TableRow>
+                     </TableHeader>
+                     <TableBody className="divide-y divide-slate-100">
+                       {MOCK_SUBJECTS.map((sub) => (
+                         <TableRow key={sub.id} className="group hover:bg-slate-50/50">
+                           <TableCell className="px-8 py-5 border-r border-slate-100 bg-white sticky left-0 z-10 group-hover:bg-slate-50 shadow-[5px_0_15px_rgba(0,0,0,0.02)]">
+                             <div className="flex items-center gap-4">
+                               <div className={cn(
+                                 "w-8 h-8 rounded-lg flex items-center justify-center shadow-sm",
+                                 sub.type === 'Core' ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"
+                               )}>
+                                 {sub.type === 'Core' ? <ShieldCheck size={16} /> : <BookMarked size={16} />}
+                               </div>
+                               <div>
+                                 <p className="text-[13px] font-black italic font-display text-slate-900 leading-none mb-1">{sub.name}</p>
+                                 <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{sub.code}</p>
+                               </div>
+                             </div>
+                           </TableCell>
+                           <TableCell className="px-6 py-5 text-center border-r border-slate-100">
+                             <div className="flex items-center justify-center gap-1.5">
+                               <span className="text-sm font-black italic font-display text-slate-900">{sub.creditHours}</span>
+                               <Clock size={10} className="text-slate-300" />
+                             </div>
+                           </TableCell>
+                           {MOCK_YEARS.flatMap(y => y.programs.flatMap(p => p.classrooms)).map(cls => {
+                             const isCore = sub.type === 'Core';
+                             const progName = cls.name.toLowerCase().includes('science') ? 'Science' : 
+                                             cls.name.toLowerCase().includes('arts') ? 'General Arts' : 
+                                             cls.name.toLowerCase().includes('bus') ? 'Business' : '';
+                             const isProgramMatch = sub.applicablePrograms.includes(progName);
+                             const isRecommended = isCore || isProgramMatch;
 
-                            return (
-                              <td key={cls.id} className={cn(
-                                "px-4 py-5 text-center border-r border-slate-50 transition-colors",
-                                isCore ? "bg-emerald-50/20" : ""
-                              )}>
-                                <div className="flex items-center justify-center">
-                                  <label className="relative flex items-center cursor-pointer group/toggle">
-                                    <input type="checkbox" defaultChecked={isRecommended} className="peer sr-only" />
-                                    <div className={cn(
-                                      "w-10 h-6 bg-slate-100 rounded-full peer-checked:bg-slate-900 transition-all shadow-inner border border-slate-200",
-                                      isCore && "opacity-50 cursor-not-allowed"
-                                    )}>
-                                      <div className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-all peer-checked:translate-x-4 shadow-sm" />
-                                    </div>
-                                    <div className="absolute -top-1 -right-1 opacity-0 group-hover/toggle:opacity-100 pointer-events-none transition-opacity">
-                                      {isRecommended && <CheckCircle2 size={10} className="text-emerald-500 fill-white" />}
-                                    </div>
-                                  </label>
-                                </div>
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                             return (
+                               <TableCell key={cls.id} className={cn(
+                                 "px-4 py-5 text-center border-r border-slate-50 transition-colors",
+                                 isCore ? "bg-emerald-50/20" : ""
+                               )}>
+                                 <div className="flex items-center justify-center">
+                                   <label className="relative flex items-center cursor-pointer group/toggle">
+                                     <input type="checkbox" defaultChecked={isRecommended} className="peer sr-only" />
+                                     <div className={cn(
+                                       "w-10 h-6 bg-slate-100 rounded-full peer-checked:bg-slate-900 transition-all shadow-inner border border-slate-200",
+                                       isCore && "opacity-50 cursor-not-allowed"
+                                     )}>
+                                       <div className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-all peer-checked:translate-x-4 shadow-sm" />
+                                     </div>
+                                     <div className="absolute -top-1 -right-1 opacity-0 group-hover/toggle:opacity-100 pointer-events-none transition-opacity">
+                                       {isRecommended && <CheckCircle2 size={10} className="text-emerald-500 fill-white" />}
+                                     </div>
+                                   </label>
+                                 </div>
+                               </TableCell>
+                             );
+                           })}
+                         </TableRow>
+                       ))}
+                     </TableBody>
+                   </Table>
+                 </div>
 
                 <div className="p-8 bg-slate-50 border-t border-slate-200 shrink-0 flex flex-col md:flex-row items-center justify-between gap-6">
                    <div className="flex items-center gap-8">

@@ -1,6 +1,6 @@
 ﻿import React, { useState, useMemo } from 'react';
 import { 
-  Users, Search, Download, Plus,
+  Users, Search, Download, 
   ChevronRight, TrendingUp,
   X,
   FileText,
@@ -19,6 +19,14 @@ import {
   AreaChart, Area
 } from 'recharts';
 import { MOCK_PARENTS, PTA_ROLES, BROADCAST_TEMPLATES, PARENT_TARGET_POPULATIONS } from './data';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '../../components/ui/table';
 
 // --- Components ---
 
@@ -317,20 +325,20 @@ export const ParentRegistry = () => {
 
       <div className="flex-1 overflow-y-auto p-8 relative">
         <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-100">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Guardian / Household</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Linked Wards</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Communication Status</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Ward Finance</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-slate-50/80 border-b border-slate-100">
+                <TableHead className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Guardian / Household</TableHead>
+                <TableHead className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Linked Wards</TableHead>
+                <TableHead className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Communication Status</TableHead>
+                <TableHead className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Ward Finance</TableHead>
+                <TableHead className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredParents.map((parent) => (
-                <tr key={parent.id} className="group hover:bg-slate-50 cursor-pointer transition-all" onClick={() => setSelectedParentId(parent.id)}>
-                  <td className="px-8 py-5">
+                <TableRow key={parent.id} className="group hover:bg-slate-50 cursor-pointer transition-all" onClick={() => setSelectedParentId(parent.id)}>
+                  <TableCell className="px-8 py-5">
                     <div className="flex items-center gap-4">
                        <div className={cn(
                          "w-11 h-11 rounded-xl flex items-center justify-center transition-all",
@@ -346,8 +354,8 @@ export const ParentRegistry = () => {
                           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{parent.phone}</p>
                        </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-5">
+                  </TableCell>
+                  <TableCell className="px-6 py-5">
                      <div className="flex flex-wrap gap-1.5">
                        {parent.wards.map(w => (
                          <span key={w.id} className="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-black italic font-display rounded-lg">
@@ -355,14 +363,14 @@ export const ParentRegistry = () => {
                          </span>
                        ))}
                      </div>
-                  </td>
-                  <td className="px-6 py-5">
+                  </TableCell>
+                  <TableCell className="px-6 py-5">
                     <div>
                       <p className="text-[11px] font-bold text-slate-900 mb-0.5">{parent.lastContacted}</p>
                       <p className="text-[9px] font-black uppercase text-slate-400 tracking-tight">{parent.lastMessage}</p>
                     </div>
-                  </td>
-                  <td className="px-6 py-5 text-center">
+                  </TableCell>
+                  <TableCell className="px-6 py-5 text-center">
                     <div className="flex flex-col items-center gap-1.5">
                       {parent.wards.map(w => (
                         <div key={w.id} className={cn(
@@ -375,8 +383,8 @@ export const ParentRegistry = () => {
                         </div>
                       ))}
                     </div>
-                  </td>
-                  <td className="px-8 py-5 text-right">
+                  </TableCell>
+                  <TableCell className="px-8 py-5 text-right">
                      <div className="flex justify-end gap-2">
                         <button className="p-3 bg-slate-50 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-xl transition-all" onClick={(e) => {
                           e.stopPropagation();
@@ -386,11 +394,11 @@ export const ParentRegistry = () => {
                         </button>
                         <button className="p-3 bg-slate-50 text-slate-400 hover:bg-slate-900 hover:text-white rounded-xl transition-all"><MoreVertical size={18} /></button>
                      </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </div>
 
