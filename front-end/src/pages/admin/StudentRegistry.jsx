@@ -24,6 +24,18 @@ import {
   TableRow,
   TableCell,
 } from '../../components/ui/table';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Textarea } from '../../components/ui/textarea';
+import { 
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue
+} from '../../components/ui/select';
+import { Badge } from '../../components/ui/badge';
+import { Card } from '../../components/ui/card';
 
 const StudentDossier = ({ 
   student, 
@@ -368,41 +380,75 @@ export const StudentRegistry = () => {
       </header>
 
       <div className="px-8 py-5 bg-white border-b border-slate-200/60 flex flex-wrap items-center justify-between gap-6">
-         <div className="flex items-center gap-4 flex-1 min-w-[300px]">
-           <div className="relative flex-1">
-             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-             <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-12 pr-6 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-[13px] outline-none" />
-           </div>
-           <select value={selectedBatch} onChange={(e) => setSelectedBatch(e.target.value)} className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-[11px] font-black uppercase tracking-widest outline-none">
-             <option value="All">All Batches</option>
-             {BATCHES.map(b => <option key={b} value={b}>{b}</option>)}
-           </select>
-           <select value={selectedProgram} onChange={(e) => setSelectedProgram(e.target.value)} className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-[11px] font-black uppercase tracking-widest outline-none">
-             <option value="All">All Programs</option>
-             {PROGRAMS.map(p => <option key={p} value={p}>{p}</option>)}
-           </select>
-           <select value={selectedHouse} onChange={(e) => setSelectedHouse(e.target.value)} className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-[11px] font-black uppercase tracking-widest outline-none">
-             <option value="All">All Houses</option>
-             {HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
-           </select>
-           <select value={selectedResidence} onChange={(e) => setSelectedResidence(e.target.value)} className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-[11px] font-black uppercase tracking-widest outline-none">
-             <option value="All">All Residencies</option>
-             <option value="Boarder">Boarder</option>
-             <option value="Day">Day</option>
-           </select>
-         </div>
-         <div className="flex items-center gap-3">
-            <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
-               <button onClick={() => setViewMode('Academic')} className={cn("px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest", viewMode === 'Academic' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400")}>Academic</button>
-               <button onClick={() => setViewMode('Personal')} className={cn("px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest", viewMode === 'Personal' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400")}>Biosocial</button>
+          <div className="flex items-center gap-4 flex-1 min-w-[300px]">
+            <div className="relative flex-1">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Input placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-12 pr-6 py-3" />
             </div>
-            <button onClick={() => executeSensitiveAction('export-all')} className="p-3 bg-slate-900 text-white rounded-2xl"><Download size={20} /></button>
-            <button onClick={() => alert('Launching Index Number Generator...')} className="px-4 py-3 bg-white text-slate-900 border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest font-display italic">ID Generator</button>
+            <Select value={selectedBatch} onValueChange={(e) => setSelectedBatch(e.target.value)} className="w-full">
+              <SelectTrigger>
+                <SelectValue placeholder="All Batches" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All Batches</SelectItem>
+                {BATCHES.map(b => (
+                  <SelectItem key={b} value={b}>{b}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedProgram} onValueChange={(e) => setSelectedProgram(e.target.value)} className="w-full">
+              <SelectTrigger>
+                <SelectValue placeholder="All Programs" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All Programs</SelectItem>
+                {PROGRAMS.map(p => (
+                  <SelectItem key={p} value={p}>{p}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedHouse} onValueChange={(e) => setSelectedHouse(e.target.value)} className="w-full">
+              <SelectTrigger>
+                <SelectValue placeholder="All Houses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All Houses</SelectItem>
+                {HOUSES.map(h => (
+                  <SelectItem key={h} value={h}>{h}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedResidence} onValueChange={(e) => setSelectedResidence(e.target.value)} className="w-full">
+              <SelectTrigger>
+                <SelectValue placeholder="All Residencies" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All Residencies</SelectItem>
+                <SelectItem value="Boarder">Boarder</SelectItem>
+                <SelectItem value="Day">Day</SelectItem>
+              </SelectContent>
+            </Select>
+         </div>
+          <div className="flex items-center gap-3">
+             <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+                <Button onClick={() => setViewMode('Academic')} variant={viewMode === 'Academic' ? "default" : "outline"} className="px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                  Academic
+                </Button>
+                <Button onClick={() => setViewMode('Personal')} variant={viewMode === 'Personal' ? "default" : "outline"} className="px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                  Biosocial
+                </Button>
+             </div>
+             <Button onClick={() => executeSensitiveAction('export-all')} className="p-3">
+                <Download size={20} />
+             </Button>
+             <Button onClick={() => alert('Launching Index Number Generator...')} variant="outline" className="px-4 py-3 text-[10px] font-black uppercase tracking-widest font-display italic">
+                ID Generator
+             </Button>
          </div>
       </div>
 
 <div className="flex-1 overflow-y-auto p-8 relative">
-        <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
+        <Card>
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50/80 border-b border-slate-100">
@@ -431,22 +477,30 @@ export const StudentRegistry = () => {
                   <TableCell className="px-6 py-5">
                      <span className="text-[12px] font-black text-slate-900">{stu.house}</span>
                   </TableCell>
-                  <TableCell className="px-6 py-5 text-center">
-                     {viewMode === 'Academic' ? (
-                        <div className={cn("inline-block px-4 py-1.5 rounded-full text-[11px] font-black italic font-display", stu.averageGrade >= 75 ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600")}>{stu.averageGrade}%</div>
-                     ) : (
-                        <div className={cn("inline-block px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest", stu.feesStatus === 'Paid' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600")}>{stu.feesStatus}</div>
-                     )}
-                  </TableCell>
+                   <TableCell className="px-6 py-5 text-center">
+                      {viewMode === 'Academic' ? (
+                         <Badge className={cn(
+                           stu.averageGrade >= 75 ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"
+                         )}>
+                           {stu.averageGrade}%
+                         </Badge>
+                      ) : (
+                         <Badge className={cn(
+                           stu.feesStatus === 'Paid' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+                         )}>
+                           {stu.feesStatus}
+                         </Badge>
+                      )}
+                   </TableCell>
                   <TableCell className="px-8 py-5 text-right">
                      <button className="p-3 bg-slate-50 text-slate-400 hover:bg-slate-900 hover:text-white rounded-xl transition-all"><MoreVertical size={18} /></button>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
-        </div>
-      </div>
+           </Table>
+         </Card>
+       </div>
 
       <AnimatePresence>
         {selectedStudent && (

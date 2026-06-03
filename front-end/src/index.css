@@ -139,39 +139,51 @@
 @utility slide-out-to-end-* { &:where(:dir(ltr),[dir="ltr"],[dir="ltr"]*) { --tw-exit-translate-x: calc(--value(integer) * var(--spacing)); } &:where(:dir(rtl),[dir="rtl"],[dir="rtl"]*) { --tw-exit-translate-x: calc(--value(integer) * var(--spacing) * -1); } }
 
 /* ==========================================================================
-   DESIGN SYSTEM VARIABLE DEFINITIONS (:root)
-   Strictly configured using spatial HSL formats compatible with Tailwind v4 engine.
-   ========================================================================== */
+    DESIGN SYSTEM VARIABLE DEFINITIONS (:root)
+    Strictly configured using spatial HSL formats compatible with Tailwind v4 engine.
+    ========================================================================== */
 :root {
   --background: hsl(210 40% 98%);
-  --surface: hsl(0 0% 100%);
+  --foreground: hsl(222 47% 11%);
+  
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(222 47% 11%);
+  
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(222 47% 11%);
+  
+  --primary: hsl(217 91% 60%);
+  --primary-foreground: hsl(0 0% 100%);
+  
+  --secondary: hsl(243 70% 59%);
+  --secondary-foreground: hsl(0 0% 100%);
+  
+  --muted: hsl(210 40% 98%);
+  --muted-foreground: hsl(215 16% 47%);
+  
+  --accent: hsl(243 70% 59%);
+  --accent-foreground: hsl(0 0% 100%);
+  
+  --destructive: hsl(0 84% 60%);
+  --destructive-foreground: hsl(0 0% 100%);
+  
   --border: hsl(214 32% 91%);
-
-  --text-primary: hsl(222 47% 11%);
-  --text-secondary: hsl(215 16% 47%);
-
-  --brand-primary: hsl(217 91% 60%);
-  --brand-secondary: hsl(243 70% 59%);
-  --brand-dark: hsl(222 47% 11%);
-
+  --input: hsl(214 32% 91%);
+  --ring: hsl(217 91% 60%);
+  
+  --radius: 0.75rem;
+  
   --success: hsl(162 78% 41%);
   --warning: hsl(38 92% 50%);
   --danger: hsl(0 84% 60%);
-
-  /* shadcn/ui compatibility aliases */
-  --primary: var(--brand-primary);
-  --primary-foreground: var(--surface);
-  --secondary: var(--brand-secondary);
-  --secondary-foreground: var(--surface);
-  --muted: var(--background);
-  --muted-foreground: var(--text-secondary);
-  --accent: var(--brand-secondary);
-  --accent-foreground: var(--surface);
-  --destructive: var(--danger);
-  --destructive-foreground: var(--surface);
-  --ring: var(--brand-primary);
-  --input: var(--border);
-  --foreground: var(--text-primary);
+  
+  --surface: hsl(0 0% 100%);
+  --text-primary: hsl(222 47% 11%);
+  --text-secondary: hsl(215 16% 47%);
+  
+  --brand-primary: hsl(217 91% 60%);
+  --brand-secondary: hsl(243 70% 59%);
+  --brand-dark: hsl(222 47% 11%);
 }
 
 /* ==========================================================================

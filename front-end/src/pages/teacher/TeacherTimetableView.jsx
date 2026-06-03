@@ -4,7 +4,8 @@ import { useTeacherTimetable } from '../../hooks/useTeacherTimetable';
 import { WeeklyTimetableView } from './WeeklyTimetableView';
 import { DailyTimetableView } from './DailyTimetableView';
 import { ResourceModal } from './ResourceModal';
-import { useUI } from '../../context/UIContext';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../../components/ui/tooltip';
+import { Button } from '../../components/ui/button';
 
 import { 
   Clock, 
@@ -17,9 +18,6 @@ import {
   RefreshCw, 
   BookOpen 
 } from 'lucide-react';
-
-import { Card } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
@@ -73,193 +71,196 @@ export function TeacherTimetableView() {
   const currentPeriod = getCurrentPeriod();
   const nextPeriod = getNextPeriod();
 
-{"/* ── Loading Screen ── */"}
-   if (loading) {
-     return (
-       <div className="flex-1 flex flex-col bg-muted backdrop-blur-md items-center justify-center gap-4">
-         <div className="relative">
-           <div className="w-12 h-12 border-[3px] border-brand-primary/20 border-t-brand-primary rounded-full animate-spin" />
-           <BookOpen size={16} className="absolute inset-0 m-auto text-brand-primary animate-pulse" />
-         </div>
-         <div className="text-center">
-           <p className="text-sm font-bold text-muted-foreground">Syncing Schedule Vault</p>
-           <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mt-0.5">WAEC STP Compliance T-AR-1.1</p>
-         </div>
-       </div>
-     );
-   }
+  if (loading) {
+    return (
+      <div className="flex-1 flex flex-col bg-background backdrop-blur-md items-center justify-center gap-4">
+        <div className="relative">
+          <div className="w-12 h-12 border-[3px] border-success/30 border-t-success rounded-full animate-spin" />
+          <BookOpen size={16} className="absolute inset-0 m-auto text-success animate-pulse" />
+        </div>
+        <div className="text-center">
+          <p className="text-sm font-bold text-text-primary tracking-tight">Syncing Schedule Vault</p>
+          <p className="text-[11px] font-semibold text-text-secondary uppercase tracking-widest mt-0.5">WAEC STP Compliance T-AR-1.1</p>
+        </div>
+      </div>
+    );
+  }
 
-   {"/* ── Error Screen ── */"}
-   if (error) {
-     return (
-       <div className="flex-1 flex flex-col bg-muted backdrop-blur-md p-6 justify-center items-center">
-         <Card className="p-6 max-w-sm text-center shadow-xl">
-           <div className="w-12 h-12 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl flex items-center justify-center mx-auto mb-3">
-             <AlertCircle size={22} />
-           </div>
-           <h3 className="text-sm font-bold text-foreground">Data Boundary Isolation Timeout</h3>
-           <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-             We could not pull your specific subject data profile securely. Please reload to re-authenticate context.
-           </p>
-           <Button 
-             onClick={() => window.location.reload()} 
-             className="mt-5 inline-flex items-center gap-2 font-bold shadow-sm"
-           >
-             <RefreshCw size={12} />
-             Re-verify Security Token
-           </Button>
-         </Card>
-       </div>
-     );
-   }
+  if (error) {
+    return (
+      <div className="flex-1 flex flex-col bg-background backdrop-blur-md p-6 justify-center items-center">
+        <div className="bg-surface rounded-2xl p-6 max-w-sm text-center border border-border shadow-xl shadow-brand-dark/5">
+          <div className="w-12 h-12 bg-danger/10 border border-danger/20 text-danger rounded-xl flex items-center justify-center mx-auto mb-3">
+            <AlertCircle size={22} />
+          </div>
+          <h3 className="text-sm font-bold text-text-primary">Data Boundary Isolation Timeout</h3>
+          <p className="text-xs text-text-secondary mt-2 leading-relaxed">
+            We could not pull your specific subject data profile securely. Please reload to re-authenticate context.
+          </p>
+          <Button 
+            onClick={() => window.location.reload()} 
+            variant="default"
+            size="sm"
+            className="mt-5 gap-2"
+          >
+            <RefreshCw size={12} />
+            Re-verify Security Token
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex-1 flex flex-col lg:flex-row bg-muted overflow-hidden">
-      
-      {/* LEFT: Live Status Command Column */}
-      <div className="w-full lg:w-80 bg-card border-b lg:border-b-0 lg:border-r border-border p-5 flex flex-col shrink-0 gap-5">
-        <div>
-          <span className="text-[10px] font-bold tracking-widest text-brand-primary uppercase bg-brand-primary/10 px-2 py-1 rounded-md">
-            Live Schedule Portal
-          </span>
-          <h1 className="text-xl font-bold text-foreground mt-2 tracking-tight">Your Classes</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Isolated department access view.</p>
-        </div>
+    <TooltipProvider delayDuration={200}>
+      <div className="flex-1 flex flex-col lg:flex-row bg-background overflow-hidden">
+        
+        <div className="w-full lg:w-80 bg-surface border-b lg:border-b-0 lg:border-r border-border p-5 flex flex-col shrink-0 gap-5">
+          <div>
+            <span className="text-[10px] font-bold tracking-widest text-success uppercase bg-success/10 px-2 py-1 rounded-md">
+              Live Schedule Portal
+            </span>
+            <h1 className="text-xl font-bold text-text-primary mt-2 tracking-tight">Your Classes</h1>
+            <p className="text-xs text-text-secondary mt-0.5">Isolated department access view.</p>
+          </div>
 
-        {/* View Segment Switcher */}
-        <div className="bg-muted p-1 rounded-xl flex items-center gap-1">
-          <Button
-            variant={view === 'weekly' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setView('weekly')}
-            className="flex-1 justify-center gap-2 font-bold"
-          >
-            <Layers size={14} />
-            Weekly View
-          </Button>
-          <Button
-            variant={view === 'daily' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setView('daily')}
-            className="flex-1 justify-center gap-2 font-bold"
-          >
-            <Calendar size={14} />
-            Daily Grid
-          </Button>
-        </div>
+          <div className="bg-muted p-1 rounded-xl flex items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => setView('weekly')}
+                    variant={view === 'weekly' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className="flex-1"
+                  >
+                    <Layers size={14} />
+                    Weekly View
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={12}>Weekly schedule grid</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => setView('daily')}
+                    variant={view === 'daily' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className="flex-1"
+                  >
+                    <Calendar size={14} />
+                    Daily Grid
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={12}>Daily class list</TooltipContent>
+              </Tooltip>
+          </div>
 
-        <hr className="border-border" />
+          <hr className="border-border" />
 
-        {/* Dynamic Class Insight HUD Cards */}
-        <div className="flex flex-col gap-3 flex-1 overflow-y-auto subtle-scrollbar">
-          
-          {/* Current Period Frame */}
-          <Card className="p-4 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-6 bg-foreground/5 rounded-bl-full translate-x-2 -translate-y-2 group-hover:scale-110 transition-transform" />
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-success">
-              <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-              Happening Now
+          <div className="flex flex-col gap-3 flex-1 overflow-y-auto no-scrollbar">
+            
+            <div className="bg-brand-dark rounded-xl p-4 text-surface shadow-md relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-6 bg-white/5 rounded-bl-full translate-x-2 -translate-y-2 group-hover:scale-110 transition-transform" />
+              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-success">
+                <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                Happening Now
+              </div>
+              
+              {currentPeriod ? (
+                <div className="mt-3">
+                  <h3 className="text-base font-bold tracking-tight">{currentPeriod.subject}</h3>
+                  <p className="text-xs text-text-secondary font-medium mt-0.5">{currentPeriod.className} • Room {currentPeriod.room}</p>
+                  <div className="flex items-center gap-1.5 mt-4 text-[11px] text-text-secondary font-medium bg-white/10 w-fit px-2 py-1 rounded-md">
+                    <Clock size={12} />
+                    {currentPeriod.startTime} - {currentPeriod.endTime}
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-3 py-2 text-text-secondary text-xs font-medium italic">
+                  No active class session right now.
+                </div>
+              )}
+            </div>
+
+            <div className="bg-surface border border-border rounded-xl p-4 shadow-sm">
+              <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-secondary">
+                <Sparkles size={11} className="text-warning" />
+                Up Next Today
+              </div>
+
+              {nextPeriod ? (
+                <div className="mt-3 flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="text-xs font-bold text-text-primary">{nextPeriod.subject}</h3>
+                    <p className="text-[11px] text-text-secondary mt-0.5 font-semibold">{nextPeriod.className} • Room {nextPeriod.room}</p>
+                    <p className="text-[10px] text-success font-bold mt-2 bg-success/10 px-1.5 py-0.5 rounded w-fit">
+                      Starts {nextPeriod.startTime}
+                    </p>
+                  </div>
+                  <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-text-secondary border border-border">
+                    <ArrowRight size={14} />
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-3 py-2 text-text-secondary text-xs font-medium italic">
+                  Done for the day!
+                </div>
+              )}
             </div>
             
-            {currentPeriod ? (
-              <div className="mt-3">
-                <h3 className="text-base font-bold tracking-tight">{currentPeriod.subject}</h3>
-                <p className="text-xs text-muted/80 font-medium mt-0.5">{currentPeriod.className} • Room {currentPeriod.room}</p>
-                <div className="flex items-center gap-1.5 mt-4 text-[11px] text-muted/80 font-medium bg-foreground/10 w-fit px-2 py-1 rounded-md">
-                  <Clock size={12} />
-                  {currentPeriod.startTime} - {currentPeriod.endTime}
-                </div>
-              </div>
-            ) : (
-              <div className="mt-3 py-2 text-muted-foreground text-xs font-medium italic">
-                No active class session right now.
-              </div>
-            )}
-          </Card>
+          </div>
 
-          {/* Up Next Frame */}
-          <Card className="p-4">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              <Sparkles size={11} className="text-warning" />
-              Up Next Today
-            </div>
-
-            {nextPeriod ? (
-              <div className="mt-3 flex items-start justify-between gap-2">
-                <div>
-                  <h3 className="text-xs font-bold text-foreground">{nextPeriod.subject}</h3>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 font-semibold">{nextPeriod.className} • Room {nextPeriod.room}</p>
-                  <p className="text-[10px] text-brand-primary font-bold mt-2 bg-brand-primary/10 px-1.5 py-0.5 rounded w-fit">
-                    Starts {nextPeriod.startTime}
-                  </p>
-                </div>
-                <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-muted-foreground border border-border">
-                  <ArrowRight size={14} />
-                </div>
-              </div>
-            ) : (
-              <div className="mt-3 py-2 text-muted-foreground text-xs font-medium italic">
-                Done for the day!
-              </div>
-            )}
-          </Card>
-          
+          {view === 'daily' && (
+            <Button
+              onClick={() => {
+                setSelectedEntry(currentPeriod || timetable[0]);
+                setIsResourceModalOpen(true);
+              }}
+              disabled={timetable.length === 0}
+              className="w-full gap-2"
+            >
+              <FilePlus size={14} />
+              Attach Lesson Materials
+            </Button>
+          )}
         </div>
 
-        {/* Global Floating Actions Anchor */}
-        {view === 'daily' && (
-          <Button
-            onClick={() => {
-              setSelectedEntry(currentPeriod || timetable[0]);
-              setIsResourceModalOpen(true);
-            }}
-            disabled={timetable.length === 0}
-            className="w-full justify-center gap-2 shadow-sm"
-            variant="default"
-          >
-            <FilePlus size={14} />
-            Attach Lesson Materials
-          </Button>
-        )}
-      </div>
+        <div className="flex-1 overflow-hidden relative flex flex-col">
+          {view === 'weekly' ? (
+            <WeeklyTimetableView
+              timetable={timetable}
+              currentTime={currentTime}
+              getTimePosition={getTimePosition}
+              formatTime={formatTime}
+              setHoveredId={setHoveredId}
+              hoveredId={hoveredId}
+            />
+          ) : (
+            <DailyTimetableView
+              timetable={timetable}
+              selectedDay={selectedDay}
+              setSelectedDay={setSelectedDay}
+              setHoveredId={setHoveredId}
+              hoveredId={hoveredId}
+              user={user}
+              selectedEntry={selectedEntry}
+              setSelectedEntry={setSelectedEntry}
+              setIsResourceModalOpen={setIsResourceModalOpen}
+              newMaterial={newMaterial}
+              setNewMaterial={setNewMaterial}
+            />
+          )}
+        </div>
 
-      {/* RIGHT: Primary Schedule View Canvas Frame */}
-      <div className="flex-1 overflow-hidden relative flex flex-col">
-        {view === 'weekly' ? (
-          <WeeklyTimetableView
-            timetable={timetable}
-            currentTime={currentTime}
-            getTimePosition={getTimePosition}
-            formatTime={formatTime}
-            setHoveredId={setHoveredId}
-            hoveredId={hoveredId}
-          />
-        ) : (
-          <DailyTimetableView
-            timetable={timetable}
-            selectedDay={selectedDay}
-            setSelectedDay={setSelectedDay}
-            setHoveredId={setHoveredId}
-            hoveredId={hoveredId}
-            user={user}
-            selectedEntry={selectedEntry}
-            setSelectedEntry={setSelectedEntry}
-            setIsResourceModalOpen={setIsResourceModalOpen}
-            newMaterial={newMaterial}
-            setNewMaterial={setNewMaterial}
-          />
-        )}
+        <ResourceModal
+          isOpen={isResourceModalOpen}
+          onClose={() => setIsResourceModalOpen(false)}
+          selectedEntry={selectedEntry}
+          user={user}
+          newMaterial={newMaterial}
+          setNewMaterial={setNewMaterial}
+        />
       </div>
-
-      {/* Global Context Resource Interstitial Modal */}
-      <ResourceModal
-        isOpen={isResourceModalOpen}
-        onClose={() => setIsResourceModalOpen(false)}
-        selectedEntry={selectedEntry}
-        user={user}
-        newMaterial={newMaterial}
-        setNewMaterial={setNewMaterial}
-      />
-    </div>
+    </TooltipProvider>
   );
 }

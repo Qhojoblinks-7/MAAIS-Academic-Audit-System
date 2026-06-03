@@ -1,33 +1,32 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import {
-  FileText,
-  Printer,
-  ShieldCheck,
-  User,
-  Database,
-  TrendingUp,
-  History,
-  CheckCircle2,
-  ArrowLeft,
+import { 
+  FileText, 
+  Printer, 
+  ShieldCheck, 
+  User, 
+  Database, 
+  TrendingUp, 
+  History, 
+  CheckCircle2, 
+  ArrowLeft, 
   Calendar,
   Lock,
   Bot,
   Award
 } from 'lucide-react';
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer 
 } from 'recharts';
-import { cn } from '@/lib/utils';
+import { cn } from '../../lib/utils';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 
 // Helper to calculate WAEC Grade
 const getWAECGrade = (score) => {
@@ -610,54 +609,54 @@ const handleExportTranscript = async () => {
                     </span>
                   </div>
 
-{/* Subject Grade Table */}
-                   <div className="p-4 overflow-x-auto no-scrollbar">
-                     <Table className="w-full text-left min-w-[280px]">
-                       <TableHeader>
-                         <TableRow className="text-[8px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
-                           <TableHead className="pb-3 pl-2">Subject</TableHead>
-                           <TableHead className="pb-3 text-center">Class (30)</TableHead>
-                           <TableHead className="pb-3 text-center">Exam (70)</TableHead>
-                           <TableHead className="pb-3 text-center">Grade</TableHead>
-                           <TableHead className="pb-3 text-right pr-2 font-black italic">Total</TableHead>
-                         </TableRow>
-                       </TableHeader>
-                       <TableBody className="divide-y divide-slate-50">
-                         {['General Agric (Theory)', 'General Agric (Practical)'].map((subj, sIdx) => {
-                           const baseGrade = term.finalGrade || 70;
-                           const classScore = Math.round((baseGrade * 0.3) + (sIdx % 2 === 0 ? 1 : -3));
-                           const examScore = Math.round((baseGrade * 0.7) + (sIdx % 3 === 0 ? -1 : 3));
-                           const totalScore = Math.min(100, Math.max(0, classScore + examScore));
-                           const calculatedGrade = getWAECGrade(totalScore);
+                  {/* Subject Grade Table */}
+                  <div className="p-4 overflow-x-auto no-scrollbar">
+                    <table className="w-full text-left min-w-[280px]">
+                      <thead>
+                        <tr className="text-[8px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                          <th className="pb-3 pl-2">Subject</th>
+                          <th className="pb-3 text-center">Class (30)</th>
+                          <th className="pb-3 text-center">Exam (70)</th>
+                          <th className="pb-3 text-center">Grade</th>
+                          <th className="pb-3 text-right pr-2 font-black italic">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {['General Agric (Theory)', 'General Agric (Practical)'].map((subj, sIdx) => {
+                          const baseGrade = term.finalGrade || 70;
+                          const classScore = Math.round((baseGrade * 0.3) + (sIdx % 2 === 0 ? 1 : -3));
+                          const examScore = Math.round((baseGrade * 0.7) + (sIdx % 3 === 0 ? -1 : 3));
+                          const totalScore = Math.min(100, Math.max(0, classScore + examScore));
+                          const calculatedGrade = getWAECGrade(totalScore);
 
-                           return (
-                             <TableRow key={subj} className="hover:bg-slate-50/50 transition-all text-[11px] font-medium text-slate-600">
-                               <TableCell className="py-3 pl-2 font-semibold text-slate-800 leading-tight">
-                                 {subj}
-                               </TableCell>
-                               <TableCell className="py-3 text-center font-mono text-slate-500">
-                                 {classScore}
-                               </TableCell>
-                               <TableCell className="py-3 text-center font-mono text-slate-500">
-                                 {examScore}
-                               </TableCell>
-                               <TableCell className="py-3 text-center">
-                                 <span className={cn(
-                                   "px-2 py-0.5 text-[9px] rounded-md border",
-                                   calculatedGrade.color
-                                 )}>
-                                   {calculatedGrade.grade}
-                                 </span>
-                               </TableCell>
-                               <TableCell className="py-3 text-right pr-2 font-extrabold font-mono text-slate-900">
-                                 {totalScore}%
-                               </TableCell>
-                             </TableRow>
-                           );
-                         })}
-                       </TableBody>
-                     </Table>
-                   </div>
+                          return (
+                            <tr key={subj} className="hover:bg-slate-50/50 transition-all text-[11px] font-medium text-slate-600">
+                              <td className="py-3 pl-2 font-semibold text-slate-800 leading-tight">
+                                {subj}
+                              </td>
+                              <td className="py-3 text-center font-mono text-slate-500">
+                                {classScore}
+                              </td>
+                              <td className="py-3 text-center font-mono text-slate-500">
+                                {examScore}
+                              </td>
+                              <td className="py-3 text-center">
+                                <span className={cn(
+                                  "px-2 py-0.5 text-[9px] rounded-md border",
+                                  calculatedGrade.color
+                                )}>
+                                  {calculatedGrade.grade}
+                                </span>
+                              </td>
+                              <td className="py-3 text-right pr-2 font-extrabold font-mono text-slate-900">
+                                {totalScore}%
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
 
                   {/* Term Aggregate Summary Footer */}
                   <div className="bg-slate-50/30 border-t border-slate-100 p-4.5 flex items-center justify-between text-slate-500 text-xs mt-auto">

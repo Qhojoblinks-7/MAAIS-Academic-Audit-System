@@ -4,54 +4,61 @@ import { ChevronRight, MapPin, ShieldAlert, BookOpen, FilePlus, FileText, Link a
 import { cn } from '../../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { DailyClassCard } from '../../components/shared/DailyClassCard';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../../components/ui/tooltip';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
 export function DailyTimetableView({ timetable, selectedDay, setSelectedDay, setHoveredId, hoveredId, user, selectedEntry, setIsResourceModalOpen, newMaterial, setNewMaterial }) {
   const navigate = useNavigate();
 
-return (
-    <div className="h-full flex flex-col p-8 overflow-y-auto">
-      <div className="max-w-3xl mx-auto">
-        <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
-          {DAYS.map(day => (
-            <button
-              key={day}
-              onClick={() => setSelectedDay(day)}
-              className={cn(
-                "px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap",
-                selectedDay === day ? "bg-brand-primary text-primary-foreground shadow-lg" : "bg-card text-muted-foreground hover:bg-muted"
-              )}
-            >
-              {day}
-            </button>
-          ))}
-        </div>
+  return (
+    <TooltipProvider delayDuration={200}>
+      <div className="h-full flex flex-col p-8 overflow-y-auto">
+        <div className="max-w-3xl mx-auto w-full">
+          <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
+            {DAYS.map(day => (
+              <Tooltip key={day}>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setSelectedDay(day)}
+                    className={cn(
+                      "px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap",
+                      selectedDay === day ? "bg-success text-surface shadow-lg" : "bg-surface text-text-secondary hover:bg-muted"
+                    )}
+                  >
+                    {day}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" sideOffset={8}>View {day} schedule</TooltipContent>
+              </Tooltip>
+            ))}
+          </div>
 
-        <div className="space-y-4">
-          {timetable.filter(e => e.day === selectedDay).sort((a, b) => a.startTime.localeCompare(b.startTime)).map(entry => (
-            <DailyClassCard
-              key={entry.id}
-              entry={entry}
-              user={user}
-              hoveredId={hoveredId}
-              setHoveredId={setHoveredId}
-              selectedEntry={selectedEntry}
-              setIsResourceModalOpen={setIsResourceModalOpen}
-              newMaterial={newMaterial}
-              setNewMaterial={setNewMaterial}
-            />
-          ))}
-          
-          {timetable.filter(e => e.day === selectedDay).length === 0 && (
-            <div className="text-center py-20 bg-card rounded-3xl border-2 border-dashed border-border">
-              <Calendar className="mx-auto text-muted-foreground mb-4" size={48} />
-              <h3 className="text-lg font-black text-foreground">No Classes Scheduled</h3>
-              <p className="text-sm font-bold text-muted-foreground">Enjoy your free period!</p>
-            </div>
-          )}
+          <div className="space-y-4">
+            {timetable.filter(e => e.day === selectedDay).sort((a, b) => a.startTime.localeCompare(b.startTime)).map(entry => (
+              <DailyClassCard
+                key={entry.id}
+                entry={entry}
+                user={user}
+                hoveredId={hoveredId}
+                setHoveredId={setHoveredId}
+                selectedEntry={selectedEntry}
+                setIsResourceModalOpen={setIsResourceModalOpen}
+                newMaterial={newMaterial}
+                setNewMaterial={setNewMaterial}
+              />
+            ))}
+            
+            {timetable.filter(e => e.day === selectedDay).length === 0 && (
+              <div className="text-center py-20 bg-surface rounded-3xl border-2 border-dashed border-border">
+                <Calendar className="mx-auto text-text-secondary mb-4" size={48} />
+                <h3 className="text-lg font-black text-text-primary">No Classes Scheduled</h3>
+                <p className="text-sm font-bold text-text-secondary">Enjoy your free period!</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-   );
+    </TooltipProvider>
+  );
 }

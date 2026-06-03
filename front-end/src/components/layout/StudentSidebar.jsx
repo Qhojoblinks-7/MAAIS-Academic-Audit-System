@@ -14,16 +14,19 @@ import {
   BookOpen,
   Award,
   LineChart,
+  AlertCircle,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../ui/tooltip';
+import { Button } from '../ui/button';
 
 export function StudentSidebar() {
   const location = useLocation();
   const { user } = useRole();
-  
+
   const [showLogoutModal, setShowLogoutModal] = React.useState(false);
+  const [unsavedMarks] = React.useState(12);
   const sidebarRef = useRef(null);
 
   const navItems = [
@@ -62,7 +65,7 @@ export function StudentSidebar() {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <aside 
+      <aside
         ref={sidebarRef}
         className="w-20 h-screen bg-background border-r border-border flex flex-col items-center py-8 gap-8 z-30 select-none shrink-0 print:hidden"
       >
@@ -75,7 +78,7 @@ export function StudentSidebar() {
           <TooltipContent side="right" sideOffset={12}>Home</TooltipContent>
         </Tooltip>
 
-        <nav 
+        <nav
           className="flex-1 flex flex-col gap-4 w-full px-3 overflow-y-auto"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
@@ -129,25 +132,29 @@ export function StudentSidebar() {
         <div className="flex flex-col gap-4 mt-auto px-3 w-full items-center shrink-0">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link to="/support" className={cn("rounded-2xl w-12 h-12 flex items-center justify-center", location.pathname === '/support' ? "bg-surface text-brand-primary" : "text-text-secondary hover:bg-surface")}>
-                <LifeBuoy size={22} />
-              </Link>
+              <Button asChild variant="ghost" size="icon" className="w-12 h-12">
+                <Link to="/support">
+                  <LifeBuoy size={22} />
+                </Link>
+              </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={12}>ICT Support</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link to="/settings" className={cn("rounded-2xl w-12 h-12 flex items-center justify-center", location.pathname === '/settings' ? "bg-surface text-brand-primary" : "text-text-secondary hover:bg-surface")}>
-                <Settings size={22} />
-              </Link>
+              <Button asChild variant="ghost" size="icon" className="w-12 h-12">
+                <Link to="/settings">
+                  <Settings size={22} />
+                </Link>
+              </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={12}>Settings</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <button onClick={() => setShowLogoutModal(true)} className="rounded-2xl w-12 h-12 flex items-center justify-center text-text-secondary hover:bg-danger/10 hover:text-danger">
+              <Button variant="ghost" size="icon" onClick={() => setShowLogoutModal(true)} className="w-12 h-12 text-text-secondary hover:text-danger hover:bg-danger/10">
                 <LogOut size={22} />
-              </button>
+              </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={12}>Logout</TooltipContent>
           </Tooltip>
@@ -161,6 +168,21 @@ export function StudentSidebar() {
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-md bg-surface rounded-3xl p-8 border border-border">
               <h3 className="text-xl font-semibold mb-2">Terminate Session?</h3>
               <p className="text-sm text-text-secondary mb-6">Are you sure you want to log out?</p>
+
+              {unsavedMarks > 0 && (
+                <div className="bg-warning/10 border border-warning/20 rounded-2xl p-4 mb-6 flex gap-3.5">
+                  <div className="text-warning shrink-0 mt-0.5">
+                    <AlertCircle size={18} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-text-primary">Unsaved Data Discovered</p>
+                    <p className="text-xs text-text-secondary mt-0.5">
+                      There are {unsavedMarks} data nodes currently sitting in your local cache.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-3">
                 <button onClick={() => setShowLogoutModal(false)} className="flex-1 py-3 border rounded-xl">Cancel</button>
                 <button onClick={handleLogout} className="flex-1 py-3 bg-danger text-surface rounded-xl">Log Out</button>

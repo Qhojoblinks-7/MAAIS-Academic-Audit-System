@@ -6,6 +6,9 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import mockTeacherService from '../../services/mockTeacherService';
+import { Input } from '../../components/ui/input';
+import { Button } from '../../components/ui/button';
+import { Switch } from '../../components/ui/switch';
 
 export function TeacherSettings() {
   const navigate = useNavigate();
@@ -177,62 +180,60 @@ if (loading) {
               <div className="p-8 space-y-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Full Name</label>
-                        {profile.role === 'SET' ? (
-                          <input
-                            type="text"
-                            name="name"
-                            value={profile.name}
-                            onChange={handleChange}
-                            className={cn(
-                              "w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/10",
-                              errors.name && "border-destructive"
-                            )}
-                          />
-                        ) : (
-                          <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground">
-                            {profile.name || '—'}
-                          </p>
-                        )}
-                        {errors.name && <p className="text-[9px] text-destructive mt-1">{errors.name}</p>}
-                      </div>
+                        <div>
+                          <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Full Name</label>
+                          {profile.role === 'SET' ? (
+                            <Input
+                              name="name"
+                              value={profile.name}
+                              onChange={handleChange}
+                              className={cn(
+                                "font-black",
+                                errors.name && "border-destructive"
+                              )}
+                            />
+                          ) : (
+                            <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground">
+                              {profile.name || '—'}
+                            </p>
+                          )}
+                          {errors.name && <p className="text-[9px] text-destructive mt-1">{errors.name}</p>}
+                        </div>
                       <div>
                         <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Staff ID</label>
                         <div className="px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black font-mono text-muted-foreground">
                           {profile.staffId ? profile.staffId : '—'}
                         </div>
                       </div>
-                      <div>
-                        <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Department</label>
-                        {profile.role === 'SET' ? (
-                          <input
-                            type="text"
-                            name="department"
-                            value={profile.department}
-                            onChange={handleChange}
-                            className={cn(
-                              "w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/10",
-                              errors.department && "border-destructive"
-                            )}
-                          />
-                        ) : (
-                          <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground">
-                            {profile.department || '—'}
-                          </p>
-                        )}
-                        {errors.department && <p className="text-[9px] text-destructive mt-1">{errors.department}</p>}
-                      </div>
+                        <div>
+                          <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Department</label>
+                          {profile.role === 'SET' ? (
+                            <Input
+                              name="department"
+                              value={profile.department}
+                              onChange={handleChange}
+                              className={cn(
+                                "w-full font-black",
+                                errors.department && "border-destructive"
+                              )}
+                            />
+                          ) : (
+                            <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground">
+                              {profile.department || '—'}
+                            </p>
+                          )}
+                          {errors.department && <p className="text-[9px] text-destructive mt-1">{errors.department}</p>}
+                        </div>
                       <div>
                         <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Email</label>
                         {profile.role === 'SET' ? (
-                          <input
+                          <Input
                             type="email"
                             name="email"
                             value={profile.email}
                             onChange={handleChange}
                             className={cn(
-                              "w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/10",
+                              "w-full font-black",
                               errors.email && "border-destructive"
                             )}
                           />
@@ -246,13 +247,13 @@ if (loading) {
                       <div>
                         <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Phone</label>
                         {profile.role === 'SET' ? (
-                          <input
+                          <Input
                             type="tel"
                             name="phone"
                             value={profile.phone}
                             onChange={handleChange}
                             className={cn(
-                              "w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/10",
+                              "w-full font-black",
                               errors.phone && "border-destructive"
                             )}
                           />
@@ -269,14 +270,14 @@ if (loading) {
                           {profile.role ? profile.role : '—'}
                         </div>
                       </div>
-                    </div>
-                 <button
-                      type="submit"
-                      disabled={!canSave}
-                      className="w-full py-4 bg-foreground text-background rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-foreground/80 transition-all shadow-2xl shadow-foreground/10 flex items-center justify-center gap-2"
-                    >
-                      <Save size={16} /> Save Changes
-                    </button>
+                     </div>
+                     <Button
+                       type="submit"
+                       disabled={!canSave}
+                       className="w-full py-4 font-black uppercase tracking-widest shadow-2xl"
+                     >
+                       <Save size={16} /> Save Changes
+                     </Button>
                 </form>
               </div>
             </section>
@@ -318,9 +319,7 @@ if (loading) {
                       <p className="text-sm font-black text-foreground">{pref.label}</p>
                       <p className="text-[10px] font-medium text-muted-foreground mt-0.5">{pref.desc}</p>
                     </div>
-                    <button className={cn("w-12 h-7 rounded-full relative p-1", pref.enabled ? "bg-success shadow-lg shadow-success/20" : "bg-muted-foreground/30")}>
-                      <motion.div className="w-5 h-5 bg-background rounded-full shadow-sm" animate={{ x: pref.enabled ? 20 : 0 }} />
-                    </button>
+                     <Switch checked={pref.enabled} onCheckedChange={() => {}} />
                   </div>
                 ))}
               </div>

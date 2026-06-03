@@ -223,26 +223,30 @@ return (
                   className="p-4 sm:p-8 space-y-6 sm:space-y-8 max-w-7xl mx-auto"
                 >
                   
-                  {/* Analytic Indicator Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                    {[
-                      { title: 'Total Rostered Students', val: totalAlumni, note: 'Current & Graduated cohorts', icon: Users },
-                      { title: 'Cumulative GPA Average', val: `${cumulativeAverage}%`, note: 'Overall average over past terms', icon: TrendingUp },
-                      { title: 'Cryptographic Seals', val: sealedCount, note: 'Tamper-proof department seals', icon: ShieldCheck },
-                      { title: 'Database Security', val: 'Active', note: 'Secure Level 4 Vault Integrity', icon: Lock }
-                    ].map((card, idx) => (
-                      <Card key={idx} className="p-6 flex items-center justify-between">
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{card.title}</p>
-                          <p className="text-2xl font-black text-foreground tracking-tight">{card.val}</p>
-                          <p className="text-[10px] font-semibold text-muted-foreground uppercase">{card.note}</p>
-                        </div>
-                        <div className="w-12 h-12 rounded-[1.25rem] flex items-center justify-center text-background shrink-0 bg-foreground">
-                          <card.icon size={20} />
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
+                   {/* Analytic Indicator Cards */}
+                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                     {[
+                       { title: 'Total Rostered Students', val: totalAlumni, note: 'Current & Graduated cohorts', icon: Users },
+                       { title: 'Cumulative GPA Average', val: `${cumulativeAverage}%`, note: 'Overall average over past terms', icon: TrendingUp },
+                       { title: 'Cryptographic Seals', val: sealedCount, note: 'Tamper-proof department seals', icon: ShieldCheck },
+                       { title: 'Database Security', val: 'Active', note: 'Secure Level 4 Vault Integrity', icon: Lock }
+                     ].map((card, idx) => (
+                       <Card key={idx} className="p-6 rounded-2xl shadow-sm flex flex-col gap-3 ring-0">
+                         <div className="flex items-center gap-3">
+                           <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center text-foreground border border-border shrink-0">
+                             <card.icon size={20} />
+                           </div>
+                           <div>
+                             <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none">{card.title}</p>
+                             <div className="flex items-baseline gap-1">
+                               <span className="text-2xl font-black text-foreground leading-none">{card.val}</span>
+                               <span className="text-[11px] font-bold text-muted-foreground">{card.note}</span>
+                             </div>
+                           </div>
+                         </div>
+                       </Card>
+                     ))}
+                   </div>
 
 {/* Filter Row */}
                    <div className="bg-card border border-border rounded-[2rem] p-6 shadow-sm space-y-4">
