@@ -1,22 +1,27 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Cpu, 
-  Clock, 
-  ShieldCheck, 
-  LifeBuoy, 
-  Settings, 
-  LogOut, 
-  X, 
+import {
+  LayoutDashboard,
+  Users,
+  Cpu,
+  Clock,
+  ShieldCheck,
+  LifeBuoy,
+  Settings,
+  LogOut,
+  X,
   AlertTriangle,
-  ChevronRight
+  ChevronRight,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
 import { useUI } from '../../context/UIContext';
+
+import { Button } from '../ui/button';
+import { Card } from '../ui/card';
+
+
 
 export function AdminSidebar() {
    const location = useLocation();
@@ -224,44 +229,50 @@ export function AdminSidebar() {
               initial={{ scale: 0.95, opacity: 0, y: 10 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 10 }}
-              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100"
+              className="relative w-full max-w-md"
             >
-              <div className="p-8">
-                <div className="flex justify-between items-start mb-6">
-                  <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600">
-                    <AlertTriangle size={24} />
+              <Card className="rounded-3xl shadow-2xl overflow-hidden border border-slate-100 bg-white">
+                <div className="p-8">
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600">
+                      <AlertTriangle size={24} />
+                    </div>
+                    <Button
+                      variant="ghost"
+                      className="p-2 h-auto"
+                      onClick={() => setShowLogoutModal(false)}
+                      aria-label="Close"
+                    >
+                      <X size={20} />
+                    </Button>
                   </div>
-                  <button 
-                    onClick={() => setShowLogoutModal(false)} 
-                    className="p-2 hover:bg-slate-50 rounded-xl transition-all text-slate-400 hover:text-slate-600"
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
 
-                <h3 className="text-xl font-semibold text-slate-900 tracking-tight mb-2">Terminate Session?</h3>
-                <p className="text-sm text-slate-500 leading-relaxed mb-6">
-                  Are you sure you want to log out? Your access tokens will be cleared from this browser session.
-                </p>
+                  <h3 className="text-xl font-semibold text-slate-900 tracking-tight mb-2">Terminate Session?</h3>
+                  <p className="text-sm text-slate-500 leading-relaxed mb-6">
+                    Are you sure you want to log out? Your access tokens will be cleared from this browser session.
+                  </p>
 
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowLogoutModal(false)}
-                    className="flex-1 py-3 bg-slate-50 text-slate-700 font-medium rounded-xl text-sm hover:bg-slate-100 transition-all border border-slate-200/40"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="flex-1 py-3 bg-rose-600 text-white font-medium rounded-xl text-sm hover:bg-rose-700 transition-all shadow-md shadow-rose-600/10"
-                  >
-                    Log Out
-                  </button>
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      className="flex-1 py-3 border-slate-200/40"
+                      onClick={() => setShowLogoutModal(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      className="flex-1 py-3"
+                      onClick={handleLogout}
+                    >
+                      Log Out
+                    </Button>
+                  </div>
                 </div>
-              </div>
-              <div className="bg-slate-50 py-3.5 text-center border-t border-slate-100">
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Technical Protocol Secure</p>
-              </div>
+                <div className="bg-slate-50 py-3.5 text-center border-t border-slate-100">
+                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Technical Protocol Secure</p>
+                </div>
+              </Card>
             </motion.div>
           </div>
         )}

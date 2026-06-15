@@ -1,0 +1,14 @@
+import { api } from './client';
+
+export const archiveApi = {
+  getPromotionHistory: async (studentId) => api.get(`/archive/students/${studentId}/promotions`),
+
+  promoteStudent: async (studentId, academicYearId, fromClass, toClass, status, notes) =>
+    api.post('/archive/promote', { studentId, academicYearId, fromClass, toClass, status, notes }),
+
+  getAcademicYears: async () => api.get('/archive/academic-years'),
+
+  getArchiveStats: async () => api.get('/archive/stats'),
+};
+
+export default archiveApi;

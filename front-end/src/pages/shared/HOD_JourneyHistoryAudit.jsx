@@ -3,6 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { TrendingUp, Download, Calendar, Target, BookOpen, Activity, Star, CheckCircle2, Lock, History, Database as DbIcon } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '../../components/ui/table';
 
 const historyData = [
   { id: 's1', name: 'Angela Owusu', index: '10001', year: '2025/2026', term: 'Term 2', final: 78.5, status: 'IN PROGRESS' },
@@ -86,37 +94,37 @@ export function HOD_JourneyHistoryAudit() {
             </div>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-left min-w-[700px]">
-              <thead>
-                <tr className="bg-gray-50/50 border-b border-gray-100">
-                  <th className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">Student</th>
-                  <th className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">Index</th>
-                  <th className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">Year</th>
-                  <th className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">Term</th>
-                  <th className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest text-right">Final Grade</th>
-                  <th className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
+            <Table className="min-w-[700px]">
+              <TableHeader>
+                <TableRow className="bg-gray-50/50 border-b border-gray-100">
+                  <TableHead className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">Student</TableHead>
+                  <TableHead className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">Index</TableHead>
+                  <TableHead className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">Year</TableHead>
+                  <TableHead className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">Term</TableHead>
+                  <TableHead className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest text-right">Final Grade</TableHead>
+                  <TableHead className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-gray-50">
                 {historyData.map((s, i) => (
-                  <motion.tr key={s.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }} className="hover:bg-gray-50/50 transition-all">
-                    <td className="px-6 py-4">
+                  <TableRow key={s.id} className="hover:bg-gray-50/50 transition-all">
+                    <TableCell className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-center text-[10px] font-black text-gray-700">{s.name.charAt(0)}</div>
                         <span className="text-sm font-black text-gray-900">{s.name}</span>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm font-bold font-mono text-gray-500">{s.index}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-500">{s.year}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-500">{s.term}</td>
-                    <td className="px-6 py-4 text-sm font-black text-emerald-700 text-right">{s.final}%</td>
-                    <td className="px-6 py-4">
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-sm font-bold font-mono text-gray-500">{s.index}</TableCell>
+                    <TableCell className="px-6 py-4 text-sm font-medium text-gray-500">{s.year}</TableCell>
+                    <TableCell className="px-6 py-4 text-sm font-medium text-gray-500">{s.term}</TableCell>
+                    <TableCell className="px-6 py-4 text-sm font-black text-emerald-700 text-right">{s.final}%</TableCell>
+                    <TableCell className="px-6 py-4">
                       <span className={cn("text-[9px] font-black px-2 py-1 rounded uppercase tracking-widest", s.status === 'GRADUATED' ? 'bg-gray-50 text-gray-500 border border-gray-200' : 'bg-emerald-50 text-emerald-700')}>{s.status}</span>
-                    </td>
-                  </motion.tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       </div>

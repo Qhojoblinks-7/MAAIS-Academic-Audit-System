@@ -7,7 +7,7 @@ import {
   Mail, 
   Phone, 
   ShieldCheck, 
-  Lock, 
+  Lock,
   ArrowLeft,
   X,
   Filter,
@@ -19,6 +19,26 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { mockStaff, DEPARTMENTS, ROLES } from './data';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '../../components/ui/table';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Textarea } from '../../components/ui/textarea';
+import { 
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue
+} from '../../components/ui/select';
+import { Badge } from '../../components/ui/badge';
+import { Card } from '../../components/ui/card';
 
 export function StaffRegistry() {
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -125,36 +145,36 @@ export function StaffRegistry() {
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Institutional Command Registry : {mockStaff.length} Nodes</p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={handleExportCSV}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-200 hover:bg-slate-100 transition-all"
-          >
-            <Download size={14} />
-            Export CSV
-          </button>
-          <button 
-            onClick={handleOnboardStaff}
-            className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-slate-900/10"
-          >
-            <UserPlus size={16} />
-            Onboard Staff
-          </button>
-        </div>
+         <div className="flex items-center gap-3">
+           <Button 
+             onClick={handleExportCSV}
+             variant="outline"
+             className="flex items-center gap-2 px-4 py-2.5"
+           >
+             <Download size={14} />
+             Export CSV
+           </Button>
+           <Button 
+             onClick={handleOnboardStaff}
+             className="flex items-center gap-2 px-5 py-2.5"
+           >
+             <UserPlus size={16} />
+             Onboard Staff
+           </Button>
+         </div>
       </header>
 
       {/* Filter & Search Bar */}
       <div className="px-8 py-4 bg-white border-b border-slate-100 flex items-center justify-between shrink-0">
-        <div className="relative w-96 flex items-center group">
-          <Search className="absolute left-4 text-slate-400 group-focus-within:text-slate-900 transition-colors" size={18} />
-          <input 
-            type="text" 
-            placeholder="Query Registry by Name or Employee ID..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-6 py-3 bg-slate-50 border border-slate-200/60 rounded-2xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:bg-white transition-all"
-          />
-        </div>
+          <div className="relative w-96 flex items-center group">
+            <Search className="absolute left-4 text-slate-400 group-focus-within:text-slate-900 transition-colors" size={18} />
+            <Input 
+              placeholder="Query Registry by Name or Employee ID..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-6 py-3"
+            />
+          </div>
 
         <div className="flex items-center gap-2">
           <div className="relative">
@@ -182,64 +202,68 @@ export function StaffRegistry() {
                     <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Filter Registry</p>
                   </div>
                   <div className="p-4 space-y-4">
-                    <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Department</p>
-                      <select
-                        value={selectedDepartment}
-                        onChange={(e) => setSelectedDepartment(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
-                      >
-                        <option value="All">All Departments</option>
-                        {DEPARTMENTS.map(dept => (
-                          <option key={dept} value={dept}>{dept}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Role</p>
-                      <select
-                        value={selectedRole}
-                        onChange={(e) => setSelectedRole(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
-                      >
-                        <option value="All">All Roles</option>
-                        {ROLES.map(role => (
-                          <option key={role} value={role}>{role}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Status</p>
-                      <select
-                        value={selectedStatus}
-                        onChange={(e) => setSelectedStatus(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
-                      >
-                        <option value="All">All Statuses</option>
-                        <option value="Active">Active</option>
-                        <option value="On Leave">On Leave</option>
-                        <option value="Retired">Retired</option>
-                      </select>
-                    </div>
+                     <div>
+                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Department</p>
+                       <Select value={selectedDepartment} onValueChange={(e) => setSelectedDepartment(e.target.value)} className="w-full">
+                         <SelectTrigger>
+                           <SelectValue placeholder="All Departments" />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="All">All Departments</SelectItem>
+                           {DEPARTMENTS.map(dept => (
+                             <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                           ))}
+                         </SelectContent>
+                       </Select>
+                     </div>
+                     <div>
+                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Role</p>
+                       <Select value={selectedRole} onValueChange={(e) => setSelectedRole(e.target.value)} className="w-full">
+                         <SelectTrigger>
+                           <SelectValue placeholder="All Roles" />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="All">All Roles</SelectItem>
+                           {ROLES.map(role => (
+                             <SelectItem key={role} value={role}>{role}</SelectItem>
+                           ))}
+                         </SelectContent>
+                       </Select>
+                     </div>
+                     <div>
+                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Status</p>
+                       <Select value={selectedStatus} onValueChange={(e) => setSelectedStatus(e.target.value)} className="w-full">
+                         <SelectTrigger>
+                           <SelectValue placeholder="All Statuses" />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="All">All Statuses</SelectItem>
+                           <SelectItem value="Active">Active</SelectItem>
+                           <SelectItem value="On Leave">On Leave</SelectItem>
+                           <SelectItem value="Retired">Retired</SelectItem>
+                         </SelectContent>
+                       </Select>
+                     </div>
                   </div>
-                  <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-2">
-                    <button
-                      onClick={() => {
-                        setSelectedDepartment('All');
-                        setSelectedRole('All');
-                        setSelectedStatus('All');
-                      }}
-                      className="flex-1 py-2 bg-white border border-slate-200 text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all"
-                    >
-                      Reset
-                    </button>
-                    <button
-                      onClick={() => setShowFilters(false)}
-                      className="flex-1 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all"
-                    >
-                      Apply
-                    </button>
-                  </div>
+                   <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-2">
+                     <Button
+                       onClick={() => {
+                         setSelectedDepartment('All');
+                         setSelectedRole('All');
+                         setSelectedStatus('All');
+                       }}
+                       variant="outline"
+                       className="flex-1 py-2"
+                     >
+                       Reset
+                     </Button>
+                     <Button
+                       onClick={() => setShowFilters(false)}
+                       className="flex-1 py-2"
+                     >
+                       Apply
+                     </Button>
+                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -249,24 +273,24 @@ export function StaffRegistry() {
 
       {/* Registry Table */}
       <div className="flex-1 overflow-auto">
-        <table className="w-full border-collapse">
-          <thead className="sticky top-0 z-10">
-            <tr className="bg-slate-50/80 backdrop-blur-md border-b border-slate-200">
-              <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Full Name / ID</th>
-              <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Department</th>
-              <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Job Role</th>
-              <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Registry Status</th>
-              <th className="px-8 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Operations</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 bg-white">
+        <Table>
+          <TableHeader className="sticky top-0 z-10">
+            <TableRow className="bg-slate-50/80 backdrop-blur-md border-b border-slate-200">
+              <TableHead className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Full Name / ID</TableHead>
+              <TableHead className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Department</TableHead>
+              <TableHead className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Job Role</TableHead>
+              <TableHead className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Registry Status</TableHead>
+              <TableHead className="px-8 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Operations</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {filteredStaff.map((staff) => (
-              <tr 
+              <TableRow 
                 key={staff.id} 
                 onClick={() => setSelectedStaff(staff)}
                 className="group hover:bg-slate-50/50 transition-colors cursor-pointer"
               >
-                <td className="px-8 py-5">
+                <TableCell className="px-8 py-5">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-[0.75rem] bg-slate-100 flex items-center justify-center text-slate-900 font-bold text-sm border border-slate-200 group-hover:bg-white transition-colors uppercase select-none">
                       {staff.name.split(' ').map(n => n[0]).join('')}
@@ -276,33 +300,26 @@ export function StaffRegistry() {
                       <p className="text-[11px] font-bold text-slate-400 font-mono tracking-tighter">{staff.employeeId}</p>
                     </div>
                   </div>
-                </td>
-                <td className="px-8 py-5">
+                </TableCell>
+                <TableCell className="px-8 py-5">
                   <span className="text-[13px] font-bold text-slate-600">{staff.department}</span>
-                </td>
-                <td className="px-8 py-5">
+                </TableCell>
+                <TableCell className="px-8 py-5">
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
                     <span className="text-[11px] font-black text-slate-900 uppercase tracking-widest">{staff.role}</span>
                   </div>
-                </td>
-                <td className="px-8 py-5">
-                  <div className={cn(
-                    "inline-flex items-center gap-2 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest",
-                    staff.status === 'Active' ? "bg-emerald-50 border-emerald-100 text-emerald-700" :
-                    staff.status === 'On Leave' ? "bg-amber-50 border-amber-100 text-amber-700" :
-                    "bg-slate-100 border-slate-200 text-slate-500"
-                  )}>
-                    <div className={cn(
-                      "w-1 h-1 rounded-full",
-                      staff.status === 'Active' ? "bg-emerald-500" :
-                      staff.status === 'On Leave' ? "bg-amber-500" :
-                      "bg-slate-400"
-                    )} />
-                    {staff.status}
-                  </div>
-                </td>
-                <td className="px-8 py-5 text-right">
+                </TableCell>
+                 <TableCell className="px-8 py-5">
+                   <Badge className={cn(
+                     staff.status === 'Active' ? "flex items-center gap-2 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest bg-emerald-50 border-emerald-100 text-emerald-700" :
+                     staff.status === 'On Leave' ? "flex items-center gap-2 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest bg-amber-50 border-amber-100 text-amber-700" :
+                     "flex items-center gap-2 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest bg-slate-100 border-slate-200 text-slate-500"
+                   )}>
+                     {staff.status}
+                   </Badge>
+                 </TableCell>
+                <TableCell className="px-8 py-5 text-right">
                   <div className="relative">
                     <button 
                       onClick={(e) => toggleKebab(e, staff.id)}
@@ -354,11 +371,11 @@ export function StaffRegistry() {
                       )}
                     </AnimatePresence>
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
 
         {filteredStaff.length === 0 && (
           <div className="py-32 flex flex-col items-center justify-center text-center">

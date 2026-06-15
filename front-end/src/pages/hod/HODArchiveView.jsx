@@ -6,6 +6,8 @@ import { HODVaultView } from '../../components/organisms/HODVaultView';
 import { HODPromotionTerminal } from '../../components/organisms/HODPromotionTerminal';
 import { HODComplianceAudits } from '../../components/organisms/HODComplianceAudits';
 import { HODArchiveDetailView } from './HODArchiveDetailView';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
 export function HODArchiveView() {
   const [activeSubTab, setActiveSubTab] = useState('VAULT');

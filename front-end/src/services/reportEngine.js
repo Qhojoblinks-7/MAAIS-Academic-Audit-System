@@ -1,4 +1,4 @@
-import { calcRoman } from '../pages/shared/GradingSheet.constants';
+import { calcRoman } from '../constants/grading';
 
 class ReportEngine {
   generateWAECCSV(rows, subjectName = 'Subject', className = 'Class') {

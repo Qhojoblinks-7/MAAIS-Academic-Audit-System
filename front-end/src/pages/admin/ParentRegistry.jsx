@@ -1,6 +1,6 @@
 ﻿import React, { useState, useMemo } from 'react';
 import { 
-  Users, Search, Download, Plus,
+  Users, Search, Download, 
   ChevronRight, TrendingUp,
   X,
   FileText,
@@ -19,6 +19,24 @@ import {
   AreaChart, Area
 } from 'recharts';
 import { MOCK_PARENTS, PTA_ROLES, BROADCAST_TEMPLATES, PARENT_TARGET_POPULATIONS } from './data';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '../../components/ui/table';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Textarea } from '../../components/ui/textarea';
+import { 
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue
+} from '../../components/ui/select';
 
 // --- Components ---
 
@@ -39,9 +57,9 @@ const ParentProfile = ({ parent, onClose }) => {
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">{parent.phone}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-all">
-            <X size={24} />
-          </button>
+            <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-all">
+              <X size={24} />
+            </button>
         </div>
 
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
@@ -176,30 +194,30 @@ const ParentProfile = ({ parent, onClose }) => {
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <button className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-widest shadow-lg shadow-emerald-600/20">
-                  <ShieldCheck size={16} /> Reset PIN
-                </button>
-                <button className="flex-1 py-4 bg-white text-slate-900 border border-slate-200 rounded-2xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-widest">
-                  <Bell size={16} /> Notify
-                </button>
-              </div>
+               <div className="flex gap-3">
+                 <Button className="flex-1 py-4">
+                   <ShieldCheck size={16} /> Reset PIN
+                 </Button>
+                 <Button variant="outline" className="flex-1 py-4">
+                   <Bell size={16} /> Notify
+                 </Button>
+               </div>
             </div>
           </div>
         )}
       </div>
 
-      <div className="p-8 bg-white border-t border-slate-100 flex gap-3 shrink-0">
-        <button className="p-4 bg-emerald-50 text-emerald-600 rounded-2xl hover:bg-emerald-100 transition-all flex items-center justify-center">
-          <Phone size={20} />
-        </button>
-        <button className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest">
-          Full Statement
-        </button>
-        <button className="flex-1 py-4 border border-slate-200 rounded-2xl text-[11px] font-black uppercase tracking-widest">
-          Archive
-        </button>
-      </div>
+       <div className="p-8 bg-white border-t border-slate-100 flex gap-3 shrink-0">
+         <Button className="p-4">
+           <Phone size={20} />
+         </Button>
+         <Button className="flex-1 py-4">
+           Full Statement
+         </Button>
+         <Button variant="outline" className="flex-1 py-4">
+           Archive
+         </Button>
+       </div>
     </div>
   );
 };
@@ -248,14 +266,14 @@ export const ParentRegistry = () => {
               Institutional Household Management
             </h1>
           </div>
-          <div className="flex items-center gap-3">
-             <button onClick={() => setIsPTAHubOpen(true)} className="flex items-center gap-2 px-5 py-2.5 bg-emerald-50 text-emerald-900 border border-emerald-100 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-emerald-100 transition-all">
-                <Users size={16} /> PTA Hub
-             </button>
-             <button onClick={() => setIsBroadcasting(true)} className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/20">
-                <Send size={16} /> Broadcast Blast
-             </button>
-          </div>
+           <div className="flex items-center gap-3">
+              <Button onClick={() => setIsPTAHubOpen(true)} className="flex items-center gap-2 px-5 py-2.5">
+                 <Users size={16} /> PTA Hub
+              </Button>
+              <Button onClick={() => setIsBroadcasting(true)} variant="outline" className="flex items-center gap-2 px-5 py-2.5">
+                 <Send size={16} /> Broadcast Blast
+              </Button>
+           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -304,33 +322,35 @@ export const ParentRegistry = () => {
          <div className="flex items-center gap-4 flex-1 min-w-[300px]">
            <div className="relative flex-1">
              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-             <input type="text" placeholder="Search Guardians or Wards..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-12 pr-6 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-[13px] outline-none font-medium" />
+              <Input placeholder="Search Guardians or Wards..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-12 pr-6 py-3" />
            </div>
          </div>
-         <div className="flex items-center gap-3">
-            <button className="px-5 py-3 bg-white text-slate-900 border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-               <Download size={16} /> Global Report
-            </button>
-            <button className="p-3 bg-slate-900 text-white rounded-2xl"><Plus size={20} /></button>
-         </div>
+          <div className="flex items-center gap-3">
+             <Button variant="outline" className="px-5 py-3">
+                <Download size={16} /> Global Report
+             </Button>
+             <Button className="p-3">
+                <Plus size={20} />
+             </Button>
+          </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-8 relative">
         <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-100">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Guardian / Household</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Linked Wards</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Communication Status</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Ward Finance</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-slate-50/80 border-b border-slate-100">
+                <TableHead className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Guardian / Household</TableHead>
+                <TableHead className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Linked Wards</TableHead>
+                <TableHead className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Communication Status</TableHead>
+                <TableHead className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Ward Finance</TableHead>
+                <TableHead className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredParents.map((parent) => (
-                <tr key={parent.id} className="group hover:bg-slate-50 cursor-pointer transition-all" onClick={() => setSelectedParentId(parent.id)}>
-                  <td className="px-8 py-5">
+                <TableRow key={parent.id} className="group hover:bg-slate-50 cursor-pointer transition-all" onClick={() => setSelectedParentId(parent.id)}>
+                  <TableCell className="px-8 py-5">
                     <div className="flex items-center gap-4">
                        <div className={cn(
                          "w-11 h-11 rounded-xl flex items-center justify-center transition-all",
@@ -346,8 +366,8 @@ export const ParentRegistry = () => {
                           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{parent.phone}</p>
                        </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-5">
+                  </TableCell>
+                  <TableCell className="px-6 py-5">
                      <div className="flex flex-wrap gap-1.5">
                        {parent.wards.map(w => (
                          <span key={w.id} className="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-black italic font-display rounded-lg">
@@ -355,42 +375,44 @@ export const ParentRegistry = () => {
                          </span>
                        ))}
                      </div>
-                  </td>
-                  <td className="px-6 py-5">
+                  </TableCell>
+                  <TableCell className="px-6 py-5">
                     <div>
                       <p className="text-[11px] font-bold text-slate-900 mb-0.5">{parent.lastContacted}</p>
                       <p className="text-[9px] font-black uppercase text-slate-400 tracking-tight">{parent.lastMessage}</p>
                     </div>
-                  </td>
-                  <td className="px-6 py-5 text-center">
+                  </TableCell>
+                  <TableCell className="px-6 py-5 text-center">
                     <div className="flex flex-col items-center gap-1.5">
-                      {parent.wards.map(w => (
-                        <div key={w.id} className={cn(
-                          "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
-                          w.feesStatus === 'Paid' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                          w.feesStatus === 'Arrears' ? "bg-rose-50 text-rose-600 border-rose-100" :
-                          "bg-amber-50 text-amber-600 border-amber-100"
-                        )}>
-                          {w.feesStatus}
-                        </div>
-                      ))}
+                       {parent.wards.map(w => (
+                         <Badge key={w.id} variant="default" className={cn(
+                           "text-[9px] font-black uppercase tracking-widest",
+                           w.feesStatus === 'Paid' ? "bg-emerald-50 text-emerald-600" :
+                           w.feesStatus === 'Arrears' ? "bg-rose-50 text-rose-600" :
+                           "bg-amber-50 text-amber-600"
+                         )}>
+                           {w.feesStatus}
+                         </Badge>
+                       ))}
                     </div>
-                  </td>
-                  <td className="px-8 py-5 text-right">
-                     <div className="flex justify-end gap-2">
-                        <button className="p-3 bg-slate-50 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-xl transition-all" onClick={(e) => {
-                          e.stopPropagation();
-                          window.location.href = `tel:${parent.phone}`;
-                        }}>
-                          <Phone size={18} />
-                        </button>
-                        <button className="p-3 bg-slate-50 text-slate-400 hover:bg-slate-900 hover:text-white rounded-xl transition-all"><MoreVertical size={18} /></button>
-                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                  <TableCell className="px-8 py-5 text-right">
+                      <div className="flex justify-end gap-2">
+                         <Button variant="outline" className="p-3" onClick={(e) => {
+                           e.stopPropagation();
+                           window.location.href = `tel:${parent.phone}`;
+                         }}>
+                           <Phone size={18} />
+                         </Button>
+                         <Button variant="outline" className="p-3">
+                           <MoreVertical size={18} />
+                         </Button>
+                      </div>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </div>
 
@@ -422,33 +444,39 @@ export const ParentRegistry = () => {
                 <div className="p-10 space-y-8">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-4">
-                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-2">Target Population</label>
-                      <select className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-sm">
-                        <option>All Guardians</option>
-                        <option>SHS 3 Boarder Parents</option>
-                        <option>Fee Arrears Only</option>
-                        <option>Day Parent Protocol</option>
-                      </select>
-                    </div>
+                       <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-2">Target Population</label>
+                       <Select className="w-full">
+                         <SelectTrigger>
+                           <SelectValue placeholder="Select Population" />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="All Guardians">All Guardians</SelectItem>
+                           <SelectItem value="SHS 3 Boarder Parents">SHS 3 Boarder Parents</SelectItem>
+                           <SelectItem value="Fee Arrears Only">Fee Arrears Only</SelectItem>
+                           <SelectItem value="Day Parent Protocol">Day Parent Protocol</SelectItem>
+                         </SelectContent>
+                       </Select>
+                     </div>
                     <div className="space-y-4">
-                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-2">Template Core</label>
-                      <select className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-sm">
-                        <option>Custom Message</option>
-                        <option>PTA Meeting Invitation</option>
-                        <option>Terminal Report Dispatch</option>
-                        <option>Re-opening Schedule</option>
-                      </select>
-                    </div>
+                       <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-2">Template Core</label>
+                       <Select className="w-full">
+                         <SelectTrigger>
+                           <SelectValue placeholder="Select Template" />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="Custom Message">Custom Message</SelectItem>
+                           <SelectItem value="PTA Meeting Invitation">PTA Meeting Invitation</SelectItem>
+                           <SelectItem value="Terminal Report Dispatch">Terminal Report Dispatch</SelectItem>
+                           <SelectItem value="Re-opening Schedule">Re-opening Schedule</SelectItem>
+                         </SelectContent>
+                       </Select>
+                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-2">Broadcast Payload</label>
-                    <textarea 
-                      rows={4}
-                      className="w-full px-8 py-6 bg-slate-50 border border-slate-200 rounded-[2rem] outline-none font-bold text-sm italic resize-none"
-                      placeholder="Type your strategic institutional message here..."
-                    />
-                  </div>
+                   <div className="space-y-4">
+                     <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-2">Broadcast Payload</label>
+                     <Textarea rows={4} className="w-full px-8 py-6" placeholder="Type your strategic institutional message here..." />
+                   </div>
 
                   <div className="p-6 bg-emerald-50 rounded-[2rem] border border-emerald-100 flex items-center justify-between">
                     <div className="flex items-center gap-4">

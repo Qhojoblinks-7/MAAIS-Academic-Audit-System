@@ -1,4 +1,4 @@
-﻿﻿import React from 'react';
+﻿import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -9,6 +9,18 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
+import { Button } from '../../components/ui/button';
+import { Card } from '../../components/ui/card';
+import { Textarea } from '../../components/ui/textarea';
+import { Input } from '../../components/ui/input';
+import { 
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue
+} from '../../components/ui/select';
+import { Badge } from '../../components/ui/badge';
 import { 
   performanceDatasets, initialActivityLog, initialPendingApprovals, supportTickets,
   vitalSigns, fabActions, registerNodeProtocols, broadcastChannels
@@ -395,43 +407,41 @@ export function AdminHome() {
     </div>
     <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-wider">Strategic Memo</h3>
   </div>
-  <textarea 
-    value={notepadContent}
-    onChange={(e) => setNotepadContent(e.target.value)}
-    className="w-full h-24 bg-transparent text-xs font-bold text-slate-600 placeholder:text-slate-400 focus:outline-none resize-none leading-normal border-none p-0 focus:ring-0"
-    placeholder="Commit strategic reminders here..."
-  />
+   <Textarea
+     value={notepadContent}
+     onChange={(e) => setNotepadContent(e.target.value)}
+     className="h-24 placeholder:text-slate-400"
+     placeholder="Commit strategic reminders here..."
+   />
   <div className="flex justify-between items-center mt-2 pt-2 border-t border-slate-200/40">
     <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider italic text-emerald-600">Saved</p>
-    <button 
-      onClick={() => {
-        // Safe check for Modern Secure Context Clipboard API
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(notepadContent)
-            .then(() => alert("Memo copied to workspace clipboard!"))
-            .catch(() => alert("Failed to copy text."));
-        } else {
-          // Fallback mechanism for non-secure HTTP / network IP environments
-          const textArea = document.createElement("textarea");
-          textArea.value = notepadContent;
-          textArea.style.position = "fixed"; // Avoid scrolling page to bottom
-          document.body.appendChild(textArea);
-          textArea.focus();
-          textArea.select();
-          try {
-            document.execCommand('copy');
-            alert("Memo copied to workspace clipboard! (via fallback)");
-          } catch (err) {
-            alert("Could not copy memo automatically.");
-          }
-          document.body.removeChild(textArea);
-        }
-      }}
-      className="p-1 text-slate-400 hover:text-slate-900"
-      title="Copy Memo"
-    >
-      <ExternalLink size={12} />
-    </button>
+     <Button variant="outline" className="p-1" title="Copy Memo"
+       onClick={() => {
+         // Safe check for Modern Secure Context Clipboard API
+         if (navigator.clipboard && navigator.clipboard.writeText) {
+           navigator.clipboard.writeText(notepadContent)
+             .then(() => alert("Memo copied to workspace clipboard!"))
+             .catch(() => alert("Failed to copy text."));
+         } else {
+           // Fallback mechanism for non-secure HTTP / network IP environments
+           const textArea = document.createElement("textarea");
+           textArea.value = notepadContent;
+           textArea.style.position = "fixed"; // Avoid scrolling page to bottom
+           document.body.appendChild(textArea);
+           textArea.focus();
+           textArea.select();
+           try {
+             document.execCommand('copy');
+             alert("Memo copied to workspace clipboard! (via fallback)");
+           } catch (err) {
+             alert("Could not copy memo automatically.");
+           }
+           document.body.removeChild(textArea);
+         }
+       }}
+     >
+       <ExternalLink size={12} />
+     </Button>
   </div>
 </div>
             
@@ -465,16 +475,16 @@ export function AdminHome() {
            )}
          </AnimatePresence>
 
-        <button 
-          onClick={() => setFabOpen(!fabOpen)}
-          className={cn(
-            "w-12 h-12 rounded-xl flex items-center justify-center transition-all shadow-md transform active:scale-95 z-50",
-            fabOpen ? "bg-slate-900 text-white rotate-45" : 
-            isFreezeActive ? "bg-rose-600 text-white animate-pulse" : "bg-slate-900 text-white hover:bg-black"
-          )}
-        >
-          {isFreezeActive && !fabOpen ? <Lock size={20} /> : <Plus size={20} />}
-        </button>
+         <Button 
+           onClick={() => setFabOpen(!fabOpen)}
+           className={cn(
+             "w-12 h-12 rounded-xl flex items-center justify-center transition-all shadow-md transform active:scale-95 z-50",
+             fabOpen ? "bg-slate-900 text-white rotate-45" : 
+             isFreezeActive ? "bg-rose-600 text-white animate-pulse" : "bg-slate-900 text-white"
+           )}
+         >
+           {isFreezeActive && !fabOpen ? <Lock size={20} /> : <Plus size={20} />}
+         </Button>
       </div>
 
       {/* Quick Action Modals */}
@@ -486,30 +496,31 @@ export function AdminHome() {
                 <h3 className="text-lg font-black italic font-display text-slate-900">Register New Node</h3>
                 <p className="text-[8px] font-black uppercase text-slate-400 tracking-wider mb-5">Identity Provisioning Protocol</p>
                 
-                <div className="grid grid-cols-1 gap-2.5">
-                  {registerNodeProtocols.map((p, i) => {
-                    const iconMap = { GraduationCap, UserPlus, Users };
-                    const Icon = iconMap[p.icon] || UserPlus;
-                    return (
-                      <button 
-                        key={i} 
-                        onClick={() => { setActiveAction(null); navigate(p.path); }}
-                        className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl hover:bg-slate-100 transition-all text-left w-full"
-                      >
-                         <div className="flex items-center gap-3 min-w-0">
-                           <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-slate-900 shadow-xs shrink-0">
-                             <Icon size={18} />
-                           </div>
-                           <div className="min-w-0">
-                             <p className="text-xs font-black italic font-display text-slate-900 leading-tight">{p.label}</p>
-                             <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tight truncate">{p.desc}</p>
-                           </div>
-                         </div>
-                         <ChevronRight size={14} className="text-slate-300 shrink-0" />
-                      </button>
-                    );
-                  })}
-                </div>
+                 <div className="grid grid-cols-1 gap-2.5">
+                   {registerNodeProtocols.map((p, i) => {
+                     const iconMap = { GraduationCap, UserPlus, Users };
+                     const Icon = iconMap[p.icon] || UserPlus;
+                     return (
+                       <Button
+                         key={i}
+                         onClick={() => { setActiveAction(null); navigate(p.path); }}
+                         variant="outline"
+                         className="flex items-center justify-between p-4 text-left w-full"
+                       >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-slate-900 shadow-xs shrink-0">
+                              <Icon size={18} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-black italic font-display text-slate-900 leading-tight">{p.label}</p>
+                              <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tight truncate">{p.desc}</p>
+                            </div>
+                          </div>
+                          <ChevronRight size={14} className="text-slate-300 shrink-0" />
+                       </Button>
+                     );
+                   })}
+                 </div>
               </motion.div>
            </div>
          )}
@@ -528,40 +539,41 @@ export function AdminHome() {
                 <div className="p-5 space-y-4">
                   <div className="space-y-2">
                     <label className="text-[8px] font-black uppercase text-slate-400 tracking-wider ml-1">Channels</label>
-                    <div className="flex gap-2">
-                      {broadcastChannels.map(c => (
-                        <button 
-                          key={c} 
-                          onClick={() => setSelectedChannel(c)}
-                          className={cn(
-                            "flex-1 py-2 rounded-xl text-[8px] font-black uppercase tracking-wider transition-all border",
-                            c === selectedChannel ? "bg-slate-900 text-white border-slate-900" : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
-                          )}
-                        >
-                          {c}
-                        </button>
-                      ))}
-                    </div>
+                     <div className="flex gap-2">
+                       {broadcastChannels.map(c => (
+                         <Button
+                           key={c}
+                           onClick={() => setSelectedChannel(c)}
+                           variant="outline"
+                           className={cn(
+                             "flex-1 py-2",
+                             c === selectedChannel ? "bg-slate-900 text-white" : "text-slate-600"
+                           )}
+                         >
+                           {c}
+                         </Button>
+                       ))}
+                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[8px] font-black uppercase text-slate-400 tracking-wider ml-1">Payload Message Core</label>
-                    <textarea 
-                      value={broadcastPayload}
-                      onChange={(e) => setBroadcastPayload(e.target.value)}
-                      className="w-full h-24 p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none font-medium text-xs italic resize-none focus:ring-1 focus:ring-slate-400"
-                      placeholder="Enter core notification copy..."
-                    />
-                  </div>
-                  <button 
-                    onClick={handleFireBroadcast}
-                    disabled={!broadcastPayload.trim()}
-                    className={cn(
-                      "w-full py-3.5 rounded-xl text-[9px] font-black uppercase tracking-wider shadow-md flex items-center justify-center gap-2 transition-all",
-                      broadcastPayload.trim() ? "bg-slate-900 text-white cursor-pointer hover:bg-black" : "bg-slate-200 text-slate-400 cursor-not-allowed"
-                    )}
-                  >
-                    <Radio size={14} className={cn(broadcastPayload.trim() && "animate-pulse")} /> Initiate Global Pulse
-                  </button>
+                   <div className="space-y-2">
+                     <label className="text-[8px] font-black uppercase text-slate-400 tracking-wider ml-1">Payload Message Core</label>
+                     <Textarea 
+                       value={broadcastPayload}
+                       onChange={(e) => setBroadcastPayload(e.target.value)}
+                       className="h-24 font-medium text-xs italic"
+                       placeholder="Enter core notification copy..."
+                     />
+                   </div>
+                   <Button 
+                     onClick={handleFireBroadcast}
+                     disabled={!broadcastPayload.trim()}
+                     className={cn(
+                       "w-full py-3.5",
+                       broadcastPayload.trim() ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-400"
+                     )}
+                   >
+                     <Radio size={14} className={cn(broadcastPayload.trim() && "animate-pulse")} /> Initiate Global Pulse
+                   </Button>
                 </div>
              </motion.div>
           </div>
@@ -582,30 +594,32 @@ export function AdminHome() {
                     ? 'Restores standard entry and transactional read/write authority parameters across all department nodes.'
                     : 'Instantly locks write authority cross-institutionally to safeguard live evaluation logs.'}
                 </p>
-                <div className="flex gap-2.5">
-                  <button onClick={() => setActiveAction(null)} className="flex-1 py-2.5 bg-slate-50 text-slate-400 rounded-xl text-[9px] font-black uppercase tracking-wider">Abort</button>
-                  <button 
-                    onClick={() => { 
-                      setIsFreezeActive(!isFreezeActive); 
-                      
-                      // Push critical system action updates down into live view logger
-                      const freezeLog = {
-                        id: String(Date.now()),
-                        time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-                        event: `CRITICAL STATUS ALTERED: Global write access ${!isFreezeActive ? 'SUSPENDED/FROZEN' : 'RESTORED/UNFROZEN'}.`,
-                        type: 'security'
-                      };
-                      setActivities(prev => [freezeLog, ...prev]);
-                      setActiveAction(null); 
-                    }}
-                    className={cn(
-                      "flex-1 py-2.5 text-white rounded-xl text-[9px] font-black uppercase tracking-wider shadow-sm transition-all",
-                      isFreezeActive ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"
-                    )}
-                  >
-                    {isFreezeActive ? 'Restore Node' : 'Lock System'}
-                  </button>
-                </div>
+                 <div className="flex gap-2.5">
+                   <Button variant="outline" className="flex-1 py-2.5" onClick={() => setActiveAction(null)}>
+                     Abort
+                   </Button>
+                   <Button 
+                     onClick={() => { 
+                       setIsFreezeActive(!isFreezeActive); 
+                       
+                       // Push critical system action updates down into live view logger
+                       const freezeLog = {
+                         id: String(Date.now()),
+                         time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+                         event: `CRITICAL STATUS ALTERED: Global write access ${!isFreezeActive ? 'SUSPENDED/FROZEN' : 'RESTORED/UNFROZEN'}.`,
+                         type: 'security'
+                       };
+                       setActivities(prev => [freezeLog, ...prev]);
+                       setActiveAction(null); 
+                     }}
+                     className={cn(
+                       "flex-1 py-2.5",
+                       isFreezeActive ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"
+                     )}
+                   >
+                     {isFreezeActive ? 'Restore Node' : 'Lock System'}
+                   </Button>
+                 </div>
              </motion.div>
           </div>
         )}

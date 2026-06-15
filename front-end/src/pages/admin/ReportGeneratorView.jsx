@@ -8,6 +8,14 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '../../components/ui/table';
 
 const MOCK_REPORTS = [
   { id: '1', name: 'Angela Owusu', form: 'SHS 3', track: 'Gold Track', class: 'General Science 1', status: 'READY', attendance: '68/70', gradeAverage: 88.5 },
@@ -169,62 +177,62 @@ export const ReportGeneratorView = () => {
                   </div>
                </div>
 
-               <div className="overflow-x-auto">
-                 <table className="w-full text-left border-collapse">
-                    <thead>
-                       <tr className="bg-white border-b border-slate-100">
-                          <th className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Student Hierarchy</th>
-                          <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Avg Grade</th>
-                          <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Attend</th>
-                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Report Status</th>
-                          <th className="px-8 py-5"></th>
-                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
+<div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-white border-b border-slate-100">
+                         <TableHead className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Student Hierarchy</TableHead>
+                         <TableHead className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Avg Grade</TableHead>
+                         <TableHead className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Attend</TableHead>
+                         <TableHead className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Report Status</TableHead>
+                         <TableHead className="px-8 py-5"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                        {filteredReports.length > 0 ? (
                          filteredReports.map((report) => (
-                           <tr key={report.id} className="hover:bg-slate-50/50 transition-all group">
-                              <td className="px-10 py-6">
-                                 <p className="text-[14px] font-black italic font-display text-slate-900 leading-tight">{report.name}</p>
-                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">ID: ST-00{report.id}</p>
-                              </td>
-                              <td className="px-6 py-6 text-center">
-                                 <span className="text-[16px] font-black font-mono text-slate-900 italic font-display">{report.gradeAverage}%</span>
-                              </td>
-                              <td className="px-6 py-6">
-                                 <div className="flex items-center gap-2">
-                                    <Calendar size={12} className="text-slate-300" />
-                                    <span className="text-[11px] font-black text-slate-600 font-mono">{report.attendance}</span>
-                                 </div>
-                              </td>
-                              <td className="px-8 py-6">
-                                 <div className={cn(
-                                   "inline-flex items-center gap-2 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border",
-                                   report.status === 'READY' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                                   report.status === 'MISSING_MARKS' ? "bg-rose-50 text-rose-600 border-rose-100" :
-                                   report.status === 'PENDING_APPROVAL' ? "bg-amber-50 text-amber-600 border-amber-100" :
-                                   "bg-blue-50 text-blue-600 border-blue-100"
-                                 )}>
-                                    {report.status.replace('_', ' ')}
-                                 </div>
-                              </td>
-                              <td className="px-8 py-6 text-right">
-                                 <button className="p-2.5 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-900 hover:text-white transition-all opacity-0 group-hover:opacity-100 shadow-sm">
-                                   <Download size={14} />
-                                 </button>
-                              </td>
-                           </tr>
-                         ))
-                       ) : (
-                         <tr>
-                           <td colSpan={5} className="px-10 py-16 text-center text-[12px] font-bold uppercase tracking-widest text-slate-400 italic">
-                             No student records found matches criteria.
-                           </td>
-                         </tr>
-                       )}
-                    </tbody>
-                 </table>
-               </div>
+                           <TableRow key={report.id} className="hover:bg-slate-50/50 transition-all group">
+                               <TableCell className="px-10 py-6">
+                                  <p className="text-[14px] font-black italic font-display text-slate-900 leading-tight">{report.name}</p>
+                                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">ID: ST-00{report.id}</p>
+                               </TableCell>
+                               <TableCell className="px-6 py-6 text-center">
+                                  <span className="text-[16px] font-black font-mono text-slate-900 italic font-display">{report.gradeAverage}%</span>
+                               </TableCell>
+                               <TableCell className="px-6 py-6">
+                                  <div className="flex items-center gap-2">
+                                     <Calendar size={12} className="text-slate-300" />
+                                     <span className="text-[11px] font-black text-slate-600 font-mono">{report.attendance}</span>
+                                  </div>
+                               </TableCell>
+                               <TableCell className="px-8 py-6">
+                                  <div className={cn(
+                                    "inline-flex items-center gap-2 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border",
+                                    report.status === 'READY' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                                    report.status === 'MISSING_MARKS' ? "bg-rose-50 text-rose-600 border-rose-100" :
+                                    report.status === 'PENDING_APPROVAL' ? "bg-amber-50 text-amber-600 border-amber-100" :
+                                    "bg-blue-50 text-blue-600 border-blue-100"
+                                  )}>
+                                     {report.status.replace('_', ' ')}
+                                  </div>
+                               </TableCell>
+                               <TableCell className="px-8 py-6 text-right">
+                                  <button className="p-2.5 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-900 hover:text-white transition-all opacity-0 group-hover:opacity-100 shadow-sm">
+                                    <Download size={14} />
+                                  </button>
+                               </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={5} className="px-10 py-16 text-center text-[12px] font-bold uppercase tracking-widest text-slate-400 italic">
+                              No student records found matches criteria.
+                            </TableCell>
+                          </TableRow>
+                        )}
+                     </TableBody>
+                  </Table>
+                </div>
             </div>
           </div>
 

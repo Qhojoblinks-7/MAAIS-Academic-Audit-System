@@ -8,6 +8,14 @@ import {
   Trash2, Copy, Save, MapPin
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '../../components/ui/table';
 
 // --- Types & Constants ---
 
@@ -230,32 +238,32 @@ export const MasterTimetable = () => {
             </div>
           </div>
 
-          {/* Master Grid Area */}
+{/* Master Grid Area */}
           <div className="xl:col-span-9">
             <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
                <div className="overflow-x-auto">
-                 <table className="w-full border-collapse">
-                   <thead>
-                     <tr className="bg-slate-50 border-b border-slate-200">
-                        <th className="px-6 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest border-r border-slate-200 sticky left-0 z-10 bg-slate-50">Time Slot</th>
+                 <Table>
+                   <TableHeader>
+                     <TableRow className="bg-slate-50 border-b border-slate-200">
+                        <TableHead className="px-6 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest border-r border-slate-200 sticky left-0 z-10 bg-slate-50">Time Slot</TableHead>
                         {DAYS.map(day => (
-                          <th key={day} className="px-6 py-6 text-[10px] font-black text-slate-900 uppercase tracking-widest text-center min-w-[200px]">
+                          <TableHead key={day} className="px-6 py-6 text-[10px] font-black text-slate-900 uppercase tracking-widest text-center min-w-[200px]">
                             {day}
-                          </th>
+                          </TableHead>
                         ))}
-                     </tr>
-                   </thead>
-                   <tbody className="divide-y divide-slate-100">
+                     </TableRow>
+                   </TableHeader>
+                   <TableBody>
                      {TIME_SLOTS.map(slot => {
                        const isBreak = slot.id.startsWith('break');
                        return (
-                         <tr key={slot.id} className={cn(isBreak ? "bg-slate-50/50" : "")}>
-                           <td className="px-6 py-8 border-r border-slate-200 sticky left-0 z-10 bg-white">
-                              <p className="text-[12px] font-black text-slate-900 italic leading-none mb-1">{slot.label}</p>
-                              <div className="flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase">
-                                <Clock size={10} /> {slot.start} - {slot.end}
-                              </div>
-                           </td>
+                         <TableRow key={slot.id} className={cn(isBreak ? "bg-slate-50/50" : "")}>
+                           <TableCell className="px-6 py-8 border-r border-slate-200 sticky left-0 z-10 bg-white">
+                               <p className="text-[12px] font-black text-slate-900 italic leading-none mb-1">{slot.label}</p>
+                               <div className="flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase">
+                                 <Clock size={10} /> {slot.start} - {slot.end}
+                               </div>
+                           </TableCell>
                            {DAYS.map(day => {
                              const slotKey = `${day}-${slot.id}`;
                              const lesson = currentClassSchedule[slotKey];
@@ -264,69 +272,70 @@ export const MasterTimetable = () => {
                              
                              if (isBreak) {
                                return (
-                                 <td key={day} className="px-4 py-4 text-center">
-                                    <div className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] flex items-center justify-center gap-2">
-                                       <div className="w-8 h-px bg-slate-100" />
-                                       {slot.label}
-                                       <div className="w-8 h-px bg-slate-100" />
-                                    </div>
-                                 </td>
+                                 <TableCell key={day} className="px-4 py-4 text-center">
+                                       <div className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] flex items-center justify-center gap-2">
+                                          <div className="w-8 h-px bg-slate-100" />
+                                          {slot.label}
+                                          <div className="w-8 h-px bg-slate-100" />
+                                       </div>
+                                 </TableCell>
                                );
                              }
 
                              return (
-                               <td 
+                               <TableCell 
                                  key={day} 
                                  className="px-3 py-3 relative min-h-[140px]"
                                  onDragOver={(e) => handleDragOver(e, slotKey)}
                                  onDragLeave={handleDragLeave}
                                  onDrop={(e) => handleDrop(e, slotKey)}
+                                 data-slot-key={slotKey}
                                >
-                                  <div 
-                                    className={cn(
-                                      "w-full h-full min-h-[100px] border-2 border-dashed border-slate-100 rounded-[1.5rem] flex items-center justify-center transition-all group",
-                                      lesson ? "border-transparent bg-slate-50 p-4" : "hover:border-slate-300 hover:bg-slate-50/50 cursor-pointer",
-                                      conflict ? "bg-rose-50 border-rose-100 ring-4 ring-rose-500/10" : "",
-                                      dragOverSlot === slotKey ? "bg-slate-200 border-slate-400 scale-[1.02]" : ""
-                                    )}
-                                  >
-                                    {lesson ? (
-                                      <div className="w-full relative">
-                                        <div className={cn("absolute -left-4 top-0 bottom-0 w-1", lesson.color)} />
-                                        <div className="flex justify-between items-start mb-1">
-                                          <p className="text-[13px] font-black italic text-slate-900 leading-tight">{lesson.subject}</p>
-                                          <button 
-                                            onClick={() => removeLesson(slotKey)}
-                                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-slate-300 hover:text-rose-500"
-                                          >
-                                            <Trash2 size={12} />
-                                          </button>
-                                        </div>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{lesson.class}</p>
-                                        <div className="flex items-center gap-1.5 mt-2">
-                                          <MapPin size={10} className="text-slate-300" />
-                                          <span className="text-[8px] font-black text-slate-500 uppercase">Room B3</span>
-                                        </div>
-                                        
-                                        {conflict && (
-                                          <div className="mt-3 p-2 bg-rose-500 text-white rounded-lg flex items-center gap-2" title={conflict.msg}>
-                                            <AlertTriangle size={10} className="shrink-0" />
-                                            <span className="text-[8px] font-black uppercase tracking-tighter truncate">Clash: {lesson.teacher}</span>
-                                          </div>
-                                        )}
-                                      </div>
-                                    ) : (
-                                      <Plus size={20} className="text-slate-200 group-hover:text-slate-400 transition-colors" />
-                                    )}
-                                  </div>
-                               </td>
+                                   <div 
+                                     className={cn(
+                                       "w-full h-full min-h-[100px] border-2 border-dashed border-slate-100 rounded-[1.5rem] flex items-center justify-center transition-all group",
+                                       lesson ? "border-transparent bg-slate-50 p-4" : "hover:border-slate-300 hover:bg-slate-50/50 cursor-pointer",
+                                       conflict ? "bg-rose-50 border-rose-100 ring-4 ring-rose-500/10" : "",
+                                       dragOverSlot === slotKey ? "bg-slate-200 border-slate-400 scale-[1.02]" : ""
+                                     )}
+                                   >
+                                     {lesson ? (
+                                       <div className="w-full relative">
+                                         <div className={cn("absolute -left-4 top-0 bottom-0 w-1", lesson.color)} />
+                                         <div className="flex justify-between items-start mb-1">
+                                           <p className="text-[13px] font-black italic text-slate-900 leading-tight">{lesson.subject}</p>
+                                           <button 
+                                             onClick={() => removeLesson(slotKey)}
+                                             className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-slate-300 hover:text-rose-500"
+                                           >
+                                             <Trash2 size={12} />
+                                           </button>
+                                         </div>
+                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{lesson.class}</p>
+                                         <div className="flex items-center gap-1.5 mt-2">
+                                           <MapPin size={10} className="text-slate-300" />
+                                           <span className="text-[8px] font-black text-slate-500 uppercase">Room B3</span>
+                                         </div>
+                                         
+                                         {conflict && (
+                                           <div className="mt-3 p-2 bg-rose-500 text-white rounded-lg flex items-center gap-2" title={conflict.msg}>
+                                             <AlertTriangle size={10} className="shrink-0" />
+                                             <span className="text-[8px] font-black uppercase tracking-tighter truncate">Clash: {lesson.teacher}</span>
+                                           </div>
+                                         )}
+                                       </div>
+                                     ) : (
+                                       <Plus size={20} className="text-slate-200 group-hover:text-slate-400 transition-colors" />
+                                     )}
+                                   </div>
+                               </TableCell>
                              );
                            })}
-                         </tr>
+                         </TableRow>
                        );
                      })}
-                   </tbody>
-                 </table>
+                   </TableBody>
+                 </Table>
                </div>
             </div>
           </div>

@@ -6,6 +6,9 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import mockTeacherService from '../../services/mockTeacherService';
+import { Input } from '../../components/ui/input';
+import { Button } from '../../components/ui/button';
+import { Switch } from '../../components/ui/switch';
 
 export function TeacherSettings() {
   const navigate = useNavigate();
@@ -135,12 +138,12 @@ export function TeacherSettings() {
     }
   };
 
-  if (loading) {
+if (loading) {
     return (
-      <div className="flex-1 overflow-y-auto bg-[#F9F9F7] p-6 md:p-8 lg:p-12 pb-32 lg:pb-24">
+      <div className="flex-1 overflow-y-auto bg-background p-6 md:p-8 lg:p-12 pb-32 lg:pb-24">
         <div className="max-w-3xl mx-auto">
           <div className="text-center py-12">
-            <p className="text-gray-500">Loading profile...</p>
+            <p className="text-muted-foreground">Loading profile...</p>
           </div>
         </div>
       </div>
@@ -148,160 +151,155 @@ export function TeacherSettings() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#F9F9F7] p-6 md:p-8 lg:p-12 pb-32 lg:pb-24">
+    <div className="flex-1 overflow-y-auto bg-background p-6 md:p-8 lg:p-12 pb-32 lg:pb-24">
       <div className="max-w-3xl mx-auto">
         {message && (
-          <div className={`mb-4 p-4 rounded-2xl ${messageType === 'success' ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'} text-${messageType === 'success' ? 'emerald-700' : 'red-700'} flex items-center gap-3`}>
-            <CheckCircle2 size={20} className={`${messageType === 'success' ? 'text-emerald-500' : 'text-red-500'}`} />
+          <div className={cn("mb-4 p-4 rounded-2xl flex items-center gap-3",
+            messageType === 'success' ? 'bg-success/10 border border-success/20 text-success' : 'bg-destructive/10 border border-destructive/20 text-destructive'
+          )}>
+            <CheckCircle2 size={20} className={cn(messageType === 'success' ? 'text-success' : 'text-destructive')} />
             <span>{message}</span>
           </div>
         )}
           <header className="mb-10 flex items-center gap-4">
-            <div className="w-12 h-12 bg-gray-900 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-gray-900/10">
+            <div className="w-12 h-12 bg-foreground rounded-2xl flex items-center justify-center text-background shadow-xl shadow-foreground/10">
               <User size={28} />
             </div>
             <div>
-              <h1 className="text-[28px] md:text-[34px] font-black text-gray-900 tracking-tighter leading-none italic font-display uppercase">My Identity</h1>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Professional profile & academic credentials</p>
+              <h1 className="text-[28px] md:text-[34px] font-black text-foreground tracking-tighter leading-none italic font-display uppercase">My Identity</h1>
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">Professional profile & academic credentials</p>
             </div>
           </header>
 
           <div className="grid gap-6 mb-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {/* Stats remain unchanged */ }
-            </div>
-
-            <section className="bg-white rounded-[2rem] border border-gray-100 p-8 shadow-sm">
-              <div className="p-6 border-b border-gray-50 bg-gray-50/30 flex items-center gap-3">
-                <User className="text-gray-900" size={20} />
-                <h2 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">Personal Details</h2>
+            <section className="bg-card rounded-[2rem] border border-border p-8 shadow-sm">
+              <div className="p-6 border-b border-border bg-muted/30 flex items-center gap-3">
+                <User className="text-foreground" size={20} />
+                <h2 className="text-[11px] font-black text-foreground uppercase tracking-widest">Personal Details</h2>
               </div>
               <div className="p-8 space-y-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     <div>
-                       <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Full Name</label>
-                       {profile.role === 'SET' ? (
-                         <input
-                           type="text"
-                           name="name"
-                           value={profile.name}
-                           onChange={handleChange}
-                           className={cn(
-                             "w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-[14px] font-black text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/10",
-                             errors.name && "border-red-500"
-                           )}
-                         />
-                       ) : (
-                         <p className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-[14px] font-black text-gray-900">
-                           {profile.name || '—'}
-                         </p>
-                       )}
-                       {errors.name && <p className="text-[9px] text-red-500 mt-1">{errors.name}</p>}
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Full Name</label>
+                          {profile.role === 'SET' ? (
+                            <Input
+                              name="name"
+                              value={profile.name}
+                              onChange={handleChange}
+                              className={cn(
+                                "font-black",
+                                errors.name && "border-destructive"
+                              )}
+                            />
+                          ) : (
+                            <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground">
+                              {profile.name || '—'}
+                            </p>
+                          )}
+                          {errors.name && <p className="text-[9px] text-destructive mt-1">{errors.name}</p>}
+                        </div>
+                      <div>
+                        <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Staff ID</label>
+                        <div className="px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black font-mono text-muted-foreground">
+                          {profile.staffId ? profile.staffId : '—'}
+                        </div>
+                      </div>
+                        <div>
+                          <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Department</label>
+                          {profile.role === 'SET' ? (
+                            <Input
+                              name="department"
+                              value={profile.department}
+                              onChange={handleChange}
+                              className={cn(
+                                "w-full font-black",
+                                errors.department && "border-destructive"
+                              )}
+                            />
+                          ) : (
+                            <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground">
+                              {profile.department || '—'}
+                            </p>
+                          )}
+                          {errors.department && <p className="text-[9px] text-destructive mt-1">{errors.department}</p>}
+                        </div>
+                      <div>
+                        <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Email</label>
+                        {profile.role === 'SET' ? (
+                          <Input
+                            type="email"
+                            name="email"
+                            value={profile.email}
+                            onChange={handleChange}
+                            className={cn(
+                              "w-full font-black",
+                              errors.email && "border-destructive"
+                            )}
+                          />
+                        ) : (
+                          <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground">
+                            {profile.email || '—'}
+                          </p>
+                        )}
+                        {errors.email && <p className="text-[9px] text-destructive mt-1">{errors.email}</p>}
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Phone</label>
+                        {profile.role === 'SET' ? (
+                          <Input
+                            type="tel"
+                            name="phone"
+                            value={profile.phone}
+                            onChange={handleChange}
+                            className={cn(
+                              "w-full font-black",
+                              errors.phone && "border-destructive"
+                            )}
+                          />
+                        ) : (
+                          <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground">
+                            {profile.phone || '—'}
+                          </p>
+                        )}
+                        {errors.phone && <p className="text-[9px] text-destructive mt-1">{errors.phone}</p>}
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Role</label>
+                        <div className="px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-muted-foreground">
+                          {profile.role ? profile.role : '—'}
+                        </div>
+                      </div>
                      </div>
-                     <div>
-                       <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Staff ID</label>
-                       <div className="px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-[14px] font-black font-mono text-gray-800">
-                         {profile.staffId ? profile.staffId : '—'}
-                       </div>
-                     </div>
-                     <div>
-                       <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Department</label>
-                       {profile.role === 'SET' ? (
-                         <input
-                           type="text"
-                           name="department"
-                           value={profile.department}
-                           onChange={handleChange}
-                           className={cn(
-                             "w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-[14px] font-black text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/10",
-                             errors.department && "border-red-500"
-                           )}
-                         />
-                       ) : (
-                         <p className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-[14px] font-black text-gray-900">
-                           {profile.department || '—'}
-                         </p>
-                       )}
-                       {errors.department && <p className="text-[9px] text-red-500 mt-1">{errors.department}</p>}
-                     </div>
-                     <div>
-                       <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Email</label>
-                       {profile.role === 'SET' ? (
-                         <input
-                           type="email"
-                           name="email"
-                           value={profile.email}
-                           onChange={handleChange}
-                           className={cn(
-                             "w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-[14px] font-black text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/10",
-                             errors.email && "border-red-500"
-                           )}
-                         />
-                       ) : (
-                         <p className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-[14px] font-black text-gray-900">
-                           {profile.email || '—'}
-                         </p>
-                       )}
-                       {errors.email && <p className="text-[9px] text-red-500 mt-1">{errors.email}</p>}
-                     </div>
-                     <div>
-                       <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Phone</label>
-                       {profile.role === 'SET' ? (
-                         <input
-                           type="tel"
-                           name="phone"
-                           value={profile.phone}
-                           onChange={handleChange}
-                           className={cn(
-                             "w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-[14px] font-black text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/10",
-                             errors.phone && "border-red-500"
-                           )}
-                         />
-                       ) : (
-                         <p className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-[14px] font-black text-gray-900">
-                           {profile.phone || '—'}
-                         </p>
-                       )}
-                       {errors.phone && <p className="text-[9px] text-red-500 mt-1">{errors.phone}</p>}
-                     </div>
-                     <div>
-                       <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Role</label>
-                       <div className="px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-[14px] font-black text-gray-800">
-                         {profile.role ? profile.role : '—'}
-                       </div>
-                     </div>
-                   </div>
-                  <button
-                    type="submit"
-                    disabled={!canSave}
-                    className="w-full py-4 bg-gray-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-2xl shadow-gray-900/20 flex items-center justify-center gap-2"
-                  >
-                    <Save size={16} /> Save Changes
-                  </button>
+                     <Button
+                       type="submit"
+                       disabled={!canSave}
+                       className="w-full py-4 font-black uppercase tracking-widest shadow-2xl"
+                     >
+                       <Save size={16} /> Save Changes
+                     </Button>
                 </form>
               </div>
             </section>
 
-            {/* Remaining sections (My Classes, Notification Preferences) remain unchanged */ }
-            <section className="bg-white rounded-[2rem] border border-gray-100 p-8 shadow-sm">
-              <div className="p-6 border-b border-gray-50 bg-gray-50/30 flex items-center gap-3">
-                <BookOpen className="text-gray-900" size={20} />
-                <h2 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">My Classes</h2>
+            <section className="bg-card rounded-[2rem] border border-border p-8 shadow-sm">
+              <div className="p-6 border-b border-border bg-muted/30 flex items-center gap-3">
+                <BookOpen className="text-foreground" size={20} />
+                <h2 className="text-[11px] font-black text-foreground uppercase tracking-widest">My Classes</h2>
               </div>
               <div className="p-8 space-y-4">
-                {SETTINGS_CLASSES.map((cls, i) => (
-                  <div key={cls.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all">
+                {settingsClasses.map((cls, i) => (
+                  <div key={cls.id} className="flex items-center justify-between p-4 bg-muted rounded-2xl hover:bg-muted/50 transition-all">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
-                        <BookOpen className="text-emerald-600" size={20} />
+                      <div className="w-10 h-10 bg-success/10 rounded-xl flex items-center justify-center">
+                        <BookOpen className="text-success" size={20} />
                       </div>
                       <div>
-                        <p className="text-sm font-black text-gray-900">{cls.subject}</p>
-                        <p className="text-[9px] font-bold text-gray-500 uppercase">{cls.className} • {cls.studentCount} students</p>
+                        <p className="text-sm font-black text-foreground">{cls.subject}</p>
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">{cls.className} • {cls.studentCount} students</p>
                       </div>
                     </div>
-                    <button className="text-[9px] font-black text-emerald-700 uppercase tracking-widest hover:underline">
+                    <button className="text-[9px] font-black text-brand-primary uppercase tracking-widest hover:underline">
                       Enter Marks
                     </button>
                   </div>
@@ -309,21 +307,19 @@ export function TeacherSettings() {
               </div>
             </section>
 
-            <section className="bg-white rounded-[2rem] border border-gray-100 p-8 shadow-sm">
-              <div className="p-6 border-b border-gray-50 bg-gray-50/30 flex items-center gap-3">
-                <Bell className="text-gray-900" size={20} />
-                <h2 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">Notification Preferences</h2>
+            <section className="bg-card rounded-[2rem] border border-border p-8 shadow-sm">
+              <div className="p-6 border-b border-border bg-muted/30 flex items-center gap-3">
+                <Bell className="text-foreground" size={20} />
+                <h2 className="text-[11px] font-black text-foreground uppercase tracking-widest">Notification Preferences</h2>
               </div>
               <div className="p-8 space-y-4">
-                {NOTIFICATION_PREFERENCES.map((pref, i) => (
-                  <div key={i} className="flex items-center justify-between p-5 bg-gray-50 rounded-2xl">
+                {notificationPreferences.map((pref, i) => (
+                  <div key={i} className="flex items-center justify-between p-5 bg-muted rounded-2xl">
                     <div>
-                      <p className="text-sm font-black text-gray-900">{pref.label}</p>
-                      <p className="text-[10px] font-medium text-gray-400 mt-0.5">{pref.desc}</p>
+                      <p className="text-sm font-black text-foreground">{pref.label}</p>
+                      <p className="text-[10px] font-medium text-muted-foreground mt-0.5">{pref.desc}</p>
                     </div>
-                    <button className={cn("w-12 h-7 rounded-full relative p-1", pref.enabled ? "bg-emerald-600 shadow-lg shadow-emerald-600/20" : "bg-gray-300")}>
-                      <motion.div className="w-5 h-5 bg-white rounded-full shadow-sm" animate={{ x: pref.enabled ? 20 : 0 }} />
-                    </button>
+                     <Switch checked={pref.enabled} onCheckedChange={() => {}} />
                   </div>
                 ))}
               </div>
@@ -331,5 +327,5 @@ export function TeacherSettings() {
           </div>
       </div>
     </div>
-  );
+   );
 }

@@ -11,6 +11,7 @@ export { HODTeachers }          from './HODTeachers';
 export { HODAnalytics }         from './HODAnalytics';
 export { HODArchiveView }       from './HODArchiveView';
 export { HODArchiveDetailView } from './HODArchiveDetailView';
+export { HODMissingObservations } from './HODMissingObservations';
 export { Unauthorized }         from './Unauthorized';
 export {BroadsheetGenerator} from './BroadsheetGenerator';
 export { HODCertification } from './HODCertification';

@@ -6,7 +6,8 @@ import {
   DEFAULT_CLASS_INFO,
   DEFAULT_STP_RULES,
   getSectionFieldName,
-} from './GradingSheet.constants';
+  calcRoman,
+} from '../../constants/grading';
 import { notification } from '../../services/notificationService';
 
 /**
@@ -269,7 +270,6 @@ export function useGradingSheetLogic({
   }, [isTermFinalized, selectedStudent, behavioralRatings, behavioralComment, flaggedStudents, labSafetyCompliance]);
 
   const handleExportWAEC = useCallback(() => {
-    const { calcRoman } = require('./GradingSheet.constants');
     if (isTermFinalized || missingCount > 0 || isSubmissionLocked) return;
     const headers = ['Index', 'Student Name', 'SBA', 'Exam', 'Final', 'Grade', 'Roman'];
     const rows = students.map(s => [

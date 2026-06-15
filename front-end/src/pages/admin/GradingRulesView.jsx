@@ -12,6 +12,14 @@ import { cn } from '../../lib/utils';
 import { useUI } from '../../context/UIContext';
 import { useNavigate } from 'react-router-dom';
 import { auditTrail } from '../../services/auditTrailService';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '../../components/ui/table';
 
 
 const DEFAULT_REMARK_POOL = {
@@ -358,107 +366,107 @@ export const GradingRulesView = () => {
                  </button>
                </div>
                
-               <div className="overflow-x-auto">
-                 <table className="w-full text-left">
-                   <thead>
-                     <tr className="bg-slate-50 border-b border-slate-100">
-                        <th className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Score Range (%)</th>
-                        <th className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Grade</th>
-                        <th className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Automated Remark (Smart Logic)</th>
-                        <th className="px-10 py-5"></th>
-                     </tr>
-                   </thead>
-                   <tbody className="divide-y divide-slate-50">
-                     {boundaries.map((b) => (
-                       <tr key={b.id} className="hover:bg-slate-50/50 transition-colors group">
-                         <td className="px-10 py-6">
-                           <div className="flex items-center gap-3">
-                              <input 
-                                type="number" 
-                                value={b.min}
-                                disabled={isTermFinalized}
-                                // Safe input handling: string allows backspacing clean fields
-                                onChange={(e) => handleBoundaryChange(b.id, 'min', e.target.value === '' ? '' : parseInt(e.target.value))}
-                                className="w-16 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-[12px] font-black font-mono text-center outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
-                              />
-                              <span className="text-slate-300 font-black">—</span>
-                              <input 
-                                type="number" 
-                                value={b.max}
-                                disabled={isTermFinalized}
-                                onChange={(e) => handleBoundaryChange(b.id, 'max', e.target.value === '' ? '' : parseInt(e.target.value))}
-                                className="w-16 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-[12px] font-black font-mono text-center outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
-                              />
-                           </div>
-                         </td>
-                         <td className="px-10 py-6 text-center">
-                           <span className={cn(
-                             "px-4 py-2 rounded-xl text-[14px] font-black italic font-display border",
-                             b.grade.startsWith('A') ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                             b.grade.startsWith('B') ? "bg-blue-50 text-blue-600 border-blue-100" :
-                             b.grade.startsWith('C') ? "bg-amber-50 text-amber-600 border-amber-100" :
-                             "bg-rose-50 text-rose-600 border-rose-100"
-                           )}>
-                             {b.grade}
-                           </span>
-                         </td>
-                         <td className="px-10 py-6">
-                           <div className="relative flex items-center gap-2">
-                             <div className="relative flex-1">
-                               <Edit3 size={12} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-hover:text-emerald-600 transition-colors" />
+<div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50 border-b border-slate-100">
+                         <TableHead className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Score Range (%)</TableHead>
+                         <TableHead className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Grade</TableHead>
+                         <TableHead className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Automated Remark (Smart Logic)</TableHead>
+                         <TableHead className="px-10 py-5"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody className="divide-y divide-slate-50">
+                      {boundaries.map((b) => (
+                        <TableRow key={b.id} className="hover:bg-slate-50/50 transition-colors group">
+                          <TableCell className="px-10 py-6">
+                            <div className="flex items-center gap-3">
                                <input 
-                                 type="text"
-                                 value={b.remark}
+                                 type="number" 
+                                 value={b.min}
                                  disabled={isTermFinalized}
-                                 onChange={(e) => handleBoundaryChange(b.id, 'remark', e.target.value)}
-                                 className="w-full pl-10 pr-4 py-3 bg-transparent border border-transparent hover:border-slate-200 rounded-xl text-[12px] font-bold text-slate-600 outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 transition-all font-sans"
+                                 // Safe input handling: string allows backspacing clean fields
+                                 onChange={(e) => handleBoundaryChange(b.id, 'min', e.target.value === '' ? '' : parseInt(e.target.value))}
+                                 className="w-16 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-[12px] font-black font-mono text-center outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
                                />
-                             </div>
-                             
-                             {/* Smart Suggestion Dropdown */}
-                             <div className="relative group/suggest">
-                               <button 
+                               <span className="text-slate-300 font-black">—</span>
+                               <input 
+                                 type="number" 
+                                 value={b.max}
                                  disabled={isTermFinalized}
-                                 className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-emerald-500 hover:text-white disabled:hover:bg-slate-50 disabled:hover:text-slate-400 transition-all border border-slate-100"
-                               >
-                                 <Sparkles size={14} />
-                               </button>
-                               {!isTermFinalized && (
-                                 <div className="absolute right-0 bottom-full mb-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 hidden group-hover/suggest:block z-50">
-                                    <div className="px-3 py-2 border-b border-slate-50 mb-1">
-                                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Smart Suggestions</p>
-                                    </div>
-                                    {b.suggestionPool?.map((suggestion, idx) => (
-                                      <button 
-                                        key={idx}
-                                        onClick={() => handleBoundaryChange(b.id, 'remark', suggestion)}
-                                        className="w-full text-left px-3 py-2 text-[10px] font-bold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors leading-tight"
-                                      >
-                                        {suggestion}
-                                      </button>
-                                    ))}
-                                    {(!b.suggestionPool || b.suggestionPool.length === 0) && (
-                                      <div className="px-3 py-2 text-[10px] font-medium text-slate-400 italic">No templates for this category.</div>
-                                    )}
-                                 </div>
-                               )}
-                             </div>
-                           </div>
-                         </td>
-                         <td className="px-10 py-6 text-right">
-                            <button 
-                              disabled={isTermFinalized}
-                              onClick={() => handleDeleteBoundary(b.id)}
-                              className="text-slate-300 hover:text-rose-500 disabled:hover:text-slate-300 transition-colors opacity-0 group-hover:opacity-100"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                         </td>
-                       </tr>
-                     ))}
-                   </tbody>
-                 </table>
-               </div>
+                                 onChange={(e) => handleBoundaryChange(b.id, 'max', e.target.value === '' ? '' : parseInt(e.target.value))}
+                                 className="w-16 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-[12px] font-black font-mono text-center outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                               />
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-10 py-6 text-center">
+                            <span className={cn(
+                              "px-4 py-2 rounded-xl text-[14px] font-black italic font-display border",
+                              b.grade.startsWith('A') ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                              b.grade.startsWith('B') ? "bg-blue-50 text-blue-600 border-blue-100" :
+                              b.grade.startsWith('C') ? "bg-amber-50 text-amber-600 border-amber-100" :
+                              "bg-rose-50 text-rose-600 border-rose-100"
+                            )}>
+                              {b.grade}
+                            </span>
+                          </TableCell>
+                          <TableCell className="px-10 py-6">
+                            <div className="relative flex items-center gap-2">
+                              <div className="relative flex-1">
+                                <Edit3 size={12} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-hover:text-emerald-600 transition-colors" />
+                                <input 
+                                  type="text"
+                                  value={b.remark}
+                                  disabled={isTermFinalized}
+                                  onChange={(e) => handleBoundaryChange(b.id, 'remark', e.target.value)}
+                                  className="w-full pl-10 pr-4 py-3 bg-transparent border border-transparent hover:border-slate-200 rounded-xl text-[12px] font-bold text-slate-600 outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 transition-all font-sans"
+                                />
+                              </div>
+                              
+                              {/* Smart Suggestion Dropdown */}
+                              <div className="relative group/suggest">
+                                <button 
+                                  disabled={isTermFinalized}
+                                  className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-emerald-500 hover:text-white disabled:hover:bg-slate-50 disabled:hover:text-slate-400 transition-all border border-slate-100"
+                                >
+                                  <Sparkles size={14} />
+                                </button>
+                                {!isTermFinalized && (
+                                  <div className="absolute right-0 bottom-full mb-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 hidden group-hover/suggest:block z-50">
+                                     <div className="px-3 py-2 border-b border-slate-50 mb-1">
+                                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Smart Suggestions</p>
+                                     </div>
+                                     {b.suggestionPool?.map((suggestion, idx) => (
+                                       <button 
+                                         key={idx}
+                                         onClick={() => handleBoundaryChange(b.id, 'remark', suggestion)}
+                                         className="w-full text-left px-3 py-2 text-[10px] font-bold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors leading-tight"
+                                       >
+                                         {suggestion}
+                                       </button>
+                                     ))}
+                                     {(!b.suggestionPool || b.suggestionPool.length === 0) && (
+                                       <div className="px-3 py-2 text-[10px] font-medium text-slate-400 italic">No templates for this category.</div>
+                                     )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-10 py-6 text-right">
+                             <button 
+                               disabled={isTermFinalized}
+                               onClick={() => handleDeleteBoundary(b.id)}
+                               className="text-slate-300 hover:text-rose-500 disabled:hover:text-slate-300 transition-colors opacity-0 group-hover:opacity-100"
+                             >
+                               <Trash2 size={16} />
+                             </button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
                
                <div className="p-8 bg-slate-50 border-t border-slate-100">
                   <button 

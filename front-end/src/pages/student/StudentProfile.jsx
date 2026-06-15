@@ -1,38 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { GraduationCap, Lock, Unlock, ArrowLeft, User, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '../../lib/utils';
 import { useHOD } from '../../context/HODContext';
 import { GradingSheet } from '../../pages/shared/GradingSheet';
+import '@/index.css';
 
-const MOCK_STUDENT = {
-  id: 'stud001',
-  index: '001',
-  name: 'Angela Owusu',
-  classForm: 'SHS 1 Agric B',
-  department: 'Agriculture',
-};
-
-const MOCK_TERM_HISTORY = [
-  { term: '2023/24 Term 1', gpa: 2.85, grade: 'B2' },
-  { term: '2023/24 Term 2', gpa: 3.12, grade: 'B2' },
-  { term: '2023/24 Term 3', gpa: 3.25, grade: 'B2' },
-  { term: '2024/25 Term 1', gpa: 3.45, grade: 'A1' },
-  { term: '2024/25 Term 2', gpa: 3.62, grade: 'A1' },
-];
-
-const MOCK_SUBJECT_PERFORMANCE = [
-  { subject: 'General Agriculture', grades: ['B3', 'B2', 'B2', 'A1'], trend: 'improving' },
-  { subject: 'Mathematics', grades: ['C5', 'C4', 'B3', 'B2'], trend: 'improving' },
-  { subject: 'English', grades: ['B2', 'B2', 'B2', 'B2'], trend: 'stable' },
-  { subject: 'Science', grades: ['B3', 'B3', 'B2', 'C4'], trend: 'stable' },
-];
-
-const MOCK_BEHAVIORAL_LOGS = [
-  { date: '2026-05-14', type: 'Lab Safety', comment: 'Exhibited high safety protocol compliance' },
-  { date: '2026-04-28', type: 'Academic', comment: 'Near top percentile in mid-term practical' },
-];
-
+// 1. Unified Subject Keys across the entire module
 const SUBJECT_CONFIG = {
   'General Agriculture': {
     sections: ['Paper 1 (50)', 'Paper 2-Agri (90)', 'Paper 3-Pract (60)'],
@@ -51,6 +24,29 @@ const SUBJECT_CONFIG = {
   },
 };
 
+const MOCK_STUDENT = {
+  id: 'stud001',
+  index: '001',
+  name: 'Angela Owusu',
+  classForm: 'SHS 1 Agric B',
+  department: 'Agriculture',
+};
+
+const MOCK_TERM_HISTORY = [
+  { term: '2023/24 Term 1', gpa: 2.85, grade: 'B2' },
+  { term: '2023/24 Term 2', gpa: 3.12, grade: 'B2' },
+  { term: '2023/24 Term 3', gpa: 3.25, grade: 'B2' },
+  { term: '2024/25 Term 1', gpa: 3.45, grade: 'A1' },
+  { term: '2024/25 Term 2', gpa: 3.62, grade: 'A1' },
+];
+
+// Fixed key from 'Mathematics' to 'Core Mathematics' to pair with configuration
+const MOCK_SUBJECT_PERFORMANCE = [
+  { subject: 'General Agriculture', grades: ['B3', 'B2', 'B2', 'A1'], trend: 'improving' },
+  { subject: 'Core Mathematics', grades: ['C5', 'C4', 'B3', 'B2'], trend: 'improving' },
+  { subject: 'English Language', grades: ['B2', 'B2', 'B2', 'B2'], trend: 'stable' },
+];
+
 export function StudentProfile() {
   const { archivedClasses, interventionAlerts } = useHOD();
   const [student, setStudent] = useState(null);
@@ -58,40 +54,51 @@ export function StudentProfile() {
   const [isEnteringGrade, setIsEnteringGrade] = useState(false);
   const [gradeSubject, setGradeSubject] = useState(null);
 
+  // Flatten out student records from HOD context safely
   const allStudents = useMemo(() => {
     const students = [];
-    archivedClasses.forEach(archived => {
-      if (archived.students && Array.isArray(archived.students)) {
-        archived.students.forEach(s => {
-          students.push({
-            id: s.id,
-            name: s.name,
-            index: s.indexNumber,
-            classForm: archived.className || archived.class,
-            archived: archived.status === 'LOCKED' || archived.status === 'ARCHIVED',
+    if (archivedClasses && Array.isArray(archivedClasses)) {
+      archivedClasses.forEach(archived => {
+        if (archived.students && Array.isArray(archived.students)) {
+          archived.students.forEach(s => {
+            students.push({
+              id: s.id,
+              name: s.name,
+              index: s.indexNumber || s.index,
+              classForm: archived.className || archived.class,
+              archived: archived.status === 'LOCKED' || archived.status === 'ARCHIVED',
+            });
           });
-        });
-      }
-    });
+        }
+      });
+    }
     if (students.length === 0) {
       students.push(MOCK_STUDENT);
     }
     return students;
   }, [archivedClasses]);
 
+  // Sync URL state to track the active profile target
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const studentId = params.get('id');
-    if (studentId) {
-      const found = allStudents.find(s => s.id === studentId);
-      if (found) {
-        setStudent(found);
-        setIsArchived(found.archived);
-      }
+    
+    // Fallback to mock profile if no routing params exist yet
+    if (!studentId) {
+      setStudent(MOCK_STUDENT);
+      setIsArchived(false);
+      return;
+    }
+
+    const found = allStudents.find(s => s.id === studentId);
+    if (found) {
+      setStudent(found);
+      setIsArchived(found.archived);
     }
   }, [allStudents]);
 
   const handleEnterGrade = (subject) => {
+    if (!subject) return;
     setGradeSubject(subject);
     setIsEnteringGrade(true);
   };
@@ -102,10 +109,8 @@ export function StudentProfile() {
   };
 
   const studentAlerts = useMemo(() => {
-    if (!student) return [];
-    return Array.isArray(interventionAlerts) 
-      ? interventionAlerts.filter(a => a.studentId === student.id || a.studentName === student.name)
-      : [];
+    if (!student || !Array.isArray(interventionAlerts)) return [];
+    return interventionAlerts.filter(a => a.studentId === student.id || a.studentName === student.name);
   }, [interventionAlerts, student]);
 
   if (!student) {
@@ -123,7 +128,7 @@ export function StudentProfile() {
   const latestGPA = MOCK_TERM_HISTORY[MOCK_TERM_HISTORY.length - 1]?.gpa || 0;
 
   return (
-    <div className="w-full h-screen bg-[#F4F3EA] text-[#1C1C1E] p-5 font-sans antialiased selection:bg-yellow-200 flex flex-col overflow-hidden">
+    <div className="w-full h-screen bg-[#F4F3EA] text-[#1C1C1E] p-5 font-sans antialiased flex flex-col overflow-hidden">
       <header className="flex items-center justify-between mb-4 shrink-0">
         <h1 className="text-xl font-semibold tracking-tight text-[#1C1C1E]">Student Profile</h1>
         <div className="flex items-center gap-2">
@@ -133,10 +138,10 @@ export function StudentProfile() {
             </span>
           ) : (
             <button 
-              onClick={() => handleEnterGrade('General Agriculture')}
-              className="px-3 py-1.5 bg-white text-xs font-medium rounded-xl shadow-3xs border border-white/60 flex items-center gap-2 text-emerald-700 hover:bg-emerald-50 transition"
+              onClick={() => handleEnterGrade(availableSubjects[0])}
+              className="px-3 py-1.5 bg-white text-xs font-medium rounded-xl shadow-sm border border-slate-200/60 flex items-center gap-2 text-emerald-700 hover:bg-emerald-50 transition"
             >
-              <Unlock size={13} /> <span>Enter Grade</span>
+              <Unlock size={13} /> <span>Quick Grade Entry</span>
             </button>
           )}
         </div>
@@ -144,45 +149,52 @@ export function StudentProfile() {
 
       <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <div className="lg:col-span-4 bg-white/60 border border-white/80 rounded-[24px] p-4">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 rounded-[12px] bg-slate-100 border border-white flex items-center justify-center text-slate-400">
+          {/* Sidebar Info Panel */}
+          <div className="lg:col-span-4 bg-white/60 border border-white/80 rounded-[24px] p-4 flex flex-col gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-[12px] bg-slate-100 border border-white flex items-center justify-center text-slate-400 shrink-0">
                 <GraduationCap size={28} />
               </div>
               <div>
-                <h2 className="text-lg font-bold">{student.name}</h2>
-                <p className="text-[10px] text-[#A1A1A1] font-mono">Index: {student.index}</p>
-                <p className="text-[10px] text-[#7A7A7A]">{student.classForm}</p>
-                <p className="text-[9px] text-emerald-700">GPA: {latestGPA.toFixed(2)}</p>
+                <h2 className="text-lg font-bold leading-tight">{student.name}</h2>
+                <p className="text-[10px] text-gray-400 font-mono mt-0.5">Index: {student.index}</p>
+                <p className="text-[10px] text-gray-500">{student.classForm}</p>
+                <p className="text-[10px] font-semibold text-emerald-700 mt-1">GPA: {latestGPA.toFixed(2)}</p>
               </div>
             </div>
 
             {isArchived && (
-              <div className="mb-3 p-2 bg-amber-50/50 border border-amber-200/50 rounded-lg">
-                <p className="text-[10px] text-[#7A7A7A]">Record archived. Grades read-only.</p>
+              <div className="p-2.5 bg-amber-50/60 border border-amber-200/40 rounded-xl">
+                <p className="text-[11px] text-amber-800 font-medium">Record archived. Grades are read-only.</p>
               </div>
             )}
 
             {studentAlerts.length > 0 && !isArchived && (
-              <div className="mb-3 p-2 bg-amber-50/50 border border-amber-200/50 rounded-lg">
-                <p className="text-[9px] font-bold uppercase mb-1 flex items-center gap-1">
-                  <AlertTriangle size={10} className="text-amber-600" /> Interventions
+              <div className="p-3 bg-rose-50/60 border border-rose-200/40 rounded-xl">
+                <p className="text-[10px] font-bold uppercase mb-1.5 flex items-center gap-1 text-rose-800">
+                  <AlertTriangle size={11} /> Interventions Required
                 </p>
-                {studentAlerts.slice(0, 2).map((alert, idx) => (
-                  <p key={idx} className="text-[9px] leading-tight">{alert.subject}: {alert.reason}</p>
-                ))}
+                <div className="space-y-1">
+                  {studentAlerts.slice(0, 2).map((alert, idx) => (
+                    <p key={idx} className="text-[11px] text-rose-900 leading-tight">
+                      <span className="font-medium">{alert.subject}:</span> {alert.reason}
+                    </p>
+                  ))}
+                </div>
               </div>
             )}
 
             {!isArchived && (
-              <div>
-                <p className="text-[9px] font-bold uppercase mb-1">Enter Grade For:</p>
+              <div className="mt-auto pt-2">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 block mb-1.5">
+                  Select Subject for Entry:
+                </label>
                 <select 
-                  onChange={(e) => e.target.value && handleEnterGrade(e.target.value)}
-                  className="w-full text-xs bg-white border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                  defaultValue=""
+                  onChange={(e) => handleEnterGrade(e.target.value)}
+                  className="w-full text-xs bg-white border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  value={gradeSubject || ""}
                 >
-                  <option value="">Select subject...</option>
+                  <option value="" disabled>Choose a configuration setup...</option>
                   {availableSubjects.map(subject => (
                     <option key={subject} value={subject}>{subject}</option>
                   ))}
@@ -191,23 +203,26 @@ export function StudentProfile() {
             )}
           </div>
 
-          <div className="lg:col-span-8 space-y-3">
+          {/* Performance Data Metrics */}
+          <div className="lg:col-span-8 space-y-4">
             <div className="bg-white/40 border border-white/80 rounded-[24px] p-4">
-              <h3 className="text-xs font-bold uppercase mb-2 flex items-center gap-1">
-                <TrendingUp size={12} className="text-[#1C1C1E]" /> Performance Trend (SHS 1-3)
+              <h3 className="text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1 text-gray-600">
+                <TrendingUp size={12} /> Performance History (Cumulative)
               </h3>
-              <div className="space-y-2">
+              <div className="divide-y divide-gray-200/40">
                 {MOCK_TERM_HISTORY.map((term, idx) => (
-                  <div key={idx} className="flex items-center justify-between text-xs">
-                    <span className="text-[#7A7A7A]">{term.term}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold">{term.grade}</span>
-                      <span className="font-mono">{term.gpa.toFixed(2)}</span>
-                      {idx > 0 && MOCK_TERM_HISTORY[idx-1] && (
-                        term.gpa > MOCK_TERM_HISTORY[idx-1].gpa
-                          ? <TrendingUp size={12} className="text-emerald-600" />
-                          : <TrendingDown size={12} className="text-amber-600" />
-                      )}
+                  <div key={idx} className="flex items-center justify-between py-2 text-xs implementation-row">
+                    <span className="text-gray-500 font-medium">{term.term}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-gray-700 font-bold">{term.grade}</span>
+                      <span className="font-mono w-8 text-right font-semibold">{term.gpa.toFixed(2)}</span>
+                      <span className="w-4">
+                        {idx > 0 && term.gpa > MOCK_TERM_HISTORY[idx - 1].gpa ? (
+                          <TrendingUp size={13} className="text-emerald-600" />
+                        ) : idx > 0 ? (
+                          <TrendingDown size={13} className="text-amber-500" />
+                        ) : null}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -215,12 +230,14 @@ export function StudentProfile() {
             </div>
 
             <div className="bg-white/40 border border-white/80 rounded-[24px] p-4">
-              <h3 className="text-xs font-bold uppercase mb-2">Subject Performance</h3>
-              <div className="space-y-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider mb-3 text-gray-600">Subject Tracker</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {MOCK_SUBJECT_PERFORMANCE.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-2 bg-slate-50 border border-slate-100 rounded-lg">
-                    <span className="text-xs font-medium">{item.subject}</span>
-                    <span className="text-xs font-mono text-emerald-700">{item.grades[item.grades.length-1] || 'N/A'}</span>
+                  <div key={idx} className="flex items-center justify-between p-3 bg-white/80 border border-slate-100 rounded-xl">
+                    <span className="text-xs font-medium text-gray-700">{item.subject}</span>
+                    <span className="text-xs font-mono font-bold bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md">
+                      {item.grades[item.grades.length - 1] || 'N/A'}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -229,35 +246,42 @@ export function StudentProfile() {
         </div>
       </div>
 
+      {/* Grade Input Overlay Modal Sheet */}
       <AnimatePresence>
         {isEnteringGrade && gradeSubject && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4"
             onClick={handleCloseGradeEntry}
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.98, y: 8, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.98, y: 8, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-[24px] w-full max-w-4xl max-h-[90vh] flex flex-col"
+              className="bg-white rounded-[24px] w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden"
             >
-              <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                <h3 className="text-lg font-bold">Enter Grade: {gradeSubject}</h3>
-                <button onClick={handleCloseGradeEntry} className="p-2 hover:bg-slate-100 rounded-lg">
-                  <ArrowLeft size={18} />
+              <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between shrink-0">
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">Assessment Sheet</h3>
+                  <p className="text-xs text-gray-400 font-medium mt-0.5">Subject Focus: {gradeSubject}</p>
+                </div>
+                <button 
+                  onClick={handleCloseGradeEntry} 
+                  className="p-2 hover:bg-slate-200/60 rounded-xl transition text-gray-500"
+                >
+                  <ArrowLeft size={16} />
                 </button>
               </div>
-              <div className="flex-1 overflow-auto p-4">
+              <div className="flex-1 overflow-auto p-4 bg-white">
                 <GradingSheet
                   classInfo={{
                     id: 'standalone',
                     subject: gradeSubject,
                     className: student.classForm,
-                    programme: 'AGRICULTURE',
+                    programme: student.department?.toUpperCase() || 'GENERAL',
                     studentCount: 1,
                     form: 'SHS 1',
                     academicYear: '2025/2026',
@@ -267,16 +291,16 @@ export function StudentProfile() {
                     name: student.name,
                     index: student.index,
                     form: 'SHS 1',
-                    programme: 'AGRICULTURE',
+                    programme: student.department?.toUpperCase() || 'GENERAL',
                     subjects: [gradeSubject],
                     secA: '', secB: '', secC: '', sba: '', exam: '', final: '', grade: '',
                     auditStatus: 'ACTIVE', subjectType: 'Core'
                   }]}
                   subjectConfig={SUBJECT_CONFIG}
                   stpRules={[
-                    { check: (s) => s.final > 100, message: 'Final score exceeds 100%' },
-                    { check: (s) => s.sba > 30, message: 'SBA exceeds 30% limit' },
-                    { check: (s) => s.exam > 70, message: 'Exam exceeds 70% limit' },
+                    { check: (s) => Number(s.final) > 100, message: 'Final score exceeds 100%' },
+                    { check: (s) => Number(s.sba) > 30, message: 'SBA exceeds 30% limit' },
+                    { check: (s) => Number(s.exam) > 70, message: 'Exam exceeds 70% limit' },
                   ]}
                   isTermFinalized={false}
                   targetStudentId={student.id}

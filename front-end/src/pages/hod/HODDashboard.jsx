@@ -5,6 +5,8 @@ import { useRole } from '../../context/RoleContext';
 import { useHOD } from '../../context/HODContext';
 import { TeacherSubmissionMatrix } from '../../components/organisms/DashboardOrganisms';
 import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
 export function HODDashboard() {
   const { user } = useRole();
@@ -80,24 +82,26 @@ export function HODDashboard() {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-7xl mx-auto"
       >
-        <header className="mb-8 border-b border-gray-200/60 pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <header className="mb-8 border-b border-border/60 pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight leading-none">
-              Welcome back, <span className="text-blue-600">{user?.name?.split(' ')[0] || 'HOD'}</span>!
+            <h1 className="text-3xl md:text-4xl font-black text-foreground tracking-tight leading-none">
+              Welcome back, <span className="text-brand-primary">{user?.name?.split(' ')[0] || 'HOD'}</span>!
             </h1>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2 flex items-center gap-1.5">
-              <ShieldCheck size={10} className="text-gray-400" />
+            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-2 flex items-center gap-1.5">
+              <ShieldCheck size={10} className="text-muted-foreground" />
               Department Oversight & Academic Integrity Console
             </p>
           </div>
-          <button
+          <Button
             onClick={handleRefreshAll}
             disabled={isLoading || refreshDisabled}
-            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-2 shadow-xs transition-colors self-start sm:self-center disabled:opacity-50"
+            variant="outline"
+            size="sm"
+            className="self-start sm:self-center"
           >
             <RefreshCw size={13} className={isLoading || refreshDisabled ? 'animate-spin' : ''} />
             Refresh Dashboard
-          </button>
+          </Button>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">

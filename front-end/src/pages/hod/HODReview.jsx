@@ -12,8 +12,12 @@ import { auditTrail } from '../../services/auditTrailService';
 import { notification } from '../../services/notificationService';
 import { eventBus } from '../../services/eventBus';
 import { HODCommentInput, ActionButtonGroup, StatusBadge, SubmissionProgressSparkline, ConfirmationDialog }
-    from '../../components/molecules';
+  from '../../components/molecules';
 import { CurrentPreviousTermComparisonView, GradeDiscussionThread } from '../../components/organisms';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 
 function SubjectRow({ subject, studentName, onAddRemark, onReject }) {
   const [remark, setRemark] = useState('');
@@ -204,46 +208,47 @@ export function HODReview() {
     });
   };
 
-  return (
-    <div className="flex-1 flex flex-col min-h-0 bg-slate-50/50 font-sans antialiased">
+return (
+    <div className="flex-1 flex flex-col min-h-0 bg-background/50 font-sans antialiased">
 
       {/* Roster View Header */}
-      <header className="bg-white border-b border-gray-200/80 px-6 py-4 sticky top-0 z-10 backdrop-blur-md bg-white/95">
+      <header className="bg-card border-b border-border/80 px-6 py-4 sticky top-0 z-10 backdrop-blur-md bg-card/95">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-base font-bold text-gray-900 tracking-tight">Grade Review Pipeline</h1>
-            <p className="text-xs text-gray-400 mt-0.5">Approve grade revisions, append override signatures, and handle approvals.</p>
+            <h1 className="text-base font-bold text-foreground tracking-tight">Grade Review Pipeline</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">Approve grade revisions, append override signatures, and handle approvals.</p>
           </div>
-          <button 
+          <Button 
             onClick={refreshDepartmentProgress} 
             disabled={isLoading}
-            className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-50 flex items-center gap-2 shadow-3xs transition-all active:scale-95 disabled:opacity-40"
+            variant="outline"
+            size="sm"
           >
             <RefreshCw size={12} className={isLoading ? 'animate-spin' : ''} />
             Sync Ledger
-          </button>
+          </Button>
         </div>
       </header>
 
       {/* Main Workspace Frame */}
       <main className="flex-1 overflow-hidden max-w-6xl w-full mx-auto p-6 flex gap-6 items-start">
-        
+         
         {/* Master Panel Side Roster */}
         <div className="w-full md:w-80 shrink-0 flex flex-col space-y-3 h-full overflow-hidden">
-          
+           
           {/* Roster Search Input */}
-          <div className="bg-white rounded-xl border border-gray-200/70 shadow-3xs p-3">
+          <div className="bg-card rounded-xl border border-border shadow-sm p-3">
             <div className="relative">
-              <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
+              <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
                 type="text"
+                placeholder="Filter student list..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Filter student list..."
-                className="w-full pl-8.5 pr-8 py-1.5 text-xs bg-gray-50 border border-gray-200/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 placeholder-gray-400 font-medium"
+                className="w-full pl-8 pr-3 py-1.5 text-xs font-medium"
               />
               {search && (
-                <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                   <X size={11} />
                 </button>
               )}
@@ -251,9 +256,9 @@ export function HODReview() {
           </div>
 
           {/* Student Selection List */}
-          <div className="bg-white rounded-xl border border-gray-200/70 shadow-3xs p-2 flex-1 overflow-y-auto space-y-0.5">
+          <div className="bg-card rounded-xl border border-border shadow-sm p-2 flex-1 overflow-y-auto space-y-0.5">
             {filteredStudents.length === 0 ? (
-              <div className="text-center py-8 text-gray-400 text-xs italic">No matched profiles.</div>
+              <div className="text-center py-8 text-muted-foreground text-xs italic">No matched profiles.</div>
             ) : (
               filteredStudents.map((s) => {
                 const active = activeStudentId === s.id;
@@ -264,22 +269,22 @@ export function HODReview() {
                     className={cn(
                       "w-full text-left p-2.5 rounded-lg text-xs transition-all border group flex items-center gap-3",
                       active
-                        ? "bg-slate-900 text-white border-slate-900 shadow-3xs font-medium"
-                        : "bg-white border-transparent text-gray-700 hover:bg-slate-50/80 hover:text-gray-900"
+                        ? "bg-foreground text-white border-foreground font-medium"
+                        : "bg-card border-transparent text-muted-foreground hover:bg-muted/80 hover:text-foreground"
                     )}
                   >
                     <div className={cn(
                       "w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-black shrink-0",
-                      active ? "bg-slate-800 text-indigo-400" : "bg-slate-100 text-slate-700"
+                      active ? "bg-muted text-brand-primary" : "bg-muted text-foreground"
                     )}>
                       {(s.name || '?').charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
                         <p className="font-bold truncate">{s.name || 'Anonymous Log'}</p>
-                        <ChevronRight size={12} className={cn("shrink-0 transition-transform", active ? "text-indigo-400 translate-x-0.5" : "text-gray-300 group-hover:text-gray-400")} />
+                        <ChevronRight size={12} className={cn("shrink-0 transition-transform", active ? "text-brand-primary translate-x-0.5" : "text-muted-foreground group-hover:text-muted-foreground")} />
                       </div>
-                      <p className={cn("text-[10px] truncate mt-0.5", active ? "text-slate-400" : "text-gray-400")}>
+                      <p className={cn("text-[10px] truncate mt-0.5", active ? "text-muted-foreground" : "text-muted-foreground")}>
                         {s.indexNumber || '—'} · {s.className}
                       </p>
                     </div>
@@ -291,8 +296,8 @@ export function HODReview() {
         </div>
 
         {/* Detail Panel Focused Interactive Feed */}
-        <div className="flex-1 bg-white rounded-xl border border-gray-200/70 shadow-3xs h-full flex flex-col overflow-hidden">
-          <AnimatePresence mode="wait">
+        <div className="flex-1 bg-card rounded-xl border border-border shadow-sm h-full flex flex-col overflow-hidden">
+          <AnimatePresence>
             {selectedStudent ? (
               <motion.div
                 key={selectedStudent.id}
@@ -303,19 +308,19 @@ export function HODReview() {
                 className="flex flex-col h-full overflow-hidden"
               >
                 {/* Selected Student Information Banner */}
-                <div className="px-5 py-4 border-b border-gray-200/60 bg-gray-50/40 flex items-start justify-between gap-4">
+                <div className="px-5 py-4 border-b border-border/60 bg-muted/40 flex items-start justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-bold text-gray-950 tracking-tight">{selectedStudent.name}</h3>
-                      <span className="text-[10px] font-mono font-bold bg-white border border-gray-200 px-1.5 py-0.5 rounded text-gray-500">
+                      <h3 className="text-sm font-bold text-foreground/90 tracking-tight">{selectedStudent.name}</h3>
+                      <span className="text-[10px] font-mono font-bold bg-card border border-border px-1.5 py-0.5 rounded text-muted-foreground">
                         {selectedStudent.indexNumber || 'No Index'}
                       </span>
                     </div>
-                    <p className="text-[11px] text-gray-400 mt-0.5 font-medium">
-                      Class Group Anchor: <span className="text-gray-700 font-semibold">{selectedStudent.className}</span>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">
+                      Class Group Anchor: <span className="text-muted-foreground/80 font-semibold">{selectedStudent.className}</span>
                     </p>
                   </div>
-                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-600">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
                     <StatusBadge status={selectedStudent.status || 'PENDING'} />
                   </div>
                 </div>
@@ -325,23 +330,23 @@ export function HODReview() {
                   
                   {/* Delta Variance Interactive Engine Graph */}
                   {Array.isArray(selectedStudent.subjects) && selectedStudent.subjects.length > 0 && (
-                    <div className="border border-gray-200/60 rounded-xl p-4 bg-slate-50/40">
+                    <div className="border border-border/60 rounded-xl p-4 bg-muted/40">
                       <div className="flex items-center gap-2 mb-3">
-                        <AlertTriangle size={13} className="text-indigo-600" />
-                        <h4 className="text-[11px] font-bold text-gray-900 uppercase tracking-wide">Comparative Evaluation Delta</h4>
+                        <AlertTriangle size={13} className="text-brand-primary" />
+                        <h4 className="text-[11px] font-bold text-foreground uppercase tracking-wide">Comparative Evaluation Delta</h4>
                       </div>
-                       <CurrentPreviousTermComparisonView
-                         subjects={selectedStudent.subjects.slice(0, 6)}
-                         currentTerm="Term 3"
-                         previousTerm="Term 2"
-                         className="w-full bg-white p-3 rounded-lg border border-gray-200/40 shadow-3xs"
-                       />
+                        <CurrentPreviousTermComparisonView
+                          subjects={selectedStudent.subjects.slice(0, 6)}
+                          currentTerm="Term 3"
+                          previousTerm="Term 2"
+                          className="w-full bg-card p-3 rounded-lg border border-border/40"
+                        />
                     </div>
                   )}
 
                   {/* Subject Scores Breakdown Stream */}
                   <div className="space-y-2">
-                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Course Matrices Override Channels</h4>
+                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Course Matrices Override Channels</h4>
                     {Array.isArray(selectedStudent.subjects) && selectedStudent.subjects.map((s, i) => (
                       <SubjectRow 
                         key={s?.id || i} 
@@ -354,7 +359,7 @@ export function HODReview() {
                   </div>
 
                    {/* Overall Institutional Comment Node */}
-                   <div className="border-t border-gray-100 pt-4">
+                   <div className="border-t border-border/60 pt-4">
                      <HODCommentInput
                        onSubmit={(remark) => handleAddRemark({ studentId: selectedStudent.id, studentName: selectedStudent.name, remark })}
                        placeholder={`Compile institutional HOD remark envelope for ${selectedStudent.name}...`}
@@ -362,8 +367,8 @@ export function HODReview() {
                      />
                    </div>
                    {/* Grade Discussion Thread */}
-                   <div className="border-t border-gray-100 pt-6">
-                     <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">
+                   <div className="border-t border-border/60 pt-6">
+                     <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
                        Grade Discussion
                      </h4>
                      <GradeDiscussionThread 
@@ -376,9 +381,9 @@ export function HODReview() {
               </motion.div>
             ) : (
               <div className="m-auto text-center py-12 max-w-xs">
-                <GraduationCap size={32} className="text-gray-200 mx-auto mb-3" />
-                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Empty Ledger Pipeline</h4>
-                <p className="text-[11px] text-gray-400 mt-1 leading-normal">
+                <GraduationCap size={32} className="text-muted-foreground/50 mx-auto mb-3" />
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Empty Ledger Pipeline</h4>
+                <p className="text-[11px] text-muted-foreground mt-1 leading-normal">
                   No active student evaluation forms are queued for your review constraints.
                 </p>
               </div>
@@ -399,5 +404,5 @@ export function HODReview() {
         onCancel={() => setRejectConfirm(null)}
       />
     </div>
-  );
+);
 }

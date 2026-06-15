@@ -1,5 +1,13 @@
 import React from 'react';
-import { cn } from '../../../lib/utils';
+import { cn } from '@/lib/utils';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table';
 
 const getWAECGrade = (score) => {
   if (score >= 80) return 'A1';
@@ -98,31 +106,31 @@ export function VaultTable({ filteredStudents, showCoreComparison, selectedSubje
 
       {/* ==================== DESKTOP VIEW (Full Vault Table) ==================== */}
       <div className="hidden lg:block overflow-x-auto">
-        <table className="w-full border-separate border-spacing-y-4 table-fixed">
-          <thead>
-            <tr className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-              <th className="w-[260px] px-6 py-4 text-left sticky left-0 z-30 bg-transparent">Student Identity</th>
+        <Table className="border-separate border-spacing-y-4 table-fixed">
+          <TableHeader>
+            <TableRow className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+              <TableHead className="w-[260px] px-6 py-4 text-left sticky left-0 z-30 bg-transparent">Student Identity</TableHead>
               {showCoreComparison ? (
                 <>
-                  <th className="px-4 py-4 text-center border-x border-gray-100/50 bg-emerald-50/50 text-emerald-900 rounded-t-xl">{selectedSubject}</th>
+                  <TableHead className="px-4 py-4 text-center border-x border-gray-100/50 bg-emerald-50/50 text-emerald-900 rounded-t-xl">{selectedSubject}</TableHead>
                   {coreSubjects.map(s => (
-                    <th key={s} className="px-4 py-4 text-center border-x border-gray-100/50">{s}</th>
+                    <TableHead key={s} className="px-4 py-4 text-center border-x border-gray-100/50">{s}</TableHead>
                   ))}
                 </>
               ) : (
                 terms.map(t => (
-                  <th key={t} className="px-4 py-4 text-center border-x border-gray-100/50">{t}</th>
+                  <TableHead key={t} className="px-4 py-4 text-center border-x border-gray-100/50">{t}</TableHead>
                 ))
               )}
-              <th className="w-[120px] px-6 py-4 text-right">Aggregate</th>
-            </tr>
-          </thead>
-          <tbody>
+              <TableHead className="w-[120px] px-6 py-4 text-right">Aggregate</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {filteredStudents.map((student) => {
               const isSelected = selectedStudent?.id === student.id;
               
               return (
-                <tr
+                <TableRow
                   key={student.id}
                   onClick={() => setSelectedStudent(student)}
                   className={cn(
@@ -131,7 +139,7 @@ export function VaultTable({ filteredStudents, showCoreComparison, selectedSubje
                   )}
                 >
                   {/* Sticky Glass Identity Cell */}
-                  <td className="w-[260px] bg-white/80 backdrop-blur-md px-6 py-5 rounded-l-[1.5rem] border-y border-l border-gray-200 shadow-sm group-hover:bg-white transition-all sticky left-0 z-20 before:absolute before:inset-0 before:bg-white/40 before:-z-10">
+                  <TableCell className="w-[260px] bg-white/80 backdrop-blur-md px-6 py-5 rounded-l-[1.5rem] border-y border-l border-gray-200 shadow-sm group-hover:bg-white transition-all sticky left-0 z-20 before:absolute before:inset-0 before:bg-white/40 before:-z-10">
                     <div className="flex items-center gap-4">
                       <img 
                         src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(student.name)}`} 
@@ -143,22 +151,22 @@ export function VaultTable({ filteredStudents, showCoreComparison, selectedSubje
                         <p className="text-[10px] font-bold text-gray-400 uppercase font-mono tracking-wider">{student.index}</p>
                       </div>
                     </div>
-                  </td>
+                  </TableCell>
 
                   {/* Core Subjects / Terms Comparison Layout */}
                   {showCoreComparison ? (
                     <>
-                      <td className="bg-emerald-50/40 backdrop-blur-[2px] px-8 py-5 border-y border-x border-emerald-100 group-hover:bg-emerald-50 transition-all text-center relative overflow-hidden">
+                      <TableCell className="bg-emerald-50/40 backdrop-blur-[2px] px-8 py-5 border-y border-x border-emerald-100 group-hover:bg-emerald-50 transition-all text-center relative overflow-hidden">
                         <span className="text-lg font-black text-emerald-900 italic">
                           {student.history[student.history.length - 1]?.finalGrade}%
                         </span>
                         <div className="text-[8px] font-black text-emerald-600 uppercase mt-1">Target Subject</div>
-                      </td>
+                      </TableCell>
                       {coreSubjects.map((s, idx) => {
                         const baseScore = student.history[student.history.length - 1]?.finalGrade || 0;
                         const simulatedScore = Math.max(0, Math.min(100, baseScore + (idx % 2 === 0 ? 5 : -10)));
                         return (
-                          <td key={s} className="bg-white/30 backdrop-blur-[2px] px-8 py-5 border-y border-x border-gray-100/50 group-hover:bg-white/80 transition-all text-center relative overflow-hidden">
+                          <TableCell key={s} className="bg-white/30 backdrop-blur-[2px] px-8 py-5 border-y border-x border-gray-100/50 group-hover:bg-white/80 transition-all text-center relative overflow-hidden">
                             <span className={cn(
                               "text-lg font-black tracking-tighter",
                               simulatedScore > 75 ? "text-emerald-950" : simulatedScore < 50 ? "text-red-900" : "text-gray-600"
@@ -166,7 +174,7 @@ export function VaultTable({ filteredStudents, showCoreComparison, selectedSubje
                               {simulatedScore.toFixed(0)}%
                             </span>
                             <div className="text-[8px] font-black text-gray-300 uppercase mt-1 tracking-tighter">Verified Audit</div>
-                          </td>
+                          </TableCell>
                         );
                       })}
                     </>
@@ -176,7 +184,7 @@ export function VaultTable({ filteredStudents, showCoreComparison, selectedSubje
                       const ghostAverage = idx === 4 ? 62 : idx === 3 ? 58 : 65;
                       
                       return (
-                        <td key={term} className="bg-white/30 backdrop-blur-[2px] px-8 py-5 border-y border-x border-gray-100/50 group-hover:bg-white/80 transition-all text-center relative overflow-hidden">
+                        <TableCell key={term} className="bg-white/30 backdrop-blur-[2px] px-8 py-5 border-y border-x border-gray-100/50 group-hover:bg-white/80 transition-all text-center relative overflow-hidden">
                           <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#000_1px,transparent_0)] bg-[size:10px_10px]" />
                           
                           <div className="relative pb-2">
@@ -201,23 +209,23 @@ export function VaultTable({ filteredStudents, showCoreComparison, selectedSubje
                               </div>
                             )}
                           </div>
-                        </td>
+                        </TableCell>
                       );
                     })
                   )}
 
                   {/* Aggregate Column */}
-                  <td className="w-[120px] bg-emerald-900 px-8 py-5 rounded-r-[1.5rem] border-y border-r border-emerald-950 shadow-xl group-hover:bg-emerald-950 transition-all text-right">
+                  <TableCell className="w-[120px] bg-emerald-900 px-8 py-5 rounded-r-[1.5rem] border-y border-r border-emerald-950 shadow-xl group-hover:bg-emerald-950 transition-all text-right">
                     <p className="text-[10px] font-black text-emerald-300/50 uppercase mb-1">Total</p>
                     <p className="text-xl font-black text-white italic">
                       {(student.history.reduce((acc, h) => acc + h.finalGrade, 0) / (student.history.length || 1)).toFixed(1)}%
                     </p>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
     </div>

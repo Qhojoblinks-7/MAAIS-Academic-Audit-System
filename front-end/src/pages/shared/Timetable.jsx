@@ -5,6 +5,14 @@ import {
   Plus, Search, Filter, Users, BookOpen, GraduationCap,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '../../components/ui/table';
 
 const mockTimetable = Array.from({ length: 7 }, (_, i) => {
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -54,28 +62,28 @@ export function Timetable() {
           ))}
         </div>
 
-        <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-x-auto">
-          <table className="w-full text-left min-w-[900px] border-collapse">
-            <thead>
-              <tr className="bg-gray-50/50">
-                <th className="px-4 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest border-r border-gray-100 min-w-[110px]">Time</th>
+<div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-x-auto">
+          <Table className="min-w-[900px]">
+            <TableHeader>
+              <TableRow className="bg-gray-50/50">
+                <TableHead className="px-4 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest border-r border-gray-100 min-w-[110px]">Time</TableHead>
                 {mockTimetable.map((d) => (
-                  <th key={d.day} className="px-2 py-4 text-[10px] font-black text-gray-900 uppercase tracking-widest text-center whitespace-nowrap">{d.day}</th>
+                  <TableHead key={d.day} className="px-2 py-4 text-[10px] font-black text-gray-900 uppercase tracking-widest text-center whitespace-nowrap">{d.day}</TableHead>
                 ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y divide-gray-50">
               {mockTimetable[0]?.periods.map((period, pIdx) => (
-                <tr key={period.id}>
-                  <td className="px-4 py-4 text-[10px] font-black text-gray-900 uppercase tracking-widest border-r border-gray-100 whitespace-nowrap">P{pIdx + 1}</td>
+                <TableRow key={period.id}>
+                  <TableCell className="px-4 py-4 text-[10px] font-black text-gray-900 uppercase tracking-widest border-r border-gray-100 whitespace-nowrap">P{pIdx + 1}</TableCell>
                   {mockTimetable.map((day, dIdx) => {
                     const entry = day.periods[pIdx];
                     const typeColor = entry.type === 'SUBSTITUTION' ? 'bg-amber-50 border-amber-200 text-amber-800' :
-                                      entry.type === 'LAB' ? 'bg-purple-50 border-purple-200 text-purple-800' :
-                                      entry.type === 'FREE' ? 'bg-gray-50 border-gray-200 text-gray-400' :
-                                      'bg-white border-gray-200 text-gray-900';
+                                    entry.type === 'LAB' ? 'bg-purple-50 border-purple-200 text-purple-800' :
+                                    entry.type === 'FREE' ? 'bg-gray-50 border-gray-200 text-gray-400' :
+                                    'bg-white border-gray-200 text-gray-900';
                     return (
-                      <td key={dIdx} className="px-2 py-2 text-center align-middle">
+                      <TableCell key={dIdx} className="px-2 py-2 text-center align-middle">
                         <div className={cn("px-2 py-2.5 rounded-xl border text-[10px] font-black transition-all cursor-pointer hover:shadow-md", typeColor)}>
                           {entry.subject !== '-' ? (
                             <>
@@ -86,13 +94,13 @@ export function Timetable() {
                             <p className="font-bold italic">Free</p>
                           )}
                         </div>
-                      </td>
+                      </TableCell>
                     );
                   })}
-                </tr>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </div>
     </div>

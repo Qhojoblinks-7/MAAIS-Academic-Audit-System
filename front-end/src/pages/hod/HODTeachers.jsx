@@ -11,6 +11,9 @@ import { useHOD } from '../../context/HODContext';
 import { LoadingSpinner } from '../../components/molecules';
 import { TeacherCard } from '../../components/organisms/TeacherImpersonationConsole';
 import { auditTrail } from '../../services/auditTrailService';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
 // ==========================================
 // COMPONENT: SLIDE-OVER DETAIL PROFILE PANEL

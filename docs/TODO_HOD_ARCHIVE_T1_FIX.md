@@ -15,3 +15,4 @@
 ## Step 4 (verification)
 
 - Run app and open `/hod/archive/t1`; confirm grading sheet renders.
+\- Optionally, add a test case to confirm the fallback logic works as expected when API returns no data for `t1`.
