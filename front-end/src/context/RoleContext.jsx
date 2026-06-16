@@ -30,7 +30,7 @@ export function RoleProvider({ children }) {
           setIsAuthenticated(true);
         }
       } catch (e) {
-        // Will use mock data as fallback via setRole
+        // Will use mock data as fallback
       } finally {
         setLoading(false);
       }
@@ -85,13 +85,15 @@ export function RoleProvider({ children }) {
       })(),
     };
 
+    window.mockUsers = mockUsers;
+    
+    // Set mock user for development/demo (comment out when backend is available)
     fetchMe().then(() => {
       if (!user) {
         setUser(mockUsers.STUDENT);
+        setIsAuthenticated(true);
       }
     });
-
-    window.mockUsers = mockUsers;
   }, []);
 
   const setRole = (role) => {

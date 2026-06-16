@@ -4,11 +4,15 @@ import { useRole } from '../../context/RoleContext';
 import { AdminHome } from '../admin/AdminHome';
 import { TeacherDashboard } from '../teacher/TeacherDashboard';
 
-// Importing from the barrel file to get the named export
 import { HODDashboard } from '../hod';
 
 export function Dashboard() {
-  const { user } = useRole();
+  const { user, isAuthenticated } = useRole();
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated || !user?.role) {
+    return <Navigate to="/login" replace />;
+  }
 
   // Route to the appropriate institutional layout based on security profile roles
   if (user?.role === 'STUDENT') return <Navigate to="/student/portal" replace />;
@@ -17,5 +21,5 @@ export function Dashboard() {
   if (user?.role === 'HOD')     return <HODDashboard />;
 
   // Default fallback state configuration
-  return <Navigate to="/student/portal" replace />;
+  return <Navigate to="/login" replace />;
 }
