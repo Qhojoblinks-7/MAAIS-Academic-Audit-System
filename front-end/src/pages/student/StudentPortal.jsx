@@ -2,6 +2,7 @@ import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { useRole } from '../../context/RoleContext';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { getAuthToken } from '../../services/auth';
 
 import studentPortalMockDataDefault from '../../data/studentPortalMockData.json';
 import { TranscriptPrintTemplate } from './portal/print/TranscriptPrintTemplate';
@@ -18,7 +19,10 @@ import { BroadsheetComparisonPanel } from './portal/panels/BroadsheetComparisonP
 // Unified valid routing tabs lookup configuration
 const VALID_TABS = ['overview', 'academic', 'interventions', 'history', 'gradingScale', 'academicJourney', 'broadsheetComparison'];
 
-export function StudentPortal({ studentPortalMockData = studentPortalMockDataDefault }) {
+export function StudentPortal({ 
+    studentPortalMockData = {},
+    useApi = true,
+  }) {
   const { user } = useRole();
   const location = useLocation();
   const navigate = useNavigate();
@@ -68,36 +72,68 @@ export function StudentPortal({ studentPortalMockData = studentPortalMockDataDef
 
     try {
       setLoading(true);
-      const allStudents = Array.isArray(studentPortalMockData?.students)
-        ? studentPortalMockData.students
-        : [];
+      let data;
 
-      const usernameDigits = String(user.username ?? user.id).replace(/\D/g, '');
-      const userIndexDigits = usernameDigits.padStart(3, '0');
-      const expectedStudId = `stud${userIndexDigits}`;
-      const lastThreeDigits = usernameDigits.slice(-3).padStart(3, '0');
-      const expectedStudIdFromLast3 = `stud${lastThreeDigits}`;
+      if (useApi) {
+        // Use real API
+        const response = await fetch(`/api/v1/portal/students/${user.id}/portal-data`, {
+          headers: {
+            'Authorization': `Bearer ${getAuthToken()}`,
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
+        if (!response.ok) throw new Error('Failed to fetch student portal data');
+        data = await response.json();
+      } else {
+        // Fallback to mock data for testing
+        const allStudents = Array.isArray(studentPortalMockData?.students)
+          ? studentPortalMockData.students
+          : [];
 
-      const found =
-        allStudents.find((s) => s.id === user.id) ||
-        allStudents.find((s) => s.id === expectedStudId) ||
-        allStudents.find((s) => s.id === expectedStudIdFromLast3) ||
-        allStudents.find((s) => String(s.indexNumber).padStart(3, '0') === userIndexDigits) ||
-        allStudents.find((s) => String(s.indexNumber).padStart(3, '0') === lastThreeDigits);
+        const usernameDigits = String(user.username ?? user.id).replace(/\D/g, '');
+        const userIndexDigits = usernameDigits.padStart(3, '0');
+        const expectedStudId = `stud${userIndexDigits}`;
 
-      if (!found) {
-        throw new Error(`No student portal record found for credentials provided.`);
+        data =
+          allStudents.find((s) => s.id === user.id) ||
+          allStudents.find((s) => s.id === expectedStudId) ||
+          allStudents.find((s) => s.id === user.id) ||
+          allStudents.find((s) => String(s.indexNumber).padStart(3, '0') === userIndexDigits);
+
+        if (!data) {
+          throw new Error(`No student portal record found for credentials provided.`);
+        }
       }
 
-      setStudentData(found);
-      const notifs = found.notifications || found.interventions || [];
-      setNotifications(Array.isArray(notifs) ? notifs : []);
+      if (!data) {
+        throw new Error('No data returned from portal');
+      }
+
+      // Transform API response to match frontend expectations
+      const transformed = useApi ? transformApiResponse(data) : data;
+
+      setStudentData(transformed);
+      setNotifications(Array.isArray(transformed.notifications) ? transformed.notifications : []);
     } catch (e) {
       setError(e.message || 'Failed to load student data');
     } finally {
       setLoading(false);
     }
-  }, [user, studentPortalMockData]);
+  }, [user, studentPortalMockData, useApi]);
+
+  // Transform API response to frontend format
+  function transformApiResponse(apiData) {
+    return {
+      ...apiData,
+      studentName: `${apiData.student?.firstName || ''} ${apiData.student?.lastName || ''}`.trim() || 'Student',
+      indexNumber: apiData.student?.indexNumber || apiData.indexNumber,
+      program: apiData.student?.currentClass?.name || '—',
+      // terminalResults already formatted by backend
+      // coreResults/technicalResults already split by backend
+      // academicHistory already built by backend
+    };
+  }
 
   React.useEffect(() => {
     fetchStudentData();
@@ -264,18 +300,18 @@ export function StudentPortal({ studentPortalMockData = studentPortalMockDataDef
             <OverviewPanel 
               studentData={studentData} 
               approvalStatus={studentData.approvalStatus}
-              coreResults={(studentData.terminalResults || []).filter(r => 
+              coreResults={studentData.coreResults || (studentData.terminalResults || []).filter(r => 
                 ['Core Mathematics', 'English Language', 'Integrated Science', 'Social Studies'].includes(r.subject)
               )}
-              technicalResults={(studentData.terminalResults || []).filter(r => 
+              technicalResults={studentData.technicalResults || (studentData.terminalResults || []).filter(r => 
                 !['Core Mathematics', 'English Language', 'Integrated Science', 'Social Studies'].includes(r.subject)
               )}
-              behaviorRating={studentData.behavioralLogs?.reduce((avg, l) => avg + l.rating, 0) / (studentData.behavioralLogs?.length || 1) || 0}
+              behaviorRating={studentData.behaviorRating ?? ((studentData.behavioralLogs?.reduce((avg, l) => avg + l.rating, 0) / (studentData.behavioralLogs?.length || 1)) || 0)}
               behaviorRemark={studentData.behaviorComments}
             />
           )}
           {activeTab === 'academic' && <AcademicPanel studentData={studentData} />}
-          {activeTab === 'interventions' && <InterventionsPanel notifications={notifications} studentData={studentData} />}
+          {activeTab === 'interventions' && <InterventionsPanel notifications={[...(notifications || []), ...(studentData?.activeInterventions || [])]} studentData={studentData} />}
           {activeTab === 'history' && <HistoryPanel studentData={studentData} onDownloadHistory={handleHistoryDownloadRequest} />}
           {activeTab === 'gradingScale' && <GradingScalePanel />}
           {activeTab === 'academicJourney' && <AcademicJourneyPanel studentData={studentData} />}

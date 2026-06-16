@@ -3,26 +3,56 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { User, Save, Fingerprint, Bell } from 'lucide-react';
 import { cn } from '../../lib/utils';
-
-const STUDENT_STATS = [
-  { label: 'Current CGPA', value: '3.82', sub: 'Term 2', color: 'text-success' },
-  { label: 'Attendance', value: '96%', sub: '94/98 days', color: 'text-brand-primary' },
-  { label: 'Class Rank', value: '#8', sub: 'of 42 students', color: 'text-warning' },
-  { label: 'Owed Fees', value: '₵0', sub: 'Account clear', color: 'text-success' },
-];
+import { getAuthToken } from '../../services/auth';
+import { useRole } from '../../context/RoleContext';
 
 export function StudentSettings() {
-   const navigate = useNavigate();
-   const [name, setName] = React.useState('Angela Owusu');
-   const [bio, setBio] = React.useState('SHS 3 Agric B student interested in agritech.');
-   const [isTwoFactor, setIsTwoFactor] = React.useState(true);
+  const { user } = useRole();
+  const navigate = useNavigate();
+  const [studentStats, setStudentStats] = React.useState(null);
+  const [studentData, setStudentData] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
 
-   // Local state array allows toggle interactions to function realistically
-   const [notifications, setNotifications] = React.useState([
-     { id: 'sms', label: 'SMS Alerts', desc: 'Receive SMS when results are published', enabled: true },
-     { id: 'push', label: 'Push App', desc: 'In-app notification banner', enabled: true },
-     { id: 'summary', label: 'Bi-weekly Summary', desc: 'Academic pulse digest via SMS', enabled: false },
-   ]);
+  React.useEffect(() => {
+    const fetchStats = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const token = getAuthToken();
+        const response = await fetch(`/api/v1/portal/students/${user.id}/portal-data`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setStudentStats({
+            cgpa: data.cgpa || 0,
+            attendance: data.attendancePercentage || 0,
+            classRank: data.classRank || 0,
+          });
+          setStudentData(data);
+        }
+      } catch (e) {
+        console.error('Failed to fetch stats:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, [user.id]);
+
+  const displayName = studentData ? `${studentData.student?.firstName || ''} ${studentData.student?.lastName || ''}`.trim() : 'Student';
+  const [name, setName] = React.useState(displayName);
+  const [bio, setBio] = React.useState('');
+  const [isTwoFactor, setIsTwoFactor] = React.useState(true);
+
+  // Notification Preferences (kept as-is)
+  const [notifications, setNotifications] = React.useState([
+    { id: 'sms', label: 'SMS Alerts', desc: 'Receive SMS when results are published', enabled: true },
+    { id: 'push', label: 'Push App', desc: 'In-app notification banner', enabled: true },
+    { id: 'summary', label: 'Bi-weekly Summary', desc: 'Academic pulse digest via SMS', enabled: false },
+  ]);
 
    const toggleNotification = (id) => {
      setNotifications(prev => prev.map(item => 
@@ -50,74 +80,93 @@ export function StudentSettings() {
            </div>
          </header>
          
-         {/* Dashboard Metric Matrix Row */}
-         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-           {STUDENT_STATS.map((stat, i) => (
-             <div key={i} className="bg-surface p-4 sm:p-5 rounded-2xl border border-border shadow-sm text-center flex flex-col justify-center min-w-0">
-               <span className={cn("text-xl sm:text-2xl font-black tracking-tight block truncate", stat.color)}>
-                 {stat.value}
-               </span>
-               <span className="text-[9px] font-black text-text-secondary uppercase tracking-wider mt-1 block truncate">
-                 {stat.label}
-               </span>
-               <span className="text-[9px] font-medium text-text-secondary mt-0.5 block truncate">
-                 {stat.sub}
-               </span>
-             </div>
-           ))}
-         </div>
+{/* Dashboard Metric Matrix Row */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+            {loading || !studentStats ? (
+              <div className="col-span-3 text-center text-text-secondary">Loading stats...</div>
+            ) : (
+              <>
+                <div className="bg-surface p-4 sm:p-5 rounded-2xl border border-border shadow-sm text-center flex flex-col justify-center min-w-0">
+                  <span className="text-xl sm:text-2xl font-black tracking-tight block truncate text-success">
+                    {studentStats.cgpa.toFixed(2)}
+                  </span>
+                  <span className="text-[9px] font-black text-text-secondary uppercase tracking-wider mt-1 block truncate">
+                    Current CGPA
+                  </span>
+                </div>
+                
+                <div className="bg-surface p-4 sm:p-5 rounded-2xl border border-border shadow-sm text-center flex flex-col justify-center min-w-0">
+                  <span className="text-xl sm:text-2xl font-black tracking-tight block truncate text-brand-primary">
+                    {studentStats.attendance}%
+                  </span>
+                  <span className="text-[9px] font-black text-text-secondary uppercase tracking-wider mt-1 block truncate">
+                    Attendance
+                  </span>
+                </div>
+                
+                <div className="bg-surface p-4 sm:p-5 rounded-2xl border border-border shadow-sm text-center flex flex-col justify-center min-w-0">
+                  <span className="text-xl sm:text-2xl font-black tracking-tight block truncate text-warning">
+                    #{studentStats.classRank || '-'}
+                  </span>
+                  <span className="text-[9px] font-black text-text-secondary uppercase tracking-wider mt-1 block truncate">
+                    Class Rank
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
          
-         {/* Profile Settings Block */}
-         <section className="bg-surface rounded-2xl sm:rounded-[2rem] border border-border shadow-sm overflow-hidden">
-           <div className="p-4 sm:p-6 border-b border-border bg-background/50 flex items-center gap-2.5">
-             <User className="text-text-primary shrink-0" size={18} />
-             <h2 className="text-xs font-black text-text-primary uppercase tracking-widest">
-               Student Profile
-             </h2>
-           </div>
-           
-           <div className="p-4 sm:p-6 md:p-8 space-y-5 sm:space-y-6">
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-               <div>
-                 <label className="text-[9px] font-black text-text-secondary uppercase tracking-[0.15em] mb-1.5 block">Full Name</label>
-                 <input 
-                   type="text" 
-                   value={name} 
-                   onChange={(e) => setName(e.target.value)} 
-                   className="w-full px-4 py-3 bg-background border border-border rounded-xl text-sm font-black text-text-primary focus:outline-none focus:bg-surface focus:ring-2 focus:ring-brand-primary/10 transition-all" 
-                 />
-               </div>
-               
-               <div>
-                 <label className="text-[9px] font-black text-text-secondary uppercase tracking-[0.15em] mb-1.5 block">Index Number</label>
-                 <div className="px-4 py-3 bg-background border border-border rounded-xl text-sm font-black font-mono text-text-secondary select-all">
-                   10001
-                 </div>
-               </div>
-               
-               <div>
-                 <label className="text-[9px] font-black text-text-secondary uppercase tracking-[0.15em] mb-1.5 block">Current Class</label>
-                 <div className="px-4 py-3 bg-background border border-border rounded-xl text-sm font-black text-text-secondary">
-                   SHS 3 Agric B
-                 </div>
-               </div>
-               
-               <div>
-                 <label className="text-[9px] font-black text-text-secondary uppercase tracking-[0.15em] mb-1.5 block">Program</label>
-                 <div className="px-4 py-3 bg-background border border-border rounded-xl text-sm font-black text-text-secondary">
-                   General Agriculture
-                 </div>
-               </div>
-             </div>
-             
-             <div>
-               <label className="text-[9px] font-black text-text-secondary uppercase tracking-[0.15em] mb-1.5 block">Bio / About</label>
-               <textarea 
-                 value={bio} 
-                 onChange={(e) => setBio(e.target.value)} 
-                 rows={3} 
-                 className="w-full px-4 py-3 bg-background border border-border rounded-xl text-sm font-medium text-text-primary focus:outline-none focus:bg-surface focus:ring-2 focus:ring-brand-primary/10 resize-none transition-all" 
-               />
+{/* Profile Settings Block */}
+          <section className="bg-surface rounded-2xl sm:rounded-[2rem] border border-border shadow-sm overflow-hidden">
+            <div className="p-4 sm:p-6 border-b border-border bg-background/50 flex items-center gap-2.5">
+              <User className="text-text-primary shrink-0" size={18} />
+              <h2 className="text-xs font-black text-text-primary uppercase tracking-widest">
+                Student Profile
+              </h2>
+            </div>
+            
+            <div className="p-4 sm:p-6 md:p-8 space-y-5 sm:space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <div>
+                  <label className="text-[9px] font-black text-text-secondary uppercase tracking-[0.15em] mb-1.5 block">Full Name</label>
+                  <input 
+                    type="text" 
+                    value={name} 
+                    onChange={(e) => setName(e.target.value)} 
+                    className="w-full px-4 py-3 bg-background border border-border rounded-xl text-sm font-black text-text-primary focus:outline-none focus:bg-surface focus:ring-2 focus:ring-brand-primary/10 transition-all" 
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-[9px] font-black text-text-secondary uppercase tracking-[0.15em] mb-1.5 block">Index Number</label>
+                  <div className="px-4 py-3 bg-background border border-border rounded-xl text-sm font-black font-mono text-text-secondary select-all">
+                    {studentData?.student?.indexNumber || '—'}
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-[9px] font-black text-text-secondary uppercase tracking-[0.15em] mb-1.5 block">Current Class</label>
+                  <div className="px-4 py-3 bg-background border border-border rounded-xl text-sm font-black text-text-secondary">
+                    {studentData?.student?.currentClass?.name || '—'}
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-[9px] font-black text-text-secondary uppercase tracking-[0.15em] mb-1.5 block">Program</label>
+                  <div className="px-4 py-3 bg-background border border-border rounded-xl text-sm font-black text-text-secondary">
+                    {studentData?.student?.currentClass?.name || '—'}
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-[9px] font-black text-text-secondary uppercase tracking-[0.15em] mb-1.5 block">Bio / About</label>
+                <textarea 
+                  value={bio} 
+                  onChange={(e) => setBio(e.target.value)} 
+                  rows={3} 
+                  className="w-full px-4 py-3 bg-background border border-border rounded-xl text-sm font-medium text-text-primary focus:outline-none focus:bg-surface focus:ring-2 focus:ring-brand-primary/10 resize-none transition-all" 
+                />
              </div>
              
              {/* Two-Factor Toggle Interaction Panel */}

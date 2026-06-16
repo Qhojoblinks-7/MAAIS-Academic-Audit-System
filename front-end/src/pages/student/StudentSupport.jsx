@@ -2,18 +2,8 @@
 import { motion } from 'framer-motion';
 import { Scale, QrCode, CheckCircle2, Clock, ArrowRight, X, Star, Send } from 'lucide-react';
 import { cn } from '../../lib/utils';
-
-const MY_OBSERVATIONS = [
-  { id: 'o1', type: 'Lab Safety', teacher: 'Mr. Mensah', comment: 'Exhibited high safety protocol compliance.', date: 'Nov 14, 2025' },
-  { id: 'o2', type: 'Collaboration', teacher: 'Dr. Boateng', comment: 'Led the workshop group effectively.', date: 'Jan 22, 2026' },
-  { id: 'o3', type: 'Behavioral', teacher: 'Mrs. Owusu', comment: 'Consistent punctuality this term.', date: 'Mar 05, 2026' },
-];
-
-const TICKETS = [
-  { id: 't1', subject: 'Missing Section B entry for General Agric', status: 'IN_PROGRESS', priority: 'HIGH', date: '2026-05-12' },
-  { id: 't2', subject: 'Request transcript for WASSCE application', status: 'OPEN', priority: 'MEDIUM', date: '2026-05-15' },
-  { id: 't3', subject: 'Query biology lab score discrepancy', status: 'RESOLVED', priority: 'LOW', date: '2026-04-28' },
-];
+import { getAuthToken } from '../../services/auth';
+import { useRole } from '../../context/RoleContext';
 
 const STATUS_STYLES = {
   OPEN: 'bg-background text-text-secondary border-border',
@@ -22,9 +12,46 @@ const STATUS_STYLES = {
 };
 
 export function StudentSupport() {
-   const [activeCategory, setActiveCategory] = React.useState('Academic');
-   const [title, setTitle] = React.useState('');
-   const [message, setMessage] = React.useState('');
+  const { user } = useRole();
+  const [observations, setObservations] = React.useState([]);
+  const [tickets, setTickets] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [activeCategory, setActiveCategory] = React.useState('Academic');
+  const [title, setTitle] = React.useState('');
+  const [message, setMessage] = React.useState('');
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const token = getAuthToken();
+        const [obsRes, ticketsRes] = await Promise.all([
+          fetch(`/api/v1/students/${user.id}/behavior`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+          }),
+          fetch('/api/v1/comms/tickets/my', {
+            headers: { 'Authorization': `Bearer ${token}` },
+          }),
+        ]);
+        if (obsRes.ok) {
+          const data = await obsRes.json();
+          setObservations(data.logs || []);
+        }
+        if (ticketsRes.ok) {
+          const data = await ticketsRes.json();
+          setTickets(data || []);
+        }
+      } catch (e) {
+        console.error('Failed to fetch support data:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [user.id]);
 
    return (
      <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 md:p-8 lg:p-12 pb-24 no-scrollbar">
@@ -49,32 +76,36 @@ export function StudentSupport() {
              </h2>
            </div>
            
-           <div className="p-4 sm:p-6 md:p-8 space-y-3 sm:space-y-4">
-             {MY_OBSERVATIONS.map((obs, i) => (
-               <motion.div
-                 key={obs.id}
-                 initial={{ opacity: 0, y: 10 }}
-                 animate={{ opacity: 1, y: 0 }}
-                 transition={{ delay: i * 0.05 }}
-                 className="p-4 sm:p-5 bg-background rounded-xl sm:rounded-2xl border-l-4 border-success border-t border-r border-b border-border"
-               >
-                 <div className="flex items-center gap-3 mb-2 flex-wrap">
-                   <span className="text-[9px] sm:text-[10px] font-black text-success bg-success/10 px-2.5 py-0.5 rounded uppercase tracking-wider">
-                     {obs.type}
-                   </span>
-                   <span className="text-[9px] font-bold text-text-secondary italic">
-                     {obs.date}
-                   </span>
-                 </div>
-                 <p className="text-xs sm:text-sm font-medium text-text-primary italic leading-relaxed">
-                   "{obs.comment}"
-                 </p>
-                 <p className="text-[9px] sm:text-[10px] font-black text-text-secondary uppercase tracking-wider mt-2.5 block">
-                   Observed by {obs.teacher}
-                 </p>
-               </motion.div>
-             ))}
-           </div>
+<div className="p-4 sm:p-6 md:p-8 space-y-3 sm:space-y-4">
+              {observations.length > 0 ? (
+                observations.map((obs, i) => (
+                  <motion.div
+                    key={obs.id || i}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="p-4 sm:p-5 bg-background rounded-xl sm:rounded-2xl border-l-4 border-success border-t border-r border-b border-border"
+                  >
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
+                      <span className="text-[9px] sm:text-[10px] font-black text-success bg-success/10 px-2.5 py-0.5 rounded uppercase tracking-wider">
+                        {obs.trait || 'Observation'}
+                      </span>
+                      <span className="text-[9px] font-bold text-text-secondary italic">
+                        {obs.createdAt ? new Date(obs.createdAt).toLocaleDateString() : ''}
+                      </span>
+                    </div>
+                    <p className="text-xs sm:text-sm font-medium text-text-primary italic leading-relaxed">
+                      "{obs.remarks || obs.comment || ''}"
+                    </p>
+                    <p className="text-[9px] sm:text-[10px] font-black text-text-secondary uppercase tracking-wider mt-2.5 block">
+                      Observed by {obs.recordedBy?.firstName ? `${obs.recordedBy.firstName} ${obs.recordedBy.lastName}` : 'Teacher'}
+                    </p>
+                  </motion.div>
+                ))
+              ) : (
+                <p className="text-text-secondary text-xs">No observations recorded yet.</p>
+              )}
+            </div>
          </section>
 
          {/* New Ticket Form Generation Module */}
@@ -147,32 +178,36 @@ export function StudentSupport() {
              </h2>
            </div>
            
-           <div className="p-2 sm:p-4 divide-y divide-border">
-             {TICKETS.map((t) => (
-               <div 
-                 key={t.id} 
-                 className="flex flex-col xs:flex-row xs:items-center justify-between p-3.5 gap-3 rounded-xl hover:bg-background/80 transition-all min-w-0"
-               >
-                 <div className="min-w-0">
-                   <p className="text-sm font-black text-text-primary truncate leading-snug">
-                     {t.subject}
-                   </p>
-                   <p className="text-[10px] font-bold text-text-secondary mt-0.5">
-                     {t.date}
-                   </p>
-                 </div>
-                 
-                 <div className="self-start xs:self-center shrink-0">
-                   <span className={cn(
-                     "text-[9px] font-black px-2.5 py-0.5 rounded-md uppercase tracking-widest border block text-center min-w-[90px]", 
-                     STATUS_STYLES[t.status]
-                   )}>
-                     {t.status.replace('_', ' ')}
-                   </span>
-                 </div>
-               </div>
-             ))}
-           </div>
+<div className="p-2 sm:p-4 divide-y divide-border">
+              {tickets.length > 0 ? (
+                tickets.map((t) => (
+                  <div 
+                    key={t.id} 
+                    className="flex flex-col xs:flex-row xs:items-center justify-between p-3.5 gap-3 rounded-xl hover:bg-background/80 transition-all min-w-0"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-black text-text-primary truncate leading-snug">
+                        {t.title || t.subject}
+                      </p>
+                      <p className="text-[10px] font-bold text-text-secondary mt-0.5">
+                        {t.createdAt ? new Date(t.createdAt).toLocaleDateString() : t.date}
+                      </p>
+                    </div>
+                    
+                    <div className="self-start xs:self-center shrink-0">
+                      <span className={cn(
+                        "text-[9px] font-black px-2.5 py-0.5 rounded-md uppercase tracking-widest border block text-center min-w-[90px]", 
+                        STATUS_STYLES[t.status] || STATUS_STYLES.OPEN
+                      )}>
+                        {t.status?.replace('_', ' ') || 'OPEN'}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-text-secondary text-xs p-4">No tickets found.</p>
+              )}
+            </div>
          </section>
 
        </div>

@@ -2,59 +2,15 @@
 import { motion } from 'framer-motion';
 import { Calendar, Clock, MapPin } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { getAuthToken } from '../../services/auth';
 
-const DAY_SCHEDULES = [
-  { day: 'Monday', items: [
-    { time: '7:45 AM', subject: 'Core Mathematics', room: 'Room A1', type: 'CLASS' },
-    { time: '8:45 AM', subject: 'English Language', room: 'Room A1', type: 'CLASS' },
-    { time: '9:45 AM', subject: 'General Science', room: 'Lab 1', type: 'LAB' },
-    { time: '10:30 AM', subject: 'Break', room: '-', type: 'BREAK' },
-    { time: '11:00 AM', subject: 'Social Studies', room: 'Room A1', type: 'CLASS' },
-    { time: '12:00 PM', subject: 'Elective Physics', room: 'Lab 2', type: 'LAB' },
-    { time: '1:00 PM', subject: 'Lunch', room: '-', type: 'BREAK' },
-    { time: '2:00 PM', subject: 'Sports & Culture', room: 'Field', type: 'SPORTS' },
-  ]},
-  { day: 'Tuesday', items: [
-    { time: '7:45 AM', subject: 'Economics', room: 'Room B3', type: 'CLASS' },
-    { time: '8:45 AM', subject: 'Elective Geography', room: 'Room B3', type: 'CLASS' },
-    { time: '9:45 AM', subject: 'ICT', room: 'Comp Lab', type: 'LAB' },
-    { time: '10:30 AM', subject: 'Break', room: '-', type: 'BREAK' },
-    { time: '11:00 AM', subject: 'RME', room: 'Hall A', type: 'CLASS' },
-    { time: '12:00 PM', subject: 'Art & Culture', room: 'Art Studio', type: 'CLASS' },
-    { time: '1:00 PM', subject: 'Lunch', room: '-', type: 'BREAK' },
-    { time: '2:00 PM', subject: 'Home Study', room: 'Room B3', type: 'STUDY' },
-  ]},
-  { day: 'Wednesday', items: [
-    { time: '7:45 AM', subject: 'Core Mathematics', room: 'Room B3', type: 'CLASS' },
-    { time: '8:45 AM', subject: 'English Language', room: 'Room A1', type: 'CLASS' },
-    { time: '9:45 AM', subject: 'Chemistry', room: 'Lab 1', type: 'LAB' },
-    { time: '10:30 AM', subject: 'Break', room: '-', type: 'BREAK' },
-    { time: '11:00 AM', subject: 'Elective Physics', room: 'Lab 2', type: 'LAB' },
-    { time: '12:00 PM', subject: 'Social Studies', room: 'Room B3', type: 'CLASS' },
-    { time: '1:00 PM', subject: 'Lunch', room: '-', type: 'BREAK' },
-    { time: '2:00 PM', subject: 'Computing', room: 'Comp Lab', type: 'LAB' },
-  ]},
-  { day: 'Thursday', items: [
-    { time: '7:45 AM', subject: 'Physics', room: 'Lab 3', type: 'LAB' },
-    { time: '8:45 AM', subject: 'Biology', room: 'Lab 2', type: 'LAB' },
-    { time: '9:45 AM', subject: 'English Language', room: 'Room A1', type: 'CLASS' },
-    { time: '10:30 AM', subject: 'Break', room: '-', type: 'BREAK' },
-    { time: '11:00 AM', subject: 'Elective Eco', room: 'Room B3', type: 'CLASS' },
-    { time: '12:00 PM', subject: 'Music / Art', room: 'Studio', type: 'CLASS' },
-    { time: '1:00 PM', subject: 'Lunch', room: '-', type: 'BREAK' },
-    { time: '2:00 PM', subject: 'Tutorial', room: 'Room B3', type: 'STUDY' },
-  ]},
-  { day: 'Friday', items: [
-    { time: '7:45 AM', subject: 'General Science', room: 'Lab 1', type: 'LAB' },
-    { time: '8:45 AM', subject: 'English Language', room: 'Hall A', type: 'CLASS' },
-    { time: '9:45 AM', subject: 'Sociology', room: 'Room B3', type: 'CLASS' },
-    { time: '10:30 AM', subject: 'Break', room: '-', type: 'BREAK' },
-    { time: '11:00 AM', subject: 'Assembly', room: 'Hall B', type: 'ASSEMBLY' },
-    { time: '12:00 PM', subject: 'Social Studies', room: 'Room B3', type: 'CLASS' },
-    { time: '1:00 PM', subject: 'Lunch', room: '-', type: 'BREAK' },
-    { time: '2:00 PM', subject: 'Career Planning', room: 'Room B3', type: 'CLASS' },
-  ]},
-];
+const DAY_MAP = {
+  MONDAY: 'Monday',
+  TUESDAY: 'Tuesday',
+  WEDNESDAY: 'Wednesday',
+  THURSDAY: 'Thursday',
+  FRIDAY: 'Friday',
+};
 
 const DAY_TYPE_STYLES = {
   CLASS: 'bg-brand-primary/10 border-brand-primary/20 text-brand-primary',
@@ -66,29 +22,76 @@ const DAY_TYPE_STYLES = {
 };
 
 export function StudentTimetable() {
-   return (
-     <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 md:p-8 lg:p-12 pb-24 no-scrollbar">
-       <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 no-scrollbar">
-         
-         {/* Module Title Area */}
-         <header className="flex items-center gap-3 sm:gap-4">
-           <div className="w-11 h-11 sm:w-12 sm:h-12 bg-brand-dark rounded-xl sm:rounded-2xl flex items-center justify-center text-surface shrink-0 shadow-lg shadow-brand-dark/10">
-             <Calendar size={24} className="sm:hidden" />
-             <Calendar size={28} className="hidden sm:block" />
-           </div>
-           <div className="min-w-0">
-             <h1 className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight uppercase italic">
-               My Timetable
-             </h1>
-             <p className="text-[9px] sm:text-[10px] font-black text-text-secondary uppercase tracking-widest mt-0.5 truncate">
-               Weekly class &amp; lab schedule
-             </p>
-           </div>
-         </header>
+  const [schedule, setSchedule] = React.useState({});
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchSchedule = async () => {
+      try {
+        const token = getAuthToken();
+        const response = await fetch('/api/v1/timetable/student-schedule', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setSchedule(data);
+        }
+      } catch (e) {
+        console.error('Failed to fetch timetable:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSchedule();
+  }, []);
+
+  const DAY_SCHEDULES = Object.entries(schedule).map(([dayKey, items]) => ({
+    day: DAY_MAP[dayKey] || dayKey,
+    items: (items || []).map((entry) => ({
+      time: entry.startTime || '',
+      subject: entry.subject?.name || 'Unknown',
+      room: entry.room || '-',
+      type: entry.subject?.type === 'ELECTIVE' ? 'LAB' : 'CLASS',
+    })),
+  }));
+
+  if (loading) {
+    return (
+      <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 md:p-8 lg:p-12 pb-24 no-scrollbar">
+        <div className="max-w-4xl mx-auto">
+          <p className="text-center text-text-secondary">Loading timetable...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 md:p-8 lg:p-12 pb-24 no-scrollbar">
+      <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 no-scrollbar">
+        
+        {/* Module Title Area */}
+        <header className="flex items-center gap-3 sm:gap-4">
+          <div className="w-11 h-11 sm:w-12 sm:h-12 bg-brand-dark rounded-xl sm:rounded-2xl flex items-center justify-center text-surface shrink-0 shadow-lg shadow-brand-dark/10">
+            <Calendar size={24} className="sm:hidden" />
+            <Calendar size={28} className="hidden sm:block" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight uppercase italic">
+              My Timetable
+            </h1>
+            <p className="text-[9px] sm:text-[10px] font-black text-text-secondary uppercase tracking-widest mt-0.5 truncate">
+              Weekly class &amp; lab schedule
+            </p>
+          </div>
+        </header>
 
         {/* Schedule List */}
         <div className="space-y-4 sm:space-y-6">
-          {DAY_SCHEDULES.map(({ day, items }, dIdx) => (
+          {DAY_SCHEDULES.length > 0 ? DAY_SCHEDULES.map(({ day, items }, dIdx) => (
             <motion.div
               key={day}
               initial={{ opacity: 0, y: 15 }}
@@ -165,7 +168,9 @@ export function StudentTimetable() {
                 })}
               </div>
             </motion.div>
-          ))}
+          )) : (
+            <p className="text-center text-text-secondary py-8">No timetable data available</p>
+          )}
         </div>
       </div>
     </div>
