@@ -14,7 +14,7 @@ function validateHODAccess(user) {
   return { valid: true, departmentId: department.id };
 }
 
-export function RequireRole({ allowedRoles = [], children, redirectTo = '/' }) {
+export function RequireRole({ allowedRoles = [], children, redirectTo = '/login' }) {
   const { user } = useRole();
   const location = useLocation();
 
@@ -43,7 +43,7 @@ export function withHODValidation(WrappedComponent) {
     const location = useLocation();
     
     if (!user?.role || user.role !== 'HOD') {
-      return <Navigate to="/" replace />;
+      return <Navigate to="/login" replace />;
     }
     
     if (user.role === 'HOD') {
@@ -56,4 +56,3 @@ export function withHODValidation(WrappedComponent) {
     return <WrappedComponent {...props} hodDepartmentId={validateHODAccess(user)?.departmentId} />;
   };
 }
-

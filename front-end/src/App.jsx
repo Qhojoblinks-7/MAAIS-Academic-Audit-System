@@ -18,6 +18,7 @@ import {StudentTimetable, StudentSettings, StudentSupport, StudentPortal, Studen
 import { TeacherTimetableView, TeacherDashboard, TeacherGradingView, TeacherObservationsView, TeacherAnalyticsView, TeacherArchiveView, TeacherArchiveDetailView, TeacherSettings, TeacherSupport, TeacherRevisionsFeed, TeacherMissingObservations } from './pages/teacher';
 import { HOD_JourneyHistoryAudit, SettingsView, SupportView } from './pages/shared';
 import { HODMissingObservations } from './pages/hod';
+import { LoginPage } from './pages/auth/LoginPage';
 import { TooltipProvider } from './components/ui/tooltip';
 import { UIProvider, useUI } from './context/UIContext';
 import { useRole } from './context/RoleContext';
@@ -32,9 +33,6 @@ function RoleBasedMissingObservations() {
   return user?.role === 'TEACHER' ? <TeacherMissingObservations /> : <HODMissingObservations />;
 }
 
-// ── Standalone wrapper for /grading route ─────────────────────────────────────
-// Provides the default data sources (mock students, SUBJECT_CONFIG) that
-// GradingSheet requires when accessed directly without a container.
 function StandaloneGradingWrapper() {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -68,7 +66,6 @@ function StandaloneGradingWrapper() {
     { id: 'stud006', name: 'Yaw Boateng', index: '006', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 30, secB: 40, secC: 35, sba: 25.0, exam: 50.0, final: 75.0, grade: 'A1', auditStatus: 'ACTIVE' },
   ];
 
-  // Map index to student ID (e.g., "001" -> "stud001")
   const targetStudentId = getTargetStudentIndex ? `stud${getTargetStudentIndex}` : null;
 
   const DEFAULT_STANDALONE_CLASSINFO = {
@@ -181,55 +178,56 @@ function AppContent() {
             user?.role === 'TEACHER' ? <TeacherSidebar /> : <AdminSidebar />}
          </div>
       <div className="flex-1 flex flex-col min-w-0">
-        {location.pathname !== '/journey-audit' && <Topbar />}
+        {location.pathname !== '/journey-audit' && location.pathname !== '/login' && <Topbar />}
         <main className="flex-1 flex overflow-hidden relative">
           <Routes>
+            <Route path="/login" element={<LoginPage />} />
             <Route path="/" element={<Dashboard />} />
              <Route path="/student/portal" element={
                <RequireRole allowedRoles={['STUDENT']}><StudentPortal /></RequireRole>
-             } />
+              } />
 
             <Route path="/student-dashboard" element={
                <RequireRole allowedRoles={['STUDENT']}>
                   <Navigate to="/" replace />
                </RequireRole>
-            } />
+             } />
             <Route path="/timetable" element={
-              <RequireRole allowedRoles={['TEACHER', 'STUDENT', 'ADMIN']}>
-                {user?.role === 'STUDENT' ? <StudentTimetable /> :
-                 user?.role === 'ADMIN' ? <SchedulingView /> : <TeacherTimetableView />}
-              </RequireRole>
-            } />
+               <RequireRole allowedRoles={['TEACHER', 'STUDENT', 'ADMIN']}>
+                 {user?.role === 'STUDENT' ? <StudentTimetable /> :
+                  user?.role === 'ADMIN' ? <SchedulingView /> : <TeacherTimetableView />}
+               </RequireRole>
+             } />
              <Route path="/grading" element={
                <RequireRole allowedRoles={['TEACHER', 'ADMIN']}>
                  {user?.role === 'ADMIN' ? <GradingRulesView /> : <StandaloneGradingWrapper />}
                </RequireRole>
-             } />
+              } />
             <Route path="/teacher-dashboard" element={
-              <RequireRole allowedRoles={['TEACHER']}><TeacherDashboard /></RequireRole>
-            } />
+               <RequireRole allowedRoles={['TEACHER']}><TeacherDashboard /></RequireRole>
+             } />
             <Route path="/teacher/grading" element={
-              <RequireRole allowedRoles={['TEACHER']}><TeacherGradingView /></RequireRole>
-            } />
+               <RequireRole allowedRoles={['TEACHER']}><TeacherGradingView /></RequireRole>
+             } />
             <Route path="/teacher/observations" element={
-              <RequireRole allowedRoles={['TEACHER']}><TeacherObservationsView /></RequireRole>
-            } />
+               <RequireRole allowedRoles={['TEACHER']}><TeacherObservationsView /></RequireRole>
+             } />
             <Route path="/teacher/analytics" element={
-              <RequireRole allowedRoles={['TEACHER']}><TeacherAnalyticsView /></RequireRole>
-            } />
+               <RequireRole allowedRoles={['TEACHER']}><TeacherAnalyticsView /></RequireRole>
+             } />
             <Route path="/teacher/archive" element={
                <RequireRole allowedRoles={['TEACHER']}><TeacherArchiveView /></RequireRole>
-             } />
+              } />
              <Route path="/archive/teacher/:id" element={
                <RequireRole allowedRoles={['TEACHER']}><TeacherArchiveDetailView /></RequireRole>
-             } />
+              } />
             <Route path="/hod"             element={<RequireRole allowedRoles={['HOD']}><HODDashboard /></RequireRole>} />
             <Route path="/hod/audit"       element={<RequireRole allowedRoles={['HOD']}><HODAudit /></RequireRole>} />
             <Route path="/hod/interventions" element={<RequireRole allowedRoles={['HOD']}><HODInterventions /></RequireRole>} />
             <Route path="/hod/review"       element={<RequireRole allowedRoles={['HOD']}><HODReview /></RequireRole>} />
             <Route path="/hod/lock-export" element={<RequireRole allowedRoles={['HOD']}><HODLockExport /></RequireRole>} />
             <Route path="/hod/teachers"    element={<RequireRole allowedRoles={['HOD']}><HODTeachers /></RequireRole>} />
-<Route path="/hod/analytics"   element={<RequireRole allowedRoles={['HOD']}><HODAnalytics /></RequireRole>} />
+            <Route path="/hod/analytics"   element={<RequireRole allowedRoles={['HOD']}><HODAnalytics /></RequireRole>} />
               <Route path="/hod/archive" element={<RequireRole allowedRoles={['HOD']}><HODArchiveView /></RequireRole>} />
               <Route path="/hod/archive/:id" element={<RequireRole allowedRoles={['HOD']}><HODArchiveDetailView /></RequireRole>} />
               <Route path="/hod/settings"    element={<RequireRole allowedRoles={['HOD']}><HODSettingsPage /></RequireRole>} />
@@ -237,98 +235,98 @@ function AppContent() {
              
             <Route path="/hod/broadsheet" element={<RequireRole allowedRoles={['HOD']}><BroadsheetGenerator /></RequireRole>} />
             <Route path="/notifications" element={
-              <RequireRole allowedRoles={['TEACHER', 'HOD', 'ADMIN', 'STUDENT']}>
-                <NotificationsPage />
-              </RequireRole>
-            } />
+               <RequireRole allowedRoles={['TEACHER', 'HOD', 'ADMIN', 'STUDENT']}>
+                 <NotificationsPage />
+               </RequireRole>
+             } />
             <Route path="/student-profile" element={<RequireRole allowedRoles={['TEACHER', 'HOD']}><StudentProfile /></RequireRole>} />
-<Route path="/certification" element={<RequireRole allowedRoles={['HOD']}><HODCertification /></RequireRole>} />
+            <Route path="/certification" element={<RequireRole allowedRoles={['HOD']}><HODCertification /></RequireRole>} />
              <Route path="/revisions" element={
                <RequireRole allowedRoles={['TEACHER', 'HOD']}>
                  {user?.role === 'HOD' ? <HODRevisionsFeed /> : <TeacherRevisionsFeed />}
                </RequireRole>
-             } />
-            
-            <Route path="/comms" element={
-              <RequireRole allowedRoles={['ADMIN']}><CommsView /></RequireRole>
-            } />
-            <Route path="/academic-architect" element={
-              <RequireRole allowedRoles={['ADMIN']}><AcademicArchitect /></RequireRole>
-            } />
-            <Route path="/audit" element={
-              <RequireRole allowedRoles={['HOD', 'ADMIN']}><AuditLogsView /></RequireRole>
-            } />
-            <Route path="/audit/extended" element={
-              <RequireRole allowedRoles={['ADMIN']}><ExtendedLogsView /></RequireRole>
-            } />
-              <Route path="/system" element={
-                <RequireRole allowedRoles={['ADMIN']}><AdminSettings /></RequireRole>
               } />
-              <Route path="/archive" element={
-                <RequireRole allowedRoles={['ADMIN', 'TEACHER', 'HOD']}><RoleBasedArchiveView /></RequireRole>
-              } />
-              <Route path="/missing-observations" element={
-                <RequireRole allowedRoles={['TEACHER']}><RoleBasedMissingObservations /></RequireRole>
-              } />
-              <Route path="/journey-audit" element={
-                <RequireRole allowedRoles={['HOD']}><HOD_JourneyHistoryAudit /></RequireRole>
-              } />
-            <Route path="/unauthorized" element={<Unauthorized />} />
-            <Route path="/identity/staff" element={
-              <RequireRole allowedRoles={['ADMIN']}><StaffRegistry /></RequireRole>
-            } />
-            <Route path="/identity/departments" element={
-              <RequireRole allowedRoles={['ADMIN']}><DepartmentManagement /></RequireRole>
-            } />
-            <Route path="/identity/students" element={
-              <RequireRole allowedRoles={['ADMIN']}><StudentRegistry /></RequireRole>
-            } />
-            <Route path="/identity/parents" element={
-              <RequireRole allowedRoles={['ADMIN']}><ParentRegistry /></RequireRole>
-            } />
-             <Route path="/settings" element={
-               <RequireRole allowedRoles={['STUDENT', 'HOD', 'ADMIN', 'TEACHER']}>
-                 {user?.role === 'STUDENT' ? <StudentSettings /> :
-                  user?.role === 'HOD' ? <HODSettings /> :
-                  user?.role === 'ADMIN' ? <AdminSettings /> : <TeacherSettings />}
-               </RequireRole>
-             } />
-             <Route path="/support" element={
-               <RequireRole allowedRoles={['STUDENT', 'HOD', 'ADMIN', 'TEACHER']}>
-                 {user?.role === 'STUDENT' ? <StudentSupport /> :
-                  user?.role === 'HOD' ? <HODSupportPage /> :
-                  user?.role === 'ADMIN' ? <AdminSupport /> : <TeacherSupport />}
-               </RequireRole>
-             } />
-             <Route path="/support/new" element={
-               <RequireRole allowedRoles={['STUDENT', 'HOD', 'ADMIN', 'TEACHER']}>
-                 {user?.role === 'STUDENT' ? <StudentSupport /> :
-                  user?.role === 'HOD' ? <HODSupportPage /> :
-                  user?.role === 'ADMIN' ? <AdminSupport /> : <TeacherSupport />}
-               </RequireRole>
-             } />
-             <Route path="/support/ticket/:id" element={
-               <RequireRole allowedRoles={['ADMIN', 'HOD']}>
-                 <SupportTicketDetailView />
-               </RequireRole>
-             } />
              
-             {/* Approvals Management Routes */}
-             <Route path="/approvals/all" element={
-               <RequireRole allowedRoles={['ADMIN', 'HOD']}>
-                 <ApprovalsView />
-               </RequireRole>
+            <Route path="/comms" element={
+               <RequireRole allowedRoles={['ADMIN']}><CommsView /></RequireRole>
              } />
-             <Route path="/approvals/inspect/:id" element={
-               <RequireRole allowedRoles={['ADMIN', 'HOD']}>
-                 <ApprovalInspectView />
-               </RequireRole>
+            <Route path="/academic-architect" element={
+               <RequireRole allowedRoles={['ADMIN']}><AcademicArchitect /></RequireRole>
              } />
-             <Route path="/approvals/new" element={
-               <RequireRole allowedRoles={['ADMIN', 'HOD']}>
-                 <NewApprovalRequestView />
-               </RequireRole>
+            <Route path="/audit" element={
+               <RequireRole allowedRoles={['HOD', 'ADMIN']}><AuditLogsView /></RequireRole>
              } />
+            <Route path="/audit/extended" element={
+               <RequireRole allowedRoles={['ADMIN']}><ExtendedLogsView /></RequireRole>
+             } />
+              <Route path="/system" element={
+                 <RequireRole allowedRoles={['ADMIN']}><AdminSettings /></RequireRole>
+               } />
+               <Route path="/archive" element={
+                 <RequireRole allowedRoles={['ADMIN', 'TEACHER', 'HOD']}><RoleBasedArchiveView /></RequireRole>
+               } />
+               <Route path="/missing-observations" element={
+                 <RequireRole allowedRoles={['TEACHER']}><RoleBasedMissingObservations /></RequireRole>
+               } />
+               <Route path="/journey-audit" element={
+                 <RequireRole allowedRoles={['HOD']}><HOD_JourneyHistoryAudit /></RequireRole>
+               } />
+             <Route path="/unauthorized" element={<Unauthorized />} />
+             <Route path="/identity/staff" element={
+               <RequireRole allowedRoles={['ADMIN']}><StaffRegistry /></RequireRole>
+             } />
+             <Route path="/identity/departments" element={
+               <RequireRole allowedRoles={['ADMIN']}><DepartmentManagement /></RequireRole>
+             } />
+             <Route path="/identity/students" element={
+               <RequireRole allowedRoles={['ADMIN']}><StudentRegistry /></RequireRole>
+             } />
+             <Route path="/identity/parents" element={
+               <RequireRole allowedRoles={['ADMIN']}><ParentRegistry /></RequireRole>
+             } />
+              <Route path="/settings" element={
+                <RequireRole allowedRoles={['STUDENT', 'HOD', 'ADMIN', 'TEACHER']}>
+                  {user?.role === 'STUDENT' ? <StudentSettings /> :
+                   user?.role === 'HOD' ? <HODSettings /> :
+                   user?.role === 'ADMIN' ? <AdminSettings /> : <TeacherSettings />}
+                </RequireRole>
+              } />
+              <Route path="/support" element={
+                <RequireRole allowedRoles={['STUDENT', 'HOD', 'ADMIN', 'TEACHER']}>
+                  {user?.role === 'STUDENT' ? <StudentSupport /> :
+                   user?.role === 'HOD' ? <HODSupportPage /> :
+                   user?.role === 'ADMIN' ? <AdminSupport /> : <TeacherSupport />}
+                </RequireRole>
+              } />
+              <Route path="/support/new" element={
+                <RequireRole allowedRoles={['STUDENT', 'HOD', 'ADMIN', 'TEACHER']}>
+                  {user?.role === 'STUDENT' ? <StudentSupport /> :
+                   user?.role === 'HOD' ? <HODSupportPage /> :
+                   user?.role === 'ADMIN' ? <AdminSupport /> : <TeacherSupport />}
+                </RequireRole>
+              } />
+              <Route path="/support/ticket/:id" element={
+                <RequireRole allowedRoles={['ADMIN', 'HOD']}>
+                  <SupportTicketDetailView />
+                </RequireRole>
+              } />
+              
+              {/* Approvals Management Routes */}
+              <Route path="/approvals/all" element={
+                <RequireRole allowedRoles={['ADMIN', 'HOD']}>
+                  <ApprovalsView />
+                </RequireRole>
+              } />
+              <Route path="/approvals/inspect/:id" element={
+                <RequireRole allowedRoles={['ADMIN', 'HOD']}>
+                  <ApprovalInspectView />
+                </RequireRole>
+              } />
+              <Route path="/approvals/new" element={
+                <RequireRole allowedRoles={['ADMIN', 'HOD']}>
+                  <NewApprovalRequestView />
+                </RequireRole>
+              } />
           </Routes>
 
           {isDashboard && user?.role !== 'ADMIN' && (
