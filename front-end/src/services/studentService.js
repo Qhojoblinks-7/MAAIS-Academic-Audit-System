@@ -32,23 +32,9 @@ async function request(method, path, body) {
 
 function createRealService() {
   return {
-    getPortalData: (studentId, params = {}) =>
-      request('GET', `/api/student/portal/${studentId}`, params ? { params } : undefined)
+    getPortalData: (studentId) =>
+      request('GET', `/api/v1/portal/students/${studentId}/portal-data`)
         .then(r => r?.data ?? r),
-    getStudentByIndex: (indexNumber) =>
-      request('GET', `/api/student/index/${indexNumber}`).then(r => r?.data ?? r),
-    getStudentByIndexOrId: (identifier) =>
-      request('GET', `/api/student/lookup/${identifier}`).then(r => r?.data ?? r),
-    getStudentAcademicHistory: (studentId) =>
-      request('GET', `/api/student/${studentId}/academic-history`).then(r => r?.data ?? r),
-    getNotifications: (studentId) =>
-      request('GET', `/api/student/${studentId}/notifications`).then(r => r?.data ?? r),
-    getTerminalResults: (studentId) =>
-      request('GET', `/api/student/${studentId}/terminal-results`).then(r => r?.data ?? r),
-    getAcademicHistory: (studentId) =>
-      request('GET', `/api/student/${studentId}/history`).then(r => r?.data ?? r),
-    getAllPortalStudents: () =>
-      request('GET', '/api/student/portal').then(r => r?.data ?? r),
   };
 }
 

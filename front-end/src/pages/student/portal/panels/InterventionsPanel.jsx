@@ -4,7 +4,13 @@ import { cn } from '../ui/cn';
 
 export function InterventionsPanel({ notifications = [], studentData }) {
   const allNotifications = React.useMemo(() => {
-    return Array.isArray(notifications) ? notifications : [];
+    return Array.isArray(notifications) ? notifications.map(n => ({
+      ...n,
+      type: n.type || (n.title?.toLowerCase().includes('achievement') ? 'achievement' : n.body ? 'message' : n.notes ? 'intervention' : 'system'),
+      message: n.message || n.body || n.notes || '',
+      timestamp: n.timestamp || n.createdAt || new Date().toISOString(),
+      read: n.read !== undefined ? n.read : (n.status === 'RESOLVED' ? true : false),
+    })) : [];
   }, [notifications]);
    
   // Track consecutive term grade deltas cleanly using stable references
