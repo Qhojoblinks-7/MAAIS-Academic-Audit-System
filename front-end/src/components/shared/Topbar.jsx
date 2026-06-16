@@ -10,20 +10,12 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-
-const MOCK_SEARCH_RESULTS = [
-  { id: "stud001", type: "student", name: "Angela Owusu", detail: "Agriculture • Index: 001", index: "001" },
-  { id: "stud002", type: "student", name: "Ama Serwaa", detail: "Agriculture • Index: 009", index: "009" },
-  { id: "stud003", type: "student", name: "Kwame Mensah", detail: "Agriculture • Index: 002", index: "002" },
-  { id: "c1", type: "class", name: "SHS 1 Agric B", detail: "General Agriculture" },
-  { id: "c2", type: "class", name: "SHS 2 Science A", detail: "Elective Physics" },
-];
+import { studentService } from "../../services/studentService";
 
 function BreadcrumbNav() {
   const { user } = useRole();
   const location = useLocation();
 
-  // Mapping for specific path labels
   const labelMap = {
     "": "Dashboard",
     "student-profile": "Student Profile",
@@ -99,6 +91,7 @@ export function Topbar() {
 
   const [query, setQuery] = useState(urlSearchQuery);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
   const searchContainerRef = useRef(null);
 
   useEffect(() => { setQuery(urlSearchQuery); }, [urlSearchQuery]);
@@ -116,13 +109,33 @@ export function Topbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const results = query.trim()
-    ? MOCK_SEARCH_RESULTS.filter((r) => r.name.toLowerCase().includes(query.toLowerCase()) || r.detail.toLowerCase().includes(query.toLowerCase()) || (r.index && r.index.includes(query)))
-    : [];
+  const fetchSearchResults = React.useCallback(async (searchQuery) => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    try {
+      const results = await studentService.searchStudents(searchQuery);
+      setSearchResults(results || []);
+    } catch (e) {
+      setSearchResults([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (query.trim()) {
+      const debounceTimer = setTimeout(() => {
+        fetchSearchResults(query);
+      }, 300);
+      return () => clearTimeout(debounceTimer);
+    } else {
+      setSearchResults([]);
+    }
+  }, [query, fetchSearchResults]);
 
   const handleResultClick = (result) => {
     setQuery(""); setIsSearching(false); updateURLSearchParam("");
-    if (result.type === 'student') { navigate(`/student-profile?id=${result.id}`); }
+    if (result.id) { navigate(`/student-profile?id=${result.id}`); }
     else { navigate("/grading"); }
   };
 
@@ -130,6 +143,8 @@ export function Topbar() {
     setRole(nextRole);
     if (nextRole === "STUDENT") { navigate("/"); }
   };
+
+  const avatarSrc = user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.name || 'default')}`;
 
   return (
     <header className="sticky top-0 z-40 h-16 bg-surface/80 backdrop-blur-md flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b border-border shrink-0 shadow-sm shadow-surface/40 print:hidden">
@@ -172,62 +187,66 @@ export function Topbar() {
           </div>
         )}
 
-        <div ref={searchContainerRef} className="relative w-full max-w-[150px] xs:max-w-[180px] sm:max-w-[240px] lg:max-w-[260px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" size={13} />
-          <Input
-            placeholder="Search..."
-            value={query}
-            onChange={(e) => { setQuery(e.target.value); setIsSearching(true); updateURLSearchParam(e.target.value); }}
-            onFocus={() => setIsSearching(true)}
-            className="pl-8.5 pr-8 py-1.5 text-xs"
-          />
-          {query && (
-            <button type="button" onClick={() => { setQuery(""); setIsSearching(false); updateURLSearchParam(""); }} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-text-secondary hover:text-text-primary rounded-md hover:bg-muted transition-colors">
-              <X size={11} />
-            </button>
-          )}
+        {user?.role !== "STUDENT" && (
+          <div ref={searchContainerRef} className="relative w-full max-w-[150px] xs:max-w-[180px] sm:max-w-[240px] lg:max-w-[260px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" size={13} />
+            <Input
+              placeholder="Search students..."
+              value={query}
+              onChange={(e) => { setQuery(e.target.value); setIsSearching(true); updateURLSearchParam(e.target.value); }}
+              onFocus={() => setIsSearching(true)}
+              className="pl-8.5 pr-8 py-1.5 text-xs"
+            />
+            {query && (
+              <button type="button" onClick={() => { setQuery(""); setIsSearching(false); updateURLSearchParam(""); }} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-text-secondary hover:text-text-primary rounded-md hover:bg-muted transition-colors">
+                <X size={11} />
+              </button>
+            )}
 
-          <AnimatePresence>
-            {isSearching && query.trim() && (
-              <motion.div
-                initial={{ opacity: 0, y: 6, scale: 0.99 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 6, scale: 0.99 }}
-                transition={{ duration: 0.1, ease: "easeOut" }}
-                className="absolute top-full right-0 mt-2 bg-surface rounded-xl border border-border shadow-xl z-50 overflow-hidden w-[260px] xs:w-[280px] sm:w-[320px]"
-              >
-                <div className="p-1.5 max-h-[280px] overflow-y-auto">
-                  {results.length > 0 ? (
-                    results.map((result) => (
-                      <button key={result.id} type="button" onClick={() => handleResultClick(result)} className="w-full flex items-center gap-2.5 p-2 hover:bg-muted rounded-lg transition-all group text-left">
-                        <div className={cn("w-7 h-7 rounded-md flex items-center justify-center shrink-0 border", result.type === "student" ? "bg-brand-secondary/10 text-brand-secondary border-brand-secondary/20" : "bg-brand-primary/10 text-brand-primary border-brand-primary/20")}>
-                          {result.type === "student" ? <Users size={13} /> : <GraduationCap size={13} />}
+            <AnimatePresence>
+              {isSearching && query.trim() && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6, scale: 0.99 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 6, scale: 0.99 }}
+                  transition={{ duration: 0.1, ease: "easeOut" }}
+                  className="absolute top-full right-0 mt-2 bg-surface rounded-xl border border-border shadow-xl z-50 overflow-hidden w-[260px] xs:w-[280px] sm:w-[320px]"
+                >
+                  <div className="p-1.5 max-h-[280px] overflow-y-auto">
+                    {searchResults.length > 0 ? (
+                      searchResults.map((result) => (
+                        <button key={result.id} type="button" onClick={() => handleResultClick(result)} className="w-full flex items-center gap-2.5 p-2 hover:bg-muted rounded-lg transition-all group text-left">
+                          <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 border bg-brand-secondary/10 text-brand-secondary border-brand-secondary/20">
+                            <Users size={13} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-text-primary truncate group-hover:text-brand-primary">{result.name}</p>
+                            <p className="text-[10px] font-bold text-text-secondary uppercase truncate mt-0.5">
+                              {result.classForm} • Index: {result.indexNumber}
+                            </p>
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="py-6 px-4 text-center">
+                        <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center text-text-secondary mx-auto mb-2 border border-border">
+                          <Search size={14} />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold text-text-primary truncate group-hover:text-brand-primary">{result.name}</p>
-                          <p className="text-[10px] font-bold text-text-secondary uppercase truncate mt-0.5">{result.detail} {result.index && `• ID: ${result.index}`}</p>
-                        </div>
-                      </button>
-                    ))
-                  ) : (
-                    <div className="py-6 px-4 text-center">
-                      <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center text-text-secondary mx-auto mb-2 border border-border">
-                        <Search size={14} />
+                        <p className="text-xs font-bold text-text-primary">No matches found</p>
                       </div>
-                      <p className="text-xs font-bold text-text-primary">No matches found</p>
+                    )}
+                  </div>
+                  {searchResults.length > 0 && (
+                    <div className="bg-muted/80 px-3 py-2 border-t border-border flex items-center justify-between">
+                      <p className="text-[9px] font-black text-text-secondary uppercase">{searchResults.length} records found</p>
+                      <button className="text-[9px] font-black text-brand-primary hover:text-brand-secondary uppercase">View All</button>
                     </div>
                   )}
-                </div>
-                {results.length > 0 && (
-                  <div className="bg-muted/80 px-3 py-2 border-t border-border flex items-center justify-between">
-                    <p className="text-[9px] font-black text-text-secondary uppercase">{results.length} records found</p>
-                    <button className="text-[9px] font-black text-brand-primary hover:text-brand-secondary uppercase">View All</button>
-                  </div>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
 
         <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-border shrink-0">
           <Select value={user?.role} onValueChange={handleRoleChange}>
@@ -249,7 +268,7 @@ export function Topbar() {
 
           <div className="relative shrink-0">
             <Avatar className="w-8 h-8 rounded-xl border border-border">
-              <AvatarImage src={user?.avatar} alt="User Profile" />
+              <AvatarImage src={avatarSrc} alt="User Profile" />
               <AvatarFallback className="rounded-xl bg-brand-secondary/10 text-brand-secondary text-[11px] font-bold">
                 <UserIcon size={13} />
               </AvatarFallback>

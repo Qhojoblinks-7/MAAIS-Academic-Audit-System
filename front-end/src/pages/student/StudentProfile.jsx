@@ -2,10 +2,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { GraduationCap, Lock, Unlock, ArrowLeft, User, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useHOD } from '../../context/HODContext';
+import { useRole } from '../../context/RoleContext';
 import { GradingSheet } from '../../pages/shared/GradingSheet';
+import { studentService } from '../../services/studentService';
 import '@/index.css';
 
-// 1. Unified Subject Keys across the entire module
 const SUBJECT_CONFIG = {
   'General Agriculture': {
     sections: ['Paper 1 (50)', 'Paper 2-Agri (90)', 'Paper 3-Pract (60)'],
@@ -24,37 +25,17 @@ const SUBJECT_CONFIG = {
   },
 };
 
-const MOCK_STUDENT = {
-  id: 'stud001',
-  index: '001',
-  name: 'Angela Owusu',
-  classForm: 'SHS 1 Agric B',
-  department: 'Agriculture',
-};
-
-const MOCK_TERM_HISTORY = [
-  { term: '2023/24 Term 1', gpa: 2.85, grade: 'B2' },
-  { term: '2023/24 Term 2', gpa: 3.12, grade: 'B2' },
-  { term: '2023/24 Term 3', gpa: 3.25, grade: 'B2' },
-  { term: '2024/25 Term 1', gpa: 3.45, grade: 'A1' },
-  { term: '2024/25 Term 2', gpa: 3.62, grade: 'A1' },
-];
-
-// Fixed key from 'Mathematics' to 'Core Mathematics' to pair with configuration
-const MOCK_SUBJECT_PERFORMANCE = [
-  { subject: 'General Agriculture', grades: ['B3', 'B2', 'B2', 'A1'], trend: 'improving' },
-  { subject: 'Core Mathematics', grades: ['C5', 'C4', 'B3', 'B2'], trend: 'improving' },
-  { subject: 'English Language', grades: ['B2', 'B2', 'B2', 'B2'], trend: 'stable' },
-];
-
 export function StudentProfile() {
   const { archivedClasses, interventionAlerts } = useHOD();
+  const { user } = useRole();
   const [student, setStudent] = useState(null);
+  const [academicHistory, setAcademicHistory] = useState([]);
+  const [terminalResults, setTerminalResults] = useState([]);
   const [isArchived, setIsArchived] = useState(false);
   const [isEnteringGrade, setIsEnteringGrade] = useState(false);
   const [gradeSubject, setGradeSubject] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  // Flatten out student records from HOD context safely
   const allStudents = useMemo(() => {
     const students = [];
     if (archivedClasses && Array.isArray(archivedClasses)) {
@@ -72,30 +53,57 @@ export function StudentProfile() {
         }
       });
     }
-    if (students.length === 0) {
-      students.push(MOCK_STUDENT);
-    }
     return students;
   }, [archivedClasses]);
 
-  // Sync URL state to track the active profile target
+  const studentAlerts = useMemo(() => {
+    if (!student || !Array.isArray(interventionAlerts)) return [];
+    return interventionAlerts.filter(a => a.studentId === student.id || a.studentName === student.name);
+  }, [interventionAlerts, student]);
+
+  const fetchStudentFullProfile = React.useCallback(async (studentId) => {
+    if (!studentId) return;
+    setLoading(true);
+    try {
+      const portalData = await studentService.getPortalData(studentId);
+      const studentInfo = {
+        id: portalData?.student?.id || studentId,
+        name: `${portalData?.student?.firstName || ''} ${portalData?.student?.lastName || ''}`.trim() || 'Unknown Student',
+        index: portalData?.student?.indexNumber || '—',
+        classForm: portalData?.student?.currentClass?.name || '—',
+        department: portalData?.student?.department?.name || '—',
+      };
+      setStudent(studentInfo);
+      setAcademicHistory(portalData?.academicHistory || []);
+      setTerminalResults(portalData?.terminalResults || []);
+    } catch (e) {
+      console.error('Failed to fetch student profile:', e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const studentId = params.get('id');
-    
-    // Fallback to mock profile if no routing params exist yet
+
     if (!studentId) {
-      setStudent(MOCK_STUDENT);
-      setIsArchived(false);
+      const foundFromHOD = allStudents[0];
+      if (foundFromHOD) {
+        setStudent(foundFromHOD);
+        setIsArchived(foundFromHOD.archived || false);
+      }
       return;
     }
 
     const found = allStudents.find(s => s.id === studentId);
     if (found) {
       setStudent(found);
-      setIsArchived(found.archived);
+      setIsArchived(found.archived || false);
+    } else {
+      fetchStudentFullProfile(studentId);
     }
-  }, [allStudents]);
+  }, [allStudents, fetchStudentFullProfile]);
 
   const handleEnterGrade = (subject) => {
     if (!subject) return;
@@ -108,12 +116,7 @@ export function StudentProfile() {
     setGradeSubject(null);
   };
 
-  const studentAlerts = useMemo(() => {
-    if (!student || !Array.isArray(interventionAlerts)) return [];
-    return interventionAlerts.filter(a => a.studentId === student.id || a.studentName === student.name);
-  }, [interventionAlerts, student]);
-
-  if (!student) {
+  if (loading || !student) {
     return (
       <div className="flex-1 flex items-center justify-center bg-[#F4F3EA] p-6">
         <div className="text-center">
@@ -125,7 +128,9 @@ export function StudentProfile() {
   }
 
   const availableSubjects = Object.keys(SUBJECT_CONFIG);
-  const latestGPA = MOCK_TERM_HISTORY[MOCK_TERM_HISTORY.length - 1]?.gpa || 0;
+  const latestGPA = academicHistory.length > 0 
+    ? academicHistory[academicHistory.length - 1]?.gpa || 0 
+    : 0;
 
   return (
     <div className="w-full h-screen bg-[#F4F3EA] text-[#1C1C1E] p-5 font-sans antialiased flex flex-col overflow-hidden">
@@ -149,7 +154,6 @@ export function StudentProfile() {
 
       <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {/* Sidebar Info Panel */}
           <div className="lg:col-span-4 bg-white/60 border border-white/80 rounded-[24px] p-4 flex flex-col gap-4">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-[12px] bg-slate-100 border border-white flex items-center justify-center text-slate-400 shrink-0">
@@ -203,50 +207,59 @@ export function StudentProfile() {
             )}
           </div>
 
-          {/* Performance Data Metrics */}
           <div className="lg:col-span-8 space-y-4">
             <div className="bg-white/40 border border-white/80 rounded-[24px] p-4">
               <h3 className="text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1 text-gray-600">
                 <TrendingUp size={12} /> Performance History (Cumulative)
               </h3>
               <div className="divide-y divide-gray-200/40">
-                {MOCK_TERM_HISTORY.map((term, idx) => (
-                  <div key={idx} className="flex items-center justify-between py-2 text-xs implementation-row">
-                    <span className="text-gray-500 font-medium">{term.term}</span>
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-gray-700 font-bold">{term.grade}</span>
-                      <span className="font-mono w-8 text-right font-semibold">{term.gpa.toFixed(2)}</span>
-                      <span className="w-4">
-                        {idx > 0 && term.gpa > MOCK_TERM_HISTORY[idx - 1].gpa ? (
-                          <TrendingUp size={13} className="text-emerald-600" />
-                        ) : idx > 0 ? (
-                          <TrendingDown size={13} className="text-amber-500" />
-                        ) : null}
-                      </span>
+                {academicHistory.length > 0 ? (
+                  academicHistory.map((term, idx) => (
+                    <div key={idx} className="flex items-center justify-between py-2 text-xs implementation-row">
+                      <span className="text-gray-500 font-medium">{term.year} {term.term}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono w-8 text-right font-semibold">
+                          {term.subjects?.reduce((avg, s) => avg + (s.score || 0), 0) / (term.subjects?.length || 1) / 100 || 0}
+                        </span>
+                        <span className="w-4">
+                          {idx > 0 && term.subjects?.length > 0 ? (
+                            <TrendingUp size={13} className="text-emerald-600" />
+                          ) : null}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-xs text-gray-400 py-4 text-center">No academic history available</p>
+                )}
               </div>
             </div>
 
             <div className="bg-white/40 border border-white/80 rounded-[24px] p-4">
               <h3 className="text-xs font-bold uppercase tracking-wider mb-3 text-gray-600">Subject Tracker</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {MOCK_SUBJECT_PERFORMANCE.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 bg-white/80 border border-slate-100 rounded-xl">
-                    <span className="text-xs font-medium text-gray-700">{item.subject}</span>
-                    <span className="text-xs font-mono font-bold bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md">
-                      {item.grades[item.grades.length - 1] || 'N/A'}
-                    </span>
-                  </div>
-                ))}
+                {terminalResults.length > 0 ? (
+                  [...new Set(terminalResults.map(r => r.subject))].map((subject, idx) => {
+                    const grades = terminalResults.filter(r => r.subject === subject);
+                    const latestGrade = grades[grades.length - 1]?.grade || 'N/A';
+                    return (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-white/80 border border-slate-100 rounded-xl">
+                        <span className="text-xs font-medium text-gray-700">{subject}</span>
+                        <span className="text-xs font-mono font-bold bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md">
+                          {latestGrade}
+                        </span>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-xs text-gray-400 col-span-2 py-4 text-center">No subjects available</p>
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Grade Input Overlay Modal Sheet */}
       <AnimatePresence>
         {isEnteringGrade && gradeSubject && (
           <motion.div

@@ -1,77 +1,102 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import mockApiData from '../data/mockApiData.json';
 
 const RoleContext = createContext(undefined);
 
-const getHODUser = () => {
-  const hodUser = mockApiData.users?.hodUsers?.[0];
-  const department = mockApiData.departments?.items?.find(d => d.hodId === hodUser?.id);
-  return {
-    id: hodUser?.id || 'hod001',
-    username: hodUser?.username || 'hod.agric',
-    name: hodUser?.name || 'Mr. Kwame Asante',
-    role: 'HOD',
-    departmentId: department?.id || '1',
-    departmentName: department?.name || 'Agriculture',
-    avatar: hodUser?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=HOD',
-    currentTerm: '2026',
-  };
-};
-
-const getTeacherUser = () => {
-  const teacher = mockApiData.users?.teacherUsers?.[0];
-  return {
-    id: teacher?.id || 'teacher001',
-    username: teacher?.username || 'mensah.agric',
-    name: teacher?.name || 'Mr. Kwame Mensah',
-    role: 'TEACHER',
-    departmentId: teacher?.departmentId || '1',
-    avatar: teacher?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Hackman',
-    currentTerm: '2026',
-  };
-};
-
-const getAdminUser = () => {
-  const admin = mockApiData.users?.adminUsers?.[0];
-  return {
-    id: admin?.id || 'admin001',
-    username: admin?.username || 'admin.system',
-    name: admin?.name || 'System Admin',
-    role: 'ADMIN',
-    departmentId: null, // Admin not tied to a specific department
-    avatar: admin?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin',
-    currentTerm: '2026',
-  };
-};
-
-const getStudentUser = () => {
-  const student = mockApiData.students?.items?.[0];
-  const department = mockApiData.departments?.items?.find(d => d.name === student?.department);
-  return {
-    id: student?.id || 'stud001',
-    username: student?.index || '001',
-    name: student?.name || 'Angela Owusu',
-    role: 'STUDENT',
-    departmentId: department?.id || '1',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Angela',
-    currentTerm: '2026',
-  };
-};
-
-const mockUsers = {
-  TEACHER: getTeacherUser(),
-  HOD: getHODUser(),
-  ADMIN: getAdminUser(),
-  STUDENT: getStudentUser(),
-};
-
 export function RoleProvider({ children }) {
-  const [user, setUser] = useState(mockUsers.STUDENT);
+  const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMe = async () => {
+      try {
+        const res = await fetch('/api/v1/auth/me', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUser({
+            id: data.id,
+            name: data.name || `${data?.studentProfile?.firstName || data?.staffProfile?.firstName || ''} ${data?.studentProfile?.lastName || data?.staffProfile?.lastName || ''}`.trim(),
+            role: data.role,
+            departmentId: data?.staffProfile?.departmentId || data?.studentProfile?.departmentId || null,
+            departmentName: data?.department?.name,
+            avatar: data?.studentProfile?.photoUrl || data?.staffProfile?.photoUrl || null,
+            currentTerm: '2026',
+          });
+          setIsAuthenticated(true);
+        }
+      } catch (e) {
+        // Will use mock data as fallback via setRole
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const hodUser = mockApiData.users?.hodUsers?.[0];
+    const teacher = mockApiData.users?.teacherUsers?.[0];
+    const admin = mockApiData.users?.adminUsers?.[0];
+    const student = mockApiData.students?.items?.[0];
+    const departments = mockApiData.departments?.items || [];
+    const getStudentDepartment = (deptName) => departments.find(d => d.name === deptName);
+
+    const mockUsers = {
+      TEACHER: {
+        id: teacher?.id || 'teacher001',
+        username: teacher?.username || 'mensah.agric',
+        name: teacher?.name || 'Mr. Kwame Mensah',
+        role: 'TEACHER',
+        departmentId: teacher?.departmentId || '1',
+        currentTerm: '2026',
+      },
+      HOD: (() => {
+        const dept = getStudentDepartment(hodUser?.department);
+        return {
+          id: hodUser?.id || 'hod001',
+          username: hodUser?.username || 'hod.agric',
+          name: hodUser?.name || 'Mr. Kwame Asante',
+          role: 'HOD',
+          departmentId: dept?.id || '1',
+          departmentName: dept?.name || 'Agriculture',
+          currentTerm: '2026',
+        };
+      })(),
+      ADMIN: {
+        id: admin?.id || 'admin001',
+        username: admin?.username || 'admin.system',
+        name: admin?.name || 'System Admin',
+        role: 'ADMIN',
+        departmentId: null,
+        currentTerm: '2026',
+      },
+      STUDENT: (() => {
+        const dept = getStudentDepartment(student?.department);
+        return {
+          id: student?.id || 'stud001',
+          username: student?.index || '001',
+          name: student?.name || 'Angela Owusu',
+          role: 'STUDENT',
+          departmentId: dept?.id || '1',
+          currentTerm: '2026',
+        };
+      })(),
+    };
+
+    fetchMe().then(() => {
+      if (!user) {
+        setUser(mockUsers.STUDENT);
+      }
+    });
+
+    window.mockUsers = mockUsers;
+  }, []);
 
   const setRole = (role) => {
-    if (mockUsers[role]) {
-      setUser(mockUsers[role]);
+    if (window.mockUsers?.[role]) {
+      setUser(window.mockUsers[role]);
       setIsAuthenticated(true);
     }
   };
@@ -85,8 +110,8 @@ export function RoleProvider({ children }) {
     if (!credentials?.token) return false;
     try {
       const payload = JSON.parse(atob(credentials.token.split('.')[1]));
-      if (payload.role && mockUsers[payload.role]) {
-        setUser({ ...mockUsers[payload.role], ...payload });
+      if (payload.role && window.mockUsers?.[payload.role]) {
+        setUser({ ...window.mockUsers[payload.role], ...payload });
         setIsAuthenticated(true);
         return true;
       }
@@ -95,6 +120,10 @@ export function RoleProvider({ children }) {
     }
     return false;
   };
+
+  if (loading) {
+    return null;
+  }
 
   return (
     <RoleContext.Provider value={{ user, setRole, logout, login, isAuthenticated }}>

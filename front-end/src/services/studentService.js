@@ -35,6 +35,9 @@ function createRealService() {
     getPortalData: (studentId) =>
       request('GET', `/api/v1/portal/students/${studentId}/portal-data`)
         .then(r => r?.data ?? r),
+    searchStudents: (query) =>
+      request('GET', `/api/v1/portal/search?q=${encodeURIComponent(query)}`)
+        .then(r => r?.data ?? r),
   };
 }
 
