@@ -1,0 +1,246 @@
+{
+  "admin_role_backend_data_requirements": {
+    "overview": "Complete data schema for ADMIN (System Administrator / Headmaster) role operations in MAAIS Academic Audit System",
+    "role_summary": {
+      "responsibilities": [
+        "Full system configuration and setup",
+        "Manages user accounts (staff, students, parents)",
+        "Creates and manages academic structure (years, terms, departments, classes, subjects)",
+        "Assigns teachers to classes and subjects",
+        "Has full access to all grading, audit, and archive data",
+        "Generates reports and oversees WAEC export compliance",
+        "Sends emergency communications and manages system settings",
+        "Monitors database health and runs promotion cycles"
+      ]
+    },
+    "1_authentication_and_profile": {
+      "endpoints": [
+        "/api/v1/auth/login",
+        "/api/v1/auth/refresh",
+        "/api/v1/auth/logout",
+        "/api/v1/auth/me"
+      ],
+      "profile_fields": {
+        "userId": "string",
+        "email": "string",
+        "staffId": "string",
+        "name": "string",
+        "role": "SUPER_ADMIN|HEADMASTER",
+        "isActive": "boolean"
+      }
+    },
+    "2_user_management": {
+      "endpoints": [
+        "/api/v1/users/staff",
+        "/api/v1/users/students",
+        "/api/v1/users/students/{id}",
+        "/api/v1/users/parents",
+        "/api/v1/users/{id}/deactivate"
+      ],
+      "staff_fields": {
+        "id": "string",
+        "staffId": "string",
+        "firstName": "string",
+        "lastName": "string",
+        "email": "string",
+        "phone": "string",
+        "gender": "string",
+        "departmentId": "string",
+        "departmentName": "string",
+        "role": "STAFF|TEACHER|HOD|HEADMASTER|SUPER_ADMIN",
+        "isActive": "boolean",
+        "teachingAssignments": ["array of subject/class assignments"],
+        "hiredAt": "datetime"
+      },
+      "student_fields": {
+        "id": "string",
+        "indexNumber": "string",
+        "firstName": "string",
+        "lastName": "string",
+        "currentClassId": "string",
+        "currentClassName": "string",
+        "departmentId": "string",
+        "departmentName": "string",
+        "gender": "string",
+        "dateOfBirth": "date",
+        "guardianContact": "string",
+        "grades": ["array of grade entries"],
+        "reportCards": ["array of report cards"],
+        "interventions": ["array of intervention alerts"],
+        "parentLinks": ["array of parent records"]
+      },
+      "parent_fields": {
+        "id": "string",
+        "firstName": "string",
+        "lastName": "string",
+        "phone": "string",
+        "email": "string",
+        "occupation": "string",
+        "linkedStudents": ["array of student profiles"]
+      },
+      "permissions": "Admin has full access to all users. Can create, view, and deactivate any account."
+    },
+    "3_academic_structure": {
+      "endpoints": [
+        "/api/v1/academic/years",
+        "/api/v1/academic/years/active",
+        "/api/v1/academic/terms",
+        "/api/v1/academic/departments",
+        "/api/v1/academic/subjects",
+        "/api/v1/academic/classes",
+        "/api/v1/academic/assignments",
+        "/api/v1/academic/assignments/teacher/{teacherId}",
+        "/api/v1/academic/classes/{id}/teacher"
+      ],
+      "academic_year_fields": {
+        "id": "string",
+        "label": "string",
+        "startDate": "date",
+        "endDate": "date",
+        "isActive": "boolean",
+        "terms": ["array of terms in this year"]
+      },
+      "term_fields": {
+        "id": "string",
+        "termNumber": "integer (1|2|3)",
+        "academicYearId": "string",
+        "startDate": "date",
+        "endDate": "date",
+        "isActive": "boolean",
+        "isLocked": "boolean"
+      },
+      "department_fields": {
+        "id": "string",
+        "name": "string",
+        "code": "string",
+        "description": "string",
+        "staffCount": "integer",
+        "subjects": ["array of subjects in department"]
+      },
+      "subject_fields": {
+        "id": "string",
+        "name": "string",
+        "code": "string",
+        "type": "CORE|ELECTIVE",
+        "departmentId": "string",
+        "isActive": "boolean",
+        "description": "string"
+      },
+      "class_fields": {
+        "id": "string",
+        "name": "string",
+        "level": "FORM_1|FORM_2|FORM_3",
+        "capacity": "integer",
+        "classTeacherId": "string",
+        "studentCount": "integer",
+        "academicYearId": "string"
+      },
+      "teaching_assignment_fields": {
+        "id": "string",
+        "teacherId": "string",
+        "subjectId": "string",
+        "classSectionId": "string",
+        "academicYearId": "string"
+      },
+      "permissions": "Admin has full CRUD on academic structure. Only Admin can create years, terms, departments, and class sections."
+    },
+    "4_grading": {
+      "endpoints": [
+        "/api/v1/grading/entries",
+        "/api/v1/grading/entries/bulk",
+        "/api/v1/grading/entries/{id}/lock",
+        "/api/v1/grading/entries/{id}/approve",
+        "/api/v1/grading/entries/bulk-approve",
+        "/api/v1/grading/corrections",
+        "/api/v1/grading/audit-tray",
+        "/api/v1/grading/class-summary/{classId}",
+        "/api/v1/grading/students/{studentId}/terms/{termId}",
+        "/api/v1/grading/smart-remarks/{grade}"
+      ],
+      "permissions": "Admin has full access to all grading operations including bulk approve, lock, and corrections across all departments."
+    },
+    "5_audit_logs": {
+      "endpoints": [
+        "/api/v1/grading/corrections"
+      ],
+      "audit_log_fields": {
+        "id": "string",
+        "gradeEntryId": "string",
+        "changedById": "string",
+        "changedByName": "string",
+        "fieldChanged": "string (classScore|examScore|remark)",
+        "oldValue": "string",
+        "newValue": "string",
+        "reason": "string",
+        "createdAt": "datetime"
+      },
+      "permissions": "Admin can view all audit logs school-wide. Cannot delete audit logs (immutable)."
+    },
+    "6_intervention_alerts": {
+      "endpoints": [
+        "/api/v1/students/{id}/interventions"
+      ],
+      "permissions": "Admin can view and resolve all intervention alerts school-wide."
+    },
+    "7_reports": {
+      "endpoints": [
+        "/api/v1/reports/report-cards/generate",
+        "/api/v1/reports/report-cards/batch",
+        "/api/v1/reports/transcripts/generate",
+        "/api/v1/reports/verify/{hash}"
+      ],
+      "permissions": "Admin can generate single report cards, batch generate for classes, and build 3-year transcripts."
+    },
+    "8_archive": {
+      "endpoints": [
+        "/api/v1/archive/promote",
+        "/api/v1/archive/vault/search",
+        "/api/v1/archive/terms/{id}/lock",
+        "/api/v1/archive/health"
+      ],
+      "permissions": "Admin has full archive access including running promotion cycles and locking terms. Can search vault school-wide."
+    },
+    "9_timetable": {
+      "endpoints": [
+        "/api/v1/timetable",
+        "/api/v1/timetable/{id}",
+        "/api/v1/timetable/teacher/{teacherId}",
+        "/api/v1/timetable/class/{classId}",
+        "/api/v1/timetable/clashes/{teacherId}"
+      ],
+      "permissions": "Admin has full CRUD on timetable entries school-wide. Can detect clashes for any teacher."
+    },
+    "10_comms": {
+      "endpoints": [
+        "/api/v1/comms/notify",
+        "/api/v1/comms/emergency",
+        "/api/v1/comms/analytics/pulse",
+        "POST /api/v1/comms/tickets (student-facing)",
+        "GET /api/v1/comms/tickets (school-wide)",
+        "PATCH /api/v1/comms/tickets/:id/status",
+        "POST /api/v1/comms/tickets/:id/reply"
+      ],
+      "permissions": "Admin can send notifications to students, broadcast emergency SMS to all parents, view full school analytics pulse, and manage support tickets (view, update status, reply)."
+    },
+    "11_system_settings": {
+      "purpose": "System configuration and settings management",
+      "frontend_page": "AdminSettings.jsx",
+      "note": "No dedicated backend settings module currently exists. Settings are likely stored in environment variables or a future /api/v1/settings endpoint. Admins currently manage configuration through .env files and database migrations."
+    },
+    "12_notes_and_constraints": {
+      "security": [
+        "Admin is the highest privilege role — full system access",
+        "All admin actions are logged in audit trail where applicable",
+        "Admin cannot modify or delete audit logs once created",
+        "Admin can deactivate any user account"
+      ],
+      "data_isolation": [
+        "No row-level restrictions — admin sees all data across all departments",
+        "No student or staff filtering — full unfiltered access"
+      ],
+      "limitations": [
+        "None — admin has unrestricted access to all endpoints except where explicitly limited by system design (e.g. immutable audit logs)"
+      ]
+    }
+  }
+}

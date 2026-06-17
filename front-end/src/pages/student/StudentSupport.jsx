@@ -1,9 +1,11 @@
-﻿import React from 'react';
+﻿import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Scale, QrCode, CheckCircle2, Clock, ArrowRight, X, Star, Send } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { getAuthToken } from '../../services/auth';
 import { useRole } from '../../context/RoleContext';
+import { studentApi } from '../../services/api/studentApi';
+import { useStudentStore } from '../../stores/useStudentStore';
+import { useStudentBehavior, useStudentTickets } from '../../hooks/api/useStudentApi';
 
 const STATUS_STYLES = {
   OPEN: 'bg-background text-text-secondary border-border',
@@ -13,45 +15,37 @@ const STATUS_STYLES = {
 
 export function StudentSupport() {
   const { user } = useRole();
-  const [observations, setObservations] = React.useState([]);
-  const [tickets, setTickets] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
-  const [activeCategory, setActiveCategory] = React.useState('Academic');
-  const [title, setTitle] = React.useState('');
-  const [message, setMessage] = React.useState('');
+  const store = useStudentStore();
+  const behavior = useStudentBehavior(user?.id);
+  const tickets = useStudentTickets();
 
-  React.useEffect(() => {
-    const fetchData = async () => {
-      if (!user?.id) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const token = getAuthToken();
-        const [obsRes, ticketsRes] = await Promise.all([
-          fetch(`/api/v1/students/${user.id}/behavior`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-          }),
-          fetch('/api/v1/comms/tickets/my', {
-            headers: { 'Authorization': `Bearer ${token}` },
-          }),
-        ]);
-        if (obsRes.ok) {
-          const data = await obsRes.json();
-          setObservations(data.logs || []);
-        }
-        if (ticketsRes.ok) {
-          const data = await ticketsRes.json();
-          setTickets(data || []);
-        }
-      } catch (e) {
-        console.error('Failed to fetch support data:', e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [user.id]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [title, setTitle] = useState(store.supportTitle || '');
+  const [message, setMessage] = useState(store.supportMessage || '');
+  const [activeCategory, setActiveCategory] = useState(store.supportCategory || 'General');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!title.trim() || !message.trim() || !user?.id) return;
+    setIsSubmitting(true);
+    try {
+      await studentApi.createTicket({
+        title: title.trim(),
+        description: message.trim(),
+        category: activeCategory,
+        priority: store.supportPriority,
+      });
+      store.resetSupportForm();
+      setTitle('');
+      setMessage('');
+      setActiveCategory('General');
+      await tickets.refetch();
+    } catch (error) {
+      console.error('Failed to submit ticket:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
    return (
      <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 md:p-8 lg:p-12 pb-24 no-scrollbar">

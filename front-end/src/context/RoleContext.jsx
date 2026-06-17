@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { clearAuthToken, getAuthToken } from '../services/auth';
+import { clearAuthToken, getAuthToken, setAuthToken } from '../services/auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
@@ -11,13 +11,24 @@ export function RoleProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchMe = async () => {
       try {
         const token = getAuthToken();
-        if (!token) {
-          setLoading(false);
+        console.groupCollapsed('[Auth] checking session');
+        console.log('[Auth] token present:', Boolean(token));
+        if (!token || cancelled) {
+          if (!cancelled) {
+            console.warn('[Auth] no auth token available; user session cleared');
+            setUser(null);
+            setIsAuthenticated(false);
+            setLoading(false);
+          }
+          console.groupEnd();
           return;
         }
+        console.groupEnd();
 
         const res = await fetch(`${API_BASE_URL}/auth/me`, {
           method: 'GET',
@@ -27,33 +38,115 @@ export function RoleProvider({ children }) {
           },
           credentials: 'include',
         });
-        if (res.ok) {
-          const data = await res.json();
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          const userId = data.id || payload.sub || payload.id;
-          const profileId = data?.studentProfile?.id || data?.staffProfile?.id || null;
-          setUser({
-            id: userId,
-            profileId: profileId,
-            name: data.name || payload.name || 
-              (data?.studentProfile ? `${data.studentProfile.firstName} ${data.studentProfile.lastName}` : '') ||
-              (data?.staffProfile ? `${data.staffProfile.firstName} ${data.staffProfile.lastName}` : ''),
-            role: data.role || payload.role,
-            departmentId: data?.staffProfile?.departmentId || data?.studentProfile?.departmentId || null,
-            departmentName: data?.department?.name,
-            avatar: data?.studentProfile?.photoUrl || data?.staffProfile?.photoUrl || null,
-            currentTerm: '2026',
-          });
-          setIsAuthenticated(true);
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            const refreshToken = localStorage.getItem('refreshToken') || sessionStorage.getItem('refreshToken');
+            const userId = localStorage.getItem('userId');
+            if (refreshToken && userId) {
+              try {
+                const refreshRes = await fetch(`${API_BASE_URL}/auth/refresh`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId, refreshToken }),
+                  credentials: 'include',
+                });
+
+                if (refreshRes.ok) {
+                  const refreshData = await refreshRes.json();
+                  if (refreshData.accessToken) {
+                    setAuthToken(refreshData.accessToken);
+                    const newRes = await fetch(`${API_BASE_URL}/auth/me`, {
+                      method: 'GET',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${refreshData.accessToken}`,
+                      },
+                      credentials: 'include',
+                    });
+
+                    if (newRes.ok) {
+                      const data = await newRes.json();
+                      const payload = (() => {
+                        try { return JSON.parse(atob(refreshData.accessToken.split('.')[1])); }
+                        catch { return {}; }
+                      })();
+
+                      const newUserId = data.id || payload.sub || payload.id;
+                      const profileId = data?.studentProfile?.id || data?.staffProfile?.id || null;
+                      setUser({
+                        id: newUserId,
+                        profileId,
+                        name: data.name || payload.name ||
+                          (data?.studentProfile ? `${data.studentProfile.firstName} ${data.studentProfile.lastName}` : '') ||
+                          (data?.staffProfile ? `${data.staffProfile.firstName} ${data.staffProfile.lastName}` : ''),
+                        role: data.role || payload.role,
+                        departmentId: data?.staffProfile?.departmentId || data?.studentProfile?.departmentId || null,
+                        departmentName: data?.department?.name,
+                        avatar: data?.studentProfile?.photoUrl || data?.staffProfile?.photoUrl || null,
+                        currentTerm: '2026',
+                      });
+                      setIsAuthenticated(true);
+                      if (!cancelled) setLoading(false);
+                      return;
+                    }
+                  }
+                }
+              } catch (refreshError) {
+                console.error('Token refresh failed:', refreshError);
+              }
+            }
+
+            clearAuthToken();
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('userId');
+            if (typeof sessionStorage !== 'undefined') {
+              sessionStorage.removeItem('refreshToken');
+              sessionStorage.removeItem('userId');
+            }
+            setUser(null);
+            setIsAuthenticated(false);
+            if (!cancelled) setLoading(false);
+            return;
+          }
+
+          throw new Error(`auth/me failed: ${res.status}`);
         }
+
+        const data = await res.json();
+        const payload = (() => {
+          try { return JSON.parse(atob(token.split('.')[1])); }
+          catch { return {}; }
+        })();
+
+        const userId = data.id || payload.sub || payload.id;
+        const profileId = data?.studentProfile?.id || data?.staffProfile?.id || null;
+        setUser({
+          id: userId,
+          profileId,
+          name: data.name || payload.name ||
+            (data?.studentProfile ? `${data.studentProfile.firstName} ${data.studentProfile.lastName}` : '') ||
+            (data?.staffProfile ? `${data.staffProfile.firstName} ${data.staffProfile.lastName}` : ''),
+          role: data.role || payload.role,
+          departmentId: data?.staffProfile?.departmentId || data?.studentProfile?.departmentId || null,
+          departmentName: data?.department?.name,
+          avatar: data?.studentProfile?.photoUrl || data?.staffProfile?.photoUrl || null,
+          currentTerm: '2026',
+        });
+        setIsAuthenticated(true);
       } catch (e) {
-        // No auth - user must login manually
+        console.error('Auth check failed:', e);
+        setUser(null);
+        setIsAuthenticated(false);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchMe();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const setRole = (role) => {

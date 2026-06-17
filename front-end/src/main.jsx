@@ -6,18 +6,21 @@ import { RoleProvider } from './context/RoleContext';
 import { SplashScreen } from './components/SplashScreen';
 
 function Root() {
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(() => {
+    return sessionStorage.getItem('splashShown') !== 'true';
+  });
 
   return (
-    <StrictMode>
-      <RoleProvider>
-        {showSplash ? (
-          <SplashScreen onComplete={() => setShowSplash(false)} />
-        ) : (
-          <App />
-        )}
-      </RoleProvider>
-    </StrictMode>
+    <RoleProvider>
+      {showSplash ? (
+        <SplashScreen onComplete={() => {
+          setShowSplash(false);
+          sessionStorage.setItem('splashShown', 'true');
+        }} />
+      ) : (
+        <App />
+      )}
+    </RoleProvider>
   );
 }
 

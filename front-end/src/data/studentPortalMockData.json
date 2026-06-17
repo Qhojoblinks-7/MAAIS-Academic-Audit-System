@@ -269,6 +269,20 @@
       "academicHistory": [
         {
           "year": "SHS 1",
+          "term": "Term 1",
+          "subjects": [
+            { "name": "Core Mathematics", "score": 82, "grade": "A1" },
+            { "name": "General Agriculture", "score": 79, "grade": "B2" },
+            { "name": "English Language", "score": 77, "grade": "B2" },
+            { "name": "Integrated Science", "score": 80, "grade": "A1" },
+            { "name": "Social Studies", "score": 75, "grade": "B2" },
+            { "name": "Elective Mathematics", "score": 80, "grade": "A1" },
+            { "name": "Chemistry", "score": 78, "grade": "B2" },
+            { "name": "Physics", "score": 76, "grade": "B2" }
+          ]
+        },
+        {
+          "year": "SHS 1",
           "term": "Term 2",
           "subjects": [
             { "name": "Core Mathematics", "score": 85, "grade": "A1" },

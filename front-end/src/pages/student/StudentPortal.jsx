@@ -2,9 +2,9 @@ import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { useRole } from '../../context/RoleContext';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getAuthToken } from '../../services/auth';
+import { studentApi } from '../../services/api/studentApi';
+import { useStudentPortalData } from '../../hooks/api/useStudentApi';
 
-import studentPortalMockDataDefault from '../../data/studentPortalMockData.json';
 import { TranscriptPrintTemplate } from './portal/print/TranscriptPrintTemplate';
 import { TerminalPrintTemplate } from './portal/print/TerminalPrintTemplate';
 import { StudentPortalHeader } from './portal/StudentPortalHeader';
@@ -18,73 +18,71 @@ import { BroadsheetComparisonPanel } from './portal/panels/BroadsheetComparisonP
 
 const VALID_TABS = ['overview', 'academic', 'interventions', 'history', 'gradingScale', 'academicJourney', 'broadsheetComparison'];
 
-export function StudentPortal({ 
-    studentPortalMockData = {},
-    useApi = true,
-  }) {
+export function StudentPortal() {
   const { user } = useRole();
   const location = useLocation();
   const navigate = useNavigate();
 
+  const studentId = user?.id || '';
+  const username = user?.username;
+  const userName = user?.name;
+
+  console.log('[StudentPortal] Initializing context:', { studentId, username, userName, currentHash: location.hash });
+
+  const { data: studentData, loading, error: portalError } = useStudentPortalData(studentId);
+
   const [activeTab, setActiveTab] = React.useState(() => {
     const hash = location.hash.replace('#', '') || 'overview';
-    console.log('[StudentPortal] [Lifecycle] Initializing activeTab state. Hash derived:', hash);
-    return VALID_TABS.includes(hash) ? hash : 'overview';
+    const fallback = VALID_TABS.includes(hash) ? hash : 'overview';
+    console.log('[StudentPortal] State init activeTab from hash:', { hash, fallback });
+    return fallback;
   });
 
-  const [studentData, setStudentData] = React.useState(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState('');
-  const [notifications, setNotifications] = React.useState([]);
   const [selectedReportType, setSelectedReportType] = React.useState('transcript');
-  
   const [singlePrintData, setSinglePrintData] = React.useState(null);
   const [showPrintConfirm, setShowPrintConfirm] = React.useState(false);
   const [pendingHistoryItem, setPendingHistoryItem] = React.useState(null);
+  const [notifications, setNotifications] = React.useState([]);
 
-  // Sync activeTab with URL hash changes smoothly
+  // Sync tab layout with window location hash changes
   React.useEffect(() => {
     const hash = location.hash.replace('#', '') || 'overview';
-    console.log('[StudentPortal] [Effect] URL Hash change detected:', location.hash, 'Calculated Tab:', hash);
+    console.log('[StudentPortal] useEffect [location.hash]:', { hash, activeTab });
     if (VALID_TABS.includes(hash) && hash !== activeTab) {
-      console.log('[StudentPortal] [State Shift] Updating activeTab to:', hash);
+      console.log(`[StudentPortal] Updating activeTab state to match hash: "${hash}"`);
       setActiveTab(hash);
+    } else if (!VALID_TABS.includes(hash)) {
+      console.log(`[StudentPortal] Invalid hash detected ("${hash}"). Defaulting view state to "overview"`);
+      setActiveTab('overview');
     }
   }, [location.hash, activeTab]);
 
-  // Clean layout context parameters safely when switching user state variables
+  // Sync incoming notifications
   React.useEffect(() => {
-    console.log('[StudentPortal] [Effect] user.id change detected or initialization occurring. User ID:', user?.id);
-    setStudentData(null);
-    setError('');
-    setNotifications([]);
-    setLoading(true);
-  }, [user?.id]);
+    if (Array.isArray(studentData?.notifications)) {
+      console.log('[StudentPortal] Syncing notifications array:', studentData.notifications);
+      setNotifications(studentData.notifications);
+    }
+  }, [studentData?.notifications]);
 
-  // Stable pure transformer helper configuration
+  // Data normalization logic
   const transformApiResponse = React.useCallback((apiData) => {
-    console.log('[StudentPortal] [Transformer] Transforming API response payload:', apiData);
     if (!apiData) {
-      console.warn('[StudentPortal] [Transformer] Received null or undefined apiData.');
+      console.warn('[StudentPortal] transformApiResponse encountered empty/null apiData.');
       return null;
     }
+
+    console.log('[StudentPortal] transformApiResponse executing on raw studentData:', apiData);
+
     const normalizeTermLabel = (term) => {
       const value = String(term || '').trim();
       if (!value) return '—';
-
       const upperValue = value.toUpperCase();
       const numericMatch = value.match(/\d+/);
 
-      if (upperValue.startsWith('TERM_')) {
-        return numericMatch ? `Term ${numericMatch[0]}` : '—';
-      }
-
-      if (upperValue.includes('TERM')) {
-        return numericMatch ? `Term ${numericMatch[0]}` : value;
-      }
-
+      if (upperValue.startsWith('TERM_')) return numericMatch ? `Term ${numericMatch[0]}` : '—';
+      if (upperValue.includes('TERM')) return numericMatch ? `Term ${numericMatch[0]}` : value;
       if (numericMatch) return `Term ${numericMatch[0]}`;
-
       return value;
     };
 
@@ -101,33 +99,39 @@ export function StudentPortal({
 
     const rawYearForm = apiData.yearForm || apiData.academicYearLabel || '—';
     const rawSemester = apiData.semester || apiData.termLabel;
-    const normalizedSemester = normalizeTermLabel(rawSemester);
     const history = Array.isArray(apiData.academicHistory) ? apiData.academicHistory : [];
-    const academicHistory = history.map(term => ({
-      ...term,
-      year: normalizeYearLabel(term?.year || term?.yearLabel || rawYearForm),
-      term: normalizeTermLabel(term?.term),
-      subjects: Array.isArray(term?.subjects) ? term.subjects.map(normalizeSubject) : [],
-      approvalStatus: term?.approvalStatus || apiData.approvalStatus,
-    }));
 
-    const latestHistoryYear = academicHistory.length > 0
-      ? academicHistory[academicHistory.length - 1].year
-      : '—';
-    const normalizedYearForm = normalizeYearLabel(rawYearForm) === '—'
-      ? latestHistoryYear
-      : normalizeYearLabel(rawYearForm);
+    const academicHistory = history.map((term, index) => {
+      const parsedYear = normalizeYearLabel(term?.year || term?.yearLabel || rawYearForm);
+      const parsedTerm = normalizeTermLabel(term?.term);
+      return {
+        ...term,
+        year: parsedYear,
+        term: parsedTerm,
+        subjects: Array.isArray(term?.subjects) ? term.subjects.map(normalizeSubject) : [],
+        approvalStatus: term?.approvalStatus || apiData.approvalStatus,
+      };
+    });
+
+    const latestHistoryTerm = academicHistory.length > 0 ? academicHistory[academicHistory.length - 1].term : null;
+    const normalizedSemester = normalizeTermLabel(rawSemester) === '—' && latestHistoryTerm ? latestHistoryTerm : normalizeTermLabel(rawSemester);
+
+    const latestHistoryYear = academicHistory.length > 0 ? academicHistory[academicHistory.length - 1].year : '—';
+    const normalizedYearForm = normalizeYearLabel(rawYearForm) === '—' ? latestHistoryYear : normalizeYearLabel(rawYearForm);
+
     const terminalResults = Array.isArray(apiData.terminalResults)
       ? apiData.terminalResults
       : [
           ...(Array.isArray(apiData.coreResults) ? apiData.coreResults : []),
           ...(Array.isArray(apiData.technicalResults) ? apiData.technicalResults : []),
         ];
-    const hasCurrentTerm = academicHistory.some(term =>
-      normalizeYearLabel(term?.year) === normalizedYearForm && normalizeTermLabel(term?.term) === normalizedSemester
+
+    const hasCurrentTerm = academicHistory.some((term) =>
+      normalizeYearLabel(term?.year) === normalizedYearForm && normalizeTermLabel(term?.term) === normalizedSemester,
     );
 
     if (!hasCurrentTerm && normalizedYearForm !== '—' && normalizedSemester !== '—' && terminalResults.length > 0) {
+      console.log('[StudentPortal] Injecting missing current active term info into parsed academicHistory array.');
       academicHistory.push({
         year: normalizedYearForm,
         term: normalizedSemester,
@@ -136,149 +140,77 @@ export function StudentPortal({
       });
     }
 
-    const result = {
+    const transformed = {
       ...apiData,
       yearForm: normalizedYearForm,
       semester: normalizedSemester,
       academicHistory,
-      studentName: `${apiData.student?.firstName || ''} ${apiData.student?.lastName || ''}`.trim() || apiData.studentName || 'Student',
-      indexNumber: apiData.student?.indexNumber || apiData.indexNumber || '—',
-      program: apiData.student?.currentClass?.name || apiData.program || '—',
+      studentName: `${apiData.student?.firstName || ''} ${apiData.student?.lastName || ''}`.trim() || 'Student',
+      indexNumber: apiData.student?.indexNumber || '—',
+      program: apiData.student?.currentClass?.name || '—',
       attendance: apiData.attendancePercentage ?? apiData.attendance ?? 0,
       lastSeen: apiData.lastSeen ?? apiData.student?.user?.lastLoginAt ?? null,
     };
-    console.log('[StudentPortal] [Transformer] Completed successfully. Formatted object output:', result);
-    return result;
+
+    console.log('[StudentPortal] transformApiResponse transformation complete result:', transformed);
+    return transformed;
   }, []);
 
-  const fetchStudentData = React.useCallback(async () => {
-    console.log('[StudentPortal] [Fetch Engine] Initiated execution loop.');
-    console.log('[StudentPortal] [Fetch Engine] Current Environment Context Variables -> user.id:', user?.id, '| user.role:', user?.role, '| useApi config flag:', useApi);
-
-    if (!user?.id || user?.role !== 'STUDENT') {
-      console.warn('[StudentPortal] [Fetch Engine] Halted. Guard clause failed: execution criteria unfulfilled.');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      let data;
-      if (useApi) {
-        const url = `/api/v1/portal/students/${user.id}/portal-data`;
-        console.log('[StudentPortal] [Fetch Engine] Dispatching network request to backend resource endpoint:', url);
-
-        const response = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${getAuthToken()}`,
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        });
-
-        console.log('[StudentPortal] [Fetch Engine] Server connection established. HTTP Response Code Status:', response.status);
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch student portal data: ${response.status}`);
-        }
-        data = await response.json();
-        console.log('[StudentPortal] [Fetch Engine] Successfully parsed API response JSON string content data.');
-      } else {
-        console.log('[StudentPortal] [Fetch Engine] useApi is false. Stepping back down to mock data configurations.');
-        const allStudents = Array.isArray(studentPortalMockData?.students)
-          ? studentPortalMockData.students
-          : [];
-
-        const usernameDigits = String(user.username ?? user.id).replace(/\D/g, '');
-        const userIndexDigits = usernameDigits.padStart(3, '0');
-        const expectedStudId = `stud${userIndexDigits}`;
-
-        console.log('[StudentPortal] [Fetch Engine] Scanning mock manifest array metrics for matches using ID parsing algorithms. Computed values:', { usernameDigits, userIndexDigits, expectedStudId });
-
-        data =
-          allStudents.find((s) => s.id === user.id) ||
-          allStudents.find((s) => s.id === expectedStudId) ||
-          allStudents.find((s) => String(s.indexNumber).padStart(3, '0') === userIndexDigits);
-
-        if (!data) {
-          throw new Error(`No student portal record found for credentials provided.`);
-        }
-        console.log('[StudentPortal] [Fetch Engine] Local structural match discovered inside mock arrays.');
-      }
-
-      if (!data) {
-        throw new Error('No data returned from portal context templates.');
-      }
-
-      const transformed = useApi ? transformApiResponse(data) : data;
-
-      console.log('[StudentPortal] [Fetch Engine] Storing structural variables inside application hook state sets:', transformed);
-      setStudentData(transformed);
-      setNotifications(Array.isArray(transformed?.notifications) ? transformed.notifications : []);
-      setError('');
-    } catch (e) {
-      console.error('[StudentPortal] [Fetch Engine] Runtime failure encountered during loop cycle processing:', e);
-      setError(e.message || 'Failed to load student data');
-    } finally {
-      console.log('[StudentPortal] [Fetch Engine] Exiting execution cycle scope blocks. Dropping loading flags to false.');
-      setLoading(false);
-    }
-  }, [user?.id, user?.role, useApi, transformApiResponse]);
-
-  React.useEffect(() => {
-    console.log('[StudentPortal] [Effect] Mount loop execution layer triggering dispatch routines.');
-    fetchStudentData();
-  }, [fetchStudentData]);
+  const transformedStudentData = studentData ? transformApiResponse(studentData) : null;
 
   const handleDownloadReport = () => {
-    console.log('[StudentPortal] [Action Trigger] Global printing session configuration initiated.');
+    console.log('[StudentPortal] Executing handleDownloadReport (Global PDF Print Workflow)', { selectedReportType });
     setSinglePrintData(null);
+    setSelectedReportType('transcript');
     setTimeout(() => {
+      console.log('[StudentPortal] Initializing global window browser print dialog setup');
       window.print();
     }, 50);
   };
 
   const handleHistoryDownloadRequest = (item) => {
-    console.log('[StudentPortal] [Action Trigger] Print requested for specific historical sheet reference:', item);
+    console.log('[StudentPortal] handleHistoryDownloadRequest triggered for item:', item);
     if (window.innerWidth < 640) {
-      console.log('[StudentPortal] [Action Trigger] Screen dimensions register smaller than 640px. Displaying confirmation dialog layout layer.');
+      console.log('[StudentPortal] Mobile viewport identified. Postponing print confirmation modal view overlay.');
       setPendingHistoryItem(item);
       setShowPrintConfirm(true);
     } else {
+      console.log('[StudentPortal] Standard desktop viewport identified. Proceeding to direct history print payload compiler.');
       triggerHistoryPrint(item);
     }
   };
 
   const triggerHistoryPrint = (item) => {
-    console.log('[StudentPortal] [Action Trigger] Structuring specific historical printing matrix data payloads for targeted item:', item);
-    const historyItem = studentData?.academicHistory?.find(
+    console.log('[StudentPortal] Compiling explicit timeline item for print payload construction:', item);
+    const historyItem = transformedStudentData?.academicHistory?.find(
       h => h.year === item.year && h.term === item.term
     ) || item;
 
     const formattedPrintPayload = {
-      studentName: studentData?.studentName || user?.name || 'Student',
-      indexNumber: studentData?.indexNumber || '—',
-      dateOfBirth: studentData?.dateOfBirth || '—',
-      gender: studentData?.gender || '—',
-      program: studentData?.programName || studentData?.program || '—',
-      learningArea: studentData?.learningArea || '—',
+      studentName: transformedStudentData?.studentName || userName || 'Student',
+      indexNumber: transformedStudentData?.indexNumber || '—',
+      dateOfBirth: transformedStudentData?.dateOfBirth || '—',
+      gender: transformedStudentData?.gender || '—',
+      program: transformedStudentData?.programName || transformedStudentData?.program || '—',
+      learningArea: transformedStudentData?.learningArea || '—',
       yearForm: historyItem?.year || '—',
       semester: historyItem?.term || '—',
-      enrollmentDate: studentData?.enrollmentDate || '—',
-      completionDate: studentData?.completionDate || '—',
-      house: studentData?.house || '—',
-      sbaScore: studentData?.sbaScore || 0,
-      waecExamScore: studentData?.waecExamScore || 0,
-      finalScore: studentData?.finalScore || 0,
-      grade: studentData?.grade || '—',
-      gpaPerTerm: studentData?.gpaPerTerm || 0,
-      cgpa: studentData?.cgpa || 0,
-      approvalStatus: historyItem?.approvalStatus || studentData?.approvalStatus || '—',
+      enrollmentDate: transformedStudentData?.enrollmentDate || '—',
+      completionDate: transformedStudentData?.completionDate || '—',
+      house: transformedStudentData?.house || '—',
+      sbaScore: transformedStudentData?.sbaScore || 0,
+      waecExamScore: transformedStudentData?.waecExamScore || 0,
+      finalScore: transformedStudentData?.finalScore || 0,
+      grade: transformedStudentData?.grade || '—',
+      gpaPerTerm: transformedStudentData?.gpaPerTerm || 0,
+      cgpa: transformedStudentData?.cgpa || 0,
+      approvalStatus: historyItem?.approvalStatus || transformedStudentData?.approvalStatus || '—',
       qualitativeAssessment: {
-        characterQualities: studentData?.characterTraits?.characterQualities ?? 0,
-        leadership: studentData?.characterTraits?.leadership ?? 0,
-        discipline: studentData?.characterTraits?.discipline ?? 0,
-        teamwork: studentData?.characterTraits?.teamwork ?? 0,
-        ethics: studentData?.characterTraits?.ethics ?? 0,
+        characterQualities: transformedStudentData?.characterTraits?.characterQualities ?? 0,
+        leadership: transformedStudentData?.characterTraits?.leadership ?? 0,
+        discipline: transformedStudentData?.characterTraits?.discipline ?? 0,
+        teamwork: transformedStudentData?.characterTraits?.teamwork ?? 0,
+        ethics: transformedStudentData?.characterTraits?.ethics ?? 0,
       },
       academicHistory: [{
         year: historyItem?.year,
@@ -286,24 +218,24 @@ export function StudentPortal({
         subjects: historyItem?.subjects || [],
         approvalStatus: historyItem?.approvalStatus
       }],
-      wassceResults: studentData?.wassceResults || [],
+      wassceResults: transformedStudentData?.wassceResults || [],
       sessionInfo: {
         year: historyItem?.year || '—',
         term: historyItem?.term || '—',
-        examDate: studentData?.terminalExamDate || '—',
+        examDate: transformedStudentData?.terminalExamDate || '—',
       },
     };
 
-    console.log('[StudentPortal] [Action Trigger] Serializing localized single print object payload target:', formattedPrintPayload);
+    console.log('[StudentPortal] Formatted Print Payload for Timeline History block structured:', formattedPrintPayload);
     setSinglePrintData(formattedPrintPayload);
     setTimeout(() => {
+      console.log('[StudentPortal] Triggering individual specific target terminal result printing.');
       window.print();
     }, 150);
   };
 
-  console.log('[StudentPortal] [Render Node Check] Current Component Variables Map state check -> loading:', loading, '| error state content:', error, '| studentData available status:', !!studentData);
-
   if (loading) {
+    console.log('[StudentPortal] Rendering: Loading state');
     return (
       <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-8 flex items-center justify-center min-h-[400px]">
         <div className="text-center animate-pulse px-4">
@@ -315,47 +247,47 @@ export function StudentPortal({
     );
   }
 
-  if (error || !studentData) {
-    console.warn('[StudentPortal] [Render Node Failure Route] Rendering full error overlay UI context elements.');
+  if (!transformedStudentData || portalError) {
+    console.error('[StudentPortal] Rendering: Error or Missing Profile context match execution logs:', { portalError, transformedStudentData });
     return (
       <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-8 flex items-center justify-center min-h-[400px]">
         <div className="w-full max-w-md bg-surface border border-slate-100 rounded-2xl p-5 sm:p-6 shadow-sm text-center mx-auto">
           <AlertTriangle className="mx-auto text-warning mb-2" size={24} />
-          <p className="text-sm font-bold text-text-primary">{error || 'No profile context matches found.'}</p>
+          <p className="text-sm font-bold text-text-primary">{portalError || 'No profile context matches found.'}</p>
           <p className="text-[11px] text-text-secondary mt-1">Please reach out to administration if this condition persists.</p>
         </div>
       </div>
     );
   }
 
-  // Global Default Transcript Mapping Dataset
+  // Generate fallback base package structural layout mapping
   const globalTranscriptDataset = {
-    studentName: studentData.studentName || user?.name || 'Student',
-    indexNumber: studentData.indexNumber || '—',
-    dateOfBirth: studentData.dateOfBirth || '—',
-    gender: studentData.gender || '—',
-    program: studentData.programName || studentData.program || '—',
-    learningArea: studentData.learningArea || '—',
-    yearForm: studentData.yearForm || '—',
-    semester: studentData.semester || '—',
-    enrollmentDate: studentData.enrollmentDate || '—',
-    completionDate: studentData.completionDate || '—',
-    house: studentData.house || '—',
-    sbaScore: studentData.sbaScore || 0,
-    waecExamScore: studentData.waecExamScore || 0,
-    finalScore: studentData.finalScore || 0,
-    grade: studentData.grade || '—',
-    gpaPerTerm: studentData.gpaPerTerm || 0,
-    cgpa: studentData.cgpa || 0,
-    approvalStatus: studentData.approvalStatus || '—',
+    studentName: transformedStudentData.studentName || userName || 'Student',
+    indexNumber: transformedStudentData.indexNumber || '—',
+    dateOfBirth: transformedStudentData.dateOfBirth || '—',
+    gender: transformedStudentData.gender || '—',
+    program: transformedStudentData.programName || transformedStudentData.program || '—',
+    learningArea: transformedStudentData.learningArea || '—',
+    yearForm: transformedStudentData.yearForm || '—',
+    semester: transformedStudentData.semester || '—',
+    enrollmentDate: transformedStudentData.enrollmentDate || '—',
+    completionDate: transformedStudentData.completionDate || '—',
+    house: transformedStudentData.house || '—',
+    sbaScore: transformedStudentData.sbaScore || 0,
+    waecExamScore: transformedStudentData.waecExamScore || 0,
+    finalScore: transformedStudentData.finalScore || 0,
+    grade: transformedStudentData.grade || '—',
+    gpaPerTerm: transformedStudentData.gpaPerTerm || 0,
+    cgpa: transformedStudentData.cgpa || 0,
+    approvalStatus: transformedStudentData.approvalStatus || '—',
     qualitativeAssessment: {
-      characterQualities: studentData.characterTraits?.characterQualities ?? 0,
-      leadership: studentData.characterTraits?.leadership ?? 0,
-      discipline: studentData.characterTraits?.discipline ?? 0,
-      teamwork: studentData.characterTraits?.teamwork ?? 0,
-      ethics: studentData.characterTraits?.ethics ?? 0,
+      characterQualities: transformedStudentData.characterTraits?.characterQualities ?? 0,
+      leadership: transformedStudentData.characterTraits?.leadership ?? 0,
+      discipline: transformedStudentData.characterTraits?.discipline ?? 0,
+      teamwork: transformedStudentData.characterTraits?.teamwork ?? 0,
+      ethics: transformedStudentData.characterTraits?.ethics ?? 0,
     },
-    academicHistory: (studentData.academicHistory || []).map((h) => ({
+    academicHistory: (transformedStudentData.academicHistory || []).map((h) => ({
       year: h.year,
       term: h.term,
       subjects: (h.subjects || []).map((s) => ({
@@ -364,52 +296,55 @@ export function StudentPortal({
         grade: s.grade || '—',
       })),
     })),
-    wassceResults: studentData.wassceResults || [],
-    terminalResults: (studentData.terminalResults || []).map(r => ({
+    wassceResults: transformedStudentData.wassceResults || [],
+    terminalResults: (transformedStudentData.terminalResults || []).map(r => ({
       ...r,
       sbaScore: r.sbaScore ?? r.caScore ?? 0,
     })),
     sessionInfo: {
-      year: studentData.yearForm || '—',
-      term: studentData.semester || '—',
-      examDate: studentData.terminalExamDate || '—',
+      year: transformedStudentData.yearForm || '—',
+      term: transformedStudentData.semester || '—',
+      examDate: transformedStudentData.terminalExamDate || '—',
     },
   };
 
   const activePrintPayload = singlePrintData || globalTranscriptDataset;
-  console.log('[StudentPortal] [Render Node Success Route] Mounting structural markup tree view boards. Tab View Active Target:', activeTab);
+  console.log('[StudentPortal] Rendering Layout details.', { activeTab, displayingPrintPayload: !!singlePrintData ? 'Single Row context' : 'Global Dataset context' });
 
   return (
     <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 md:p-8 print:bg-surface print:p-0 no-scrollbar">
       <div className="w-full max-w-5xl mx-auto print:hidden space-y-4 sm:space-y-6 no-scrollbar">
-        
-        <StudentPortalHeader 
+
+        <StudentPortalHeader
           onPrint={handleDownloadReport}
           selectedReportType={selectedReportType}
-          onReportTypeChange={(e) => setSelectedReportType(e.target.value)}
+          onReportTypeChange={(e) => {
+            console.log('[StudentPortal] Report type configuration updated:', e.target.value);
+            setSelectedReportType(e.target.value);
+          }}
         />
 
         <main className="w-full focus:outline-none">
           {activeTab === 'overview' && (
-            <OverviewPanel 
-              studentData={studentData} 
-              approvalStatus={studentData.approvalStatus}
-              coreResults={studentData.coreResults || (studentData.terminalResults || []).filter(r => 
+            <OverviewPanel
+              studentData={transformedStudentData}
+              approvalStatus={transformedStudentData.approvalStatus}
+              coreResults={transformedStudentData.coreResults || (transformedStudentData.terminalResults || []).filter(r =>
                 ['Core Mathematics', 'English Language', 'Integrated Science', 'Social Studies'].includes(r.subject)
               )}
-              technicalResults={studentData.technicalResults || (studentData.terminalResults || []).filter(r => 
+              technicalResults={transformedStudentData.technicalResults || (transformedStudentData.terminalResults || []).filter(r =>
                 !['Core Mathematics', 'English Language', 'Integrated Science', 'Social Studies'].includes(r.subject)
               )}
-              behaviorRating={studentData.behaviorRating ?? ((studentData.behavioralLogs?.reduce((avg, l) => avg + l.rating, 0) / (studentData.behavioralLogs?.length || 1)) || 0)}
-              behaviorRemark={studentData.behaviorComments}
+              behaviorRating={transformedStudentData.behaviorRating ?? ((transformedStudentData.behavioralLogs?.reduce((avg, l) => avg + l.rating, 0) / (transformedStudentData.behavioralLogs?.length || 1)) || 0)}
+              behaviorRemark={transformedStudentData.behaviorComments}
             />
           )}
-          {activeTab === 'academic' && <AcademicPanel studentData={studentData} />}
-          {activeTab === 'interventions' && <InterventionsPanel notifications={[...(notifications || []), ...(studentData?.activeInterventions || [])]} studentData={studentData} />}
-          {activeTab === 'history' && <HistoryPanel studentData={studentData} onDownloadHistory={handleHistoryDownloadRequest} />}
+          {activeTab === 'academic' && <AcademicPanel studentData={transformedStudentData} />}
+          {activeTab === 'interventions' && <InterventionsPanel notifications={[...(notifications || []), ...(transformedStudentData?.activeInterventions || [])]} studentData={transformedStudentData} />}
+          {activeTab === 'history' && <HistoryPanel studentData={transformedStudentData} onDownloadHistory={handleHistoryDownloadRequest} />}
           {activeTab === 'gradingScale' && <GradingScalePanel />}
-          {activeTab === 'academicJourney' && <AcademicJourneyPanel studentData={studentData} />}
-          {activeTab === 'broadsheetComparison' && <BroadsheetComparisonPanel studentData={studentData} />}
+          {activeTab === 'academicJourney' && <AcademicJourneyPanel studentData={transformedStudentData} />}
+          {activeTab === 'broadsheetComparison' && <BroadsheetComparisonPanel studentData={transformedStudentData} />}
         </main>
       </div>
 
@@ -429,7 +364,10 @@ export function StudentPortal({
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setShowPrintConfirm(false)}
+                onClick={() => {
+                  console.log('[StudentPortal] Print modal execution dismissed by user request');
+                  setShowPrintConfirm(false);
+                }}
                 className="flex-1 px-3 py-2 bg-background text-text-primary border border-slate-100 rounded-lg text-[10px] font-black uppercase tracking-wider"
               >
                 Cancel
@@ -437,10 +375,11 @@ export function StudentPortal({
               <button
                 type="button"
                 onClick={() => {
+                  console.log('[StudentPortal] Print modal execution confirmed by mobile layout view confirmation trigger.');
                   setShowPrintConfirm(false);
                   triggerHistoryPrint(pendingHistoryItem);
                 }}
-                className="flex-1 px-3 py-2 bg-brand-primary text-surface rounded-lg text-[10px] font-black uppercase tracking-wider"
+                className="flex-1 px-3 py-2 bg-brand-primary text-surface rounded-lg text-[10px] font-black uppercase tracking-widest"
               >
                 View PDF
               </button>

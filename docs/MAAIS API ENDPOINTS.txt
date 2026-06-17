@@ -80,23 +80,31 @@ Teaching & grading responsibilities.
 | POST | /api/v1/auth/refresh | Refresh access token using refresh token |
 | POST | /api/v1/auth/logout | Logout and invalidate refresh token |
 | GET | /api/v1/auth/me | Get current authenticated user with profile |
-| GET | /api/v1/users/students | List students in their classes |
-| GET | /api/v1/academic/classes | View classes |
+| GET | /api/v1/users/students | List students in their assigned classes (row-level) |
+| GET | /api/v1/users/students/{id} | Get student profile (if teacher is assigned to student's class) |
+| GET | /api/v1/academic/classes | View classes (read-only) |
 | GET | /api/v1/academic/my-assignments | Get own assignments |
+| GET | /api/v1/academic/assignments/teacher/{teacherId} | Get teacher assignments |
+| GET | /api/v1/academic/subjects | Get all active subjects |
+| GET | /api/v1/academic/departments | View departments |
+| GET | /api/v1/academic/years/active | Get active academic year |
+| GET | /api/v1/academic/terms | View terms |
 | POST | /api/v1/grading/entries | Submit or update a grade entry |
 | POST | /api/v1/grading/entries/bulk | Bulk grade entry for a class/subject |
-| PATCH | /api/v1/grading/entries/{id}/lock | Lock a grade entry |
-| PATCH | /api/v1/grading/entries/{id}/approve | Approve a grade entry |
-| GET | /api/v1/grading/audit-tray | View missing observations |
-| GET | /api/v1/grading/class-summary/{classId} | View class performance |
+| GET | /api/v1/grading/audit-tray | View missing observations in assigned subjects |
+| GET | /api/v1/grading/class-summary/{classId} | View class performance (if assigned) |
 | GET | /api/v1/grading/students/{studentId}/terms/{termId} | Get student grades |
 | GET | /api/v1/grading/smart-remarks/{grade} | Get smart remark suggestions |
 | GET | /api/v1/timetable/my-schedule | View own schedule |
 | GET | /api/v1/timetable/weekly/{teacherId} | Get weekly schedule grouped by day |
 | GET | /api/v1/timetable/teacher/{teacherId} | Get own timetable |
 | GET | /api/v1/timetable/clashes/{teacherId} | Check schedule clashes |
+| GET | /api/v1/timetable/class/{classId} | View class timetable |
+| GET | /api/v1/students/{id}/behavior | Log/view student behavior observations |
+| GET | /api/v1/students/{id}/interventions | View student interventions |
 | GET | /api/v1/comms/notifications/{studentId} | View student notifications |
-| GET | /api/v1/comms/analytics/pulse | View pulse dashboard |
+| GET | /api/v1/comms/analytics/pulse | View pulse dashboard (own classes) |
+| POST | /api/v1/reports/report-cards/generate | Generate report cards |
 
 ---
 

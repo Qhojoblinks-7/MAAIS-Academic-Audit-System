@@ -1,0 +1,348 @@
+{
+  "hod_role_backend_data_requirements": {
+    "overview": "Complete data schema for HOD (Head of Department) role operations in MAAIS Academic Audit System",
+    "role_summary": {
+      "responsibilities": [
+        "Audits grade changes and reviews audit logs",
+        "Reviews and responds to intervention alerts",
+        "Locks finalized results for WAEC STP export",
+        "Approves grade entries submitted by teachers",
+        "Manages department staff and teaching assignments",
+        "Views department-wide student performance analytics",
+        "Generates broadsheets and report cards",
+        "Reviews missing observations across department"
+      ]
+    },
+    "1_authentication_and_profile": {
+      "endpoints": [
+        "/api/v1/auth/login",
+        "/api/v1/auth/refresh",
+        "/api/v1/auth/logout",
+        "/api/v1/auth/me"
+      ],
+      "profile_fields": {
+        "userId": "string",
+        "email": "string",
+        "staffId": "string",
+        "name": "string",
+        "departmentId": "string",
+        "departmentName": "string",
+        "role": "HOD"
+      }
+    },
+    "2_staff_and_user_management": {
+      "endpoints": [
+        "/api/v1/users/staff",
+        "/api/v1/users/students",
+        "/api/v1/users/students/{id}",
+        "/api/v1/users/parents",
+        "/api/v1/users/students/{id}"
+      ],
+      "staff_fields": {
+        "id": "string",
+        "staffId": "string",
+        "firstName": "string",
+        "lastName": "string",
+        "email": "string",
+        "phone": "string",
+        "gender": "string",
+        "departmentId": "string",
+        "departmentName": "string",
+        "role": "STAFF|TEACHER|HOD",
+        "isActive": "boolean",
+        "teachingAssignments": ["array of subject/class assignments with class sections"],
+        "hiredAt": "datetime"
+      },
+      "student_fields": {
+        "id": "string",
+        "indexNumber": "string",
+        "firstName": "string",
+        "lastName": "string",
+        "currentClassId": "string",
+        "currentClassName": "string",
+        "departmentId": "string",
+        "departmentName": "string",
+        "gender": "string",
+        "dateOfBirth": "date",
+        "guardianContact": "string",
+        "grades": ["array of grade entries with subjects"],
+        "reportCards": ["array of generated report cards"],
+        "interventions": ["array of intervention alerts"],
+        "parentLinks": ["array of parent records"]
+      },
+      "permissions": "HOD can view and manage staff and students within their own department"
+    },
+    "3_academic_structure": {
+      "endpoints": [
+        "/api/v1/academic/classes",
+        "/api/v1/academic/subjects",
+        "/api/v1/academic/departments",
+        "/api/v1/academic/assignments/teacher/{teacherId}",
+        "/api/v1/academic/assignments",
+        "/api/v1/academic/years/active",
+        "/api/v1/academic/terms"
+      ],
+      "class_fields": {
+        "id": "string",
+        "name": "string",
+        "level": "string",
+        "capacity": "integer",
+        "classTeacherId": "string",
+        "classTeacherName": "string",
+        "studentCount": "integer",
+        "academicYearId": "string"
+      },
+      "subject_fields": {
+        "id": "string",
+        "name": "string",
+        "code": "string",
+        "type": "CORE|ELECTIVE",
+        "departmentId": "string",
+        "departmentName": "string",
+        "isActive": "boolean",
+        "description": "string"
+      },
+      "department_fields": {
+        "id": "string",
+        "name": "string",
+        "code": "string",
+        "description": "string",
+        "staffCount": "integer",
+        "subjects": ["array of subjects in department"]
+      },
+      "permissions": "HOD can view academic structure and assign teachers to subjects/classes in their department. HOD can create subjects within their department. HOD cannot create academic years, terms, departments, or class sections (Headmaster/Admin only)."
+    },
+    "4_grading_and_approval": {
+      "endpoints": [
+        "/api/v1/grading/entries",
+        "/api/v1/grading/entries/bulk",
+        "/api/v1/grading/entries/{id}/lock",
+        "/api/v1/grading/entries/{id}/approve",
+        "/api/v1/grading/entries/bulk-approve",
+        "/api/v1/grading/corrections",
+        "/api/v1/grading/audit-tray",
+        "/api/v1/grading/class-summary/{classId}",
+        "/api/v1/grading/students/{studentId}/terms/{termId}",
+        "/api/v1/grading/smart-remarks/{grade}"
+      ],
+      "grade_entry_fields": {
+        "id": "string",
+        "studentId": "string",
+        "studentName": "string",
+        "subjectId": "string",
+        "subjectName": "string",
+        "termId": "string",
+        "academicYear": "string",
+        "classScore": "decimal",
+        "examScore": "decimal",
+        "totalScore": "decimal",
+        "grade": "string (A1-F9)",
+        "remark": "string",
+        "position": "integer",
+        "hasObservation": "boolean",
+        "observationText": "string",
+        "status": "DRAFT|SUBMITTED|APPROVED|LOCKED",
+        "isLocked": "boolean",
+        "lockedAt": "datetime",
+        "lockedById": "string",
+        "submittedById": "string",
+        "submittedAt": "datetime",
+        "isApproved": "boolean",
+        "approvedById": "string",
+        "approvedAt": "datetime",
+        "corrections": ["array of grade corrections with old/new values and justifications"]
+      },
+      "grade_summary_fields": {
+        "studentId": "string",
+        "name": "string",
+        "indexNumber": "string",
+        "progress": "decimal (percentage of approved grades)",
+        "isFullyApproved": "boolean",
+        "gradesCount": "integer"
+      },
+      "permissions": "HOD can approve and lock grades. HOD can view audit tray (missing observations) for department. HOD can view class summaries."
+    },
+    "5_audit_logs": {
+      "endpoints": [
+        "/api/v1/grading/corrections"
+      ],
+      "audit_log_fields": {
+        "id": "string",
+        "gradeEntryId": "string",
+        "changedById": "string",
+        "changedByName": "string",
+        "fieldChanged": "string (classScore|examScore|remark)",
+        "oldValue": "string",
+        "newValue": "string",
+        "reason": "string",
+        "createdAt": "datetime"
+      },
+      "permissions": "HOD can view all grade corrections (audit trail) for their department"
+    },
+    "6_intervention_alerts": {
+      "endpoints": [
+        "/api/v1/students/{id}/interventions"
+      ],
+      "intervention_alert_fields": {
+        "id": "string",
+        "studentId": "string",
+        "studentName": "string",
+        "subjectId": "string",
+        "subjectName": "string",
+        "termId": "string",
+        "alertType": "PERFORMANCE_DROP|ATTENDANCE_DROP|BEHAVIORAL",
+        "severity": "LOW|MEDIUM|HIGH|CRITICAL",
+        "currentScore": "decimal",
+        "previousAverageScore": "decimal",
+        "percentageDrop": "decimal",
+        "triggeredBy": "SYSTEM_AUTOMATIC|TEACHER_MANUAL",
+        "status": "ACTIVE|IN_PROGRESS|RESOLVED|DISMISSED",
+        "notes": "text",
+        "createdAt": "datetime",
+        "resolvedAt": "datetime",
+        "resolvedById": "string"
+      },
+      "permissions": "HOD can view and resolve all intervention alerts for students in their department"
+    },
+    "7_reports": {
+      "endpoints": [
+        "/api/v1/reports/report-cards/generate",
+        "/api/v1/reports/verify/{hash}"
+      ],
+      "report_card_fields": {
+        "id": "string",
+        "studentId": "string",
+        "termId": "string",
+        "documentType": "REPORT_CARD|TRANSCRIPT",
+        "systemHash": "string",
+        "qrCodeUrl": "string",
+        "totalScore": "float",
+        "averageScore": "float",
+        "classPosition": "integer",
+        "classSize": "integer",
+        "conductGrade": "string",
+        "headmasterRemarks": "string",
+        "classTeacherRemarks": "string",
+        "pdfUrl": "string",
+        "generatedAt": "datetime"
+      },
+      "permissions": "HOD can generate report cards for students. HOD cannot batch generate report cards or build transcripts (Headmaster/Admin/Student only)."
+    },
+    "8_timetable": {
+      "endpoints": [
+        "/api/v1/timetable",
+        "/api/v1/timetable/teacher/{teacherId}",
+        "/api/v1/timetable/class/{classId}",
+        "/api/v1/timetable/clashes/{teacherId}",
+        "/api/v1/timetable/{id}"
+      ],
+      "timetable_entry_fields": {
+        "id": "string",
+        "teacherId": "string",
+        "subjectId": "string",
+        "subjectName": "string",
+        "subjectCode": "string",
+        "classId": "string",
+        "className": "string",
+        "day": "string (Monday-Friday)",
+        "startTime": "time (HH:MM)",
+        "endTime": "time (HH:MM)",
+        "room": "string",
+        "termId": "string",
+        "academicYear": "string",
+        "isActive": "boolean",
+        "createdAt": "datetime"
+      },
+      "clash_detection_response": {
+        "hasClash": "boolean",
+        "clashes": [
+          {
+            "period1Id": "string",
+            "period2Id": "string",
+            "day": "string",
+            "startTime": "string",
+            "endTime": "string",
+            "subject1": "string",
+            "subject2": "string"
+          }
+        ]
+      },
+      "permissions": "HOD can view all timetable entries. HOD can create, update, and delete timetable entries."
+    },
+    "9_comms_and_analytics": {
+      "endpoints": [
+        "/api/v1/comms/notify",
+        "/api/v1/comms/analytics/pulse",
+        "GET /api/v1/comms/tickets (department-filtered)",
+        "PATCH /api/v1/comms/tickets/:id/status",
+        "POST /api/v1/comms/tickets/:id/reply"
+      ],
+      "pulse_dashboard_fields": {
+        "enrollment": [
+          {
+            "class": "string",
+            "count": "integer",
+            "capacity": "integer"
+          }
+        ],
+        "subjectPerformance": [
+          {
+            "subjectId": "string",
+            "averageScore": "decimal",
+            "studentCount": "integer"
+          }
+        ],
+        "attendance": {
+          "daysPresent": "decimal",
+          "totalDays": "decimal"
+        }
+      },
+      "permissions": "HOD can view department analytics pulse and send notifications to students in their department. HOD cannot send emergency SMS broadcasts (Headmaster/Admin only)."
+    },
+    "11_support_tickets": {
+      "endpoints": [
+        "POST /api/v1/comms/tickets (student-facing)",
+        "GET /api/v1/comms/tickets (department-filtered)",
+        "PATCH /api/v1/comms/tickets/:id/status",
+        "POST /api/v1/comms/tickets/:id/reply"
+      ],
+      "ticket_fields": {
+        "id": "string",
+        "studentId": "string",
+        "title": "string",
+        "description": "text",
+        "category": "Academic|Technical|Finance|General",
+        "priority": "HIGH|MEDIUM|LOW",
+        "status": "OPEN|IN_PROGRESS|RESOLVED",
+        "assignedTo": "string (userId)",
+        "resolvedAt": "datetime",
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      },
+      "permissions": "HOD can view all tickets from students in their department classes. Can update ticket status (open->in_progress->resolved) and add replies. Cannot send emergency SMS."
+    },
+    "10_notes_and_constraints": {
+      "security": [
+        "HOD can only approve/lock grades in their department",
+        "HOD can only view audit logs for their department",
+        "HOD can only manage staff assigned to their department",
+        "HOD cannot delete audit logs or grades",
+        "All HOD actions (approve, lock, resolve) are logged in audit trail",
+        "HOD can send notifications to students and parents in their department"
+      ],
+      "data_isolation": [
+        "Row-level security: HOD only sees data from their departmentId",
+        "Staff filtering: HOD only sees teachers in their department",
+        "Student filtering: HOD only sees students enrolled in their department classes",
+        "Class filtering: HOD only sees class sections in their department"
+      ],
+      "limitations": [
+        "HOD cannot create academic years, terms, departments, or class sections",
+        "HOD cannot deactivate user accounts",
+        "HOD cannot send emergency SMS broadcasts",
+        "HOD cannot batch generate report cards",
+        "HOD cannot build 3-year transcripts"
+      ]
+    }
+  }
+}

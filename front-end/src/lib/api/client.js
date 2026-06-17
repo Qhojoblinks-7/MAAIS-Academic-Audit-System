@@ -93,10 +93,11 @@ async function request(endpoint, options = {}) {
  */
 async function attemptRefresh(refreshToken) {
   try {
+    const userId = localStorage.getItem('userId');
     const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
+      body: JSON.stringify({ userId, refreshToken }),
     });
 
     if (!res.ok) return null;

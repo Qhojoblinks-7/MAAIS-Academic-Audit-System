@@ -1,0 +1,435 @@
+{
+  "teacher_role_backend_data_requirements": {
+    "overview": "Complete data schema for teacher role operations in MAAIS Academic Audit System",
+    "role_summary": {
+      "responsibilities": [
+        "Inputs raw scores and provides justifications for grade edits",
+        "Logs student behavior and safety compliance",
+        "Views assigned classes, teaching schedule, and student performance",
+        "Submits grades and observations for HOD review",
+        "Bulk grade entry for assigned subjects"
+      ]
+    },
+    "1_authentication_and_profile": {
+      "endpoints": [
+        "/api/v1/auth/login",
+        "/api/v1/auth/refresh",
+        "/api/v1/auth/logout",
+        "/api/v1/auth/me"
+      ],
+      "teacher_profile_fields": {
+        "userId": "string",
+        "email": "string",
+        "staffId": "string",
+        "name": "string",
+        "departmentId": "string",
+        "departmentName": "string",
+        "role": "TEACHER",
+        "assignedSubjects": ["array of subject assignments with class sections"],
+        "employmentStatus": "string"
+      }
+    },
+    "2_student_data": {
+      "endpoints": [
+        "/api/v1/users/students",
+        "/api/v1/users/students/{id}"
+      ],
+      "student_profile_fields": {
+        "id": "string",
+        "indexNumber": "string",
+        "firstName": "string",
+        "lastName": "string",
+        "currentClassId": "string",
+        "currentClassName": "string",
+        "gender": "string",
+        "dateOfBirth": "date",
+        "guardianContact": "string"
+      },
+      "permissions": "Teachers can only see students enrolled in their assigned class sections"
+    },
+    "3_academic_structure": {
+      "endpoints": [
+        "/api/v1/academic/classes",
+        "/api/v1/academic/my-assignments",
+        "/api/v1/academic/assignments/teacher/{teacherId}",
+        "/api/v1/academic/subjects",
+        "/api/v1/academic/departments",
+        "/api/v1/academic/years/active",
+        "/api/v1/academic/terms"
+      ],
+      "class_fields": {
+        "id": "string",
+        "className": "string",
+        "section": "string",
+        "academicYear": "string",
+        "departmentId": "string",
+        "classTeacherId": "string",
+        "studentCount": "integer",
+        "capacity": "integer"
+      },
+      "assignment_fields": {
+        "id": "string",
+        "teacherId": "string",
+        "subjectId": "string",
+        "subjectName": "string",
+        "subjectCode": "string",
+        "classId": "string",
+        "className": "string",
+        "academicYear": "string",
+        "termId": "string",
+        "gradingType": "CORE|TECHNICAL",
+        "isActive": "boolean"
+      },
+      "subject_fields": {
+        "id": "string",
+        "name": "string",
+        "code": "string",
+        "departmentId": "string",
+        "isCore": "boolean",
+        "isElective": "boolean",
+        "gradingWindowOpen": "boolean",
+        "maxScore": "integer"
+      }
+    },
+    "4_grading_and_assessment": {
+      "endpoints": [
+        "/api/v1/grading/entries",
+        "/api/v1/grading/entries/bulk",
+        "/api/v1/grading/students/{studentId}/terms/{termId}",
+        "/api/v1/grading/class-summary/{classId}",
+        "/api/v1/grading/smart-remarks/{grade}",
+        "/api/v1/grading/corrections",
+        "/api/v1/grading/audit-tray"
+      ],
+      "grade_entry_fields": {
+        "id": "string",
+        "studentId": "string",
+        "subjectId": "string",
+        "teacherId": "string",
+        "termId": "string",
+        "academicYear": "string",
+        "rawScore": "decimal",
+        "totalScore": "decimal",
+        "componentScores": {
+          "classExercise": "decimal (WAEC 20%)",
+          "examScore": "decimal (WAEC 80%)",
+          "practicalScore": "decimal (Technical WIP)",
+          "drawingScore": "decimal (Technical Drawing)",
+          "theoryScore": "decimal (Technical Theory)",
+          "milestoneScores": {
+            "markingOut": "decimal",
+            "assembly": "decimal",
+            "finishing": "decimal"
+          }
+        },
+        "weightedScore": "decimal",
+        "remark": "string",
+        "gradingType": "CORE|TECHNICAL",
+        "status": "DRAFT|SUBMITTED|APPROVED|LOCKED",
+        "isLocked": "boolean",
+        "lockedAt": "datetime",
+        "lockedBy": "string (HOD or Admin)",
+        "submittedAt": "datetime",
+        "approvedAt": "datetime",
+        "approvedBy": "string (HOD)"
+      },
+      "grade_entry_rules": {
+        "lock_check": "Backend checks is_locked before allowing edits",
+        "justification_required": "Teachers must provide justification when editing existing grades",
+        "intervention_threshold": "15% or greater drop triggers intervention flag",
+        "bulk_entry_support": "Single endpoint for entering all students in a class",
+        "smart_remarks": "System suggests remarks based on score"
+      }
+    },
+    "5_audit_and_corrections": {
+      "endpoints": [
+        "/api/v1/grading/corrections",
+        "/api/v1/grading/audit-tray",
+        "/api/v1/grading/entries/{id}/approve"
+      ],
+      "audit_log_fields": {
+        "id": "string",
+        "gradeEntryId": "string",
+        "teacherId": "string",
+        "oldValue": "decimal",
+        "newValue": "decimal",
+        "justification": "text",
+        "timestamp": "datetime",
+        "ipAddress": "string",
+        "userAgent": "string"
+      },
+      "missing_observations_fields": {
+        "id": "string",
+        "gradeEntryId": "string",
+        "studentId": "string",
+        "subjectId": "string",
+        "reason": "string",
+        "status": "PENDING|RESOLVED",
+        "createdAt": "datetime"
+      }
+    },
+    "6_observations_and_behavior": {
+      "purpose": "Log workshop safety compliance and attitudinal ratings as per FR4 and Q12 requirements",
+      "endpoints": [
+        "/api/v1/students/{id}/behavior"
+      ],
+      "behavior_log_fields": {
+        "id": "string",
+        "studentId": "string",
+        "teacherId": "string",
+        "termId": "string",
+        "academicYear": "string",
+        "observationType": "SAFETY_COMPLIANCE|ATTITUDINAL|WORKSHOP_BEHAVIOR",
+        "category": "string (e.g. workshop safety, teamwork, punctuality, respect for authorities)",
+        "rating": "integer (1-5 scale)",
+        "description": "text",
+        "evidenceUrl": "string (optional attachment)",
+        "isPositive": "boolean",
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      },
+      "observation_categories": [
+        "Workshop Safety Compliance",
+        "Respect towards teachers",
+        "Respect towards colleagues",
+        "Punctuality",
+        "Teamwork",
+        "Tool handling",
+        "Following instructions",
+        "Cleanliness of workspace",
+        "Participation in practical activities"
+      ],
+      "safety_compliance_fields": {
+        "date": "date",
+        "ppeCompliance": "boolean",
+        "toolUsageCompliance": "boolean",
+        "incidentOccurred": "boolean",
+        "incidentDescription": "text",
+        "correctiveAction": "text"
+      }
+    },
+    "7_intervention_alerts": {
+      "endpoints": [
+        "/api/v1/students/{id}/interventions",
+        "/api/v1/grading/class-summary/{classId}"
+      ],
+      "intervention_alert_fields": {
+        "id": "string",
+        "studentId": "string",
+        "subjectId": "string",
+        "termId": "string",
+        "alertType": "PERFORMANCE_DROP|ATTENDANCE_DROP|BEHAVIORAL",
+        "severity": "LOW|MEDIUM|HIGH|CRITICAL",
+        "currentScore": "decimal",
+        "previousAverageScore": "decimal",
+        "percentageDrop": "decimal",
+        "triggeredBy": "SYSTEM_AUTOMATIC|TEACHER_MANUAL",
+        "status": "ACTIVE|IN_PROGRESS|RESOLVED|DISMISSED",
+        "notes": "text",
+        "createdAt": "datetime",
+        "resolvedAt": "datetime",
+        "resolvedBy": "string"
+      },
+      "intervention_rules": {
+        "auto_trigger_threshold": "Current_Score < Previous_Avg * 0.85",
+        "permissions": "Teachers can view alerts for their students and add resolution notes"
+      }
+    },
+    "8_timetable": {
+      "endpoints": [
+        "/api/v1/timetable/my-schedule",
+        "/api/v1/timetable/teacher/{teacherId}",
+        "/api/v1/timetable/weekly/{teacherId}",
+        "/api/v1/timetable/clashes/{teacherId}",
+        "/api/v1/timetable/class/{classId}"
+      ],
+      "timetable_entry_fields": {
+        "id": "string",
+        "teacherId": "string",
+        "subjectId": "string",
+        "subjectName": "string",
+        "subjectCode": "string",
+        "classId": "string",
+        "className": "string",
+        "day": "string (Monday-Friday)",
+        "startTime": "time (HH:MM)",
+        "endTime": "time (HH:MM)",
+        "room": "string",
+        "termId": "string",
+        "academicYear": "string",
+        "isActive": "boolean",
+        "createdAt": "datetime"
+      },
+      "clash_detection_response": {
+        "hasClash": "boolean",
+        "clashes": [
+          {
+            "period1Id": "string",
+            "period2Id": "string",
+            "day": "string",
+            "startTime": "string",
+            "endTime": "string",
+            "subject1": "string",
+            "subject2": "string"
+          }
+        ]
+      }
+    },
+    "9_notifications": {
+      "endpoints": [
+        "/api/v1/comms/notifications/{studentId}",
+        "/api/v1/comms/analytics/pulse",
+        "/api/v1/comms/tickets"
+      ],
+      "notification_fields": {
+        "id": "string",
+        "userId": "string",
+        "title": "string",
+        "message": "string",
+        "type": "GRADE_SUBMISSION|APPROVAL|INTERVENTION|SYSTEM|ANNOUNCEMENT",
+        "isRead": "boolean",
+        "priority": "LOW|NORMAL|HIGH|URGENT",
+        "actionUrl": "string",
+        "createdAt": "datetime",
+        "readAt": "datetime"
+      },
+      "pulse_dashboard_fields": {
+        "enrollment": [
+          {
+            "class": "string",
+            "count": "integer",
+            "capacity": "integer"
+          }
+        ],
+        "subjectPerformance": [
+          {
+            "subjectId": "string",
+            "averageScore": "decimal",
+            "studentCount": "integer"
+          }
+        ],
+        "attendance": {
+          "daysPresent": "decimal",
+          "totalDays": "decimal"
+        },
+        "teacherAssignments": [
+          {
+            "id": "string",
+            "subjectId": "string",
+            "subjectName": "string",
+            "classSectionId": "string",
+            "className": "string"
+          }
+        ]
+      }
+    },
+    "10_archive": {
+      "purpose": "Teachers can view historical academic records of students they have taught (cross-department). Term locking and promotion cycles remain Headmaster/SuperAdmin only.",
+      "endpoints": [
+        "/api/v1/archive/vault/search"
+      ],
+      "access_rules": {
+        "teacher": "Can search vault for students they have ever submitted grades for (via gradeEntry.submittedById matching their staffProfile). No department restriction — includes students across all departments.",
+        "hod": "Can search vault only for students within their departmentId",
+        "admin_headmaster": "Full school-wide access, no filters"
+      },
+      "restricted_endpoints": {
+        "/api/v1/archive/promote": "SUPER_ADMIN and HEADMASTER only",
+        "/api/v1/archive/terms/:id/lock": "SUPER_ADMIN and HEADMASTER only",
+        "/api/v1/archive/health": "TEACHER, HOD, HEADMASTER, SUPER_ADMIN accessible (read-only)"
+      }
+    },
+    "11_resources_and_lesson_materials": {
+      "purpose": "Allow teachers to attach lesson materials to timetable entries",
+      "endpoints": [
+        "/api/v1/timetable/{id}"
+      ],
+      "resource_fields": {
+        "id": "string",
+        "timetableEntryId": "string",
+        "teacherId": "string",
+        "title": "string",
+        "url": "string",
+        "type": "PDF|LINK|VIDEO|DOCUMENT|SLIDE",
+        "description": "text",
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      }
+    },
+    "12_teacher_dashboard_summary": {
+      "purpose": "Aggregated data shown on TeacherDashboard",
+      "fields": {
+        "assignedClasses": "integer (count of active assignments)",
+        "gradingProgress": "decimal (average completion percentage across classes)",
+        "totalStudents": "integer (total students across assigned classes)",
+        "rolloverChanges": [
+          {
+            "subject": "string",
+            "action": "ADDED|REMOVED",
+            "previousTerm": "string",
+            "currentTerm": "string"
+          }
+        ]
+      }
+    },
+    "12_report_card_data": {
+      "endpoints": [
+        "/api/v1/reports/report-cards/generate"
+      ],
+      "report_card_fields": {
+        "id": "string",
+        "studentId": "string",
+        "termId": "string",
+        "academicYear": "string",
+        "generatedBy": "string",
+        "generatedAt": "datetime",
+        "averageScore": "decimal",
+        "totalScore": "decimal",
+        "classPosition": "string",
+        "subjects": [
+          {
+            "subjectId": "string",
+            "subjectName": "string",
+            "rawScore": "decimal",
+            "weightedScore": "decimal",
+            "grade": "string",
+            "remark": "string",
+            "status": "DRAFT|FINALIZED|LOCKED"
+          }
+        ],
+        "behaviorRatings": [
+          {
+            "category": "string",
+            "rating": "integer",
+            "comment": "text"
+          }
+        ],
+        "classTeacherComment": "text",
+        "hodComment": "text",
+        "attendancePercentage": "decimal"
+      }
+    },
+    "13_notes_and_constraints": {
+      "security": [
+        "Teachers can only edit grade entries in classes assigned to them (enforced via TeachingAssignment)",
+        "Teachers cannot lock/approve grades (HOD/Admin/Headmaster only)",
+        "Teachers cannot create students or parents (HOD/Admin only)",
+        "Teachers cannot create classes, departments, subjects, academic years, or terms",
+        "Teachers cannot create timetable entries (HOD/Admin only)",
+        "All grade edits require justification - enforced via GradeCorrection table",
+        "Locked grades cannot be edited - checked at service level",
+        "Audit logs are immutable once created"
+      ],
+      "data_isolation": [
+        "Row-level security: teachers only see students in their class_sections",
+        "Teachers can only access behavior records they created",
+        "Timetable data filtered by teacherId"
+      ],
+      "waec_compliance": [
+        "30/70 weighting for Core subjects (Class Exercise 30%, Exam 70%)",
+        "Technical subjects may have Practical, Drawing, and Theory components",
+        "WAEC STP export is handled by HOD, teachers only provide raw scores"
+      ]
+    }
+  }
+}
