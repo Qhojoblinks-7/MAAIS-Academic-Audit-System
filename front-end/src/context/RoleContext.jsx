@@ -1,4 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { clearAuthToken, getAuthToken } from '../services/auth';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 const RoleContext = createContext(undefined);
 
@@ -10,22 +13,31 @@ export function RoleProvider({ children }) {
   useEffect(() => {
     const fetchMe = async () => {
       try {
-        const res = await fetch('/api/v1/auth/me', {
+        const token = getAuthToken();
+        if (!token) {
+          setLoading(false);
+          return;
+        }
+
+        const res = await fetch(`${API_BASE_URL}/auth/me`, {
           method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
           credentials: 'include',
         });
         if (res.ok) {
           const data = await res.json();
-          const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
-          if (!token) {
-            setLoading(false);
-            return;
-          }
           const payload = JSON.parse(atob(token.split('.')[1]));
+          const userId = data.id || payload.sub || payload.id;
+          const profileId = data?.studentProfile?.id || data?.staffProfile?.id || null;
           setUser({
-            id: data.id || payload.id,
-            name: data.name || payload.name || `${data?.studentProfile?.firstName || data?.staffProfile?.firstName || ''} ${data?.studentProfile?.lastName || data?.staffProfile?.lastName || ''}`.trim(),
+            id: userId,
+            profileId: profileId,
+            name: data.name || payload.name || 
+              (data?.studentProfile ? `${data.studentProfile.firstName} ${data.studentProfile.lastName}` : '') ||
+              (data?.staffProfile ? `${data.staffProfile.firstName} ${data.staffProfile.lastName}` : ''),
             role: data.role || payload.role,
             departmentId: data?.staffProfile?.departmentId || data?.studentProfile?.departmentId || null,
             departmentName: data?.department?.name,
@@ -49,6 +61,13 @@ export function RoleProvider({ children }) {
   };
 
   const logout = () => {
+    clearAuthToken();
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('userId');
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem('refreshToken');
+      sessionStorage.removeItem('userId');
+    }
     setUser(null);
     setIsAuthenticated(false);
   };
@@ -57,13 +76,16 @@ export function RoleProvider({ children }) {
     if (!credentials?.token) return false;
     try {
       const payload = JSON.parse(atob(credentials.token.split('.')[1]));
+      const userId = credentials.user?.id || payload.sub || payload.id;
+      const profileId = credentials.user?.studentProfile?.id || credentials.user?.staffProfile?.id || payload.profileId || null;
       setUser({
-        id: payload.id,
-        name: payload.name,
-        role: payload.role,
-        departmentId: payload.departmentId || null,
+        id: userId,
+        profileId: profileId,
+        name: credentials.user?.name || payload.name,
+        role: credentials.user?.role || payload.role,
+        departmentId: credentials.user?.departmentId || payload.departmentId || null,
         departmentName: null,
-        avatar: payload.avatar || null,
+        avatar: credentials.user?.avatar || payload.avatar || null,
         currentTerm: '2026',
       });
       setIsAuthenticated(true);

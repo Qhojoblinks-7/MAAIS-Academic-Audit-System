@@ -1,12 +1,12 @@
 const TOKEN_KEY = 'auth_token';
-const TOKEN_HEADER_KEYS = ['Authorization', 'authorization'];
 
 export function getAuthToken() {
+  // Check both keys for backward compatibility
   return (
     localStorage.getItem(TOKEN_KEY) ||
-    // support "Authorization: Bearer …" slipped into sessionStorage
+    localStorage.getItem('accessToken') ||
     (typeof sessionStorage !== 'undefined'
-      ? sessionStorage.getItem(TOKEN_KEY)
+      ? sessionStorage.getItem(TOKEN_KEY) || sessionStorage.getItem('accessToken')
       : null)
   );
 }

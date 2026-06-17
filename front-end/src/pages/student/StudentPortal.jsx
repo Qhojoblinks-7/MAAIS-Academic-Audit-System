@@ -16,7 +16,6 @@ import { GradingScalePanel } from './portal/panels/GradingScalePanel';
 import { AcademicJourneyPanel } from './portal/panels/AcademicJourneyPanel';
 import { BroadsheetComparisonPanel } from './portal/panels/BroadsheetComparisonPanel';
 
-// Unified valid routing tabs lookup configuration
 const VALID_TABS = ['overview', 'academic', 'interventions', 'history', 'gradingScale', 'academicJourney', 'broadsheetComparison'];
 
 export function StudentPortal({ 
@@ -27,9 +26,9 @@ export function StudentPortal({
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Fix: Whitelist initialized to recognize 'overview' directly from MobileDrawer hooks
   const [activeTab, setActiveTab] = React.useState(() => {
     const hash = location.hash.replace('#', '') || 'overview';
+    console.log('[StudentPortal] [Lifecycle] Initializing activeTab state. Hash derived:', hash);
     return VALID_TABS.includes(hash) ? hash : 'overview';
   });
 
@@ -39,7 +38,6 @@ export function StudentPortal({
   const [notifications, setNotifications] = React.useState([]);
   const [selectedReportType, setSelectedReportType] = React.useState('transcript');
   
-  // Isolated printing state mechanics to secure DOM variable hydration
   const [singlePrintData, setSinglePrintData] = React.useState(null);
   const [showPrintConfirm, setShowPrintConfirm] = React.useState(false);
   const [pendingHistoryItem, setPendingHistoryItem] = React.useState(null);
@@ -47,46 +45,145 @@ export function StudentPortal({
   // Sync activeTab with URL hash changes smoothly
   React.useEffect(() => {
     const hash = location.hash.replace('#', '') || 'overview';
+    console.log('[StudentPortal] [Effect] URL Hash change detected:', location.hash, 'Calculated Tab:', hash);
     if (VALID_TABS.includes(hash) && hash !== activeTab) {
+      console.log('[StudentPortal] [State Shift] Updating activeTab to:', hash);
       setActiveTab(hash);
     }
   }, [location.hash, activeTab]);
 
+  // Clean layout context parameters safely when switching user state variables
   React.useEffect(() => {
+    console.log('[StudentPortal] [Effect] user.id change detected or initialization occurring. User ID:', user?.id);
     setStudentData(null);
     setError('');
     setNotifications([]);
     setLoading(true);
-  }, [user]);
+  }, [user?.id]);
+
+  // Stable pure transformer helper configuration
+  const transformApiResponse = React.useCallback((apiData) => {
+    console.log('[StudentPortal] [Transformer] Transforming API response payload:', apiData);
+    if (!apiData) {
+      console.warn('[StudentPortal] [Transformer] Received null or undefined apiData.');
+      return null;
+    }
+    const normalizeTermLabel = (term) => {
+      const value = String(term || '').trim();
+      if (!value) return '—';
+
+      const upperValue = value.toUpperCase();
+      const numericMatch = value.match(/\d+/);
+
+      if (upperValue.startsWith('TERM_')) {
+        return numericMatch ? `Term ${numericMatch[0]}` : '—';
+      }
+
+      if (upperValue.includes('TERM')) {
+        return numericMatch ? `Term ${numericMatch[0]}` : value;
+      }
+
+      if (numericMatch) return `Term ${numericMatch[0]}`;
+
+      return value;
+    };
+
+    const normalizeYearLabel = (year) => {
+      const value = String(year || '').trim();
+      return value ? value.replace('/', '-') : '—';
+    };
+
+    const normalizeSubject = (subject) => ({
+      name: subject?.name || subject?.subject || subject?.subj || 'Unknown',
+      score: subject?.score ?? subject?.totalScore ?? 0,
+      grade: subject?.grade || '-',
+    });
+
+    const rawYearForm = apiData.yearForm || apiData.academicYearLabel || '—';
+    const rawSemester = apiData.semester || apiData.termLabel;
+    const normalizedSemester = normalizeTermLabel(rawSemester);
+    const history = Array.isArray(apiData.academicHistory) ? apiData.academicHistory : [];
+    const academicHistory = history.map(term => ({
+      ...term,
+      year: normalizeYearLabel(term?.year || term?.yearLabel || rawYearForm),
+      term: normalizeTermLabel(term?.term),
+      subjects: Array.isArray(term?.subjects) ? term.subjects.map(normalizeSubject) : [],
+      approvalStatus: term?.approvalStatus || apiData.approvalStatus,
+    }));
+
+    const latestHistoryYear = academicHistory.length > 0
+      ? academicHistory[academicHistory.length - 1].year
+      : '—';
+    const normalizedYearForm = normalizeYearLabel(rawYearForm) === '—'
+      ? latestHistoryYear
+      : normalizeYearLabel(rawYearForm);
+    const terminalResults = Array.isArray(apiData.terminalResults)
+      ? apiData.terminalResults
+      : [
+          ...(Array.isArray(apiData.coreResults) ? apiData.coreResults : []),
+          ...(Array.isArray(apiData.technicalResults) ? apiData.technicalResults : []),
+        ];
+    const hasCurrentTerm = academicHistory.some(term =>
+      normalizeYearLabel(term?.year) === normalizedYearForm && normalizeTermLabel(term?.term) === normalizedSemester
+    );
+
+    if (!hasCurrentTerm && normalizedYearForm !== '—' && normalizedSemester !== '—' && terminalResults.length > 0) {
+      academicHistory.push({
+        year: normalizedYearForm,
+        term: normalizedSemester,
+        subjects: terminalResults.map(normalizeSubject),
+        approvalStatus: apiData.approvalStatus,
+      });
+    }
+
+    const result = {
+      ...apiData,
+      yearForm: normalizedYearForm,
+      semester: normalizedSemester,
+      academicHistory,
+      studentName: `${apiData.student?.firstName || ''} ${apiData.student?.lastName || ''}`.trim() || apiData.studentName || 'Student',
+      indexNumber: apiData.student?.indexNumber || apiData.indexNumber || '—',
+      program: apiData.student?.currentClass?.name || apiData.program || '—',
+      attendance: apiData.attendancePercentage ?? apiData.attendance ?? 0,
+      lastSeen: apiData.lastSeen ?? apiData.student?.user?.lastLoginAt ?? null,
+    };
+    console.log('[StudentPortal] [Transformer] Completed successfully. Formatted object output:', result);
+    return result;
+  }, []);
 
   const fetchStudentData = React.useCallback(async () => {
-    if (!user || !user.id) {
-      setLoading(false);
-      return;
-    }
-    if (user.role !== 'STUDENT') {
-      setError('Please switch to STUDENT role to view this portal.');
+    console.log('[StudentPortal] [Fetch Engine] Initiated execution loop.');
+    console.log('[StudentPortal] [Fetch Engine] Current Environment Context Variables -> user.id:', user?.id, '| user.role:', user?.role, '| useApi config flag:', useApi);
+
+    if (!user?.id || user?.role !== 'STUDENT') {
+      console.warn('[StudentPortal] [Fetch Engine] Halted. Guard clause failed: execution criteria unfulfilled.');
       setLoading(false);
       return;
     }
 
     try {
-      setLoading(true);
       let data;
-
       if (useApi) {
-        // Use real API
-        const response = await fetch(`/api/v1/portal/students/${user.id}/portal-data`, {
+        const url = `/api/v1/portal/students/${user.id}/portal-data`;
+        console.log('[StudentPortal] [Fetch Engine] Dispatching network request to backend resource endpoint:', url);
+
+        const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${getAuthToken()}`,
             'Content-Type': 'application/json',
           },
           credentials: 'include',
         });
-        if (!response.ok) throw new Error('Failed to fetch student portal data');
+
+        console.log('[StudentPortal] [Fetch Engine] Server connection established. HTTP Response Code Status:', response.status);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch student portal data: ${response.status}`);
+        }
         data = await response.json();
+        console.log('[StudentPortal] [Fetch Engine] Successfully parsed API response JSON string content data.');
       } else {
-        // Fallback to mock data for testing
+        console.log('[StudentPortal] [Fetch Engine] useApi is false. Stepping back down to mock data configurations.');
         const allStudents = Array.isArray(studentPortalMockData?.students)
           ? studentPortalMockData.students
           : [];
@@ -95,59 +192,55 @@ export function StudentPortal({
         const userIndexDigits = usernameDigits.padStart(3, '0');
         const expectedStudId = `stud${userIndexDigits}`;
 
+        console.log('[StudentPortal] [Fetch Engine] Scanning mock manifest array metrics for matches using ID parsing algorithms. Computed values:', { usernameDigits, userIndexDigits, expectedStudId });
+
         data =
           allStudents.find((s) => s.id === user.id) ||
           allStudents.find((s) => s.id === expectedStudId) ||
-          allStudents.find((s) => s.id === user.id) ||
           allStudents.find((s) => String(s.indexNumber).padStart(3, '0') === userIndexDigits);
 
         if (!data) {
           throw new Error(`No student portal record found for credentials provided.`);
         }
+        console.log('[StudentPortal] [Fetch Engine] Local structural match discovered inside mock arrays.');
       }
 
       if (!data) {
-        throw new Error('No data returned from portal');
+        throw new Error('No data returned from portal context templates.');
       }
 
-      // Transform API response to match frontend expectations
       const transformed = useApi ? transformApiResponse(data) : data;
 
+      console.log('[StudentPortal] [Fetch Engine] Storing structural variables inside application hook state sets:', transformed);
       setStudentData(transformed);
-      setNotifications(Array.isArray(transformed.notifications) ? transformed.notifications : []);
+      setNotifications(Array.isArray(transformed?.notifications) ? transformed.notifications : []);
+      setError('');
     } catch (e) {
+      console.error('[StudentPortal] [Fetch Engine] Runtime failure encountered during loop cycle processing:', e);
       setError(e.message || 'Failed to load student data');
     } finally {
+      console.log('[StudentPortal] [Fetch Engine] Exiting execution cycle scope blocks. Dropping loading flags to false.');
       setLoading(false);
     }
-  }, [user, studentPortalMockData, useApi]);
-
-  // Transform API response to frontend format
-  function transformApiResponse(apiData) {
-    return {
-      ...apiData,
-      studentName: `${apiData.student?.firstName || ''} ${apiData.student?.lastName || ''}`.trim() || 'Student',
-      indexNumber: apiData.student?.indexNumber || apiData.indexNumber,
-      program: apiData.student?.currentClass?.name || '—',
-      // terminalResults already formatted by backend
-      // coreResults/technicalResults already split by backend
-      // academicHistory already built by backend
-    };
-  }
+  }, [user?.id, user?.role, useApi, transformApiResponse]);
 
   React.useEffect(() => {
+    console.log('[StudentPortal] [Effect] Mount loop execution layer triggering dispatch routines.');
     fetchStudentData();
   }, [fetchStudentData]);
 
   const handleDownloadReport = () => {
-    setSinglePrintData(null); // Clear single layout parameters to fallback on global configuration templates
+    console.log('[StudentPortal] [Action Trigger] Global printing session configuration initiated.');
+    setSinglePrintData(null);
     setTimeout(() => {
       window.print();
     }, 50);
   };
 
   const handleHistoryDownloadRequest = (item) => {
+    console.log('[StudentPortal] [Action Trigger] Print requested for specific historical sheet reference:', item);
     if (window.innerWidth < 640) {
+      console.log('[StudentPortal] [Action Trigger] Screen dimensions register smaller than 640px. Displaying confirmation dialog layout layer.');
       setPendingHistoryItem(item);
       setShowPrintConfirm(true);
     } else {
@@ -156,57 +249,59 @@ export function StudentPortal({
   };
 
   const triggerHistoryPrint = (item) => {
-    const historyItem = studentData.academicHistory?.find(
+    console.log('[StudentPortal] [Action Trigger] Structuring specific historical printing matrix data payloads for targeted item:', item);
+    const historyItem = studentData?.academicHistory?.find(
       h => h.year === item.year && h.term === item.term
     ) || item;
 
     const formattedPrintPayload = {
-      studentName: studentData.studentName || user?.name || 'Student',
-      indexNumber: studentData.indexNumber || '—',
-      dateOfBirth: studentData.dateOfBirth || '—',
-      gender: studentData.gender || '—',
-      program: studentData.programName || studentData.program || '—',
-      learningArea: studentData.learningArea || '—',
-      yearForm: historyItem.year || '—',
-      semester: historyItem.term || '—',
-      enrollmentDate: studentData.enrollmentDate || '—',
-      completionDate: studentData.completionDate || '—',
-      house: studentData.house || '—',
-      sbaScore: studentData.sbaScore || 0,
-      waecExamScore: studentData.waecExamScore || 0,
-      finalScore: studentData.finalScore || 0,
-      grade: studentData.grade || '—',
-      gpaPerTerm: studentData.gpaPerTerm || 0,
-      cgpa: studentData.cgpa || 0,
-      approvalStatus: historyItem.approvalStatus || studentData.approvalStatus || '—',
+      studentName: studentData?.studentName || user?.name || 'Student',
+      indexNumber: studentData?.indexNumber || '—',
+      dateOfBirth: studentData?.dateOfBirth || '—',
+      gender: studentData?.gender || '—',
+      program: studentData?.programName || studentData?.program || '—',
+      learningArea: studentData?.learningArea || '—',
+      yearForm: historyItem?.year || '—',
+      semester: historyItem?.term || '—',
+      enrollmentDate: studentData?.enrollmentDate || '—',
+      completionDate: studentData?.completionDate || '—',
+      house: studentData?.house || '—',
+      sbaScore: studentData?.sbaScore || 0,
+      waecExamScore: studentData?.waecExamScore || 0,
+      finalScore: studentData?.finalScore || 0,
+      grade: studentData?.grade || '—',
+      gpaPerTerm: studentData?.gpaPerTerm || 0,
+      cgpa: studentData?.cgpa || 0,
+      approvalStatus: historyItem?.approvalStatus || studentData?.approvalStatus || '—',
       qualitativeAssessment: {
-        characterQualities: studentData.characterTraits?.characterQualities ?? 0,
-        leadership: studentData.characterTraits?.leadership ?? 0,
-        discipline: studentData.characterTraits?.discipline ?? 0,
-        teamwork: studentData.characterTraits?.teamwork ?? 0,
-        ethics: studentData.characterTraits?.ethics ?? 0,
+        characterQualities: studentData?.characterTraits?.characterQualities ?? 0,
+        leadership: studentData?.characterTraits?.leadership ?? 0,
+        discipline: studentData?.characterTraits?.discipline ?? 0,
+        teamwork: studentData?.characterTraits?.teamwork ?? 0,
+        ethics: studentData?.characterTraits?.ethics ?? 0,
       },
       academicHistory: [{
-        year: historyItem.year,
-        term: historyItem.term,
-        subjects: historyItem.subjects || [],
-        approvalStatus: historyItem.approvalStatus
+        year: historyItem?.year,
+        term: historyItem?.term,
+        subjects: historyItem?.subjects || [],
+        approvalStatus: historyItem?.approvalStatus
       }],
-      wassceResults: studentData.wassceResults || [],
+      wassceResults: studentData?.wassceResults || [],
       sessionInfo: {
-        year: historyItem.year || '—',
-        term: historyItem.term || '—',
-        examDate: studentData.terminalExamDate || '—',
+        year: historyItem?.year || '—',
+        term: historyItem?.term || '—',
+        examDate: studentData?.terminalExamDate || '—',
       },
     };
 
-    // React state variable mapping prevents DOM memory dropouts during systemic hardware triggers
+    console.log('[StudentPortal] [Action Trigger] Serializing localized single print object payload target:', formattedPrintPayload);
     setSinglePrintData(formattedPrintPayload);
-    
     setTimeout(() => {
       window.print();
     }, 150);
   };
+
+  console.log('[StudentPortal] [Render Node Check] Current Component Variables Map state check -> loading:', loading, '| error state content:', error, '| studentData available status:', !!studentData);
 
   if (loading) {
     return (
@@ -221,6 +316,7 @@ export function StudentPortal({
   }
 
   if (error || !studentData) {
+    console.warn('[StudentPortal] [Render Node Failure Route] Rendering full error overlay UI context elements.');
     return (
       <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-8 flex items-center justify-center min-h-[400px]">
         <div className="w-full max-w-md bg-surface border border-slate-100 rounded-2xl p-5 sm:p-6 shadow-sm text-center mx-auto">
@@ -280,21 +376,19 @@ export function StudentPortal({
     },
   };
 
-  // Select appropriate structured metadata object prior to running print components
   const activePrintPayload = singlePrintData || globalTranscriptDataset;
+  console.log('[StudentPortal] [Render Node Success Route] Mounting structural markup tree view boards. Tab View Active Target:', activeTab);
 
   return (
     <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 md:p-8 print:bg-surface print:p-0 no-scrollbar">
       <div className="w-full max-w-5xl mx-auto print:hidden space-y-4 sm:space-y-6 no-scrollbar">
         
-        {/* Core Subcomponent Portal Header */}
         <StudentPortalHeader 
           onPrint={handleDownloadReport}
           selectedReportType={selectedReportType}
           onReportTypeChange={(e) => setSelectedReportType(e.target.value)}
         />
 
-        {/* Tab Content Display Area Panels */}
         <main className="w-full focus:outline-none">
           {activeTab === 'overview' && (
             <OverviewPanel 
@@ -319,7 +413,6 @@ export function StudentPortal({
         </main>
       </div>
 
-      {/* Print View Mode Engine Template Core */}
       <div className="hidden print:block w-full">
         {selectedReportType === 'transcript' && !singlePrintData ? (
           <TranscriptPrintTemplate data={activePrintPayload} />
@@ -328,7 +421,6 @@ export function StudentPortal({
         )}
       </div>
 
-      {/* Mobile Print Confirmation Modal */}
       {showPrintConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 sm:hidden">
           <div className="bg-surface rounded-2xl p-5 mx-4 w-full max-w-sm">

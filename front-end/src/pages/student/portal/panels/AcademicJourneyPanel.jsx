@@ -2,13 +2,12 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export function AcademicJourneyPanel({ studentData }) {
+  // Guard early before hooks execute if no history context is available
   if (!studentData || !studentData.academicHistory) {
     return <p className="text-center text-text-secondary py-4">No academic history available.</p>;
   }
 
-  const [selectedSubject, setSelectedSubject] = React.useState('');
-
-  // Extract all unique subjects from academic history
+  // 1. Extract all unique subjects cleanly
   const allSubjects = React.useMemo(() => {
     return Array.from(
       new Set(
@@ -19,17 +18,19 @@ export function AcademicJourneyPanel({ studentData }) {
     ).filter(Boolean).sort();
   }, [studentData.academicHistory]);
 
-  // Set default subject to first available or Core Mathematics if it exists
-  React.useEffect(() => {
-    if (allSubjects.length > 0 && !selectedSubject) {
-      const defaultSubject = allSubjects.includes('Core Mathematics')
-        ? 'Core Mathematics'
-        : allSubjects[0];
-      setSelectedSubject(defaultSubject);
-    }
-  }, [selectedSubject, allSubjects]);
+  // 2. Derive default tab context inline to prevent pointer loops
+  const defaultSubjectFallback = React.useMemo(() => {
+    if (allSubjects.length === 0) return '';
+    return allSubjects.includes('Core Mathematics') ? 'Core Mathematics' : allSubjects[0];
+  }, [allSubjects]);
 
-  // Prepare data for the selected subject
+  // 3. Keep local state simple without tracking dynamic dependencies via useEffect
+  const [selectedSubjectState, setSelectedSubject] = React.useState('');
+
+  // Fallback to computed layout target if current state hasn't been explicitly selected yet
+  const selectedSubject = selectedSubjectState || defaultSubjectFallback;
+
+  // 4. Prepare data metrics cleanly
   const chartData = React.useMemo(() => {
     if (!selectedSubject) return [];
     return studentData.academicHistory.map((term) => {
@@ -68,7 +69,7 @@ export function AcademicJourneyPanel({ studentData }) {
           </select>
         </div>
 
-        {selectedSubject && chartData.length > 0 && (
+        {selectedSubject && chartData.length > 0 ? (
           <div className="h-96 w-full pr-4">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -110,10 +111,12 @@ export function AcademicJourneyPanel({ studentData }) {
               </LineChart>
             </ResponsiveContainer>
           </div>
+        ) : (
+          <p className="text-xs text-text-secondary italic">No active subject sequence selected or discovered.</p>
         )}
       </div>
 
-      {/* Summary of progress */}
+      {/* Summary of progress layout cards */}
       {selectedSubject && chartData.length > 0 && (
         <div className="bg-surface rounded-xl border border-border p-4">
           <h3 className="text-base font-semibold text-text-primary mb-4">
