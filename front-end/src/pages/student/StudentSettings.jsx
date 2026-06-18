@@ -11,30 +11,28 @@ export function StudentSettings() {
    const { user } = useRole();
    const navigate = useNavigate();
    const { data: portalData, loading } = useStudentPortalData(user?.profileId || user?.id || null);
-  
+   
   const [name, setName] = React.useState(() => {
     const n = portalData ? `${portalData.student?.firstName || ''} ${portalData.student?.lastName || ''}`.trim() : '';
     return n || 'Student';
   });
   const [bio, setBio] = React.useState(() => portalData?.student?.bio || '');
   const [isTwoFactor, setIsTwoFactor] = React.useState(true);
-
+    
   React.useEffect(() => {
     if (portalData) {
       setBio(portalData.student?.bio || '');
       setName(`${portalData.student?.firstName || ''} ${portalData.student?.lastName || ''}`.trim() || 'Student');
     }
   }, [portalData]);
-
+   
   const studentStats = portalData ? {
     cgpa: portalData.cgpa || 0,
     attendance: portalData.attendancePercentage || 0,
     classRank: portalData.classRank || 0,
   } : null;
-
+   
   const studentData = portalData;
-
-  // Notification Preferences (kept as-is)
   const [notifications, setNotifications] = React.useState([
     { id: 'sms', label: 'SMS Alerts', desc: 'Receive SMS when results are published', enabled: true },
     { id: 'push', label: 'Push App', desc: 'In-app notification banner', enabled: true },

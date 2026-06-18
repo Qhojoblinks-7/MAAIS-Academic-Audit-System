@@ -385,9 +385,9 @@ export default function App() {
     <Router>
       <UIProvider>
         <TooltipProvider>
-          <HODProvider>
-            <AppContent />
-          </HODProvider>
+      <HODProvider>
+        <AppContent />
+      </HODProvider>
         </TooltipProvider>
       </UIProvider>
     </Router>

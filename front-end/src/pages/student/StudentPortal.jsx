@@ -55,7 +55,7 @@ export function StudentPortal() {
       console.log(`[StudentPortal] Invalid hash detected ("${hash}"). Defaulting view state to "overview"`);
       setActiveTab('overview');
     }
-  }, [location.hash, activeTab]);
+   }, [location.hash, activeTab]);
 
   // Sync incoming notifications
   React.useEffect(() => {

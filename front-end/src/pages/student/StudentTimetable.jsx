@@ -56,20 +56,21 @@ class StudentTimetableErrorBoundary extends React.Component {
 }
 
 export function StudentTimetable() {
-   const { user } = useRole();
-   const { data: portalData, loading: portalLoading, error: portalError } = useStudentPortalData(user?.profileId || user?.id || null);
-   const { timetable, loading, error, refetch } = useStudentTimetable(portalData?.student?.currentClassId);
-   const store = useStudentStore();
+    const { user } = useRole();
+    const { data: portalData, loading: portalLoading, error: portalError } = useStudentPortalData(user?.profileId || user?.id || null);
+    const { timetable, loading, error, refetch } = useStudentTimetable(portalData?.student?.currentClassId);
+    const setTimetableError = useStudentStore((s) => s.setTimetableError);
+    const storeTimetable = useStudentStore((s) => s.timetable);
 
   useEffect(() => {
     if (error) {
-      store.setTimetableError(error);
+      setTimetableError(error);
     }
-  }, [error, store]);
+  }, [error, setTimetableError]);
 
-  const source = Array.isArray(timetable) && timetable.length > 0 
-    ? timetable 
-    : (Array.isArray(store.timetable) ? store.timetable : []);
+  const source = Array.isArray(timetable) && timetable.length > 0
+    ? timetable
+    : (Array.isArray(storeTimetable) ? storeTimetable : []);
   
   const derivedSchedules = source.length > 0 
     ? Object.entries(

@@ -18,10 +18,12 @@ function BreadcrumbNav() {
 
   const labelMap = {
     "": "Dashboard",
+    "student": "Student",
+    "portal": "Portal",
     "student-profile": "Student Profile",
     "revisions": "Correction Requests",
     "missing-observations": "Compliance Observations",
-    "timetable": "Timetable",
+    "timetable": user?.role === "STUDENT" ? "My Timetable" : "Timetable",
     "archive": user?.role === "HOD" ? "Department Vault" : user?.role === "TEACHER" ? "My Teaching Archive" : "System Archives",
     "grading": "Mark Entry",
     "audit": "Audit & Oversight",
@@ -42,32 +44,73 @@ function BreadcrumbNav() {
     "students": "Students",
     "parents": "Parents",
     "system": "System Admin",
-    "settings": "Settings",
-    "support": "Support",
+    "settings": user?.role === "STUDENT" ? "My Identity" : "Settings",
+    "support": user?.role === "STUDENT" ? "ICT Support" : "Support",
     "new": "New Support Ticket",
     "ticket": "Support Ticket",
-    "journey-audit": "Journey Audit"
+    "journey-audit": "Journey Audit",
+    "overview": "Overview",
+    "academic": "Academic",
+    "history": "History",
+    "gradingScale": "Grading Scale",
+    "academicJourney": "Academic Journey",
+    "broadsheetComparison": "Broadsheet Comparison"
   };
 
+  const crumbs = [{ label: "Home", path: "/" }];
+
+  if (user?.role === "STUDENT" && user?.name) {
+    crumbs.push({ label: user.name, path: "/student/portal" });
+  }
+
   const pathnames = location.pathname.split("/").filter((x) => x);
-  const crumbs = [{ label: "Home", path: "/" }, ...pathnames.map((value, index) => {
-    const path = `/${pathnames.slice(0, index + 1).join("/")}`;
-    return { label: labelMap[value] || value.replace(/-/g, " "), path };
-  })];
+
+  const displaySegments = [];
+  let i = 0;
+  while (i < pathnames.length) {
+    if (pathnames[i] === "student" && pathnames[i + 1] === "portal") {
+      if (user?.role !== "STUDENT" || !user?.name) {
+        displaySegments.push({ display: "Student Portal", original: "student/portal" });
+      }
+      i += 2;
+    } else {
+      displaySegments.push({ display: pathnames[i], original: pathnames[i] });
+      i += 1;
+    }
+  }
+
+  displaySegments.forEach((seg, index) => {
+    const path = "/" + displaySegments.slice(0, index + 1).map(s => s.original).join("/");
+    const label = labelMap[seg.display] || labelMap[seg.original] || seg.display.replace(/-/g, " ");
+    crumbs.push({ label, path });
+  });
+
+  const hash = location.hash.replace("#", "");
+  const validStudentTabs = ["overview", "academic", "interventions", "history", "gradingScale", "academicJourney", "broadsheetComparison"];
+  const isStudentPortal = pathnames.length >= 2 && pathnames[0] === "student" && pathnames[1] === "portal";
+
+  if (isStudentPortal && validStudentTabs.includes(hash)) {
+    crumbs.push({
+      label: labelMap[hash] || hash.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+      path: null,
+    });
+  }
 
   return (
     <Breadcrumb>
       <BreadcrumbList>
         {crumbs.map((crumb, idx) => {
           const isLast = idx === crumbs.length - 1;
+          const crumbPath = crumb.path ?? crumb.href;
+          const crumbLabel = crumb.label || '';
           return (
             <React.Fragment key={idx}>
               <BreadcrumbItem>
                 {isLast ? (
-                  <BreadcrumbPage className="font-bold text-brand-primary">{crumb.label}</BreadcrumbPage>
+                  <BreadcrumbPage className="font-bold text-brand-primary">{crumbLabel}</BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink asChild>
-                    <Link to={crumb.path}>{crumb.label}</Link>
+                    <Link to={crumbPath}>{crumbLabel}</Link>
                   </BreadcrumbLink>
                 )}
               </BreadcrumbItem>
