@@ -24,7 +24,7 @@ const DAY_TYPE_STYLES = {
 
 export function StudentTimetable() {
   const { user } = useRole();
-  const { data: portalData } = useStudentPortalData(user?.id);
+  const { data: portalData, loading: portalLoading, error: portalError } = useStudentPortalData(user?.id || null);
   const { timetable, loading, error, refetch } = useStudentTimetable(portalData?.student?.currentClassId);
   const store = useStudentStore();
 
@@ -34,26 +34,10 @@ export function StudentTimetable() {
     }
   }, [error, store]);
 
-  const DAY_SCHEDULES = Object.entries(
-    (timetable || store.timetable).reduce((acc, entry) => {
-      const day = DAY_MAP[entry.day] || entry.day;
-      if (!acc[day]) acc[day] = [];
-      acc[day].push(entry);
-      return acc;
-    }, {}),
-  ).map(([day, items]) => ({
-    day,
-    items: (items || []).map((entry) => ({
-      time: `${entry.startTime || ''} - ${entry.endTime || ''}`,
-      subject: entry.subject?.name || entry.subjectName || 'Unknown',
-      room: entry.room || '-',
-      type: entry.type || 'CLASS',
-    })),
-  }));
-
-  const source = timetable && timetable.length > 0 ? timetable : store.timetable;
+  const source = Array.isArray(timetable) && timetable.length > 0 ? timetable : (Array.isArray(store.timetable) ? store.timetable : []);
+  
   const derivedSchedules = Object.entries(
-    (source || []).reduce((acc, entry) => {
+    source.reduce((acc, entry) => {
       const day = DAY_MAP[entry.day] || entry.day;
       if (!acc[day]) acc[day] = [];
       acc[day].push(entry);
@@ -69,7 +53,7 @@ export function StudentTimetable() {
     })),
   }));
 
-  if (loading && (!source || source.length === 0)) {
+  if (loading && source.length === 0) {
     return (
       <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 md:p-8 lg:p-12 pb-24 no-scrollbar">
         <div className="max-w-4xl mx-auto">
