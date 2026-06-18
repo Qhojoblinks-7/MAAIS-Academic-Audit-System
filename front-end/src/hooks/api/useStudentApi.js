@@ -3,59 +3,60 @@ import { useStudentStore } from '../../stores/useStudentStore';
 import { studentApi } from '../../services/api/studentApi';
 
 export function useStudentPortalData(studentId) {
-  const { portalData, portalError, setPortalData, setPortalError } = useStudentStore();
-  const hasFetchedRef = useRef(false);
+   const { portalData, portalError, setPortalData, setPortalError } = useStudentStore();
+   const hasFetchedRef = useRef(false);
 
-  const [loading, setLoading] = useState(!!studentId);
+   const [loading, setLoading] = useState(!!studentId);
 
-  const fetchPortalData = useCallback(async () => {
-    if (!studentId) {
-      setPortalError('No student identifier available');
-      setPortalData(null);
-      setLoading(false);
-      return;
-    }
-    try {
-      const data = await studentApi.getPortalData(studentId);
-      if (!data) {
-        setPortalError('No profile context matches found');
-        setPortalData(null);
-      } else {
-        setPortalData(data);
-      }
-    } catch (error) {
-      setPortalError(error.message || 'Failed to load portal data');
-      setPortalData(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [studentId, setPortalData, setPortalError]);
+   const fetchPortalData = useCallback(async (profileId) => {
+     const idToFetch = profileId || studentId;
+     if (!idToFetch) {
+       setPortalError('No student identifier available');
+       setPortalData(null);
+       setLoading(false);
+       return;
+     }
+     try {
+       const data = await studentApi.getPortalData(idToFetch);
+       if (!data) {
+         setPortalError('No profile context matches found');
+         setPortalData(null);
+       } else {
+         setPortalData(data);
+       }
+     } catch (error) {
+       setPortalError(error.message || 'Failed to load portal data');
+       setPortalData(null);
+     } finally {
+       setLoading(false);
+     }
+   }, [studentId, setPortalData, setPortalError]);
 
-  useEffect(() => {
-    hasFetchedRef.current = false;
-  }, [studentId]);
+   useEffect(() => {
+     hasFetchedRef.current = false;
+   }, [studentId]);
 
-  useEffect(() => {
-    if (!studentId) {
-      setPortalError('No student identifier available');
-      setPortalData(null);
-      setLoading(false);
-      return;
-    }
-    if (hasFetchedRef.current) return;
-    hasFetchedRef.current = true;
-    setLoading(true);
-    setPortalError(null);
-    fetchPortalData();
-  }, [studentId, fetchPortalData, setPortalData, setPortalError]);
+   useEffect(() => {
+     if (!studentId) {
+       setPortalError('No student identifier available');
+       setPortalData(null);
+       setLoading(false);
+       return;
+     }
+     if (hasFetchedRef.current) return;
+     hasFetchedRef.current = true;
+     setLoading(true);
+     setPortalError(null);
+     fetchPortalData();
+   }, [studentId, fetchPortalData, setPortalData, setPortalError]);
 
-  return {
-    data: portalData,
-    loading,
-    error: portalError,
-    refetch: fetchPortalData,
-  };
-}
+   return {
+     data: portalData,
+     loading,
+     error: portalError,
+     refetch: fetchPortalData,
+   };
+ }
 
 export function useStudentGrades(studentId, termId) {
   const { grades, gradesLoading, gradesError, setGrades, setGradesLoading, setGradesError } = useStudentStore();
@@ -185,46 +186,46 @@ export function useStudentTickets() {
 }
 
 export function useStudentBehavior(studentId) {
-  const { behavior, behaviorLoading, behaviorError, setBehavior, setBehaviorLoading, setBehaviorError } = useStudentStore();
-  const hasFetched = useRef(false);
+   const { behavior, behaviorLoading, behaviorError, setBehavior, setBehaviorLoading, setBehaviorError } = useStudentStore();
+   const hasFetched = useRef(false);
 
-  const fetchBehavior = useCallback(async () => {
-    if (!studentId) return;
-    hasFetched.current = true;
-    setBehaviorLoading(true);
-    setBehaviorError(null);
-    try {
-      const data = await studentApi.getBehavior(studentId);
-      setBehavior(data || { logs: [], traits: null });
-    } catch (error) {
-      setBehaviorError(error.message || 'Failed to load behavior records');
-    } finally {
-      setBehaviorLoading(false);
-    }
-  }, [studentId, setBehavior, setBehaviorLoading, setBehaviorError]);
+   const fetchBehavior = useCallback(async () => {
+     if (!studentId) return;
+     hasFetched.current = true;
+     setBehaviorLoading(true);
+     setBehaviorError(null);
+     try {
+       const data = await studentApi.getBehavior(studentId);
+       setBehavior(Array.isArray(data?.logs) ? { logs: data.logs, traits: data.traits } : { logs: [], traits: null });
+     } catch (error) {
+       setBehaviorError(error.message || 'Failed to load behavior records');
+     } finally {
+       setBehaviorLoading(false);
+     }
+   }, [studentId, setBehavior, setBehaviorLoading, setBehaviorError]);
 
-  useEffect(() => {
-    if (studentId) {
-      hasFetched.current = false;
-    }
-  }, [studentId]);
+   useEffect(() => {
+     if (studentId) {
+       hasFetched.current = false;
+     }
+   }, [studentId]);
 
-  useEffect(() => {
-    if (studentId && !hasFetched.current) {
-      hasFetched.current = true;
-      setBehaviorLoading(true);
-      setBehaviorError(null);
-      fetchBehavior();
-    }
-  }, [studentId, fetchBehavior, setBehaviorLoading, setBehaviorError]);
+   useEffect(() => {
+     if (studentId && !hasFetched.current) {
+       hasFetched.current = true;
+       setBehaviorLoading(true);
+       setBehaviorError(null);
+       fetchBehavior();
+     }
+   }, [studentId, fetchBehavior, setBehaviorLoading, setBehaviorError]);
 
-  return {
-    behavior,
-    loading: behaviorLoading,
-    error: behaviorError,
-    refetch: fetchBehavior,
-  };
-}
+   return {
+     behavior,
+     loading: behaviorLoading,
+     error: behaviorError,
+     refetch: () => fetchBehavior(),
+   };
+ }
 
 export function useStudentInterventions(studentId) {
   const { interventions, interventionsLoading, interventionsError, setInterventions, setInterventionsLoading, setInterventionsError } = useStudentStore();

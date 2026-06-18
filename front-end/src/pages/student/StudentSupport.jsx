@@ -14,10 +14,10 @@ const STATUS_STYLES = {
 };
 
 export function StudentSupport() {
-  const { user } = useRole();
-  const store = useStudentStore();
-  const { behavior, loading: behaviorLoading } = useStudentBehavior(user?.id);
-  const { tickets, loading: ticketsLoading, refetch } = useStudentTickets();
+   const { user } = useRole();
+   const store = useStudentStore();
+   const { behavior, loading: behaviorLoading } = useStudentBehavior(user?.profileId || user?.id || null);
+   const { tickets, loading: ticketsLoading, refetch } = useStudentTickets();
 
   const observations = behavior?.logs || [];
 

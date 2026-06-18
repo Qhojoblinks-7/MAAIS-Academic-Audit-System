@@ -56,10 +56,10 @@ class StudentTimetableErrorBoundary extends React.Component {
 }
 
 export function StudentTimetable() {
-  const { user } = useRole();
-  const { data: portalData, loading: portalLoading, error: portalError } = useStudentPortalData(user?.id || null);
-  const { timetable, loading, error, refetch } = useStudentTimetable(portalData?.student?.currentClassId);
-  const store = useStudentStore();
+   const { user } = useRole();
+   const { data: portalData, loading: portalLoading, error: portalError } = useStudentPortalData(user?.profileId || user?.id || null);
+   const { timetable, loading, error, refetch } = useStudentTimetable(portalData?.student?.currentClassId);
+   const store = useStudentStore();
 
   useEffect(() => {
     if (error) {

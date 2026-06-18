@@ -19,13 +19,13 @@ import { BroadsheetComparisonPanel } from './portal/panels/BroadsheetComparisonP
 const VALID_TABS = ['overview', 'academic', 'interventions', 'history', 'gradingScale', 'academicJourney', 'broadsheetComparison'];
 
 export function StudentPortal() {
-  const { user } = useRole();
-  const location = useLocation();
-  const navigate = useNavigate();
+   const { user } = useRole();
+   const location = useLocation();
+   const navigate = useNavigate();
 
-  const studentId = user?.id || '';
-  const username = user?.username;
-  const userName = user?.name;
+   const studentId = user?.profileId || user?.id || '';
+   const username = user?.username;
+   const userName = user?.name;
 
   console.log('[StudentPortal] Initializing context:', { studentId, username, userName, currentHash: location.hash });
 
@@ -149,7 +149,7 @@ export function StudentPortal() {
       indexNumber: apiData.student?.indexNumber || '—',
       program: apiData.student?.currentClass?.name || '—',
       attendance: apiData.attendancePercentage ?? apiData.attendance ?? 0,
-      lastSeen: apiData.lastSeen ?? apiData.student?.user?.lastLoginAt ?? null,
+      lastSeen: apiData.lastSeen ?? apiData.student?.user?.lastLoginAt ?? apiData.student?.lastLogin ?? null,
     };
 
     console.log('[StudentPortal] transformApiResponse transformation complete result:', transformed);

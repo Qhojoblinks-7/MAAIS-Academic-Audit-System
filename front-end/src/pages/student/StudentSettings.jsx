@@ -8,9 +8,9 @@ import { useRole } from '../../context/RoleContext';
 import { useStudentPortalData } from '../../hooks/api/useStudentApi';
 
 export function StudentSettings() {
-  const { user } = useRole();
-  const navigate = useNavigate();
-  const { data: portalData, loading } = useStudentPortalData(user?.id || null);
+   const { user } = useRole();
+   const navigate = useNavigate();
+   const { data: portalData, loading } = useStudentPortalData(user?.profileId || user?.id || null);
   
   const [name, setName] = React.useState(() => {
     const n = portalData ? `${portalData.student?.firstName || ''} ${portalData.student?.lastName || ''}`.trim() : '';
