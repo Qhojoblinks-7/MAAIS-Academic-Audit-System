@@ -2,7 +2,8 @@
 import { Calendar, Clock, MapPin } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useStudentStore } from '../../stores/useStudentStore';
-import { useStudentTimetable } from '../../hooks/api/useStudentApi';
+import { useStudentTimetable, useStudentPortalData } from '../../hooks/api/useStudentApi';
+import { useRole } from '../../context/RoleContext';
 
 const DAY_MAP = {
   MONDAY: 'Monday',
@@ -22,45 +23,10 @@ const DAY_TYPE_STYLES = {
 };
 
 export function StudentTimetable() {
-  const { timetable, loading, error, refetch } = useStudentTimetable();
+  const { user } = useRole();
+  const { data: portalData } = useStudentPortalData(user?.id);
+  const { timetable, loading, error, refetch } = useStudentTimetable(portalData?.student?.currentClassId);
   const store = useStudentStore();
-  const [resolvedClassId, setResolvedClassId] = useState(null);
-
-  useEffect(() => {
-    const resolveClassId = async () => {
-      try {
-        const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
-        const res = await fetch(`/portal/students/me/portal-data`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        });
-
-        if (!res.ok) {
-          throw new Error('Failed to load student context');
-        }
-
-        const data = await res.json();
-        const classId = data?.student?.currentClassId;
-
-        if (classId && classId !== resolvedClassId) {
-          setResolvedClassId(classId);
-        }
-      } catch (e) {
-        console.error('Failed to resolve class for timetable:', e);
-      }
-    };
-
-    resolveClassId();
-  }, [resolvedClassId]);
-
-  useEffect(() => {
-    if (resolvedClassId) {
-      refetch();
-    }
-  }, [resolvedClassId, refetch]);
 
   useEffect(() => {
     if (error) {

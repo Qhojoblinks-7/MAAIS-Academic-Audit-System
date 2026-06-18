@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 function getHeaders() {
   const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token') || localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
@@ -17,12 +17,25 @@ async function request(method, path, body) {
   });
 
   if (!res.ok) {
-    const err = new Error(`Request failed: ${res.status} ${method} ${path}`);
+    let errorMessage = `Request failed: ${res.status} ${method} ${path}`;
+    try {
+      const errorText = await res.text();
+      if (errorText.includes('<!doctype') || errorText.includes('<html')) {
+        errorMessage = `API endpoint not found (${res.status})`;
+      }
+    } catch {
+      // Ignore text parsing errors
+    }
+    const err = new Error(errorMessage);
     err.status = res.status;
     throw err;
   }
 
+  const contentType = res.headers.get('content-type') || '';
   if (res.status === 204) return undefined;
+  if (!contentType.includes('application/json')) {
+    throw new Error('Invalid response: expected JSON');
+  }
   return res.json();
 }
 
