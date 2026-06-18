@@ -16,11 +16,12 @@ export function StudentSettings() {
     const n = portalData ? `${portalData.student?.firstName || ''} ${portalData.student?.lastName || ''}`.trim() : '';
     return n || 'Student';
   });
-  const [bio, setBio] = React.useState('');
+  const [bio, setBio] = React.useState(() => portalData?.student?.bio || '');
   const [isTwoFactor, setIsTwoFactor] = React.useState(true);
 
   React.useEffect(() => {
     if (portalData) {
+      setBio(portalData.student?.bio || '');
       setName(`${portalData.student?.firstName || ''} ${portalData.student?.lastName || ''}`.trim() || 'Student');
     }
   }, [portalData]);
@@ -133,14 +134,16 @@ export function StudentSettings() {
               <div>
                 <label className="text-[9px] font-black text-text-secondary uppercase tracking-[0.15em] mb-1.5 block">Current Class</label>
                 <div className="px-4 py-3 bg-background border border-border rounded-xl text-sm font-black text-text-secondary">
-                  {studentData?.student?.currentClass?.name || '—'}
+                  {studentData?.student?.currentClass ? 
+                    `${studentData?.student?.currentClass?.level?.replace('FORM_', '')} ${studentData?.student?.department?.name || ''} ${studentData?.student?.currentClass?.name?.replace(/^\d+/, '') || ''}`.replace(/\s+/g, ' ').trim() || '—'
+                    : '—'}
                 </div>
               </div>
               
               <div>
                 <label className="text-[9px] font-black text-text-secondary uppercase tracking-[0.15em] mb-1.5 block">Program</label>
                 <div className="px-4 py-3 bg-background border border-border rounded-xl text-sm font-black text-text-secondary">
-                  {studentData?.student?.currentClass?.name || '—'}
+                  {studentData?.student?.department?.name || '—'}
                 </div>
               </div>
             </div>
