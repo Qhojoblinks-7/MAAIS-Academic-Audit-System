@@ -1,17 +1,27 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useRole } from '../../context/RoleContext';
-import mockApiData from '../../data/mockApiData.json';
 
-const DEPARTMENTS = mockApiData.departments?.items || [];
-
-function validateHODAccess(user) {
-  if (!user || user.role !== 'HOD') return { valid: true };
-  const department = DEPARTMENTS.find(d => d.hodId === user.id);
-  if (!department) {
-    return { valid: false, error: 'HOD not assigned to any department' };
+async function fetchDepartmentForUser(userId) {
+  try {
+    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('accessToken');
+    if (!token) return null;
+    
+    const res = await fetch('/api/v1/departments', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+    
+    if (!res.ok) return null;
+    const data = await res.json();
+    const dept = data?.items?.find(d => d.hodId === userId);
+    return dept?.id || null;
+  } catch {
+    return null;
   }
-  return { valid: true, departmentId: department.id };
 }
 
 export function RequireRole({ allowedRoles = [], children, redirectTo = '/login' }) {
@@ -27,10 +37,8 @@ export function RequireRole({ allowedRoles = [], children, redirectTo = '/login'
   }
 
   if (user.role === 'HOD') {
-    const validation = validateHODAccess(user);
-    if (!validation.valid) {
-      console.warn('[Auth] HOD validation failed:', validation.error);
-      return <Navigate to="/unauthorized" replace state={{ error: validation.error }} />;
+    if (!user.departmentId) {
+      return <Navigate to="/unauthorized" replace state={{ error: 'HOD not assigned to any department' }} />;
     }
   }
 
@@ -46,13 +54,10 @@ export function withHODValidation(WrappedComponent) {
       return <Navigate to="/login" replace />;
     }
     
-    if (user.role === 'HOD') {
-      const validation = validateHODAccess(user);
-      if (!validation.valid) {
-        return <Navigate to="/unauthorized" replace state={{ error: validation.error }} />;
-      }
+    if (!user.departmentId) {
+      return <Navigate to="/unauthorized" replace state={{ error: 'HOD not assigned to any department' }} />;
     }
     
-    return <WrappedComponent {...props} hodDepartmentId={validateHODAccess(user)?.departmentId} />;
+    return <WrappedComponent {...props} hodDepartmentId={user.departmentId} />;
   };
 }
