@@ -159,9 +159,9 @@ export function StudentPortal() {
   const transformedStudentData = studentData ? transformApiResponse(studentData) : null;
 
   const handleDownloadReport = () => {
-    console.log('[StudentPortal] Executing handleDownloadReport (Global PDF Print Workflow)', { selectedReportType });
+    const reportType = selectedReportType || 'transcript';
+    console.log('[StudentPortal] Executing handleDownloadReport (Global PDF Print Workflow)', { reportType });
     setSinglePrintData(null);
-    setSelectedReportType('transcript');
     setTimeout(() => {
       console.log('[StudentPortal] Initializing global window browser print dialog setup');
       window.print();
