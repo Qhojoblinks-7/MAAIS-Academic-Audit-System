@@ -9,10 +9,20 @@ export function useStudentPortalData(studentId) {
   const [loading, setLoading] = useState(!!studentId);
 
   const fetchPortalData = useCallback(async () => {
-    if (!studentId) return;
+    if (!studentId) {
+      setPortalError('No student identifier available');
+      setPortalData(null);
+      setLoading(false);
+      return;
+    }
     try {
       const data = await studentApi.getPortalData(studentId);
-      setPortalData(data);
+      if (!data) {
+        setPortalError('No profile context matches found');
+        setPortalData(null);
+      } else {
+        setPortalData(data);
+      }
     } catch (error) {
       setPortalError(error.message || 'Failed to load portal data');
       setPortalData(null);
@@ -27,9 +37,9 @@ export function useStudentPortalData(studentId) {
 
   useEffect(() => {
     if (!studentId) {
-      setLoading(false);
+      setPortalError('No student identifier available');
       setPortalData(null);
-      setPortalError(null);
+      setLoading(false);
       return;
     }
     if (hasFetchedRef.current) return;

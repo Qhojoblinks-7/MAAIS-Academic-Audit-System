@@ -8,7 +8,13 @@ export const useStudentStore = create((set, get) => ({
 
   setPortalData: (data) => set({ portalData: data, portalError: null }),
   setPortalLoading: (loading) => set({ portalLoading: loading }),
-  setPortalError: (error) => set({ portalError: error }),
+  setPortalError: (error) => {
+    if (error) {
+      set({ portalError: error, portalData: null });
+    } else {
+      set({ portalError: null });
+    }
+  },
 
   // Grades
   grades: [],

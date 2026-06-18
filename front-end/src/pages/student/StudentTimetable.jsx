@@ -30,7 +30,7 @@ export function StudentTimetable() {
     const resolveClassId = async () => {
       try {
         const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
-        const res = await fetch('/api/v1/portal/students/me/portal-data', {
+        const res = await fetch(`/portal/students/me/portal-data`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',

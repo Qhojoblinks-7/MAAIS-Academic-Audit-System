@@ -21,7 +21,7 @@ export function StudentSettings() {
       }
       try {
         const token = getAuthToken();
-        const response = await fetch(`/api/v1/portal/students/${user.id}/portal-data`, {
+         const response = await fetch(`/portal/students/${user.id}/portal-data`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
         if (response.ok) {

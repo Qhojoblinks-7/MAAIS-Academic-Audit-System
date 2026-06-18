@@ -1,8 +1,6 @@
 import { getAuthToken } from './auth';
-import mockStudentService from './mockStudentService';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-const USE_MOCK = !BASE_URL || import.meta.env.VITE_USE_MOCK_API === 'true';
 
 function getHeaders() {
   const token = getAuthToken();
@@ -33,12 +31,12 @@ async function request(method, path, body) {
 function createRealService() {
   return {
     getPortalData: (studentId) =>
-      request('GET', `/api/v1/portal/students/${studentId}/portal-data`)
+      request('GET', `/portal/students/${studentId}/portal-data`)
         .then(r => r?.data ?? r),
     searchStudents: (query) =>
-      request('GET', `/api/v1/portal/search?q=${encodeURIComponent(query)}`)
+      request('GET', `/portal/search?q=${encodeURIComponent(query)}`)
         .then(r => r?.data ?? r),
   };
 }
 
-export const studentService = USE_MOCK ? mockStudentService : createRealService();
+export const studentService = createRealService();
