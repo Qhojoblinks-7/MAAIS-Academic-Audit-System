@@ -22,6 +22,39 @@ const DAY_TYPE_STYLES = {
   ASSEMBLY: 'bg-warning/10 border-warning/20 text-warning',
 };
 
+class StudentTimetableErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('StudentTimetable Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 md:p-8 lg:p-12 pb-24 no-scrollbar">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-surface rounded-2xl border border-border p-6 text-center">
+              <h2 className="text-lg font-bold text-text-primary mb-2">Unable to load timetable</h2>
+              <p className="text-sm text-text-secondary">
+                {this.state.error?.message || 'Please try again later.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export function StudentTimetable() {
   const { user } = useRole();
   const { data: portalData, loading: portalLoading, error: portalError } = useStudentPortalData(user?.id || null);
@@ -34,24 +67,30 @@ export function StudentTimetable() {
     }
   }, [error, store]);
 
-  const source = Array.isArray(timetable) && timetable.length > 0 ? timetable : (Array.isArray(store.timetable) ? store.timetable : []);
+  const source = Array.isArray(timetable) && timetable.length > 0 
+    ? timetable 
+    : (Array.isArray(store.timetable) ? store.timetable : []);
   
-  const derivedSchedules = Object.entries(
-    source.reduce((acc, entry) => {
-      const day = DAY_MAP[entry.day] || entry.day;
-      if (!acc[day]) acc[day] = [];
-      acc[day].push(entry);
-      return acc;
-    }, {}),
-  ).map(([day, items]) => ({
-    day,
-    items: (items || []).map((entry) => ({
-      time: `${entry.startTime || entry.start_time || ''} - ${entry.endTime || entry.end_time || ''}`,
-      subject: entry.subject?.name || entry.subjectName || 'Unknown',
-      room: entry.room || '-',
-      type: entry.type || 'CLASS',
-    })),
-  }));
+  const derivedSchedules = source.length > 0 
+    ? Object.entries(
+        source.reduce((acc, entry) => {
+          if (!entry) return acc;
+          const dayKey = entry.dayOfWeek || entry.day;
+          const day = DAY_MAP[dayKey] || dayKey || 'Unknown';
+          if (!acc[day]) acc[day] = [];
+          acc[day].push(entry);
+          return acc;
+        }, {}),
+      ).map(([day, items]) => ({
+        day,
+        items: (items || []).map((entry) => ({
+          time: `${entry.startTime || entry.start_time || ''} - ${entry.endTime || entry.end_time || ''}`,
+          subject: entry.subject?.name || entry.subjectName || 'Unknown',
+          room: entry.room || '-',
+          type: entry.type || 'CLASS',
+        })),
+      }))
+    : [];
 
   if (loading && source.length === 0) {
     return (
@@ -83,7 +122,7 @@ export function StudentTimetable() {
         </header>
 
         <div className="space-y-4 sm:space-y-6">
-          {derivedSchedules.length > 0 ? derivedSchedules.map(({ day, items }, dIdx) => (
+          {derivedSchedules.length > 0 ? derivedSchedules.map(({ day, items }) => (
             <div
               key={day}
               className="bg-surface rounded-2xl sm:rounded-[2rem] border border-border shadow-sm overflow-hidden"
@@ -166,4 +205,10 @@ export function StudentTimetable() {
   );
 }
 
-export default StudentTimetable;
+const StudentTimetableWithErrorBoundary = (props) => (
+  <StudentTimetableErrorBoundary>
+    <StudentTimetable {...props} />
+  </StudentTimetableErrorBoundary>
+);
+
+export default StudentTimetableWithErrorBoundary;
