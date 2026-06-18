@@ -80,10 +80,19 @@ export function StudentPortal() {
       const upperValue = value.toUpperCase();
       const numericMatch = value.match(/\d+/);
 
-      if (upperValue.startsWith('TERM_')) return numericMatch ? `Term ${numericMatch[0]}` : '—';
-      if (upperValue.includes('TERM')) return numericMatch ? `Term ${numericMatch[0]}` : value;
-      if (numericMatch) return `Term ${numericMatch[0]}`;
+      if (upperValue.startsWith('SEMESTER_')) return numericMatch ? `${getOrdinal(numericMatch[0])} Semester` : '—';
+      if (upperValue.startsWith('TERM_')) return numericMatch ? `${getOrdinal(numericMatch[0])} Semester` : '—';
+      if (upperValue.includes('TERM')) return numericMatch ? `${getOrdinal(numericMatch[0])} Semester` : value;
+      if (numericMatch) return `${getOrdinal(numericMatch[0])} Semester`;
       return value;
+    };
+
+    const getOrdinal = (num) => {
+      const n = parseInt(num, 10);
+      if (n === 1) return '1st';
+      if (n === 2) return '2nd';
+      if (n === 3) return '3rd';
+      return `${n}th`;
     };
 
     const normalizeYearLabel = (year) => {
@@ -96,6 +105,15 @@ export function StudentPortal() {
       score: subject?.score ?? subject?.totalScore ?? 0,
       grade: subject?.grade || '-',
     });
+
+    const getFirstAvailable = (values) => {
+      for (const value of values) {
+        if (value === undefined || value === null) continue;
+        const text = String(value).trim();
+        if (text && text !== '—') return value;
+      }
+      return '—';
+    };
 
     const rawYearForm = apiData.yearForm || apiData.academicYearLabel || '—';
     const rawSemester = apiData.semester || apiData.termLabel;
@@ -140,16 +158,40 @@ export function StudentPortal() {
       });
     }
 
+    const student = apiData.student || {};
+    const program = getFirstAvailable([
+      apiData.program,
+      apiData.programName,
+      student.program,
+      student.programName,
+      student.department?.name,
+      apiData.learningArea,
+      student.currentClass?.name,
+      student.currentClass?.label,
+      typeof student.currentClass === 'string' ? student.currentClass : undefined,
+      apiData.department?.name,
+    ]);
+
+    const terminalExamDate = getFirstAvailable([
+      apiData.terminalExamDate,
+      apiData.examDate,
+      apiData.generatedAt,
+      apiData.reportDate,
+      apiData.date,
+    ]);
+
     const transformed = {
       ...apiData,
       yearForm: normalizedYearForm,
       semester: normalizedSemester,
       academicHistory,
-      studentName: `${apiData.student?.firstName || ''} ${apiData.student?.lastName || ''}`.trim() || 'Student',
-      indexNumber: apiData.student?.indexNumber || '—',
-      program: apiData.student?.currentClass?.name || '—',
+      studentName: `${student.firstName || ''} ${student.lastName || ''}`.trim() || 'Student',
+      indexNumber: student.indexNumber || '—',
+      program,
+      programName: program,
       attendance: apiData.attendancePercentage ?? apiData.attendance ?? 0,
-      lastSeen: apiData.lastSeen ?? apiData.student?.user?.lastLoginAt ?? apiData.student?.lastLogin ?? null,
+      lastSeen: apiData.lastSeen ?? student.user?.lastLoginAt ?? student.lastLogin ?? null,
+      terminalExamDate,
     };
 
     console.log('[StudentPortal] transformApiResponse transformation complete result:', transformed);
@@ -159,9 +201,9 @@ export function StudentPortal() {
   const transformedStudentData = studentData ? transformApiResponse(studentData) : null;
 
   const handleDownloadReport = () => {
-    console.log('[StudentPortal] Executing handleDownloadReport (Global PDF Print Workflow)', { selectedReportType });
+    const reportType = selectedReportType || 'transcript';
+    console.log('[StudentPortal] Executing handleDownloadReport (Global PDF Print Workflow)', { reportType });
     setSinglePrintData(null);
-    setSelectedReportType('transcript');
     setTimeout(() => {
       console.log('[StudentPortal] Initializing global window browser print dialog setup');
       window.print();

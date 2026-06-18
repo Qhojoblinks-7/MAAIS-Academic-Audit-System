@@ -5,6 +5,13 @@ import { cn } from '../../lib/utils';
 export const TranscriptPrintTemplate = React.forwardRef(function TranscriptPrintTemplate({ data }, ref) {
   if (!data) return null;
 
+  const formatPrintDate = (value) => {
+    if (!value || value === '—') return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
   return (
     <div
       ref={ref}
@@ -80,7 +87,7 @@ export const TranscriptPrintTemplate = React.forwardRef(function TranscriptPrint
           <div className="flex items-center justify-between border-b border-slate-200/60 pb-1.5">
             <span className="text-[9px] font-bold uppercase text-slate-400 tracking-wider">Enrollment Period</span>
             <span className="text-xs font-bold text-slate-900 tracking-tight">
-              {data.enrollmentDate} — {data.completionDate}
+              {formatPrintDate(data.enrollmentDate) || "—"} {data.completionDate ? ` — ${formatPrintDate(data.completionDate)}` : ''}
             </span>
           </div>
           <div className="flex items-center justify-between border-b border-slate-200/60 pb-1.5">

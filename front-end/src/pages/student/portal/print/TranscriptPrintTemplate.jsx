@@ -5,6 +5,57 @@ import { cn } from "../ui/cn";
 export const TranscriptPrintTemplate = React.forwardRef(function TranscriptPrintTemplate({ data = {} }, ref) {
   const studentsList = data.students || (data.studentName ? [data] : []);
 
+  const getFirstAvailable = (values) => {
+    for (const value of values) {
+      if (value === undefined || value === null) continue;
+      const text = String(value).trim();
+      if (text && text !== '—') return value;
+    }
+    return '—';
+  };
+
+  const formatPrintDate = (value) => {
+    if (!value || value === '—') return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const formatApiDate = (value) => {
+    if (!value || value === '—') return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const getProgramName = (student) => getFirstAvailable([
+    student.program,
+    student.programName,
+    student.learningArea,
+    student.student?.program,
+    student.student?.programName,
+    student.student?.currentClass?.name,
+    student.currentClass?.name,
+    student.department?.name,
+    student.student?.department?.name,
+    data.program,
+    data.programName,
+    data.learningArea,
+  ]);
+
+  const getExamDate = (student) => formatPrintDate(getFirstAvailable([
+    student.sessionInfo?.examDate,
+    student.examDate,
+    student.terminalExamDate,
+    student.generatedAt,
+    student.reportDate,
+    data.sessionInfo?.examDate,
+    data.examDate,
+    data.terminalExamDate,
+    data.generatedAt,
+    data.reportDate,
+  ]));
+
   if (studentsList.length === 0) {
     return (
       <div className="text-center py-12 border border-slate-200 rounded-xl text-sm text-slate-400 font-sans italic bg-white">
@@ -67,15 +118,21 @@ export const TranscriptPrintTemplate = React.forwardRef(function TranscriptPrint
           </div>
           <div className="flex items-center justify-between border-b border-slate-200/80 pb-1">
             <span className="text-[9px] font-bold uppercase text-slate-400 tracking-wider">Academic Programme</span>
-            <span className="text-xs font-black text-slate-950 uppercase tracking-tight truncate max-w-[180px] print:max-w-none">{student.program || "—"}</span>
+            <span className="text-xs font-black text-slate-950 uppercase tracking-tight truncate max-w-[180px] print:max-w-none">{getProgramName(student)}</span>
           </div>
         </div>
 
         <div className="space-y-2">
           <div className="flex items-center justify-between border-b border-slate-200/80 pb-1">
-            <span className="text-[9px] font-bold uppercase text-slate-400 tracking-wider">Enrollment Cycle</span>
+            <span className="text-[9px] font-bold uppercase text-slate-400 tracking-wider">Enrollment Period</span>
             <span className="text-xs font-bold text-slate-950 tracking-tight">
-              {student.enrollmentDate || "—"} — {student.completionDate || "—"}
+              {formatPrintDate(student.enrollmentDate) || "—"} {student.completionDate ? ` — ${formatPrintDate(student.completionDate)}` : ''}
+            </span>
+          </div>
+          <div className="flex items-center justify-between border-b border-slate-200/80 pb-1">
+            <span className="text-[9px] font-bold uppercase text-slate-400 tracking-wider">Latest Examination Date</span>
+            <span className="text-xs font-bold text-slate-950 tracking-tight">
+              {getExamDate(student)}
             </span>
           </div>
           <div className="flex items-center justify-between border-b border-slate-200/80 pb-1">
