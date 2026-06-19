@@ -72,20 +72,21 @@ export function RoleProvider({ children }) {
                         catch { return {}; }
                       })();
 
-                      const newUserId = data.id || payload.sub || payload.id;
-                      const profileId = data?.studentProfile?.id || data?.staffProfile?.id || null;
-                      setUser({
-                        id: newUserId,
-                        profileId,
-                        name: data.name || payload.name ||
-                          (data?.studentProfile ? `${data.studentProfile.firstName} ${data.studentProfile.lastName}` : '') ||
-                          (data?.staffProfile ? `${data.staffProfile.firstName} ${data.staffProfile.lastName}` : ''),
-                        role: data.role || payload.role,
-                        departmentId: data?.staffProfile?.departmentId || data?.studentProfile?.departmentId || null,
-                        departmentName: data?.department?.name,
-                        avatar: data?.studentProfile?.photoUrl || data?.staffProfile?.photoUrl || null,
-                        currentTerm: '2026',
-                      });
+const newUserId = data.id || payload.sub || payload.id;
+                       const profileId = data?.studentProfile?.id || data?.staffProfile?.id || data?.parentProfile?.id || null;
+                       setUser({
+                         id: newUserId,
+                         profileId,
+                         name: data.name || payload.name ||
+                           (data?.studentProfile ? `${data.studentProfile.firstName} ${data.studentProfile.lastName}` : '') ||
+                           (data?.staffProfile ? `${data.staffProfile.firstName} ${data.staffProfile.lastName}` : '') ||
+                           (data?.parentProfile ? `${data.parentProfile.firstName} ${data.parentProfile.lastName}` : ''),
+                         role: data.role || payload.role,
+                         departmentId: data?.staffProfile?.departmentId || data?.studentProfile?.departmentId || null,
+                         departmentName: data?.department?.name,
+                         avatar: data?.studentProfile?.photoUrl || data?.staffProfile?.photoUrl || null,
+                         currentTerm: '2026',
+                       });
                       setIsAuthenticated(true);
                       if (!cancelled) setLoading(false);
                       return;
@@ -120,13 +121,14 @@ export function RoleProvider({ children }) {
         })();
 
         const userId = data.id || payload.sub || payload.id;
-        const profileId = data?.studentProfile?.id || data?.staffProfile?.id || null;
+        const profileId = data?.studentProfile?.id || data?.staffProfile?.id || data?.parentProfile?.id || null;
         setUser({
           id: userId,
           profileId,
           name: data.name || payload.name ||
             (data?.studentProfile ? `${data.studentProfile.firstName} ${data.studentProfile.lastName}` : '') ||
-            (data?.staffProfile ? `${data.staffProfile.firstName} ${data.staffProfile.lastName}` : ''),
+            (data?.staffProfile ? `${data.staffProfile.firstName} ${data.staffProfile.lastName}` : '') ||
+            (data?.parentProfile ? `${data.parentProfile.firstName} ${data.parentProfile.lastName}` : ''),
           role: data.role || payload.role,
           departmentId: data?.staffProfile?.departmentId || data?.studentProfile?.departmentId || null,
           departmentName: data?.department?.name,
@@ -170,15 +172,18 @@ export function RoleProvider({ children }) {
     try {
       const payload = JSON.parse(atob(credentials.token.split('.')[1]));
       const userId = credentials.user?.id || payload.sub || payload.id;
-      const profileId = credentials.user?.studentProfile?.id || credentials.user?.staffProfile?.id || payload.profileId || null;
+      const profileId = credentials.user?.studentProfile?.id || credentials.user?.staffProfile?.id || credentials.user?.parentProfile?.id || payload.profileId || null;
       setUser({
         id: userId,
         profileId: profileId,
-        name: credentials.user?.name || payload.name,
+        name: credentials.user?.name || payload.name ||
+          (credentials.user?.studentProfile ? `${credentials.user.studentProfile.firstName} ${credentials.user.studentProfile.lastName}` : '') ||
+          (credentials.user?.staffProfile ? `${credentials.user.staffProfile.firstName} ${credentials.user.staffProfile.lastName}` : '') ||
+          (credentials.user?.parentProfile ? `${credentials.user.parentProfile.firstName} ${credentials.user.parentProfile.lastName}` : ''),
         role: credentials.user?.role || payload.role,
-        departmentId: credentials.user?.departmentId || payload.departmentId || null,
+        departmentId: credentials.user?.departmentId || credentials.user?.staffProfile?.departmentId || credentials.user?.studentProfile?.departmentId || payload.departmentId || null,
         departmentName: null,
-        avatar: credentials.user?.avatar || payload.avatar || null,
+        avatar: credentials.user?.studentProfile?.photoUrl || credentials.user?.staffProfile?.photoUrl || credentials.user?.avatar || payload.avatar || null,
         currentTerm: '2026',
       });
       setIsAuthenticated(true);
