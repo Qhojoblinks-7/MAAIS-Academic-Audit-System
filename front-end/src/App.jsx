@@ -24,7 +24,7 @@ import {
   TeacherTimetableView, TeacherDashboard, TeacherGradingView, 
   TeacherObservationsView, TeacherAnalyticsView, TeacherArchiveView, 
   TeacherArchiveDetailView, TeacherSettings, TeacherSupport, 
-  TeacherRevisionsFeed, TeacherMissingObservations 
+  TeacherRevisionsFeed, TeacherMissingObservations, MobileTimetableView
 } from './pages/teacher';
 import { LoginPage } from './pages/auth/LoginPage';
 import { TooltipProvider } from './components/ui/tooltip';
@@ -231,7 +231,7 @@ function AppContent() {
             <Route path="/timetable" element={
               <RequireRole allowedRoles={['TEACHER', 'STUDENT', 'ADMIN']}>
                 {user?.role === 'STUDENT' ? <StudentTimetable /> :
-                 user?.role === 'ADMIN' ? <SchedulingView /> : <TeacherTimetableView />}
+                 user?.role === 'ADMIN' ? <SchedulingView /> : <MobileTimetableView />}
               </RequireRole>
             } />
 

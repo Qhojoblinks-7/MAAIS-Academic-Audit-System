@@ -13,12 +13,13 @@ import {
    CornerDownRight,
    Inbox,
    Check,
-   Search,
-   ChevronDown,
-   ChevronUp
-  } from 'lucide-react';
+  Search,
+  ChevronDown,
+  ChevronUp
+ } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
+import { useUI } from '../../context/UIContext';
 import { teacherService } from '../../services';
 import { statusStyles, severityStyles } from '../shared/RevisionsFeed';
 
@@ -26,6 +27,7 @@ const TeacherRevisionsFeed = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useRole();
+  const { setRevisionCount } = useUI();
   const [revisions, setRevisions] = useState([]);
   const [activeTab, setActiveTab] = useState('pending');
   const [selected, setSelected] = useState(null);
@@ -41,12 +43,13 @@ const TeacherRevisionsFeed = () => {
       try {
         const data = await teacherService.getGradeRevisions?.(user.id || user.profileId) || [];
         setRevisions(data);
+        setRevisionCount(Array.isArray(data) ? data.filter(r => r.status !== 'RESOLVED').length : 0);
       } catch (e) {
         console.error('Failed to fetch revisions:', e);
       }
     };
     fetchRevisions();
-  }, [user?.id, user?.profileId]);
+  }, [user?.id, user?.profileId, setRevisionCount]);
 
   useEffect(() => {
     const queryId = searchParams.get('revision');
@@ -73,7 +76,7 @@ const TeacherRevisionsFeed = () => {
     return matchesTab && matchesSearch;
   });
 
-const appendTeacherResponse = async () => {
+  const appendTeacherResponse = async () => {
     if (!replyText.trim() || !selected) return;
 
     try {
@@ -140,26 +143,43 @@ const appendTeacherResponse = async () => {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
-            <div className="flex p-0.5 bg-slate-100 rounded-lg border border-slate-200/40">
-              {['pending', 'resolved', 'all'].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => {
-                    setActiveTab(tab);
-                    const nextList = revisions.filter(r => tab === 'all' ? true : tab === 'pending' ? r.status !== 'RESOLVED' : r.status === 'RESOLVED');
-                    setSelected(nextList[0] || null);
-                  }}
-                  className={cn(
-                    "px-4 py-1.5 text-xs font-semibold capitalize rounded-md transition-all duration-150",
-                    activeTab === tab 
-                      ? "bg-white text-slate-900 shadow-sm border border-slate-200/20 font-bold" 
-                      : "text-slate-500 hover:text-slate-800"
-                  )}
-                >
-                  {tab === 'pending' ? 'Pending Reply' : tab}
-                </button>
-              ))}
-            </div>
+<div className="flex p-0.5 bg-slate-100 rounded-lg border border-slate-200/40">
+               {['pending', 'resolved', 'all'].map((tab) => {
+                 const count = tab === 'all' 
+                   ? revisions.length 
+                   : tab === 'pending' 
+                     ? revisions.filter(r => r.status !== 'RESOLVED').length 
+                     : revisions.filter(r => r.status === 'RESOLVED').length;
+                 return (
+                   <button
+                     key={tab}
+                     onClick={() => {
+                       setActiveTab(tab);
+                       const nextList = revisions.filter(r => tab === 'all' ? true : tab === 'pending' ? r.status !== 'RESOLVED' : r.status === 'RESOLVED');
+                       setSelected(nextList[0] || null);
+                     }}
+                     className={cn(
+                       "px-4 py-1.5 text-xs font-semibold capitalize rounded-md transition-all duration-150 flex items-center gap-1.5",
+                       activeTab === tab 
+                         ? "bg-white text-slate-900 shadow-sm border border-slate-200/20 font-bold" 
+                         : "text-slate-500 hover:text-slate-800"
+                     )}
+                   >
+                     <span>{tab === 'pending' ? 'Pending Reply' : tab}</span>
+                     {count > 0 && (
+                       <span className={cn(
+                         "inline-flex items-center justify-center min-w-[18px] h-5 px-1 rounded-full text-[10px] font-bold",
+                         activeTab === tab 
+                           ? "bg-slate-900 text-white" 
+                           : "bg-slate-200 text-slate-600"
+                       )}>
+                         {count}
+                       </span>
+                     )}
+                   </button>
+                 );
+               })}
+             </div>
 
             <div className="relative flex-1 max-w-xs">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />

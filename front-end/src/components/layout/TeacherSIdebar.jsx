@@ -20,17 +20,27 @@ import {
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
 import { useUI } from '../../context/UIContext';
-import { Tooltip, TooltipTrigger, TooltipContent } from '../ui/tooltip';
+import { teacherService } from '../../services';
 
 export function TeacherSidebar() {
   const location = useLocation();
   const { user } = useRole();
-  const { setSettingsModalOpen, setSupportModalOpen } = useUI();
-
+  const { setSettingsModalOpen, setSupportModalOpen, revisionCount, missingObservationCount, setMissingObservationCount } = useUI();
   const [showLogoutModal, setShowLogoutModal] = React.useState(false);
   const [activeSubMenu, setActiveSubMenu] = React.useState(null);
   const [unsavedMarks] = React.useState(12);
   const sidebarRef = useRef(null);
+
+  useEffect(() => {
+    teacherService.getMissingObservations?.()
+      .then((data) => {
+        const missing = Array.isArray(data)
+          ? data.filter((item) => item.status === 'Missing').length
+          : 0;
+        setMissingObservationCount(missing);
+      })
+      .catch(() => setMissingObservationCount(0));
+  }, [setMissingObservationCount]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -64,14 +74,14 @@ export function TeacherSidebar() {
       label: 'Revisions',
       id: 'revisions',
       path: '/revisions',
-      badge: 3,
+      badge: revisionCount || 0,
     },
     {
       icon: ClipboardCheck,
       label: 'Missing Obs',
       id: 'missing-obs',
       path: '/missing-observations',
-      badge: 5,
+      badge: missingObservationCount || 0,
       badgeColor: 'bg-amber-500',
     },
     {

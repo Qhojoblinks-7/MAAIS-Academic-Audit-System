@@ -57,6 +57,23 @@ function createRealService() {
     getObservations: (teacherId, params = {}) =>
       request('GET', `/teacher/classes/${teacherId}/observations`, params ? { params } : undefined)
         .then(r => r?.data ?? r),
+    getGradeRevisions: (teacherId) =>
+      request('GET', `/teacher/grade-revisions`).then(r => r?.data ?? r),
+getMissingObservations: () =>
+      request('GET', '/grading/audit-tray').then(r => {
+        const data = r?.data ?? r ?? [];
+        if (!Array.isArray(data)) return [];
+        return data.map(o => ({
+          id: o.id,
+          student: o.student ? `${o.student.firstName || ''} ${o.student.lastName || ''}`.trim() : 'Unknown',
+          index: o.student?.indexNumber || '',
+          class: 'Unknown Class',
+          teacher: 'Unknown',
+          type: o.subject?.name || 'Unknown Subject',
+          status: 'Missing',
+          date: o.createdAt ? new Date(o.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        }));
+      }),
     getSupportObservations: () =>
       request('GET', '/teacher/support/observations').then(r => r?.data ?? r),
     getGradeIssues: () =>
@@ -65,6 +82,10 @@ function createRealService() {
       request('GET', '/teacher/grade-issues/meta').then(r => r?.data ?? r),
     getTimetable: (teacherId) =>
       request('GET', `/timetable?teacherId=${encodeURIComponent(teacherId)}`).then(r => normalizeTimetableEntries(r?.data ?? r)),
+    submitGradeRevision: (revisionData) =>
+      request('POST', '/teacher/grade-revisions', revisionData).then(r => r?.data ?? r),
+    updateGradeRevision: (revisionId, updatedData) =>
+      request('PATCH', `/teacher/grade-revisions/${revisionId}`, updatedData).then(r => r?.data ?? r),
     getSettingsClasses: () =>
       request('GET', '/teacher/settings/classes').then(r => r?.data ?? r),
     getNotificationPreferences: () =>

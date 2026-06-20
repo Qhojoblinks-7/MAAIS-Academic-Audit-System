@@ -10,11 +10,23 @@ import {
 import { useUI } from '../../context/UIContext';
 import { useRole } from '../../context/RoleContext';
 import { cn } from '../../lib/utils';
+import { teacherService } from '../../services';
 
 export function MobileDrawer() {
-  const { mobileMenuOpen, setMobileMenuOpen, setSettingsModalOpen, setSupportModalOpen } = useUI();
+  const { mobileMenuOpen, setMobileMenuOpen, setSettingsModalOpen, setSupportModalOpen, revisionCount, missingObservationCount, setMissingObservationCount } = useUI();
   const { user } = useRole();
   const location = useLocation();
+
+  React.useEffect(() => {
+    teacherService.getMissingObservations?.()
+      .then((data) => {
+        const missing = Array.isArray(data)
+          ? data.filter((item) => item.status === 'Missing').length
+          : 0;
+        setMissingObservationCount(missing);
+      })
+      .catch(() => setMissingObservationCount(0));
+  }, [setMissingObservationCount]);
 
   // Root Navigation Matrix
   const navItems = [
@@ -30,8 +42,8 @@ export function MobileDrawer() {
     { icon: ShieldCheck, label: 'User Roles', id: 'system', path: '/system', roles: ['ADMIN'] },
     { icon: Database, label: 'Extended Logs', id: 'audit-ext', path: '/audit/extended', roles: ['ADMIN'] },
     { icon: AlertCircle, label: 'Academic Audit', id: 'audit', path: '/audit', roles: ['HOD', 'ADMIN'] },
-    { icon: AlertCircle, label: 'Revisions', id: 'revisions', path: '/revisions', roles: ['TEACHER'], badge: 3 },
-     { icon: ClipboardCheck, label: 'Missing Obs', id: 'missing-obs', path: '/missing-observations', roles: ['TEACHER'], badge: 5, badgeColor: 'bg-amber-500' },
+    { icon: AlertCircle, label: 'Revisions', id: 'revisions', path: '/revisions', roles: ['TEACHER'], badge: revisionCount || 0, badgeColor: 'bg-rose-500' },
+     { icon: ClipboardCheck, label: 'Missing Obs', id: 'missing-obs', path: '/missing-observations', roles: ['TEACHER'], badge: missingObservationCount || 0, badgeColor: 'bg-amber-500' },
      { icon: GraduationCap, label: 'Grading', id: 'grading', path: '/grading', roles: ['TEACHER'] },
     { icon: GraduationCap, label: 'Teacher Hub', id: 'teacher-dashboard', path: '/teacher-dashboard', roles: ['TEACHER'] },
     { icon: Database, label: 'Archive', id: 'archive', path: '/archive', roles: ['TEACHER', 'HOD'] },

@@ -13,6 +13,8 @@ export function UIProvider({ children }) {
   const [isTermFinalized, setIsTermFinalized] = React.useState(false);
   const [isOnline, setIsOnline] = React.useState(navigator.onLine);
   const [screenWidth, setScreenWidth] = React.useState(window.innerWidth);
+  const [revisionCount, setRevisionCount] = React.useState(0);
+  const [missingObservationCount, setMissingObservationCount] = React.useState(0);
 
   useEffect(() => {
     localStorage.setItem('draftMode', JSON.stringify(isDraftMode));
@@ -41,26 +43,30 @@ export function UIProvider({ children }) {
 
   return (
 <UIContext.Provider value={{
-       settingsModalOpen,
-       setSettingsModalOpen,
-       supportModalOpen,
-       setSupportModalOpen,
-       mobileMenuOpen,
-       setMobileMenuOpen,
-       isDraftMode,
-       setIsDraftMode,
-       isTermFinalized,
-       setIsTermFinalized,
-       isOnline,
-       setIsOnline,
-       screenWidth,
-       isMobile,
-       isTablet,
-       isDesktop,
-     }}>
-      {children}
-    </UIContext.Provider>
-  );
+        settingsModalOpen,
+        setSettingsModalOpen,
+        supportModalOpen,
+        setSupportModalOpen,
+        mobileMenuOpen,
+        setMobileMenuOpen,
+        isDraftMode,
+        setIsDraftMode,
+        isTermFinalized,
+        setIsTermFinalized,
+        isOnline,
+        setIsOnline,
+        screenWidth,
+        isMobile,
+        isTablet,
+        isDesktop,
+        revisionCount,
+        setRevisionCount,
+        missingObservationCount,
+        setMissingObservationCount,
+      }}>
+       {children}
+     </UIContext.Provider>
+   );
 }
 
 export function useUI() {

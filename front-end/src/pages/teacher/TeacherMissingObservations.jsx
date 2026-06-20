@@ -6,20 +6,13 @@ import {
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { cn } from '../../lib/utils';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../../components/ui/tooltip';
-
-const mockObservations = [
-  { id: 'o1', student: 'Angela Owusu', index: '001', class: 'SHS 1 Agric B', type: 'Lab Safety', teacher: 'R. Owusu', status: 'Missing', date: '2026-01-15' },
-  { id: 'o2', student: 'Kwame Mensah', index: '002', class: 'SHS 1 Agric B', type: 'Behavioral', teacher: 'M. Baah', status: 'Logged', date: '2026-01-14' },
-  { id: 'o3', student: 'Yaw Boateng', index: '003', class: 'SHS 1 Agric B', type: 'Resource Economy', teacher: 'A. Boateng', status: 'Missing', date: '2026-01-12' },
-  { id: 'o4', student: 'Esi Ansah', index: '004', class: 'SHS 1 Agric B', type: 'Hygienic Practices', teacher: 'E. Aidoo', status: 'Logged', date: '2026-01-10' },
-  { id: 'o5', student: 'Kofi Appiah', index: '005', class: 'SHS 1 Agric B', type: 'Lab Safety', teacher: 'S. K. Mensah', status: 'Missing', date: '2026-01-08' },
-];
+import { teacherService } from '../../services';
 
 export function TeacherMissingObservations() {
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('missing');
   const [searchQuery, setSearchQuery] = useState('');
+  const [observations, setObservations] = useState([]);
 
   useEffect(() => {
     const urlStudent = searchParams.get('student');
@@ -39,31 +32,40 @@ export function TeacherMissingObservations() {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    teacherService.getMissingObservations?.()
+      .then(data => {
+        if (Array.isArray(data)) {
+          setObservations(data);
+        }
+      })
+      .catch(() => setObservations([]));
+  }, []);
+
   const filteredObservations = useMemo(() => {
-    return mockObservations.filter((obs) => {
+    return observations.filter((obs) => {
       const matchesTab = 
         activeTab === 'all' ? true : 
         activeTab === 'missing' ? obs.status === 'Missing' : 
         obs.status === 'Logged';
 
       const matchesSearch = 
-        obs.student.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        obs.class.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        obs.index.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        obs.teacher.toLowerCase().includes(searchQuery.toLowerCase());
+        obs.student?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        obs.class?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        obs.index?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        obs.teacher?.toLowerCase().includes(searchQuery.toLowerCase());
 
       return matchesTab && matchesSearch;
     });
-  }, [activeTab, searchQuery]);
+  }, [activeTab, searchQuery, observations]);
 
   const missingCount = useMemo(() => 
-    mockObservations.filter(o => o.status === 'Missing').length, 
-    []
+    observations.filter(o => o.status === 'Missing').length, 
+    [observations]
   );
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <div className="flex-1 flex flex-col min-h-0 w-full h-full bg-background font-sans antialiased overflow-hidden">
+    <div className="flex-1 flex flex-col min-h-0 w-full h-full bg-background font-sans antialiased overflow-hidden">
         
         <header className="p-6 lg:p-8 bg-surface border-b border-border shrink-0">
           <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -95,22 +97,18 @@ export function TeacherMissingObservations() {
                 { id: 'logged', label: 'Logged Records' },
                 { id: 'all', label: 'All Audits' }
               ].map((tab) => (
-                <Tooltip key={tab.id}>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => setActiveTab(tab.id)}
-                      className={cn(
-                        "px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200",
-                        activeTab === tab.id
-                          ? "bg-surface text-warning shadow-sm font-bold"
-                          : "text-text-secondary hover:text-text-primary"
-                      )}
-                    >
-                      {tab.label}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" sideOffset={8}>Filter by {tab.label.toLowerCase()}</TooltipContent>
-                </Tooltip>
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    "px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200",
+                    activeTab === tab.id
+                      ? "bg-surface text-warning shadow-sm font-bold"
+                      : "text-text-secondary hover:text-text-primary"
+                  )}
+                >
+                  {tab.label}
+                </button>
               ))}
             </div>
 
@@ -138,9 +136,9 @@ export function TeacherMissingObservations() {
                   <SlidersHorizontal size={13} />
                   Observation Logs
                 </div>
-                <span className="text-[11px] font-medium text-text-secondary">
-                  Showing {filteredObservations.length} of {mockObservations.length} logs
-                </span>
+<span className="text-[11px] font-medium text-text-secondary">
+                   Showing {filteredObservations.length} of {observations.length} logs
+                 </span>
               </div>
 
               <div className="divide-y divide-border min-h-0">
@@ -219,17 +217,13 @@ export function TeacherMissingObservations() {
 
                             <div className="w-8 flex justify-end">
                               {isMissing ? (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <button
-                                      onClick={() => window.location.href = `/grading?missing=${obs.id}&student=${obs.index}`}
-                                      className="p-1.5 bg-success/10 hover:bg-brand-dark border border-success/20 rounded-lg text-success hover:text-surface transition-all shadow-sm flex items-center justify-center group-hover:translate-x-0.5"
-                                    >
-                                      <ArrowRight size={13} />
-                                    </button>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="left" sideOffset={12}>Resolve observation entry</TooltipContent>
-                                </Tooltip>
+                                <button
+                                  onClick={() => window.location.href = `/grading?missing=${obs.id}&student=${obs.index}`}
+                                  className="p-1.5 bg-success/10 hover:bg-brand-dark border border-success/20 rounded-lg text-success hover:text-surface transition-all shadow-sm flex items-center justify-center group-hover:translate-x-0.5"
+                                  title="Resolve observation entry"
+                                >
+                                  <ArrowRight size={13} />
+                                </button>
                               ) : (
                                 <ChevronRight size={14} className="text-success/50 opacity-0 group-hover:opacity-100 transition-opacity pr-1" />
                               )}
@@ -244,11 +238,10 @@ export function TeacherMissingObservations() {
                 </AnimatePresence>
               </div>
 
-            </div>
-            
+</div>
+             
           </div>
         </main>
       </div>
-    </TooltipProvider>
-  );
+   );
 }
