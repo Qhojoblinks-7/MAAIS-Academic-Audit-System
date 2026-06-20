@@ -10,15 +10,12 @@ import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
-import MOCK from '../../data/teacherMockData.json';
+import { teacherService } from '../../services';
+import { useTeacherObservationTypes, useTeacherObservations } from '../../lib/hooks/api/teacher';
 
-const { observationTypes, observations } = MOCK;
-// Source of truth: student records table (see requirement and specs.txt)
-// OBS_TYPES / OBS_COLORS sourced from centralized mock data
-const OBS_TYPES = observationTypes.types;
-const OBS_COLORS = Object.values(observationTypes.colors);
-// initialObservations sourced from centralized mock data — replace with live API
-const INITIAL_OBSERVATIONS = observations.items.map(o => ({ ...o }));
+const OBS_TYPES = ['Behavioral', 'Academic', 'Lab Safety'];
+const OBS_COLORS = ['#1D4D4F', '#f59e0b', '#ef4444'];
+const INITIAL_OBSERVATIONS = [];
 
 function ConfirmModal({ isOpen, onConfirm, onCancel, title, message }) {
   if (!isOpen) return null;

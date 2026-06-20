@@ -1,15 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRole } from '../context/RoleContext';
-import MOCK from '../data/mockApiData.json';
-
-/* O(1) — WAEC STP assignment guard:
- * GET /api/timetable?teacher_id=... returns only the subjects and classes
- * specifically assigned to the logged-in teacher per WAEC STP T-AR-1.1.
- * Fallback to mock data if the teacher has no active assignments / API fails.
- */
-
-// timetableFallback sourced from centralized mock data
-const TIMETABLE_FALLBACK = MOCK.teacher?.timetableFallback?.items || [];
+import { teacherService } from '../services';
 
 export function useTeacherTimetable() {
   const { user } = useRole();
@@ -19,7 +10,6 @@ export function useTeacherTimetable() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // If no user is logged in, do not expose any teacher assignments
     if (!user || !user.id) {
       setTimetable([]);
       setLoading(false);
@@ -34,24 +24,14 @@ export function useTeacherTimetable() {
       setError(null);
 
       try {
-        const response = await fetch(`/api/timetable?teacher_id=${encodeURIComponent(user.id)}`);
-
-        if (!response.ok) {
-          throw new Error(`Timetable API error ${response.status}`);
-        }
-
-        const data = await response.json();
+        const data = await teacherService.getTimetable(user.profileId || user.id);
 
         if (cancelled) return;
 
         setTimetable(Array.isArray(data) ? data : []);
       } catch (err) {
         if (cancelled) return;
-
-        // Per requirement: keep mock data as initial/skeleton on failure
-        // WARNING: MOCK DATA in use — replace with real backend route
-        setTimetable(TIMETABLE_FALLBACK);
-        // Don't set error since fallback data is available
+        setError(err.message || 'Failed to load timetable');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -62,7 +42,7 @@ export function useTeacherTimetable() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [user?.id, user?.profileId]);
 
   return { timetable, loading, error };
 }

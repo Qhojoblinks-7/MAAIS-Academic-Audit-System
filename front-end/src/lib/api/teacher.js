@@ -1,5 +1,19 @@
 import { api } from './client';
 
+function normalizeTimetableEntries(entries) {
+  if (!Array.isArray(entries)) return [];
+
+  return entries.map((entry) => ({
+    ...entry,
+    day: entry.day || entry.dayOfWeek,
+    subject: entry.subject?.name || entry.subjectName || 'Unknown Subject',
+    subjectName: entry.subjectName || entry.subject?.name || 'Unknown Subject',
+    className: entry.className || entry.classSection?.name || 'Unknown Class',
+    venue: entry.venue || entry.room || '-',
+    type: entry.type || 'CLASS',
+  }));
+}
+
 export const teacherApi = {
   getClasses: (teacherId, params = {}) => {
     const query = new URLSearchParams();
@@ -32,7 +46,7 @@ export const teacherApi = {
     api.get('/teacher/grade-issues/meta'),
 
   getTimetable: (teacherId) =>
-    api.get(`/timetable?teacher_id=${teacherId}`),
+    api.get(`/timetable?teacherId=${encodeURIComponent(teacherId)}`).then(normalizeTimetableEntries),
 
   getSettingsClasses: () =>
     api.get('/teacher/settings/classes'),

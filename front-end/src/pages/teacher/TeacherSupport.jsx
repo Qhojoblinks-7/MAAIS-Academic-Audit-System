@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { QrCode, CheckCircle2, Clock, ArrowRight, Star, Edit, Lock, AlertCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { teacherService } from '../../services';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
-import mockTeacherService from '../../services/mockTeacherService';
 
 export function TeacherSupport() {
   const navigate = useNavigate();
@@ -22,9 +22,9 @@ export function TeacherSupport() {
   React.useEffect(() => {
     const fetchData = async () => {
       try {
-        const obs = await mockTeacherService.getSupportObservations();
-        const issues = await mockTeacherService.getGradeIssues();
-        const styles = await mockTeacherService.getGradeIssueStatusMeta();
+        const obs = await teacherService.getSupportObservations();
+        const issues = await teacherService.getGradeIssues();
+        const styles = await teacherService.getGradeIssueStatusMeta();
         setSupportObservations(obs || []);
         setGradeIssues(issues || []);
         setStatusStyles(styles || {});

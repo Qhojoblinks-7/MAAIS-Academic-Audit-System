@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useRole } from '../../context/RoleContext';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Percent, GraduationCap, Layers, AlertTriangle, CheckCircle2, Clock, RefreshCw } from 'lucide-react';
-import mockTeacherService from '../../services/mockTeacherService';
+import { teacherService } from '../../services';
 import { NotificationBell } from '../../components/shared/NotificationBell';
 import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -17,17 +17,26 @@ export function TeacherDashboard() {
   const [rolloverChanges, setRolloverChanges] = React.useState([]);
   const [teacherClasses, setTeacherClasses] = React.useState([]);
 
-  const staffId = user?.staffId || user?.id || 'unknown';
-  const ROLLOVER_STORAGE_KEY = `maais_rollover_subjects.${staffId}`;
-  const SESSION_SEEN_KEY = `maais_seen_rollover.${staffId}`;
+  const teacherId = user?.profileId || user?.id;
+  const ROLLOVER_STORAGE_KEY = `maais_rollover_subjects.${teacherId}`;
+  const SESSION_SEEN_KEY = `maais_seen_rollover.${teacherId}`;
+
+  const fetchBackendClasses = async () => {
+    if (!teacherId) {
+      return [];
+    }
+    return teacherService.getClasses(teacherId);
+  };
 
   React.useEffect(() => {
-    if (!staffId) return;
-    mockTeacherService.getClasses(staffId).then(setTeacherClasses);
-  }, [staffId]);
+    if (!teacherId) return;
+    fetchBackendClasses()
+      .then(setTeacherClasses)
+      .catch((err) => console.error('[TeacherDashboard] failed to load classes:', err));
+  }, [teacherId]);
 
   React.useEffect(() => {
-    if (!staffId || !teacherClasses || teacherClasses.length === 0) return;
+    if (!teacherId || !teacherClasses || teacherClasses.length === 0) return;
 
     const currentSubjects = [...new Set(teacherClasses.map(c => c.subject))].sort();
     const hasSeenThisSession = sessionStorage.getItem(SESSION_SEEN_KEY);
@@ -57,7 +66,7 @@ export function TeacherDashboard() {
     }
 
     localStorage.setItem(ROLLOVER_STORAGE_KEY, JSON.stringify(currentSubjects));
-  }, [staffId, ROLLOVER_STORAGE_KEY, SESSION_SEEN_KEY]);
+  }, [teacherId, ROLLOVER_STORAGE_KEY, SESSION_SEEN_KEY, teacherClasses]);
 
   const handleDismissBanner = () => {
     setRolloverBannerVisible(false);

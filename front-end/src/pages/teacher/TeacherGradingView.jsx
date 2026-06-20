@@ -4,13 +4,11 @@ import { Search, Filter, BookOpen, Percent, GraduationCap, Clock, ChevronRight, 
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
 import { GradingSheet } from '../shared/GradingSheet';
-import mockTeacherService from '../../services/mockTeacherService';
-import { notification } from '../../services/notificationService';
-import { eventBus } from '../../services/eventBus';
+import { teacherService } from '../../services';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
-import { Input } from '../../components/ui/input';
 import { NotificationBell } from '../../components/shared/NotificationBell';
+import { useTeacherSubjectConfig } from '../../lib/hooks/api/teacher';
 
 const SUBJECT_CONFIG = {
   'General Agriculture': {
@@ -66,16 +64,13 @@ export function TeacherGradingView() {
         return;
       }
       try {
-        const classes = await mockTeacherService.getClasses(user.id);
-        const meta = await mockTeacherService.getGradingStatusMeta();
-        const filters = await mockTeacherService.getGradingFilterOptions();
-        const students = await mockTeacherService.getGradingStudents();
-        const subjectConfig = await mockTeacherService.getSubjectConfig();
+        const classes = await teacherService.getClasses(user.id || user.profileId);
+        const meta = await teacherService.getGradingStatusMeta();
+        const filters = await teacherService.getGradingFilterOptions();
         
         setGradingClasses(classes || []);
         setStatusMeta(meta || {});
         setFilterOptions(filters || []);
-        setGradingStudents(students || []);
       } catch (err) {
         setError('Failed to load grading data');
       } finally {
@@ -84,7 +79,7 @@ export function TeacherGradingView() {
     };
 
     fetchClasses();
-  }, [user?.id]);
+  }, [user?.id, user?.profileId]);
 
   /* ── Filtered class list ── */
   const totalStudents = gradingClasses.reduce((sum, c) => sum + (c.studentCount || 0), 0);
@@ -112,7 +107,7 @@ export function TeacherGradingView() {
   /* ── Class selection: no route change, just state ── */
   const handleSelectClass = useCallback(async (cls) => {
     setSelectedClass(cls);
-    const students = await mockTeacherService.getGradingStudents(cls.subject, cls.className);
+    const students = await teacherService.getGradingStudents(cls.subject, cls.className);
     setGradingStudents(students || []);
   }, []);
 

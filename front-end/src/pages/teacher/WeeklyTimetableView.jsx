@@ -1,7 +1,6 @@
 import React from 'react';
 import { cn } from '../../lib/utils';
 import { WeeklyClassCard } from '../../components/shared/WeeklyClassCard';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../../components/ui/tooltip';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const HOURS = Array.from({ length: 10 }, (_, i) => i + 8);
@@ -15,8 +14,7 @@ export function WeeklyTimetableView({
   hoveredId 
 }) {
   return (
-    <TooltipProvider delayDuration={200}>
-      <div className="h-full flex flex-col p-6 overflow-auto">
+    <div className="h-full flex flex-col p-6 overflow-auto">
         <div className="min-w-[1000px] flex-1 flex flex-col">
           
           <div className="flex border-b border-border pb-4">
@@ -97,6 +95,5 @@ export function WeeklyTimetableView({
           </div>
         </div>
       </div>
-    </TooltipProvider>
-  );
+    );
 }

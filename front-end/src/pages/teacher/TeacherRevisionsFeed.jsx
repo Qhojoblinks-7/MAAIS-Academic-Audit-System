@@ -16,12 +16,10 @@ import {
    Search,
    ChevronDown,
    ChevronUp
- } from 'lucide-react';
+  } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
-import mockTeacherService from '../../services/mockTeacherService';
-import { notification } from '../../services/notificationService';
-import { eventBus } from '../../services/eventBus';
+import { teacherService } from '../../services';
 import { statusStyles, severityStyles } from '../shared/RevisionsFeed';
 
 const TeacherRevisionsFeed = () => {
@@ -41,14 +39,14 @@ const TeacherRevisionsFeed = () => {
     const fetchRevisions = async () => {
       if (!user?.id) return;
       try {
-        const data = await mockTeacherService.getGradeRevisions?.(user.id) || [];
+        const data = await teacherService.getGradeRevisions?.(user.id || user.profileId) || [];
         setRevisions(data);
       } catch (e) {
         console.error('Failed to fetch revisions:', e);
       }
     };
     fetchRevisions();
-  }, [user?.id]);
+  }, [user?.id, user?.profileId]);
 
   useEffect(() => {
     const queryId = searchParams.get('revision');
@@ -75,7 +73,7 @@ const TeacherRevisionsFeed = () => {
     return matchesTab && matchesSearch;
   });
 
-  const appendTeacherResponse = async () => {
+const appendTeacherResponse = async () => {
     if (!replyText.trim() || !selected) return;
 
     try {
@@ -91,22 +89,15 @@ const TeacherRevisionsFeed = () => {
         }]
       };
 
-      await mockTeacherService.updateGradeRevision?.(selected.id, updatedRevision);
+      await teacherService.updateGradeRevision?.(selected.id, updatedRevision);
 
-      if (eventBus?.emit) {
-        eventBus.emit('teacher-response-submitted', { recordId: selected.id, message: replyText });
-      }
-      if (notification?.notifyHODOfTeacherAction) {
-        await notification.notifyHODOfTeacherAction?.(selected.id, 'TEACHER_RESPONSE', replyText);
-      }
-
-setRevisions(prev => prev.map(item => item.id === selected.id ? updatedRevision : item));
-       setSelected(updatedRevision);
-       setReplyText('');
-     } catch (e) {
-       console.error('Failed to submit response:', e);
-     }
-   };
+      setRevisions(prev => prev.map(item => item.id === selected.id ? updatedRevision : item));
+      setSelected(updatedRevision);
+      setReplyText('');
+    } catch (e) {
+      console.error('Failed to submit response:', e);
+    }
+  };
 
    const sendDiscussionMessage = async () => {
      if (!discussionInput.trim() || !selected) return;

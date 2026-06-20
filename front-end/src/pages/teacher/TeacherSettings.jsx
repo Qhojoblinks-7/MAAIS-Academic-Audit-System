@@ -5,7 +5,7 @@ import {
   User, BookOpen, Save, CheckCircle2, Clock, Shield, Bell, Smartphone, Fingerprint, Edit3, Eye, EyeOff, Phone, Plus, Calendar, Award, Users,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import mockTeacherService from '../../services/mockTeacherService';
+import { teacherService } from '../../services';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { Switch } from '../../components/ui/switch';
@@ -32,9 +32,9 @@ export function TeacherSettings() {
   React.useEffect(() => {
     const fetchData = async () => {
       try {
-        const profileData = await mockTeacherService.getProfile();
-        const classes = await mockTeacherService.getSettingsClasses();
-        const prefs = await mockTeacherService.getNotificationPreferences();
+        const profileData = await teacherService.getProfile();
+        const classes = await teacherService.getSettingsClasses();
+        const prefs = await teacherService.getNotificationPreferences();
         
         setProfile(profileData || {});
         setSettingsClasses(classes || []);

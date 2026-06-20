@@ -111,7 +111,7 @@ class NotificationService {
   async sendHODAlert(teacherId, action, details) {
     // Send via REST API (for persistence)
     try {
-      const result = await request('POST', '/api/notifications/hod-action', {
+      const result = await request('POST', '/comms/notifications/hod-action', {
         teacherId,
         action,
         details,
@@ -151,7 +151,7 @@ class NotificationService {
   async sendTeacherAlertToHOD(teacherId, action, details) {
     // Send via REST API (for persistence)
     try {
-      const result = await request('POST', '/api/notifications/teacher-action', {
+      const result = await request('POST', '/comms/notifications/teacher-action', {
         teacherId,
         action,
         details,
@@ -225,11 +225,11 @@ class NotificationService {
   }
 
   async markAsRead(notificationId) {
-    return request('PATCH', `/api/notifications/${notificationId}/read`);
+    return request('PATCH', `/comms/notifications/${notificationId}/read`);
   }
 
   async getUnread(userId) {
-    return request('GET', `/api/notifications/unread?userId=${userId}`);
+    return request('GET', `/comms/notifications/unread?userId=${userId}`);
   }
 
   subscribe(callback) {

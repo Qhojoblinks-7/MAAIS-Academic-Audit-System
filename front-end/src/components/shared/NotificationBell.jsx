@@ -107,7 +107,7 @@ export function NotificationBell() {
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">{notif.title}</p>
                       <p className="text-xs text-gray-500 truncate">{notif.message}</p>
-                      <time className="text-xs text-gray-400">{new Date(notif.timestamp).toLocaleTimeString()}</time>
+                      <time className="text-xs text-gray-400">{new Date(notif.timestamp || notif.createdAt).toLocaleTimeString()}</time>
                       <button
                         onClick={() => markAsRead(notif.id)}
                         className="ml-2 text-xs text-blue-500 hover:underline"

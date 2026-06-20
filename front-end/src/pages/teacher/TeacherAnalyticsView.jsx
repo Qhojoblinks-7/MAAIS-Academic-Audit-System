@@ -12,7 +12,7 @@ import {
 import { cn } from '../../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { useRole } from '../../context/RoleContext';
-import mockTeacherService from '../../services/mockTeacherService';
+import { teacherService } from '../../services';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../../components/ui/tooltip';
 
 const OBS_TYPES_MODULE = ['Behavioral', 'Academic', 'Lab Safety', 'Collaboration', 'Punctuality'];
@@ -57,8 +57,8 @@ export function TeacherAnalyticsView() {
         return;
       }
       try {
-        const obsData = await mockTeacherService.getAnalytics(user.id);
-        const gradeCfg = await mockTeacherService.getGradeConfig();
+        const obsData = await teacherService.getAnalytics(user.id || user.profileId);
+        const gradeCfg = await teacherService.getGradeConfig();
         
         setObservations(obsData.observations || []);
         setClassProgress(obsData.classProgress || FALLBACK_CLASS_PROGRESS);
@@ -72,7 +72,7 @@ export function TeacherAnalyticsView() {
       }
     };
     fetchAnalytics();
-  }, [user?.id]);
+  }, [user?.id, user?.profileId]);
 
   function getGradeBand(pct) {
     if (pct >= 75) return 'A1';

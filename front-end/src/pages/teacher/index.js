@@ -13,3 +13,4 @@ export { WeeklyTimetableView } from "./WeeklyTimetableView";
 export { DailyTimetableView } from "./DailyTimetableView";
 export { ResourceModal } from "./ResourceModal";
 export { TeacherRevisionsFeed } from "./TeacherRevisionsFeed";
+export { MobileTimetableView } from "./MobileTimetableView";
