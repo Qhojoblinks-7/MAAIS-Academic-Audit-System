@@ -1806,19 +1806,9 @@
         }
       ]
     },
+
     "observations": {
       "items": [
-        {
-          "class": "SHS 1 Agric B",
-          "comment": "Exhibited high safety protocol compliance.",
-          "date": "2026-05-14",
-          "id": "o1",
-          "index": "001",
-          "status": "Active",
-          "student": "Angela Owusu",
-          "teacherName": "Mr. Kwame Mensah",
-          "type": "Behavioral"
-        },
         {
           "class": "SHS 1 Agric B",
           "comment": "Led the workshop group effectively.",

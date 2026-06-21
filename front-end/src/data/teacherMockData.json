@@ -57,14 +57,14 @@
   "observations": {
     "description": "Teacher observation records. Source of truth: student records table. Ama Serwaa index 009 verified in GradingSheet.jsx:682.",
     "items": [
-      { "id": "o1", "type": "Behavioral", "student": "Angela Owusu", "index": "001", "class": "SHS 1 Agric B", "date": "2026-05-14", "comment": "Exhibited high safety protocol compliance.", "status": "Active" },
-      { "id": "o2", "type": "Collaboration", "student": "Kwame Mensah", "index": "017", "class": "SHS 1 Agric B", "date": "2026-05-08", "comment": "Led the workshop group effectively.", "status": "Active" },
-      { "id": "o3", "type": "Behavioral", "student": "Yaw Boateng", "index": "023", "class": "SHS 2 Agric A", "date": "2026-05-05", "comment": "Consistent punctuality this term.", "status": "Active" },
-      { "id": "o4", "type": "Academic", "student": "Ama Serwaa", "index": "009", "class": "SHS 1 Agric B", "date": "2026-04-28", "comment": "Near top percentile in mid-term practical.", "status": "Active" },
-      { "id": "o5", "type": "Behavioral", "student": "Kofi Mensah", "index": "005", "class": "SHS 3 Sci 1", "date": "2026-04-20", "comment": "Shows steady improvement in concentration.", "status": "Resolved" },
-      { "id": "o6", "type": "Punctuality", "student": "Abena Owusu", "index": "012", "class": "SHS 1 Agric B", "date": "2026-04-15", "comment": "Three consecutive late arrivals noted.", "status": "Active" },
-      { "id": "o7", "type": "Lab Safety", "student": "Yaw Boateng", "index": "023", "class": "SHS 2 Agric A", "date": "2026-04-10", "comment": "Needs reminder on chemical handling.", "status": "Active" },
-      { "id": "o8", "type": "Academic", "student": "Kwame Mensah", "index": "017", "class": "SHS 1 Agric B", "date": "2026-04-03", "comment": "Strong grasp of theoretical content.", "status": "Resolved" }
+      { "id": "o1", "type": "Behavioral", "student": "Angela Owusu", "index": "001", "class": "SHS 1 Agric B", "date": "2026-05-14", "comment": "Exhibited high safety protocol compliance.", "status": "Active", "teacher": "Mr. Kwame Mensah", "teacherName": "Mr. Kwame Mensah" },
+      { "id": "o2", "type": "Collaboration", "student": "Kwame Mensah", "index": "017", "class": "SHS 1 Agric B", "date": "2026-05-08", "comment": "Led the workshop group effectively.", "status": "Active", "teacher": "Dr. Yaw Boateng", "teacherName": "Dr. Yaw Boateng" },
+      { "id": "o3", "type": "Behavioral", "student": "Yaw Boateng", "index": "023", "class": "SHS 2 Agric A", "date": "2026-05-05", "comment": "Consistent punctuality this term.", "status": "Active", "teacher": "Mr. Kwame Mensah", "teacherName": "Mr. Kwame Mensah" },
+      { "id": "o4", "type": "Academic", "student": "Ama Serwaa", "index": "009", "class": "SHS 1 Agric B", "date": "2026-04-28", "comment": "Near top percentile in mid-term practical.", "status": "Active", "teacher": "Mr. Kwame Mensah", "teacherName": "Mr. Kwame Mensah" },
+      { "id": "o5", "type": "Behavioral", "student": "Kofi Mensah", "index": "005", "class": "SHS 3 Sci 1", "date": "2026-04-20", "comment": "Shows steady improvement in concentration.", "status": "Resolved", "teacher": "Dr. Yaw Boateng", "teacherName": "Dr. Yaw Boateng" },
+      { "id": "o6", "type": "Punctuality", "student": "Abena Owusu", "index": "012", "class": "SHS 1 Agric B", "date": "2026-04-15", "comment": "Three consecutive late arrivals noted.", "status": "Active", "teacher": "Mr. Kwame Mensah", "teacherName": "Mr. Kwame Mensah" },
+      { "id": "o7", "type": "Lab Safety", "student": "Yaw Boateng", "index": "023", "class": "SHS 2 Agric A", "date": "2026-04-10", "comment": "Needs reminder on chemical handling.", "status": "Active", "teacher": "Mr. Kwame Mensah", "teacherName": "Mr. Kwame Mensah" },
+      { "id": "o8", "type": "Academic", "student": "Kwame Mensah", "index": "017", "class": "SHS 1 Agric B", "date": "2026-04-03", "comment": "Strong grasp of theoretical content.", "status": "Resolved", "teacher": "Mr. Kwame Mensah", "teacherName": "Mr. Kwame Mensah" }
     ]
   },
 
@@ -88,7 +88,7 @@
   },
 
   "analyticsObservations": {
-    "description": "Observations data for TeacherAnalyticsView. Uses lowercase status (active/resolved) unlike TeacherObservationsView.",
+    "description": "Observations data for TeacherAnalyticsView. Uses lowercase status (active/resolved).",
     "items": [
       { "id": "ao1", "type": "Lab Safety", "student": "Angela Owusu", "index": "001", "class": "SHS 1 Agric B", "date": "2026-05-14", "comment": "Exhibited high safety protocol compliance.", "status": "active" },
       { "id": "ao2", "type": "Collaboration", "student": "Kwame Mensah", "index": "017", "class": "SHS 1 Agric B", "date": "2026-05-08", "comment": "Led the workshop group effectively.", "status": "active" },

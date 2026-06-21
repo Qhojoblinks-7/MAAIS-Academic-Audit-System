@@ -29,6 +29,31 @@ function normalizeTimetableEntries(entries) {
   }));
 }
 
+function firstDefined(...values) {
+  return values.find((value) => value !== undefined && value !== null);
+}
+
+function normalizeObservationPayload(observation) {
+  const className = firstDefined(observation?.className, observation?.class);
+  const index = firstDefined(observation?.index, observation?.indexNumber, observation?.studentIndex);
+  const subject = firstDefined(observation?.type, observation?.subject, observation?.subjectName);
+  const comment = firstDefined(observation?.comment, observation?.observationText, observation?.remark);
+
+  return {
+    ...observation,
+    className,
+    class: className,
+    index,
+    indexNumber: index,
+    studentIndex: index,
+    type: subject,
+    subject,
+    subjectName: subject,
+    comment,
+    observationText: comment,
+  };
+}
+
 async function request(method, path, body) {
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
@@ -52,6 +77,8 @@ function createRealService() {
     getClasses: (teacherId, params = undefined) =>
       request('GET', `/teacher/classes/${teacherId}`, params ? { params } : undefined)
         .then(r => r?.data ?? r),
+    getProfile: () =>
+      request('GET', '/teacher/profile').then(r => r?.data ?? r),
     getAnalytics: (teacherId) =>
       request('GET', `/teacher/classes/${teacherId}/analytics`).then(r => r?.data ?? r),
     getObservations: (teacherId, params = {}) =>
@@ -59,20 +86,15 @@ function createRealService() {
         .then(r => r?.data ?? r),
     getGradeRevisions: (teacherId) =>
       request('GET', `/teacher/grade-revisions`).then(r => r?.data ?? r),
-getMissingObservations: () =>
-      request('GET', '/grading/audit-tray').then(r => {
+    getMissingObservations: () =>
+      request('GET', '/grading/audit-tray').then((r) => {
         const data = r?.data ?? r ?? [];
-        if (!Array.isArray(data)) return [];
-        return data.map(o => ({
-          id: o.id,
-          student: o.student ? `${o.student.firstName || ''} ${o.student.lastName || ''}`.trim() : 'Unknown',
-          index: o.student?.indexNumber || '',
-          class: 'Unknown Class',
-          teacher: 'Unknown',
-          type: o.subject?.name || 'Unknown Subject',
-          status: 'Missing',
-          date: o.createdAt ? new Date(o.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-        }));
+        return Array.isArray(data) ? data : [];
+      }),
+    getObservationLogs: () =>
+      request('GET', '/teacher/observations').then((r) => {
+        const data = r?.data ?? r ?? [];
+        return Array.isArray(data) ? data : [];
       }),
     getSupportObservations: () =>
       request('GET', '/teacher/support/observations').then(r => r?.data ?? r),
@@ -90,8 +112,6 @@ getMissingObservations: () =>
       request('GET', '/teacher/settings/classes').then(r => r?.data ?? r),
     getNotificationPreferences: () =>
       request('GET', '/teacher/settings/preferences').then(r => r?.data ?? r),
-    getProfile: () =>
-      request('GET', '/teacher/profile').then(r => r?.data ?? r),
     getGradingStudents: (subject, className) =>
       request('GET', `/teacher/grading/students?subject=${encodeURIComponent(subject)}&class=${encodeURIComponent(className)}`)
         .then(r => r?.data ?? r),
@@ -101,24 +121,17 @@ getMissingObservations: () =>
       request('GET', '/teacher/grading/status-meta').then(r => r?.data ?? r),
     getGradingFilterOptions: () =>
       request('GET', '/teacher/grading/filters').then(r => r?.data ?? r),
-    getObservationTypes: () =>
-      request('GET', '/teacher/observation-types').then(r => r?.data ?? r),
-    getObservationColors: () =>
-      request('GET', '/teacher/observation-colors').then(r => r?.data ?? r),
-    getAnalyticsObservationColors: () =>
-      request('GET', '/teacher/analytics-observation-colors').then(r => r?.data ?? r),
-    getGradeConfig: () =>
-      request('GET', '/teacher/grade-config').then(r => r?.data ?? r),
+    getGradingIds: (subjectName, className) =>
+      request('GET', `/teacher/grading/ids?subject=${encodeURIComponent(subjectName)}&class=${encodeURIComponent(className)}`)
+        .then(r => r?.data ?? r ?? {}),
+    bulkUpsertGradeEntries: (entries) =>
+      request('POST', '/grading/entries/bulk', { entries }).then(r => r?.data ?? r),
     createObservation: (observation) =>
-      request('POST', '/teacher/observations', observation).then(r => r?.data ?? r),
+      request('POST', '/teacher/observations', normalizeObservationPayload(observation)).then(r => r?.data ?? r),
     updateObservation: (observationId, patch) =>
-      request('PATCH', `/teacher/observations/${observationId}`, patch).then(r => r?.data ?? r),
+      request('PATCH', `/teacher/observations/${observationId}`, normalizeObservationPayload(patch)).then(r => r?.data ?? r),
     deleteObservation: (observationId) =>
-       request('DELETE', `/teacher/observations/${observationId}`).then(r => r?.data ?? r),
-    submitGradeRevision: (revisionData) =>
-       request('POST', '/teacher/grade-revisions', revisionData).then(r => r?.data ?? r),
-    updateGradeRevision: (revisionId, updatedData) =>
-       request('PATCH', `/teacher/grade-revisions/${revisionId}`, updatedData).then(r => r?.data ?? r),
+      request('DELETE', `/teacher/observations/${observationId}`).then(r => r?.data ?? r),
   };
 }
 

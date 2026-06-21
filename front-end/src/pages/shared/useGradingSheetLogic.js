@@ -9,6 +9,7 @@ import {
   calcRoman,
 } from '../../constants/grading';
 import { notification } from '../../services/notificationService';
+import { teacherService } from '../../services/teacherService';
 
 /**
  * useGradingSheetLogic — single custom hook owning all GradingSheet state.
@@ -125,6 +126,45 @@ export function useGradingSheetLogic({
   const [flaggedStudents, setFlaggedStudents] = useState({});
   const [labSafetyCompliance, setLabSafetyCompliance] = useState({});
 
+  // Backend ID cache — resolved once per sheet mount
+  const [backendIds, setBackendIds] = useState(null);
+  const [idResolutionError, setIdResolutionError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const clearIds = () => {
+      if (!cancelled) {
+        setBackendIds(null);
+        setIdResolutionError(null);
+      }
+    };
+    const resolveIds = async () => {
+      if (!classInfo?.subject || !classInfo?.className) {
+        clearIds();
+        return;
+      }
+      try {
+        const ids = await teacherService.getGradingIds(classInfo.subject, classInfo.className);
+        if (cancelled) return;
+        setBackendIds(ids || {});
+        setIdResolutionError(null);
+      } catch (err) {
+        if (cancelled) return;
+        console.error('[GradingSheet] failed to resolve backend IDs:', err);
+        setBackendIds(null);
+        setIdResolutionError(err.message || 'Unknown error');
+      }
+    };
+    resolveIds();
+    return () => { cancelled = true; };
+  }, [classInfo?.subject, classInfo?.className]);
+
+  // Derived resolution readiness
+  const backendReady = useMemo(
+    () => !!(backendIds?.subjectId && backendIds?.classId && backendIds?.termId),
+    [backendIds],
+  );
+
   // ── Derived ─────────────────────────────────────────────────────────────────
   const missingCount = useMemo(
     () => students.filter(s => s.auditStatus === 'MISSING').length,
@@ -217,45 +257,118 @@ export function useGradingSheetLogic({
     setStpErrors(errors);
   }, [stpRules, students, isTermFinalized]);
 
-   const handleSaveDraft = useCallback(() => {
-     if (isTermFinalized) return;
-     setSubmissionStatus('DRAFT');
-     setStudents(prev => prev.map(s => ({ ...s, _draftStatus: 'DRAFT' })));
-     if (teacherId) {
-       notification.sendHODAlert(
-         teacherId,
-         'GRADE_DRAFT_SAVED',
-         {
-           classId: classInfo.id,
-           subject: classInfo.subject,
-           className: classInfo.className,
-           timestamp: new Date().toISOString(),
-         }
-       ).catch(err => {
-         console.error('Failed to send HOD alert for grade draft:', err);
-       });
-     }
-   }, [isTermFinalized, teacherId, classInfo, notification]);
+  const mapStudentToBackendEntry = (student) => ({
+    studentId: student.id,
+    subjectId: backendIds?.subjectId,
+    termId: backendIds?.termId,
+    classScore: parseFloat(student.sba) || 0,
+    examScore: parseFloat(student.exam) || 0,
+    remark: student.remark || '',
+    hasObservation: !!(student.auditStatus === 'OK' || student.auditStatus === 'ACTIVE'),
+    observationText: student.remark || '',
+  });
 
-   const handleSubmitToHOD = useCallback(() => {
-     if (isTermFinalized || missingCount > 0) return;
-     setSubmissionStatus('SUBMITTED');
-     setStudents(prev => prev.map(s => ({ ...s, _submissionStatus: 'SUBMITTED' })));
-     if (teacherId) {
-       notification.sendHODAlert(
-         teacherId,
-         'GRADE_SUBMITTED_TO_HOD',
-         {
-           classId: classInfo.id,
-           subject: classInfo.subject,
-           className: classInfo.className,
-           timestamp: new Date().toISOString(),
-         }
-       ).catch(err => {
-         console.error('Failed to send HOD alert for grade submission:', err);
-       });
-     }
-   }, [isTermFinalized, missingCount, teacherId, classInfo, notification]);
+  const persistGradesToBackend = useCallback(
+    async (entriesPayload) => {
+      if (!backendReady || !entriesPayload || entriesPayload.length === 0) return null;
+      const cleaned = entriesPayload
+        .map(mapStudentToBackendEntry)
+        .filter((e) => e.studentId && e.subjectId && e.termId);
+      if (cleaned.length === 0) return null;
+      const result = await teacherService.bulkUpsertGradeEntries(cleaned);
+      return result;
+    },
+    [backendReady, backendIds, teacherService],
+  );
+
+  const handleSaveDraft = useCallback(() => {
+    if (isTermFinalized) return;
+    setSubmissionStatus('DRAFT');
+    setStudents(prev => prev.map(s => ({ ...s, _draftStatus: 'DRAFT' })));
+    if (!backendReady) {
+      if (idResolutionError) console.warn('[GradingSheet] backend IDs unresolved — saving in local mode');
+      if (teacherId) {
+        notification.sendHODAlert(
+          teacherId,
+          'GRADE_DRAFT_SAVED',
+          {
+            classId: classInfo.id,
+            subject: classInfo.subject,
+            className: classInfo.className,
+            timestamp: new Date().toISOString(),
+          }
+        ).catch(err => {
+          console.error('Failed to send HOD alert for grade draft:', err);
+        });
+      }
+      return;
+    }
+    persistGradesToBackend(students)
+      .then(() => {
+        if (teacherId) {
+          notification.sendHODAlert(
+            teacherId,
+            'GRADE_DRAFT_SAVED',
+            {
+              classId: classInfo.id,
+              subject: classInfo.subject,
+              className: classInfo.className,
+              timestamp: new Date().toISOString(),
+            }
+          ).catch(err => {
+            console.error('Failed to send HOD alert for grade draft:', err);
+          });
+        }
+      })
+      .catch((err) => {
+        console.error('[GradingSheet] draft persistence failed:', err);
+        setSubmissionStatus('ERROR');
+      });
+  }, [isTermFinalized, teacherId, classInfo, students, backendReady, idResolutionError, persistGradesToBackend, notification]);
+
+  const handleSubmitToHOD = useCallback(() => {
+    if (isTermFinalized || missingCount > 0) return;
+    setSubmissionStatus('SUBMITTED');
+    setStudents(prev => prev.map(s => ({ ...s, _submissionStatus: 'SUBMITTED' })));
+    if (!backendReady) {
+      if (teacherId) {
+        notification.sendHODAlert(
+          teacherId,
+          'GRADE_SUBMITTED_TO_HOD',
+          {
+            classId: classInfo.id,
+            subject: classInfo.subject,
+            className: classInfo.className,
+            timestamp: new Date().toISOString(),
+          }
+        ).catch(err => {
+          console.error('Failed to send HOD alert for grade submission:', err);
+        });
+      }
+      return;
+    }
+    persistGradesToBackend(students)
+      .then(() => {
+        if (teacherId) {
+          notification.sendHODAlert(
+            teacherId,
+            'GRADE_SUBMITTED_TO_HOD',
+            {
+              classId: classInfo.id,
+              subject: classInfo.subject,
+              className: classInfo.className,
+              timestamp: new Date().toISOString(),
+            }
+          ).catch(err => {
+            console.error('Failed to send HOD alert for grade submission:', err);
+          });
+        }
+      })
+      .catch((err) => {
+        console.error('[GradingSheet] submission persistence failed:', err);
+        setSubmissionStatus('ERROR');
+      });
+  }, [isTermFinalized, missingCount, teacherId, classInfo, students, backendReady, persistGradesToBackend, notification]);
 
   const handleSaveBehavioralRatings = useCallback(() => {
     if (isTermFinalized) return;
@@ -361,6 +474,10 @@ export function useGradingSheetLogic({
     handleSubmitToHOD,
     handleSaveBehavioralRatings,
     handleExportWAEC,
+    // Backend connectivity
+    backendIds,
+    backendReady,
+    idResolutionError,
     // Sidebar helpers
     updateBehavioralRating,
     updateBehavioralComment,

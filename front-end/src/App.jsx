@@ -22,11 +22,13 @@ import {
 import { StudentTimetable, StudentSettings, StudentSupport, StudentPortal, StudentProfile } from './pages/student';
 import { 
   TeacherTimetableView, TeacherDashboard, TeacherGradingView, 
-  TeacherObservationsView, TeacherAnalyticsView, TeacherArchiveView, 
+  TeacherAnalyticsView, TeacherArchiveView, 
   TeacherArchiveDetailView, TeacherSettings, TeacherSupport, 
   TeacherRevisionsFeed, TeacherMissingObservations, MobileTimetableView
 } from './pages/teacher';
 import { LoginPage } from './pages/auth/LoginPage';
+import { gradingService } from './services/gradingService';
+import { teacherService } from './services/teacherService';
 import { TooltipProvider } from './components/ui/tooltip';
 import { UIProvider, useUI } from './context/UIContext';
 import { useRole } from './context/RoleContext';
@@ -42,53 +44,95 @@ function RoleBasedMissingObservations() {
   return user?.role === 'TEACHER' ? <TeacherMissingObservations /> : <HODMissingObservations />;
 }
 
-// Standalone Grading Context Wrapper
-function StandaloneGradingWrapper() {
+// Grading Route Data Loader
+function GradingRouteLoader() {
   const location = useLocation();
+  const { user } = useRole();
   const searchParams = new URLSearchParams(location.search);
+  const subjectParam = searchParams.get('subject');
+  const classParam = searchParams.get('class');
   const getMissingObsId = searchParams.get('missing');
   const getTargetStudentIndex = searchParams.get('student');
-  
-  const SUBJECT_CONFIG_STANDALONE = {
-    'General Agriculture': {
-      sections: ['Paper 1 (50)', 'Paper 2-Agri (90)', 'Paper 3-Pract (60)'],
-      maxRaw: 200, sectionCount: 3, hasPractical: true, practicalMarks: 60,
-      sbaLabel: 'SBA (30%)', examLabel: 'Exam (70%)',
-    },
-    'Core Mathematics': {
-      sections: ['Sec A (40)', 'Sec B (60)'],
-      maxRaw: 100, sectionCount: 2, hasPractical: false, practicalMarks: 0,
-      sbaLabel: 'SBA (30%)', examLabel: 'Exam (70%)',
-    },
-    'English Language': {
-      sections: ['Sec A-Essay (50)', 'Sec B-Comp (20)', 'Sec C-Summary (30)'],
-      maxRaw: 100, sectionCount: 3, hasPractical: false, practicalMarks: 0,
-      sbaLabel: 'SBA (30%)', examLabel: 'Exam (70%)',
-    },
-  };
 
-  const STANDALONE_MOCK_STUDENTS = [
-    { id: 'stud001', name: 'Angela Owusu', index: '001', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 35, secB: 50, secC: 38, sba: 28.5, exam: 61.5, final: 90.0, grade: 'A1', auditStatus: 'MISSING' },
-    { id: 'stud002', name: 'Kwame Mensah', index: '002', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 20, secB: 30, secC: 15, sba: 15.2, exam: 32.5, final: 47.7, grade: 'D7', auditStatus: 'MISSING' },
-    { id: 'stud003', name: 'Yaw Boateng', index: '003', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 35, secB: 50, secC: 38, sba: 28.5, exam: 61.5, final: 90.0, grade: 'A1', auditStatus: 'COMPLETE' },
-    { id: 'stud004', name: 'Esi Ansah', index: '004', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 32, secB: 48, secC: 35, sba: 26.0, exam: 55.0, final: 81.0, grade: 'A1', auditStatus: 'COMPLETE' },
-    { id: 'stud005', name: 'Kofi Appiah', index: '005', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 28, secB: 42, secC: 32, sba: 22.0, exam: 46.0, final: 68.0, grade: 'B3', auditStatus: 'COMPLETE' },
-    { id: 'stud006', name: 'Yaw Boateng', index: '006', form: 'SHS 1', programme: 'AGRICULTURE', subjects: ['General Agriculture'], secA: 30, secB: 40, secC: 35, sba: 25.0, exam: 50.0, final: 75.0, grade: 'A1', auditStatus: 'ACTIVE' },
-  ];
+  const [gradingData, setGradingData] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState('');
 
-  const targetStudentId = getTargetStudentIndex ? `stud${getTargetStudentIndex}` : null;
+  React.useEffect(() => {
+    let cancelled = false;
+    const fetchGradingData = async () => {
+      if (!subjectParam || !classParam) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const gradingIds = await gradingService.getGradingIds(subjectParam, classParam);
+        if (cancelled) return;
+        const [students] = await Promise.all([
+          gradingService.getStudentsForGrading({
+            subjectId: gradingIds?.subjectId,
+            classId: gradingIds?.classId,
+            termId: gradingIds?.termId,
+          }),
+        ]);
+        if (cancelled) return;
+        setGradingData({
+          students: students || [],
+          subjectConfig: {},
+          subjectId: gradingIds?.subjectId,
+          classId: gradingIds?.classId,
+          termId: gradingIds?.termId,
+        });
+      } catch (err) {
+        if (!cancelled) {
+          console.error('[GradingRouteLoader] failed to load grading data:', err);
+          setError(err.message || 'Failed to load grading data');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    fetchGradingData();
+    return () => { cancelled = true; };
+  }, [subjectParam, classParam]);
 
-  const DEFAULT_STANDALONE_CLASSINFO = {
-    id: 'STANDALONE-CLASS',
-    subject: 'General Agriculture',
-    className: 'SHS 1 Agric B',
+  if (loading) {
+    return (
+      <div className="flex-1 overflow-y-auto bg-background p-6 md:p-8 lg:p-10">
+        <div className="max-w-7xl mx-auto flex flex-col items-center justify-center py-24">
+          <p className="text-sm font-medium text-muted-foreground">Loading grading sheet from server…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !gradingData) {
+    return (
+      <div className="flex-1 overflow-y-auto bg-background p-6 md:p-8 lg:p-10">
+        <div className="max-w-7xl mx-auto flex flex-col items-center justify-center py-24">
+          <p className="text-sm text-destructive">{error || 'No class selected for grading'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { students, subjectConfig } = gradingData;
+  const fallbackStudent = students.find((s) => s.auditStatus === 'MISSING') || students[0] || null;
+  const targetStudentId = getTargetStudentIndex
+    ? students.find((s) => s.index === getTargetStudentIndex || s.id === getTargetStudentIndex)?.id || fallbackStudent?.id || null
+    : fallbackStudent?.id || null;
+
+  const DEFAULT_CLASS_INFO = {
+    id: gradingData.classId || subjectParam,
+    subject: subjectParam,
+    className: classParam,
     programme: 'AGRICULTURE',
-    studentCount: 38,
+    studentCount: students.length,
     form: 'SHS 1',
     academicYear: '2025/2026',
   };
 
-  const STP_STANDALONE = [
+  const STP_RULES = [
     { check: (s) => s.final > 100, message: 'Final score exceeds 100%' },
     { check: (s) => s.sba > 30, message: 'SBA exceeds 30% limit' },
     { check: (s) => s.exam > 70, message: 'Exam exceeds 70% limit' },
@@ -97,15 +141,21 @@ function StandaloneGradingWrapper() {
 
   return (
     <GradingSheet
-      classInfo={DEFAULT_STANDALONE_CLASSINFO}
-      students={STANDALONE_MOCK_STUDENTS}
-      subjectConfig={SUBJECT_CONFIG_STANDALONE}
-      stpRules={STP_STANDALONE}
+      classInfo={DEFAULT_CLASS_INFO}
+      teacherId={user?.id || user?.staffId}
+      students={students}
+      subjectConfig={subjectConfig}
+      stpRules={STP_RULES}
       isTermFinalized={false}
       missingObsId={getMissingObsId}
       targetStudentId={targetStudentId}
     />
   );
+}
+
+// Standalone Grading Context Wrapper
+function StandaloneGradingWrapper() {
+  return <GradingRouteLoader />;
 }
 
 // Global Modal Wrapper Component
@@ -256,9 +306,6 @@ function AppContent() {
             } />
             <Route path="/teacher/grading" element={
               <RequireRole allowedRoles={['TEACHER']}><TeacherGradingView /></RequireRole>
-            } />
-            <Route path="/teacher/observations" element={
-              <RequireRole allowedRoles={['TEACHER']}><TeacherObservationsView /></RequireRole>
             } />
             <Route path="/teacher/analytics" element={
               <RequireRole allowedRoles={['TEACHER']}><TeacherAnalyticsView /></RequireRole>

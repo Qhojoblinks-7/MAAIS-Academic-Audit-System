@@ -19,15 +19,6 @@ export function useTeacherAnalytics(teacherId) {
   });
 }
 
-export function useTeacherObservations(teacherId, params) {
-  return useQuery({
-    queryKey: ['teacher', 'observations', teacherId, params],
-    queryFn: () => teacherApi.getObservations(teacherId, params || {}),
-    enabled: !!teacherId,
-    staleTime: 1000 * 60 * 2,
-  });
-}
-
 export function useTeacherSupportObservations() {
   return useQuery({
     queryKey: ['teacher', 'support', 'observations'],
@@ -118,73 +109,11 @@ export function useTeacherGradingFilterOptions() {
   });
 }
 
-export function useTeacherObservationTypes() {
-  return useQuery({
-    queryKey: ['teacher', 'observation-types'],
-    queryFn: teacherApi.getObservationTypes,
-    staleTime: 1000 * 60 * 30,
-  });
-}
-
-export function useTeacherObservationColors() {
-  return useQuery({
-    queryKey: ['teacher', 'observation-colors'],
-    queryFn: teacherApi.getObservationColors,
-    staleTime: 1000 * 60 * 30,
-  });
-}
-
-export function useTeacherAnalyticsObservationColors() {
-  return useQuery({
-    queryKey: ['teacher', 'analytics', 'observation-colors'],
-    queryFn: teacherApi.getAnalyticsObservationColors,
-    staleTime: 1000 * 60 * 30,
-  });
-}
-
 export function useTeacherGradeConfig() {
   return useQuery({
     queryKey: ['teacher', 'grade-config'],
     queryFn: teacherApi.getGradeConfig,
     staleTime: 1000 * 60 * 10,
-  });
-}
-
-export function useCreateObservation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (observation) => teacherApi.createObservation(observation),
-    onSuccess: (_, teacherId) => {
-      if (teacherId) {
-        queryClient.invalidateQueries({ queryKey: ['teacher', 'observations', teacherId] });
-      }
-      queryClient.invalidateQueries({ queryKey: ['teacher', 'analytics'] });
-      queryClient.invalidateQueries({ queryKey: ['teacher', 'support', 'observations'] });
-    },
-  });
-}
-
-export function useUpdateObservation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ observationId, patch }) => teacherApi.updateObservation(observationId, patch),
-    onSuccess: (result, { observationId }) => {
-      queryClient.invalidateQueries({ queryKey: ['teacher', 'observations'] });
-      queryClient.invalidateQueries({ queryKey: ['teacher', 'analytics'] });
-      queryClient.invalidateQueries({ queryKey: ['teacher', 'support', 'observations'] });
-    },
-  });
-}
-
-export function useDeleteObservation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (observationId) => teacherApi.deleteObservation(observationId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teacher', 'observations'] });
-      queryClient.invalidateQueries({ queryKey: ['teacher', 'analytics'] });
-      queryClient.invalidateQueries({ queryKey: ['teacher', 'support', 'observations'] });
-    },
   });
 }
 

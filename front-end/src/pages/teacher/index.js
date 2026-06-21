@@ -5,7 +5,6 @@ export { TeacherSupport } from "./TeacherSupport";
 export { TeacherArchiveView } from "./TeacherArchiveView";
 export { TeacherArchiveDetailView } from "./TeacherArchiveDetailView";
 export { TeacherGradingView } from "./TeacherGradingView";
-export { TeacherObservationsView } from "./TeacherObservationsView";
 export { TeacherAnalyticsView } from "./TeacherAnalyticsView";
 export { TeacherMissingObservations } from "./TeacherMissingObservations";
 export { TimetableHeader } from "./TimetableHeader";

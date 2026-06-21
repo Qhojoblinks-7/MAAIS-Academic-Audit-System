@@ -52,6 +52,24 @@ const createMockService = () => ({
     return { observations: items };
   },
 
+getMissingObservations: async () => {
+    await simulateDelay();
+    const items = mockData.teacher.observations?.items || [];
+    // Return mix of Missing and Logged to showcase both statuses
+    const missing = items.map((o, i) => ({
+      id: o.id,
+      student: o.student || 'Unknown Student',
+      index: o.index || '000',
+      class: o.class || 'Unknown Class',
+      teacher: o.teacher || o.teacherName || 'Unknown Teacher',
+      type: o.type || 'Behavioral',
+      comment: o.comment || '',
+      status: i % 3 === 0 ? 'Missing' : 'Logged',
+      date: o.date || new Date().toISOString().split('T')[0],
+    }));
+    return missing;
+  },
+
   getSupportObservations: async () => {
     await simulateDelay();
     return mockData.teacher.supportObservations?.items || [];

@@ -6,7 +6,6 @@ import {
   Calendar,
   AlertCircle,
   ClipboardCheck,
-  GraduationCap,
   Database,
   LifeBuoy,
   Settings,
@@ -14,7 +13,6 @@ import {
   X,
   AlertTriangle,
   BarChart3,
-  Eye,
   ChevronRight,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -85,22 +83,10 @@ export function TeacherSidebar() {
       badgeColor: 'bg-amber-500',
     },
     {
-      icon: GraduationCap,
-      label: 'Grading',
-      id: 'grading',
-      path: '/grading',
-    },
-    {
       icon: BarChart3,
       label: 'Analytics',
       id: 'analytics',
       path: '/teacher/analytics',
-    },
-    {
-      icon: Eye,
-      label: 'Observations',
-      id: 'observations',
-      path: '/teacher/observations',
     },
     {
       icon: Database,

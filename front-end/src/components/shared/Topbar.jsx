@@ -8,9 +8,9 @@ import { cn } from "../../lib/utils";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "../ui/breadcrumb";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { studentService } from "../../services/studentService";
+import { NotificationBell } from "./NotificationBell";
 
 function BreadcrumbNav() {
   const { user } = useRole();
@@ -292,17 +292,7 @@ export function Topbar() {
         )}
 
         <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-border shrink-0">
-          <Select value={user?.role} onValueChange={handleRoleChange}>
-            <SelectTrigger className="h-7 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider w-auto min-w-20">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="TEACHER">Staff</SelectItem>
-              <SelectItem value="HOD">HOD</SelectItem>
-              <SelectItem value="ADMIN">Admin</SelectItem>
-              <SelectItem value="STUDENT">Student</SelectItem>
-            </SelectContent>
-          </Select>
+          <NotificationBell />
 
           <div className="hidden sm:flex flex-col text-right min-w-0 max-w-[100px]">
             <p className="text-xs font-bold text-text-primary truncate">{user?.name}</p>

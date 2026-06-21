@@ -6,7 +6,6 @@ export { usePromotionHistory, useAcademicYears, useArchiveStats, usePromoteStude
 export {
   useTeacherClasses,
   useTeacherAnalytics,
-  useTeacherObservations,
   useTeacherSupportObservations,
   useTeacherGradeIssues,
   useTeacherGradeIssueStatusMeta,
