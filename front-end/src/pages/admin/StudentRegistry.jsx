@@ -10,12 +10,13 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
+import { useAllStudents, useCreateStudent } from '../../lib/hooks';
 import { 
   ResponsiveContainer, PieChart as RePieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, 
   LineChart as ReLineChart, Line, CartesianGrid
 } from 'recharts';
-import { MOCK_STUDENTS, PROGRAMS, HOUSES, BATCHES } from './data';
+import { PROGRAMS, HOUSES, BATCHES } from './data';
 import {
   Table,
   TableHeader,
@@ -245,7 +246,28 @@ const StudentDossier = ({
 };
 
 export const StudentRegistry = () => {
-  const [students] = useState(MOCK_STUDENTS);
+  const studentsQuery = useAllStudents();
+  const createStudentMutation = useCreateStudent();
+  const students = studentsQuery.data || [];
+  const isLoading = studentsQuery.isLoading;
+
+  const displayStudents = useMemo(() => students.map((s) => ({
+    id: s.id,
+    name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.email || 'Unknown',
+    indexNumber: s.studentProfile?.indexNumber || s.staffId || s.id,
+    batch: '2025/2026',
+    program: s.studentProfile?.currentClass?.name || s.department?.name || 'General',
+    house: 'Nkrumah',
+    averageGrade: 0,
+    atRisk: false,
+    gender: 'N/A',
+    residentialStatus: 'Day',
+    subjects: [],
+    email: s.email,
+    phone: s.phone,
+    role: s.role,
+  })), [students]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBatch, setSelectedBatch] = useState('All');
   const [selectedProgram, setSelectedProgram] = useState('All');
@@ -259,12 +281,12 @@ export const StudentRegistry = () => {
   const [verificationPassword, setVerificationPassword] = useState('');
 
   const selectedStudent = useMemo(() => 
-    students.find(s => s.id === selectedStudentId), 
-    [students, selectedStudentId]
+    displayStudents.find(s => s.id === selectedStudentId), 
+    [displayStudents, selectedStudentId]
   );
 
   const filteredStudents = useMemo(() => {
-    return students.filter(s => {
+    return displayStudents.filter(s => {
       const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                            s.indexNumber.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesBatch = selectedBatch === 'All' || s.batch === selectedBatch;
@@ -273,26 +295,26 @@ export const StudentRegistry = () => {
       const matchesResidence = selectedResidence === 'All' || s.residentialStatus === selectedResidence;
       return matchesSearch && matchesBatch && matchesProgram && matchesHouse && matchesResidence;
     });
-  }, [students, searchQuery, selectedBatch, selectedProgram, selectedHouse, selectedResidence]);
+  }, [displayStudents, searchQuery, selectedBatch, selectedProgram, selectedHouse, selectedResidence]);
 
   const genderData = useMemo(() => [
-    { name: 'Male', value: students.filter(s => s.gender === 'Male').length },
-    { name: 'Female', value: students.filter(s => s.gender === 'Female').length },
-  ], [students]);
+    { name: 'Male', value: displayStudents.filter(s => s.gender === 'Male').length },
+    { name: 'Female', value: displayStudents.filter(s => s.gender === 'Female').length },
+  ], [displayStudents]);
 
   const atRiskCount = useMemo(() => 
-    students.filter(s => s.atRisk).length,
-    [students]
+    displayStudents.filter(s => s.atRisk).length,
+    [displayStudents]
   );
 
   const housePerformanceData = useMemo(() => {
     return HOUSES.map(house => ({
       name: house,
-      average: students.filter(s => s.house === house).length > 0
-        ? Math.round(students.filter(s => s.house === house).reduce((sum, s) => sum + s.averageGrade, 0) / students.filter(s => s.house === house).length)
+      average: displayStudents.filter(s => s.house === house).length > 0
+        ? Math.round(displayStudents.filter(s => s.house === house).reduce((sum, s) => sum + s.averageGrade, 0) / displayStudents.filter(s => s.house === house).length)
         : 0
     }));
-  }, [students]);
+  }, [displayStudents]);
 
   const confirmVerification = () => {
     if (verificationPassword === 'admin123') {
