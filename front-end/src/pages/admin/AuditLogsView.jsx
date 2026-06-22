@@ -12,47 +12,34 @@ import {
 } from '../../components/ui/table';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
-
-const auditLogs = [
-  {
-    id: '1',
-    studentName: 'Angela Owusu',
-    subject: 'General Agric',
-    action: 'UPDATE',
-    oldValue: 45,
-    newValue: 85,
-    justification: 'Error in practical sheet entry - re-evaluated after review.',
-    userId: 'Mr. Hackman',
-    timestamp: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    studentName: 'Kofi Mensah',
-    subject: 'Core Math',
-    action: 'LOCK',
-    justification: 'Term results finalized by HOD.',
-    userId: 'HOD Martha Baah',
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
-  },
-  {
-    id: '3',
-    studentName: 'Yaw Boateng',
-    subject: 'English',
-    action: 'CREATE',
-    newValue: 72,
-    justification: 'Initial mark entry.',
-    userId: 'Mr. Hackman',
-    timestamp: new Date(Date.now() - 7200000).toISOString(),
-  }
-];
+import { useAnalyticsPulse as useAdminAnalyticsPulse } from '../../lib/hooks';
 
 const actionBadgeStyles = {
   UPDATE: 'bg-warning/10 text-warning border-warning/20',
   LOCK: 'bg-success/10 text-success border-success/20',
   CREATE: 'bg-brand-primary/10 text-brand-primary border-brand-primary/20',
+  DELETE: 'bg-destructive/10 text-destructive border-destructive/20',
 };
 
 export function AuditLogsView() {
+  const analyticsQuery = useAdminAnalyticsPulse();
+  const auditLogs = React.useMemo(() => {
+    if (analyticsQuery.data?.recentActivity) {
+      return analyticsQuery.data.recentActivity.map((activity, idx) => ({
+        id: activity.id || `audit-${idx}`,
+        studentName: activity.studentName || activity.target || 'System',
+        subject: activity.subject || activity.action || 'N/A',
+        action: activity.action || 'UPDATE',
+        oldValue: activity.oldValue,
+        newValue: activity.newValue,
+        justification: activity.justification || activity.description || '',
+        userId: activity.userId || activity.user || 'System',
+        timestamp: activity.timestamp || new Date().toISOString(),
+      }));
+    }
+    return [];
+  }, [analyticsQuery.data]);
+
   return (
     <div className="flex-1 overflow-y-auto bg-background p-6 lg:p-12 pb-32 lg:pb-24">
       <motion.div 

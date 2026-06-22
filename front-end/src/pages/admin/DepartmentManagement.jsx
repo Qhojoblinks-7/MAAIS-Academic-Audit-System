@@ -7,6 +7,7 @@ import DepartmentManagementView from "./components/DepartmentManagementView";
 import { AlertModal } from "./components/AlertModal";
 import { authorizeTemplate } from "../../services/departmentService";
 import { auditTrail } from "../../services/auditTrailService";
+import { useAllDepartments } from "../../lib/hooks";
 
 const DEPARTMENT_COLORS = [
   "bg-blue-500",
@@ -16,9 +17,23 @@ const DEPARTMENT_COLORS = [
 ];
 
 export function DepartmentManagement() {
-  const [departments, setDepartments] = React.useState(
-    buildInitialDepartments(),
-  );
+  const departmentsQuery = useAllDepartments();
+  const apiDepartments = departmentsQuery.data || [];
+
+  const [departments, setDepartments] = React.useState(() => {
+    if (apiDepartments.length > 0) {
+      return apiDepartments.map((d, idx) => ({
+        id: d.id || `dept-${idx}`,
+        name: d.name || 'Unknown',
+        code: d.code || '',
+        head: d.head || null,
+        teacherCount: d.teacherCount || 0,
+        staff: d.staff || [],
+        color: DEPARTMENT_COLORS[idx % DEPARTMENT_COLORS.length],
+      }));
+    }
+    return buildInitialDepartments();
+  });
   const [selectedDeptId, setSelectedDeptId] = React.useState(null);
   const [activeTab, setActiveTab] = React.useState("staff");
   const [viewType, setViewType] = React.useState("grid");

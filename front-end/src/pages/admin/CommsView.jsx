@@ -26,69 +26,27 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
+import { useTimetableEntries } from '../../lib/hooks';
 
-const mockTimetable = [
-  {
-    id: '1',
-    day: 'Monday',
-    startTime: '08:00',
-    endTime: '09:30',
-    subjectName: 'General Agric',
-    className: 'SHS 1 Agric B',
-    venue: 'Classroom 4',
-    type: 'REGULAR',
-    tasks: ['Check attendance', 'Distribute textbooks'],
-    materials: [
-      { id: 'm1', title: 'Agric Syllabus 2026', type: 'PDF', url: '#', addedAt: '2026-04-10' },
-      { id: 'm2', title: 'Intro to Farming (Video)', type: 'LINK', url: 'https://youtube.com', addedAt: '2026-04-12' }
-    ]
-  },
-  {
-    id: '2',
-    day: 'Monday',
-    startTime: '10:00',
-    endTime: '11:30',
-    subjectName: 'Soil Science',
-    className: 'SHS 2 Science A',
-    venue: 'Science Lab 1',
-    type: 'LAB',
-    missingObservations: 5,
-    tasks: ['Soil pH test', 'Safety briefing', 'Equipment cleanup']
-  },
-  {
-    id: '3',
-    day: 'Monday',
-    startTime: '12:00',
-    endTime: '13:30',
-    subjectName: 'Animal Husbandry',
-    className: 'SHS 3 Agric A',
-    venue: 'Farm Block',
-    type: 'SUBSTITUTION',
-    tasks: ['Feed livestock', 'Record weight']
-  },
-  {
-    id: '4',
-    day: 'Tuesday',
-    startTime: '08:00',
-    endTime: '09:30',
-    subjectName: 'Crop Science',
-    className: 'SHS 2 Science B',
-    venue: 'Science Lab 2',
-    type: 'LAB',
-    isClash: true,
-    tasks: ['Irrigation check']
-  },
-  {
-    id: '5',
-    day: 'Wednesday',
-    startTime: '09:00',
-    endTime: '10:30',
-    subjectName: 'General Agric',
-    className: 'SHS 1 Agric B',
-    venue: 'Classroom 4',
-    type: 'REGULAR'
-  }
-];
+  const timetableData = React.useMemo(() => {
+    if (timetableEntries.length > 0) {
+      return timetableEntries.map((entry) => ({
+        id: entry.id,
+        day: entry.dayOfWeek || entry.day || 'Monday',
+        startTime: entry.startTime,
+        endTime: entry.endTime,
+        subjectName: entry.subject?.name || entry.subjectName || 'Unknown',
+        className: entry.classSection?.name || entry.className || 'Unknown',
+        venue: entry.venue || 'TBD',
+        type: entry.type || 'REGULAR',
+        tasks: [],
+        materials: [],
+        missingObservations: 0,
+        isClash: false,
+      }));
+    }
+    return [];
+  }, [timetableEntries]);
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const HOURS = Array.from({ length: 10 }, (_, i) => i + 8); // 8 AM to 5 PM
@@ -96,6 +54,9 @@ const HOURS = Array.from({ length: 10 }, (_, i) => i + 8); // 8 AM to 5 PM
 export function CommsView() {
   const { user } = useRole();
   const navigate = useNavigate();
+  const timetableQuery = useTimetableEntries();
+  const timetableEntries = timetableQuery.data || [];
+
   const [view, setView] = React.useState('weekly');
   const [selectedDay, setSelectedDay] = React.useState('Monday');
   const [currentTime, setCurrentTime] = React.useState(new Date());
@@ -120,7 +81,7 @@ export function CommsView() {
     const now = formatTime(currentTime);
     const day = DAYS[currentTime.getDay() - 1] || 'Monday';
     
-    return mockTimetable.find(entry => 
+    return timetableData.find(entry => 
       entry.day === day && 
       now >= entry.startTime && 
       now <= entry.endTime
@@ -131,7 +92,7 @@ export function CommsView() {
     const now = formatTime(currentTime);
     const day = DAYS[currentTime.getDay() - 1] || 'Monday';
     
-    const todayClasses = mockTimetable
+    const todayClasses = timetableData
       .filter(e => e.day === day)
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
       
@@ -297,7 +258,7 @@ export function CommsView() {
                   <div className="w-20" />
                   {DAYS.map(day => (
                     <div key={day} className="flex-1 relative border-r border-gray-100 last:border-r-0">
-                      {mockTimetable.filter(e => e.day === day).map(entry => (
+                      {timetableData.filter(e => e.day === day).map(entry => (
                         <motion.div
                           key={entry.id}
                           initial={{ opacity: 0, scale: 0.95 }}
@@ -414,7 +375,7 @@ export function CommsView() {
               </div>
 
               <div className="space-y-4">
-                {mockTimetable.filter(e => e.day === selectedDay).sort((a, b) => a.startTime.localeCompare(b.startTime)).map(entry => (
+                {timetableData.filter(e => e.day === selectedDay).sort((a, b) => a.startTime.localeCompare(b.startTime)).map(entry => (
                   <motion.div
                     key={entry.id}
                     layout
@@ -510,7 +471,7 @@ export function CommsView() {
                   </motion.div>
                 ))}
                 
-                {mockTimetable.filter(e => e.day === selectedDay).length === 0 && (
+                {timetableData.filter(e => e.day === selectedDay).length === 0 && (
                   <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200">
                     <Calendar className="mx-auto text-gray-300 mb-4" size={48} />
                     <h3 className="text-lg font-black text-gray-900">No Classes Scheduled</h3>
