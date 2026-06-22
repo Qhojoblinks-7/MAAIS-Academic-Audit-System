@@ -2,6 +2,7 @@ import React from 'react';
 import { ClassCard } from '../../components/shared/ClassCard';
 import { motion } from 'framer-motion';
 import { useRole } from '../../context/RoleContext';
+import { useUI } from '../../context/UIContext';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Percent, GraduationCap, Layers, AlertTriangle, CheckCircle2, Clock, RefreshCw } from 'lucide-react';
 import { teacherService } from '../../services';
@@ -11,6 +12,7 @@ import { Button } from '../../components/ui/button';
 
 export function TeacherDashboard() {
   const { user } = useRole();
+  const { rightPanelVisible } = useUI();
   const navigate = useNavigate();
 
   const [rolloverBannerVisible, setRolloverBannerVisible] = React.useState(false);
@@ -85,7 +87,7 @@ export function TeacherDashboard() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background p-6 md:p-8 select-none">
+    <div className="flex-1 overflow-y-auto bg-background p-6 md:p-8 select-none no-scrollbar">
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
@@ -143,9 +145,6 @@ export function TeacherDashboard() {
               Academic Workspace & Assessment Matrix
             </p>
           </div>
-          <div className="flex items-center gap-4 text-[9px] font-black text-success uppercase tracking-widest">
-            <NotificationBell />
-          </div>
         </header>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
@@ -197,7 +196,7 @@ export function TeacherDashboard() {
 
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className={`grid grid-cols-1 md:grid-cols-2 ${rightPanelVisible ? 'lg:grid-cols-2' : 'lg:grid-cols-3'} gap-6`}>
           {teacherClasses.map((cls, idx) => (
             <motion.div
               key={cls.id}

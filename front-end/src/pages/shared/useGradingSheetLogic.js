@@ -159,6 +159,50 @@ export function useGradingSheetLogic({
     return () => { cancelled = true; };
   }, [classInfo?.subject, classInfo?.className]);
 
+  // Fetch behavior observations from backend for all students
+  useEffect(() => {
+    let cancelled = false;
+    const fetchBehaviors = async () => {
+      if (!students.length) return;
+      const ratingsMap = {};
+      const commentMap = {};
+
+      for (const student of students) {
+        try {
+          const data = await teacherService.getStudentBehavior(student.id);
+          if (cancelled) return;
+          const logs = Array.isArray(data?.logs) ? data.logs : [];
+          const latest = logs[0];
+
+          if (latest) {
+            const ratings = {};
+            if (latest.punctuality) ratings.lab_safety = latest.punctuality;
+            if (latest.attendance) ratings.behavioral = latest.attendance;
+            if (latest.attitude) ratings.resource_economy = latest.attitude;
+            if (latest.conduct) ratings.hygienic_practices = latest.conduct;
+
+            if (Object.keys(ratings).length > 0) {
+              ratingsMap[student.id] = ratings;
+            }
+            if (latest.remarks) {
+              commentMap[student.id] = latest.remarks;
+            }
+          }
+        } catch (err) {
+          console.error(`[GradingSheet] Failed to fetch behavior for ${student.id}:`, err);
+        }
+      }
+
+      if (!cancelled) {
+        setBehavioralRatings(prev => ({ ...prev, ...ratingsMap }));
+        setBehavioralComment(prev => ({ ...prev, ...commentMap }));
+      }
+    };
+
+    fetchBehaviors();
+    return () => { cancelled = true; };
+  }, [students, teacherService]);
+
   // Derived resolution readiness
   const backendReady = useMemo(
     () => !!(backendIds?.subjectId && backendIds?.classId && backendIds?.termId),
@@ -373,14 +417,27 @@ export function useGradingSheetLogic({
   const handleSaveBehavioralRatings = useCallback(() => {
     if (isTermFinalized) return;
     const sid = selectedStudent?.id;
-    if (!sid) return;
-    console.log('[WAEC STP §7] Behavioral ratings saved:', sid, {
-      ratings: behavioralRatings[sid] || {},
-      comment: behavioralComment[sid] || '',
-      flagged: flaggedStudents[sid] || false,
-      labSafetyCompliant: labSafetyCompliance[sid] || false,
-    });
-  }, [isTermFinalized, selectedStudent, behavioralRatings, behavioralComment, flaggedStudents, labSafetyCompliance]);
+    if (!sid || !backendReady) return;
+
+    const ratings = behavioralRatings[sid] || {};
+    const comment = behavioralComment[sid] || '';
+
+    const behaviorData = {
+      punctuality: ratings.lab_safety || 0,
+      attendance: ratings.behavioral || 0,
+      attitude: ratings.resource_economy || 0,
+      conduct: ratings.hygienic_practices || 0,
+      remarks: comment,
+    };
+
+    teacherService.createBehavior(sid, behaviorData)
+      .then(() => {
+        console.log('[WAEC STP §7] Behavioral ratings saved to backend:', sid);
+      })
+      .catch(err => {
+        console.error('[WAEC STP §7] Failed to save behavioral ratings:', err);
+      });
+  }, [isTermFinalized, selectedStudent, behavioralRatings, behavioralComment, backendReady, teacherService]);
 
   const handleExportWAEC = useCallback(() => {
     if (isTermFinalized || missingCount > 0 || isSubmissionLocked) return;

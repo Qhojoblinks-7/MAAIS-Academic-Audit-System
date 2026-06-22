@@ -15,6 +15,7 @@ export function UIProvider({ children }) {
   const [screenWidth, setScreenWidth] = React.useState(window.innerWidth);
   const [revisionCount, setRevisionCount] = React.useState(0);
   const [missingObservationCount, setMissingObservationCount] = React.useState(0);
+  const [rightPanelVisible, setRightPanelVisible] = React.useState(true);
 
   useEffect(() => {
     localStorage.setItem('draftMode', JSON.stringify(isDraftMode));
@@ -63,6 +64,8 @@ export function UIProvider({ children }) {
         setRevisionCount,
         missingObservationCount,
         setMissingObservationCount,
+        rightPanelVisible,
+        setRightPanelVisible,
       }}>
        {children}
      </UIContext.Provider>

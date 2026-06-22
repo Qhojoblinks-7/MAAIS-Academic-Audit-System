@@ -26,8 +26,32 @@ export function TeacherSidebar() {
   const { setSettingsModalOpen, setSupportModalOpen, revisionCount, missingObservationCount, setMissingObservationCount } = useUI();
   const [showLogoutModal, setShowLogoutModal] = React.useState(false);
   const [activeSubMenu, setActiveSubMenu] = React.useState(null);
-  const [unsavedMarks] = React.useState(12);
+  const [unsavedMarks, setUnsavedMarks] = React.useState(0);
   const sidebarRef = useRef(null);
+
+  React.useEffect(() => {
+    const fetchPendingData = async () => {
+      try {
+        const [revisions, missingObs] = await Promise.all([
+          teacherService.getGradeRevisions(),
+          teacherService.getMissingObservations(),
+        ]);
+
+        const pendingRevisions = Array.isArray(revisions)
+          ? revisions.filter(r => r.status === 'AWAITING_APPROVAL' || r.status === 'PENDING').length
+          : 0;
+        const missingCount = Array.isArray(missingObs)
+          ? missingObs.filter(o => o.status === 'Missing').length
+          : 0;
+
+        setUnsavedMarks(pendingRevisions + missingCount);
+      } catch (err) {
+        setUnsavedMarks(0);
+      }
+    };
+
+    fetchPendingData();
+  }, []);
 
   useEffect(() => {
     teacherService.getMissingObservations?.()
@@ -270,9 +294,9 @@ export function TeacherSidebar() {
                       <AlertCircle size={18} />
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-text-primary">Unsaved Data Discovered</p>
+                      <p className="text-xs font-semibold text-text-primary">Pending Work Detected</p>
                       <p className="text-xs text-text-secondary mt-0.5">
-                        There are {unsavedMarks} data nodes currently sitting in your local cache (SHS 2 Science).
+                        You have {unsavedMarks} pending grade revision{unsavedMarks !== 1 ? 's' : ''} and missing observation{unsavedMarks !== 1 ? 's' : ''} awaiting your attention.
                       </p>
                     </div>
                   </div>

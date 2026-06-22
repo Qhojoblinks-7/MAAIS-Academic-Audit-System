@@ -97,32 +97,13 @@ export function TeacherSettings() {
     setErrors(fieldErrors);
     if (Object.keys(fieldErrors).length === 0 && canSave) {
       try {
-        const response = await fetch('/api/teacher/profile', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(profile),
-        });
-        if (!response.ok) throw new Error('Failed to save profile');
+        await teacherService.updateProfile(profile);
         setMessage('Profile saved successfully');
         setMessageType('success');
 
-        // Refresh from backend to avoid any silent local-state drift
-        const refresh = async () => {
-          const r = await fetch('/api/teacher/profile');
-          if (!r.ok) throw new Error('Failed to refresh profile');
-          const fresh = await r.json();
-          setProfile(fresh);
-        };
+        const fresh = await teacherService.getProfile();
+        setProfile(fresh || {});
 
-        try {
-          await refresh();
-        } catch (e) {
-          // Still keep success toast; only UI may be stale if refresh fails.
-        }
-
-        // Clear message after 3 seconds
         setTimeout(() => {
           setMessage('');
           setMessageType('');

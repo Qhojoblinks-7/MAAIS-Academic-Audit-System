@@ -1,61 +1,85 @@
 ﻿import React from 'react';
+import { motion } from 'framer-motion';
 import { AlertCircle, MessageSquare, ChevronRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
-
-const revisions = [
-  {
-    id: '1',
-    studentName: 'Angela Owusu',
-    class: 'SHS 1 Agric B',
-    comment: 'Please review the latest test score',
-    time: '58 sec ago',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Angela',
-  },
-  {
-    id: '2',
-    studentName: 'Angela Owusu',
-    class: 'SHS 1 Agric B',
-    comment: 'Please review the latest test score',
-    time: '58 sec ago',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Angela',
-  },
-  {
-    id: '3',
-    studentName: 'Angela Owusu',
-    class: 'SHS 1 Agric B',
-    comment: 'Please review the latest test score',
-    time: '58 sec ago',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Angela',
-  },
-];
-
-const atRiskStudents = [
-  {
-    id: '1',
-    name: 'Angela Owusu',
-    index: '10001',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Angela',
-  },
-  {
-    id: '2',
-    name: 'Angela Owusu',
-    index: '10001',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Angela',
-  },
-  {
-    id: '3',
-    name: 'Angela Owusu',
-    index: '10001',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Angela',
-  },
-];
+import { teacherService } from '../../services';
+import { useUI } from '../../context/UIContext';
 
 export function RightPanel() {
   const navigate = useNavigate();
+  const { setRightPanelVisible } = useUI();
+  const [revisions, setRevisions] = React.useState([]);
+  const [atRiskStudents, setAtRiskStudents] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [revisionsData, issuesData] = await Promise.all([
+          teacherService.getGradeRevisions(),
+          teacherService.getGradeIssues(),
+        ]);
+
+        const revs = Array.isArray(revisionsData) ? revisionsData : [];
+        const issues = Array.isArray(issuesData) ? issuesData : [];
+
+        const mappedRevisions = revs.slice(0, 3).map((rev) => ({
+          id: rev.id,
+          studentName: rev.student || 'Unknown Student',
+          class: rev.class || 'Unknown Class',
+          comment: rev.issue || rev.justification || 'Grade revision requested',
+          time: rev.time || 'Recent',
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(rev.student || 'default')}`,
+        }));
+
+        const uniqueStudents = [];
+        const seen = new Set();
+        for (const issue of issues) {
+          const name = issue.student || issue.target?.split(' - ')[1]?.split(' (')[0] || 'Unknown Student';
+          const index = issue.index || issue.studentId || '000';
+          const key = `${name}-${index}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            uniqueStudents.push({
+              id: issue.id || issue.recordId || key,
+              name,
+              index,
+              avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
+            });
+          }
+        }
+
+        setRevisions(mappedRevisions);
+        setAtRiskStudents(uniqueStudents.slice(0, 3));
+
+        const hasData = mappedRevisions.length > 0 || uniqueStudents.length > 0;
+        setRightPanelVisible(hasData);
+      } catch (err) {
+        console.error('[RightPanel] Failed to load data:', err);
+        setRightPanelVisible(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [setRightPanelVisible]);
+
+  if (loading) {
+    return (
+      <aside className="w-80 h-screen bg-white border-l border-gray-200 p-6 flex flex-col gap-8 overflow-y-auto no-scrollbar">
+        <div className="text-center text-xs text-gray-400 mt-10">Loading panel...</div>
+      </aside>
+    );
+  }
+
+  if (revisions.length === 0 && atRiskStudents.length === 0) {
+    return null;
+  }
 
   return (
-    <aside className="w-80 h-screen bg-white border-l border-gray-200 p-6 flex flex-col gap-8 overflow-y-auto">
+    <aside className="w-80 h-screen bg-white border-l border-gray-200 p-6 flex flex-col gap-8 overflow-y-auto no-scrollbar">
       <section>
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-bold text-gray-900">Revisions Tab</h2>

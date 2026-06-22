@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AdminSidebar, HODSidebar, StudentSidebar, TeacherSidebar } from './components/layout';
 import { Topbar, RightPanel, MobileDrawer, StudentMobileDrawer } from './components/shared';
-import { Dashboard, GradingSheet, HOD_JourneyHistoryAudit, SettingsView, SupportView } from './pages/shared';
+import { Dashboard, GradingSheet, HOD_JourneyHistoryAudit, SettingsView } from './pages/shared';
 import {
   AuditLogsView, ArchiveView, AdminManagement, StaffRegistry,
   DepartmentManagement, StudentRegistry, ParentRegistry,
@@ -207,7 +207,7 @@ function AppContent() {
   const { user } = useRole();
   const isDashboard = location.pathname === '/';
   const isLoginPage = location.pathname === '/login';
-  const { settingsModalOpen, setSettingsModalOpen, supportModalOpen, setSupportModalOpen } = useUI();
+  const { settingsModalOpen, setSettingsModalOpen, supportModalOpen, setSupportModalOpen, rightPanelVisible } = useUI();
 
   // Inactivity Timeout Auto Log-Out Handler (15 Mins)
   React.useEffect(() => {
@@ -393,7 +393,7 @@ function AppContent() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
 
-          {isDashboard && user?.role !== 'ADMIN' && (
+          {isDashboard && user?.role !== 'ADMIN' && rightPanelVisible && (
             <div className="hidden xl:block">
               <RightPanel />
             </div>
@@ -411,7 +411,7 @@ function AppContent() {
       >
         {user?.role === 'STUDENT' ? <StudentSettings /> :
          user?.role === 'HOD' ? <HODSettings /> :
-         user?.role === 'ADMIN' ? <AdminSettings /> : <SettingsView />}
+         user?.role === 'ADMIN' ? <AdminSettings /> : <TeacherSettings />}
       </Modal>
 
       <Modal
@@ -421,7 +421,7 @@ function AppContent() {
       >
         {user?.role === 'STUDENT' ? <StudentSupport /> :
          user?.role === 'HOD' ? <HODSupportPage /> :
-         user?.role === 'ADMIN' ? <AdminSupport /> : <SupportView />}
+         user?.role === 'ADMIN' ? <AdminSupport /> : <TeacherSupport />}
       </Modal>
     </div>
   );

@@ -1,6 +1,4 @@
-import mockApiData from "../data/mockApiData.json";
-
-let mockData = JSON.parse(JSON.stringify(mockApiData));
+let mockData = {};
 
 const simulateDelay = (ms = 300) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -207,6 +205,41 @@ getMissingObservations: async () => {
   getGradeRevisions: async (teacherId) => {
     await simulateDelay();
     return mockData.teacher.gradeRevisions?.items || [];
+  },
+
+  getTeacherArchive: async (params = {}) => {
+    await simulateDelay();
+    let items = [...mockData.archive.items];
+    if (params.year) items = items.filter((i) => i.year === params.year);
+    if (params.className) items = items.filter((i) => i.className === params.className);
+    if (params.status) items = items.filter((i) => i.status === params.status);
+    return items;
+  },
+
+  getStudentAcademicHistory: async (studentId) => {
+    await simulateDelay();
+    return mockData.studentAcademicHistory?.items?.find(h => h.studentId === studentId) || null;
+  },
+
+  getInterventionAlerts: async (params = {}) => {
+    await simulateDelay();
+    let items = [...mockData.interventionAlerts.items];
+    if (params.studentName) {
+      const q = params.studentName.toLowerCase();
+      items = items.filter((i) => i.studentName.toLowerCase().includes(q));
+    }
+    if (params.resolved !== undefined) items = items.filter((i) => i.resolved === params.resolved);
+    return items;
+  },
+
+  getAuditLogs: async (params = {}) => {
+    await simulateDelay();
+    let items = [...mockData.auditLogs.items];
+    if (params.target) {
+      const q = params.target.toLowerCase();
+      items = items.filter((i) => i.target.toLowerCase().includes(q));
+    }
+    return items;
   },
 
   updateGradeRevision: async (revisionId, updatedData) => {
