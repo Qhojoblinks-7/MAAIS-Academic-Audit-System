@@ -6,3 +6,4 @@ export { default as commsApi } from './comms';
 export { default as reportsApi } from './reports';
 export { default as archiveApi } from './archive';
 export { teacherApi } from './teacher';
+export { default as adminApi } from './admin';
