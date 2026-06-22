@@ -9,6 +9,7 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
+import { useTickets, useUnreadNotifications, useAnalyticsPulse as useAdminAnalyticsPulse, useArchiveStats as useAdminArchiveStats, useAllStudents, useAllStaff } from '../../lib/hooks';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { Textarea } from '../../components/ui/textarea';
@@ -22,9 +23,8 @@ import {
 } from '../../components/ui/select';
 import { Badge } from '../../components/ui/badge';
 import { 
-  performanceDatasets, initialActivityLog, initialPendingApprovals, supportTickets,
-  vitalSigns, fabActions, registerNodeProtocols, broadcastChannels
-} from './data';
+  performanceDatasets, fabActions, registerNodeProtocols, broadcastChannels
+} from './data/mockDashboard';
 
 function Sparkline({ color }) {
   return (
@@ -44,23 +44,47 @@ export function AdminHome() {
   const { user } = useRole();
   const navigate = useNavigate();
   
-  // Realtime System State
+  const ticketsQuery = useTickets();
+  const notificationsQuery = useUnreadNotifications();
+  const analyticsQuery = useAdminAnalyticsPulse();
+  const archiveStatsQuery = useAdminArchiveStats();
+  const studentsQuery = useAllStudents();
+  const staffQuery = useAllStaff();
+
   const [currentTime, setCurrentTime] = React.useState(new Date());
   const [fabOpen, setFabOpen] = React.useState(false);
   const [notepadContent, setNotepadContent] = React.useState('Check SHS 1 enrollment CSV by 2 PM');
-  
-  // Mutable Data State Mechanics
-  const [approvals, setApprovals] = React.useState(initialPendingApprovals);
-  const [activities, setActivities] = React.useState(initialActivityLog);
   const [activeMetric, setActiveMetric] = React.useState('Avg Score');
-  
-  // Quick Action Modal states
   const [activeAction, setActiveAction] = React.useState(null);
   const [isFreezeActive, setIsFreezeActive] = React.useState(false);
-
-  // Broadcast payload configuration parameters
   const [selectedChannel, setSelectedChannel] = React.useState('In-App Push');
   const [broadcastPayload, setBroadcastPayload] = React.useState('');
+
+  const tickets = ticketsQuery.data || [];
+  const notifications = notificationsQuery.data || [];
+  const analytics = analyticsQuery.data;
+  const archiveStats = archiveStatsQuery.data;
+  const students = studentsQuery.data || [];
+  const staff = staffQuery.data || [];
+
+  React.useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  const vitalSigns = [
+    { label: 'Total Students', value: students.length || '—', trend: '#10b981', progress: students.length ? Math.min((students.length / 2000) * 100, 100) : 0, bg: 'bg-emerald-50', color: 'text-emerald-600', sub: `${students.length} linked profiles` },
+    { label: 'Active Staff', value: staff.length || '—', trend: '#3b82f6', progress: staff.length ? Math.min((staff.length / 200) * 100, 100) : 0, bg: 'bg-blue-50', color: 'text-blue-600', sub: `${staff.length} registered nodes` },
+    { label: 'Pending Tickets', value: tickets.length || '0', trend: '#f59e0b', progress: tickets.length ? Math.min((tickets.length / 20) * 100, 100) : 0, bg: 'bg-amber-50', color: 'text-amber-600', sub: 'Awaiting resolution' },
+    { label: 'Unread Alerts', value: unreadCount || '0', trend: '#ef4444', progress: unreadCount ? Math.min((unreadCount / 10) * 100, 100) : 0, bg: 'bg-rose-50', color: 'text-rose-600', sub: 'System notifications' },
+  ];
+
+  const activities = analytics?.recentActivity || [];
+
+  const approvals = [];
+  const ticketsLoading = ticketsQuery.isLoading;
 
   React.useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -144,13 +168,12 @@ export function AdminHome() {
           </div>
         </header>
 
-        {/* Main Workspace Grid Splits */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          
-          {/* Main Left-Hand Segment Workspace */}
-          <div className="lg:col-span-8 space-y-5">
-            
-{/* Vital Signs Cards */}
+         {/* Main Workspace Grid Splits */}
+         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+           
+           <div className="lg:col-span-8 space-y-5">
+             
+         {/* Vital Signs Cards */}
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                {vitalSigns.map((card, i) => {
                  // Map icon names to actual components
@@ -372,8 +395,8 @@ export function AdminHome() {
                   <Plus size={14} /> New Ticket
                 </button>
               </div>
-              <div className="space-y-2">
-                {supportTickets.map((ticket) => (
+               <div className="space-y-2">
+                {tickets.slice(0, 5).map((ticket) => (
                   <div 
                     key={ticket.id} 
                     onClick={() => navigate(`/support/ticket/${ticket.id}`)}
@@ -382,20 +405,21 @@ export function AdminHome() {
                     <div className="flex gap-3 items-center min-w-0">
                       <div className={cn(
                         "w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-xs",
-                        ticket.status === 'priority' ? "bg-rose-50 text-rose-600" : "bg-blue-50 text-blue-600"
+                        ticket.status === 'RESOLVED' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
                       )}>
-                        <Radio size={14} className={cn(ticket.status === 'priority' && "animate-pulse")} />
+                        <Radio size={14} className={cn(ticket.status !== 'RESOLVED' && "animate-pulse")} />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[11px] font-black text-slate-900 truncate tracking-tight">{ticket.issue}</p>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider truncate">{ticket.user}</p>
+                        <p className="text-[11px] font-black text-slate-900 truncate tracking-tight">{ticket.subject || ticket.title || 'Support Ticket'}</p>
+                        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider truncate">{ticket.createdBy?.name || 'User'}</p>
                       </div>
                     </div>
-                    <button className="p-1 text-slate-300 group-hover/ticket:text-slate-950 shrink-0">
-                      <ArrowUpRight size={14} />
-                    </button>
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">{ticket.status || 'OPEN'}</span>
                   </div>
                 ))}
+                {tickets.length === 0 && (
+                  <p className="text-center text-[10px] py-4 font-bold text-slate-400 uppercase tracking-wider">No tickets in queue</p>
+                )}
               </div>
             </div>
 

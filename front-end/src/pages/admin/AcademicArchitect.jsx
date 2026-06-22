@@ -10,6 +10,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { GradingRulesView } from './GradingRulesView';
+import { useAllDepartments, useAllSubjects, useAllClasses, useAcademicYears as useAdminAcademicYears } from '../../lib/hooks';
 import {
   Table,
   TableHeader,
@@ -18,10 +19,11 @@ import {
   TableRow,
   TableCell,
 } from '../../components/ui/table';
+import { Skeleton } from '../../components/ui/skeleton';
 
 // --- Mock Data ---
 
-const MOCK_YEARS = [
+const MOCK_YEARS_FALLBACK = [
   {
     id: 'YG1',
     name: 'SHS 1',
@@ -71,7 +73,7 @@ const MOCK_YEARS = [
   }
 ];
 
-const MOCK_SUBJECTS = [
+const MOCK_SUBJECTS_FALLBACK = [
   { id: 'S1', code: 'CORE-MT', name: 'Core Mathematics', type: 'Core', creditHours: 4, applicablePrograms: [] },
   { id: 'S2', code: 'CORE-EN', name: 'English Language', type: 'Core', creditHours: 4, applicablePrograms: [] },
   { id: 'S3', code: 'CORE-SC', name: 'Integrated Science', type: 'Core', creditHours: 3, applicablePrograms: [] },
@@ -82,8 +84,60 @@ const MOCK_SUBJECTS = [
 
 export function AcademicArchitect() {
   const [activeTab, setActiveTab] = useState('Blueprint');
-  const [expandedYears, setExpandedYears] = useState(['YG1', 'YG3']);
-  const [expandedPrograms, setExpandedPrograms] = useState(['P1-SCI', 'P3-SCI']);
+  const [expandedYears, setExpandedYears] = useState([]);
+  const [expandedPrograms, setExpandedPrograms] = useState([]);
+
+  const yearsQuery = useAdminAcademicYears();
+  const departmentsQuery = useAllDepartments();
+  const subjectsQuery = useAllSubjects();
+  const classesQuery = useAllClasses();
+
+  const years = yearsQuery.data || [];
+  const departments = departmentsQuery.data || [];
+  const subjects = subjectsQuery.data || [];
+  const classes = classesQuery.data || [];
+
+  const displayYears = years.length > 0 ? years.map((y, idx) => {
+    const yearClasses = classes.filter(c => c.level === (y.label || y.name));
+    const programsMap = {};
+    yearClasses.forEach(c => {
+      const progName = c.name?.split(' ').slice(1).join(' ') || c.name || 'General';
+      if (!programsMap[progName]) programsMap[progName] = [];
+      programsMap[progName].push(c);
+    });
+    return {
+      id: y.id || `Y${idx}`,
+      name: y.label || y.name,
+      programs: Object.entries(programsMap).map(([name, cls]) => ({
+        id: cls[0].id,
+        name,
+        classrooms: cls.map(c => ({
+          id: c.id,
+          name: c.name,
+          capacity: c.capacity || 45,
+          studentsCount: 0,
+          houseDistribution: {}
+        }))
+      }))
+    };
+  }) : MOCK_YEARS_FALLBACK;
+
+  const displaySubjects = subjects.length > 0 ? subjects.map((s, idx) => ({
+    id: s.id || `S${idx}`,
+    code: s.code || '',
+    name: s.name,
+    type: s.type || 'Core',
+    creditHours: s.creditHours || 3,
+    applicablePrograms: [],
+  })) : MOCK_SUBJECTS_FALLBACK;
+
+  const displayClasses = classes.length > 0 ? classes : MOCK_YEARS_FALLBACK.flatMap(y => y.programs.flatMap(p => p.classrooms));
+
+  React.useEffect(() => {
+    if (years.length > 0 && expandedYears.length === 0) {
+      setExpandedYears(years.map(y => y.id));
+    }
+  }, [years, expandedYears.length]);
 
   // --- Helpers ---
   
@@ -154,7 +208,7 @@ export function AcademicArchitect() {
                   </div>
 
                   <div className="space-y-4">
-                    {MOCK_YEARS.map((year) => (
+                     {displayYears.map((year) => (
                       <div key={year.id} className="space-y-3">
                         {/* Year Node */}
                         <div 
@@ -405,8 +459,8 @@ export function AcademicArchitect() {
                        <TableRow>
                          <TableHead className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] w-[250px] bg-slate-50 border-r border-slate-200 sticky left-0 z-30">Subject Logic Unit</TableHead>
                          <TableHead className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center w-[100px]">Credits</TableHead>
-                         {MOCK_YEARS.flatMap(y => y.programs.flatMap(p => p.classrooms)).map(cls => (
-                           <TableHead key={cls.id} className="px-4 py-5 text-[10px] font-black text-slate-900 uppercase tracking-tighter text-center min-w-[100px] hover:bg-slate-100 transition-colors">
+                          {displayClasses.map(cls => (
+                            <TableHead key={cls.id} className="px-4 py-5 text-[10px] font-black text-slate-900 uppercase tracking-tighter text-center min-w-[100px] hover:bg-slate-100 transition-colors">
                              <span className="italic font-display">{cls.name.split(' ')[0]}</span>
                              <span className="block text-[8px] opacity-40 font-black mt-0.5">{cls.name.split(' ').slice(1).join(' ')}</span>
                            </TableHead>
@@ -414,7 +468,7 @@ export function AcademicArchitect() {
                        </TableRow>
                      </TableHeader>
                      <TableBody className="divide-y divide-slate-100">
-                       {MOCK_SUBJECTS.map((sub) => (
+                        {displaySubjects.map((sub) => (
                          <TableRow key={sub.id} className="group hover:bg-slate-50/50">
                            <TableCell className="px-8 py-5 border-r border-slate-100 bg-white sticky left-0 z-10 group-hover:bg-slate-50 shadow-[5px_0_15px_rgba(0,0,0,0.02)]">
                              <div className="flex items-center gap-4">
@@ -436,7 +490,7 @@ export function AcademicArchitect() {
                                <Clock size={10} className="text-slate-300" />
                              </div>
                            </TableCell>
-                           {MOCK_YEARS.flatMap(y => y.programs.flatMap(p => p.classrooms)).map(cls => {
+                            {displayClasses.map(cls => {
                              const isCore = sub.type === 'Core';
                              const progName = cls.name.toLowerCase().includes('science') ? 'Science' : 
                                              cls.name.toLowerCase().includes('arts') ? 'General Arts' : 

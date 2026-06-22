@@ -5,7 +5,7 @@ import { Database, FileText, Filter, Calendar, Search, ShieldCheck, User, Trendi
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer
 } from 'recharts';
-
+import { useArchiveStats as useAdminArchiveStats, useAcademicYears as useAdminAcademicYears } from '../../lib/hooks';
 import { SubTabSelector } from './components/SubTabSelector';
 import { PromotionTab, MaintenanceTab } from './components/ArchiveTabs';
 import { VaultHeader } from './components/VaultHeader';
@@ -32,84 +32,7 @@ export const getWAECGrade = (score) => {
   return 'F9';
 };
 
-const mockArchiveData = [
-  {
-    id: '001',
-    name: 'Angela Owusu',
-    index: '001',
-    currentClass: 'SHS 3 Agric B',
-    department: 'Science',
-    consistencyScore: 'Steady',
-    percentileHistory: [
-      { term: 'SHS 1-T1', percentile: 88 },
-      { term: 'SHS 1-T2', percentile: 90 },
-      { term: 'SHS 1-T3', percentile: 92 },
-      { term: 'SHS 2-T1', percentile: 85 },
-      { term: 'SHS 2-T2', percentile: 80 },
-      { term: 'SHS 2-T3', percentile: 94 },
-    ],
-    history: [
-      { year: '2023', term: 'Term 1', finalGrade: 85, behaviorRating: 4, department: 'Science' },
-      { year: '2023', term: 'Term 2', finalGrade: 88, behaviorRating: 4, department: 'Science' },
-      { year: '2023', term: 'Term 3', finalGrade: 90, behaviorRating: 4, department: 'Science' },
-      { year: '2024', term: 'Term 1', finalGrade: 82, behaviorRating: 3, department: 'Science' },
-      { year: '2024', term: 'Term 2', finalGrade: 78, behaviorRating: 2, department: 'Science', hodComment: 'Decline in practical engagement noted.' },
-      { year: '2024', term: 'Term 3', finalGrade: 92, behaviorRating: 4, department: 'Science' },
-    ],
-    observations: [
-      { id: 'obs1', date: '2024-03-15', type: 'Lab Safety', comment: 'Excellent handling of soil testing equipment.', teacherName: 'Mr. Boateng' },
-      { id: 'obs2', date: '2024-06-10', type: 'Behavioral', comment: 'Distracted during group sessions.', teacherName: 'Mrs. Mensah' },
-      { id: 'obs3', date: '2023-05-12', type: 'Practicals', comment: 'Developing steady hands for microscopy.', teacherName: 'Dr. Addo' },
-    ],
-    interventions: [
-      { 
-        id: 'int1', 
-        term: 'Term 2', 
-        year: '2024', 
-        reason: 'Decline in practical scores', 
-        action: '1-on-1 Lab Coaching', 
-        outcome: 'Practical scores increased by 15% in following term' 
-      }
-    ]
-  },
-  {
-    id: '002',
-    name: 'Kwame Mensah',
-    index: '002',
-    currentClass: 'SHS 3 Agric B',
-    department: 'General',
-    consistencyScore: 'Improving',
-    percentileHistory: [
-      { term: 'SHS 1-T1', percentile: 40 },
-      { term: 'SHS 1-T2', percentile: 45 },
-      { term: 'SHS 1-T3', percentile: 38 },
-      { term: 'SHS 2-T1', percentile: 52 },
-      { term: 'SHS 2-T2', percentile: 58 },
-      { term: 'SHS 2-T3', percentile: 62 },
-    ],
-    history: [
-      { year: '2023', term: 'Term 1', finalGrade: 45, behaviorRating: 2, department: 'General' },
-      { year: '2023', term: 'Term 2', finalGrade: 48, behaviorRating: 2, department: 'General' },
-      { year: '2023', term: 'Term 3', finalGrade: 42, behaviorRating: 1, department: 'General' },
-      { year: '2024', term: 'Term 1', finalGrade: 55, behaviorRating: 3, department: 'General' },
-      { year: '2024', term: 'Term 2', finalGrade: 60, behaviorRating: 3, department: 'General' },
-      { year: '2024', term: 'Term 3', finalGrade: 65, behaviorRating: 4, department: 'General' },
-    ],
-    observations: [
-      { id: 'obs4', date: '2023-11-20', type: 'Resource Economy', comment: 'Wasted seeds during planting exercise.', teacherName: 'Mr. Appiah' }
-    ],
-    interventions: [
-      { 
-        id: 'int2', 
-        term: 'Term 3', 
-        year: '2023', 
-        reason: 'Below 45% average', 
-        action: 'After-school tutoring session', 
-        outcome: 'Grade normalized and began upwards trend' 
-      }
-    ]
-  }
-];
+const vaultEntries = [];
 
 export function ArchiveView() {
   const [activeSubTab, setActiveSubTab] = React.useState('VAULT');
@@ -124,10 +47,17 @@ export function ArchiveView() {
     concludingSummary: ''
   });
 
-  const filteredStudents = mockArchiveData.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    s.index.includes(searchTerm)
-  );
+  const archiveStatsQuery = useAdminArchiveStats();
+  const academicYearsQuery = useAdminAcademicYears();
+
+  const archiveStats = archiveStatsQuery.data;
+  const academicYears = academicYearsQuery.data || [];
+
+  const vaultEntries = React.useMemo(() => {
+    if (archiveStats?.recentPromotions) return archiveStats.recentPromotions;
+    if (archiveStats?.recentArchives) return archiveStats.recentArchives;
+    return [];
+  }, [archiveStats]);
 
   const terms = ['SHS 1-T1', 'SHS 1-T2', 'SHS 1-T3', 'SHS 2-T1', 'SHS 2-T2', 'SHS 2-T3'];
   const coreSubjects = ['Core Math', 'English', 'Int. Science', 'Social Studies'];
@@ -247,9 +177,10 @@ export function ArchiveView() {
                     onChange={(e) => setSelectedYear(e.target.value)}
                     className="bg-transparent text-sm font-black text-gray-900 focus:outline-none cursor-pointer pr-4"
                   >
-                    <option>2024/2025</option>
-                    <option>2023/2024</option>
-                    <option>2022/2023</option>
+                    {academicYears.map(y => (
+                      <option key={y.id} value={y.label}>{y.label}</option>
+                    ))}
+                    {academicYears.length === 0 && <option>2024/2025</option>}
                   </select>
                 </div>
 
@@ -288,18 +219,18 @@ export function ArchiveView() {
                       <TableHead className="px-6 py-4 text-right">Aggregate</TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
-                    {filteredStudents.map((student) => (
-                      <motion.tr
-                        key={student.id}
-                        layoutId={student.id}
-                        onClick={() => setSelectedStudent(student)}
-                        whileHover={{ scale: 1.002, x: 4 }}
-                        className="group cursor-pointer"
-                      >
-                        {/* Identity Cell */}
-                        <TableCell className="bg-white/40 backdrop-blur-md px-6 py-5 rounded-l-[1.5rem] border-y border-l border-gray-200 shadow-sm group-hover:bg-white transition-all sticky left-0 z-20">
-                          <div className="flex items-center gap-4">
+                   <TableBody>
+                     {vaultEntries.length > 0 ? vaultEntries.map((student) => (
+                       <motion.tr
+                         key={student.id}
+                         layoutId={student.id}
+                         onClick={() => setSelectedStudent(student)}
+                         whileHover={{ scale: 1.002, x: 4 }}
+                         className="group cursor-pointer"
+                       >
+                         {/* Identity Cell */}
+                         <TableCell className="bg-white/40 backdrop-blur-md px-6 py-5 rounded-l-[1.5rem] border-y border-l border-gray-200 shadow-sm group-hover:bg-white transition-all sticky left-0 z-20">
+                           <div className="flex items-center gap-4">
                             <img 
                               src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${student.name}`} 
                               alt={student.name} 
@@ -381,9 +312,15 @@ export function ArchiveView() {
                             {(student.history.reduce((acc, h) => acc + h.finalGrade, 0) / student.history.length).toFixed(1)}%
                           </p>
                         </TableCell>
-                      </motion.tr>
-                    ))}
-                  </TableBody>
+                       </motion.tr>
+                     )) : (
+                       <TableRow>
+                         <TableCell colSpan={8} className="text-center py-12 text-slate-400 text-sm font-bold">
+                           {archiveStatsQuery.isLoading ? 'Loading archive data...' : 'No archived records found. Vault is empty.'}
+                         </TableCell>
+                       </TableRow>
+                     )}
+                   </TableBody>
                 </Table>
               </div>
             </div>

@@ -18,7 +18,6 @@ import {
   Trash2
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { mockStaff, DEPARTMENTS, ROLES } from './data';
 import {
   Table,
   TableHeader,
@@ -39,6 +38,7 @@ import {
 } from '../../components/ui/select';
 import { Badge } from '../../components/ui/badge';
 import { Card } from '../../components/ui/card';
+import { useAllStaff, useCreateStaff, useDeactivateUser, useAllDepartments } from '../../lib/hooks';
 
 export function StaffRegistry() {
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -51,12 +51,24 @@ export function StaffRegistry() {
   const [selectedRole, setSelectedRole] = React.useState('All');
   const [selectedStatus, setSelectedStatus] = React.useState('All');
   const [onboardForm, setOnboardForm] = React.useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
-    department: DEPARTMENTS[0] || '',
-    role: ROLES[0] || ''
+    staffId: '',
+    department: 'Administration',
+    role: 'TEACHER',
   });
+
+  const staffQuery = useAllStaff();
+  const departmentsQuery = useAllDepartments();
+  const createStaffMutation = useCreateStaff();
+  const deactivateMutation = useDeactivateUser();
+
+  const staff = staffQuery.data || [];
+  const departments = departmentsQuery.data || [];
+  const isLoading = staffQuery.isLoading;
+  const error = staffQuery.error;
 
   const toggleKebab = (e, id) => {
     e.stopPropagation();
@@ -73,15 +85,15 @@ export function StaffRegistry() {
     const headers = ['Name', 'Employee ID', 'Department', 'Role', 'Status', 'Email', 'Phone', 'Joined Date'];
     const csvContent = [
       headers.join(','),
-      ...filteredStaff.map(s => [
-        `"${s.name}"`,
-        `"${s.employeeId}"`,
-        `"${s.department}"`,
-        `"${s.role}"`,
-        `"${s.status}"`,
-        `"${s.email}"`,
-        `"${s.phone}"`,
-        `"${s.joinedDate || 'Recent'}"`
+      ...staff.map(s => [
+        `"${(s.firstName || '') + ' ' + (s.lastName || '')}"`,
+        `"${s.staffId || s.employeeId || ''}"`,
+        `"${s.department?.name || s.department || ''}"`,
+        `"${s.role || ''}"`,
+        `"${s.status || 'ACTIVE'}"`,
+        `"${s.email || ''}"`,
+        `"${s.phone || ''}"`,
+        `"${s.hiredAt || 'Recent'}"`
       ].join(','))
     ].join('\n');
 
@@ -94,44 +106,48 @@ export function StaffRegistry() {
     URL.revokeObjectURL(url);
   };
 
-  const handleOnboardStaff = () => {
-    setShowOnboardModal(true);
-  };
-
-  const handleOnboardSubmit = () => {
-    if (!onboardForm.name || !onboardForm.email) {
+  const handleOnboardSubmit = async () => {
+    if (!onboardForm.firstName || !onboardForm.lastName || !onboardForm.email) {
       alert('Name and Email are required fields.');
       return;
     }
-    const newId = String(mockStaff.length + 1);
-    const newStaff = {
-      id: newId,
-      name: onboardForm.name,
-      employeeId: `STF-${String(mockStaff.length + 1).padStart(3, '0')}`,
-      department: onboardForm.department,
-      role: onboardForm.role,
-      status: 'Active',
-      email: onboardForm.email,
-      phone: onboardForm.phone,
-      joinedDate: new Date().toISOString().split('T')[0]
-    };
-    mockStaff.push(newStaff);
-    setOnboardForm({
-      name: '',
-      email: '',
-      phone: '',
-      department: DEPARTMENTS[0] || '',
-      role: ROLES[0] || ''
-    });
-    setShowOnboardModal(false);
+    try {
+      await createStaffMutation.mutateAsync({
+        firstName: onboardForm.firstName,
+        lastName: onboardForm.lastName,
+        email: onboardForm.email,
+        phone: onboardForm.phone,
+        staffId: onboardForm.staffId || `STF-${String(staff.length + 1).padStart(3, '0')}`,
+        department: onboardForm.department,
+        role: onboardForm.role,
+      });
+      setShowOnboardModal(false);
+      setOnboardForm({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        staffId: '',
+        department: 'Administration',
+        role: 'TEACHER',
+      });
+    } catch (err) {
+      alert('Failed to create staff: ' + (err.message || err));
+    }
   };
 
-  const filteredStaff = mockStaff.filter(s => 
-    (s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     s.employeeId.toLowerCase().includes(searchQuery.toLowerCase())) &&
-    (selectedDepartment === 'All' || s.department === selectedDepartment) &&
-    (selectedRole === 'All' || s.role === selectedRole) &&
-    (selectedStatus === 'All' || s.status === selectedStatus)
+  const handleDeactivate = async (userId) => {
+    if (!window.confirm('Deactivate this user? This action cannot be undone.')) return;
+    try {
+      await deactivateMutation.mutateAsync(userId);
+    } catch (err) {
+      alert('Failed to deactivate: ' + (err.message || err));
+    }
+  };
+
+  const filteredStaff = staff.filter(s => 
+    ((s.firstName || '') + ' ' + (s.lastName || '')).toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (s.staffId || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -142,7 +158,7 @@ export function StaffRegistry() {
           <h1 className="text-2xl font-black text-slate-900 italic font-display tracking-tight leading-none mb-1">
             Staff Directory
           </h1>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Institutional Command Registry : {mockStaff.length} Nodes</p>
+           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Institutional Command Registry : {isLoading ? '...' : `${staff.length} Nodes`}</p>
         </div>
 
          <div className="flex items-center gap-3">
@@ -202,34 +218,34 @@ export function StaffRegistry() {
                     <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Filter Registry</p>
                   </div>
                   <div className="p-4 space-y-4">
-                     <div>
-                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Department</p>
-                       <Select value={selectedDepartment} onValueChange={(e) => setSelectedDepartment(e.target.value)} className="w-full">
-                         <SelectTrigger>
-                           <SelectValue placeholder="All Departments" />
-                         </SelectTrigger>
-                         <SelectContent>
-                           <SelectItem value="All">All Departments</SelectItem>
-                           {DEPARTMENTS.map(dept => (
-                             <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                           ))}
-                         </SelectContent>
-                       </Select>
-                     </div>
-                     <div>
-                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Role</p>
-                       <Select value={selectedRole} onValueChange={(e) => setSelectedRole(e.target.value)} className="w-full">
-                         <SelectTrigger>
-                           <SelectValue placeholder="All Roles" />
-                         </SelectTrigger>
-                         <SelectContent>
-                           <SelectItem value="All">All Roles</SelectItem>
-                           {ROLES.map(role => (
-                             <SelectItem key={role} value={role}>{role}</SelectItem>
-                           ))}
-                         </SelectContent>
-                       </Select>
-                     </div>
+                      <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Department</p>
+                        <Select value={selectedDepartment} onValueChange={(e) => setSelectedDepartment(e.target.value)} className="w-full">
+                          <SelectTrigger>
+                            <SelectValue placeholder="All Departments" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="All">All Departments</SelectItem>
+                            {departments.map(dept => (
+                              <SelectItem key={dept.id || dept.name} value={dept.name || dept.id}>{dept.name || dept.id}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Role</p>
+                        <Select value={selectedRole} onValueChange={(e) => setSelectedRole(e.target.value)} className="w-full">
+                          <SelectTrigger>
+                            <SelectValue placeholder="All Roles" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="All">All Roles</SelectItem>
+                            {['TEACHER', 'HOD', 'HEADMASTER', 'SUPER_ADMIN'].map(role => (
+                              <SelectItem key={role} value={role}>{role}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                      <div>
                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Status</p>
                        <Select value={selectedStatus} onValueChange={(e) => setSelectedStatus(e.target.value)} className="w-full">
@@ -618,31 +634,31 @@ export function StaffRegistry() {
                    </div>
 
                    <div className="grid grid-cols-2 gap-4">
-                     <div>
-                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Department</p>
-                       <select
-                         value={onboardForm.department}
-                         onChange={(e) => setOnboardForm({...onboardForm, department: e.target.value})}
-                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-900/5"
-                       >
-                         {DEPARTMENTS.map(dept => (
-                           <option key={dept} value={dept}>{dept}</option>
-                         ))}
-                       </select>
-                     </div>
+                      <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Department</p>
+                        <select
+                          value={onboardForm.department}
+                          onChange={(e) => setOnboardForm({...onboardForm, department: e.target.value})}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-900/5"
+                        >
+                          {departments.map(dept => (
+                            <option key={dept.id || dept.name} value={dept.name || dept.id}>{dept.name || dept.id}</option>
+                          ))}
+                        </select>
+                      </div>
 
-                     <div>
-                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Job Role</p>
-                       <select
-                         value={onboardForm.role}
-                         onChange={(e) => setOnboardForm({...onboardForm, role: e.target.value})}
-                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-900/5"
-                       >
-                         {ROLES.map(role => (
-                           <option key={role} value={role}>{role}</option>
-                         ))}
-                       </select>
-                     </div>
+                      <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Job Role</p>
+                        <select
+                          value={onboardForm.role}
+                          onChange={(e) => setOnboardForm({...onboardForm, role: e.target.value})}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-900/5"
+                        >
+                          {['TEACHER', 'HOD', 'HEADMASTER', 'SUPER_ADMIN'].map(role => (
+                            <option key={role} value={role}>{role}</option>
+                          ))}
+                        </select>
+                      </div>
                    </div>
 
                    <div className="flex gap-3 pt-4">
