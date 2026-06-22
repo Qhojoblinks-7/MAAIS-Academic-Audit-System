@@ -15,3 +15,7 @@ export { mockStudentService } from './mockStudentService';
 export { hodService } from './hodService';
 export { teacherService } from './teacherService';
 export { studentService } from './studentService';
+
+// New TanStack Query API
+export { hodApi } from './hodApi';
+export * from './hodApi';

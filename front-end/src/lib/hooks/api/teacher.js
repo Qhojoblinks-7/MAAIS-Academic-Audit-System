@@ -117,6 +117,30 @@ export function useTeacherGradeConfig() {
   });
 }
 
+export function useTeacherObservationTypes() {
+  return useQuery({
+    queryKey: ['teacher', 'observation-types'],
+    queryFn: teacherApi.getObservationTypes,
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+export function useTeacherObservationColors() {
+  return useQuery({
+    queryKey: ['teacher', 'observation-colors'],
+    queryFn: teacherApi.getObservationColors,
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+export function useTeacherAnalyticsObservationColors() {
+  return useQuery({
+    queryKey: ['teacher', 'analytics-observation-colors'],
+    queryFn: teacherApi.getAnalyticsObservationColors,
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
 export function useSubmitGradeRevision() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -133,6 +157,36 @@ export function useUpdateGradeRevision() {
     mutationFn: ({ revisionId, updatedData }) => teacherApi.updateGradeRevision(revisionId, updatedData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teacher', 'grade', 'issues'] });
+    },
+  });
+}
+
+export function useCreateObservation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (observation) => teacherApi.createObservation(observation),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacher', 'observations'] });
+    },
+  });
+}
+
+export function useUpdateObservation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ observationId, patch }) => teacherApi.updateObservation(observationId, patch),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacher', 'observations'] });
+    },
+  });
+}
+
+export function useDeleteObservation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (observationId) => teacherApi.deleteObservation(observationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacher', 'observations'] });
     },
   });
 }

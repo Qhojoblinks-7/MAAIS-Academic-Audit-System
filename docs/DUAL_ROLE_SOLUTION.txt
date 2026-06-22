@@ -1,0 +1,249 @@
+I cannot write files in this read-only mode. However, here is the detailed solution in a format you can copy to a `.txt` file:
+
+---
+
+## MAAIS Dual-Role HOD/Teacher Solution
+### Date: 2026-06-22
+
+### PROBLEM SUMMARY
+
+When a teacher is assigned as HOD, the current system:
+1. Changes their role from TEACHER → HOD (single role enum)
+2. Removes their teaching assignments from view
+3. Prevents them from accessing their own teaching dashboard
+4. Creates redundant frontend/backend systems for HOD vs Teacher
+
+### RECOMMENDED SOLUTION: Context-Based Interface
+
+**Maintain single role but add dual-context capability via database flags**
+
+### DATABASE CHANGES
+
+Add to `StaffProfile` model in `schema.prisma`:
+```
+hodDepartmentId       String?   // Department they oversee (can be same or different)
+canTeach              Boolean   @default(true) // Can they actively teach?
+isHod                 Boolean   @default(false) // Quick check for HOD status
+```
+
+### BACKEND CHANGES
+
+#### 1. Users Service Update
+```typescript
+// src/users/users.service.ts
+async getAllStaff(user?: { id: string; role: Role }) {
+  let departmentId: string | undefined;
+
+  if (user?.role === Role.HOD || user?.isHod) {
+    const staff = await this.prisma.staffProfile.findUnique({
+      where: { userId: user.id },
+    });
+    departmentId = staff?.hodDepartmentId || staff?.departmentId;
+  }
+
+  return this.prisma.staffProfile.findMany({
+    where: {
+      ...(departmentId ? { departmentId } : {}),
+    },
+    include: {
+      user: { select: { email: true, role: true, isActive: true } },
+      department: true,
+      teachingAssignments: { include: { subject: true, classSection: true } },
+    },
+    orderBy: { lastName: 'asc' },
+  });
+}
+```
+
+#### 2. New Context Endpoint
+```typescript
+// src/users/users.controller.ts
+@Get('me/context')
+@Roles(Role.TEACHER, Role.HOD)
+async getMyContext(@CurrentUser('id') userId: string, @CurrentUser('role') role: Role) {
+  const profile = await this.prisma.staffProfile.findUnique({
+    where: { userId },
+    include: { 
+      department: true,
+      hodDepartment: true, // New relation
+      teachingAssignments: { 
+        include: { subject: true, classSection: true } 
+      }
+    }
+  });
+
+  return {
+    role,
+    department: profile?.department,
+    hodDepartment: profile?.hodDepartment,
+    teachingAssignments: profile?.teachingAssignments,
+    canTeach: profile?.canTeach ?? true,
+    canOversight: role === Role.HOD || profile?.hodDepartmentId != null,
+    activeMode: role === Role.HOD && profile?.canTeach ? 'dual' : 'single'
+  };
+}
+```
+
+### FRONTEND CHANGES
+
+#### 1. RoleContext Update
+```javascript
+// src/context/RoleContext.jsx
+const [activeMode, setActiveMode] = useState('teaching');
+const [context, setContext] = useState(null);
+
+// On user load, fetch context
+useEffect(() => {
+  if (user?.role === 'HOD' || user?.canOversight) {
+    fetch('/api/users/me/context')
+      .then(r => r.json())
+      .then(setContext);
+  }
+}, [user]);
+
+// View mode derived from context
+const viewMode = activeMode === 'oversight' && context?.canOversight 
+  ? 'oversight' 
+  : 'teaching';
+```
+
+#### 2. Topbar Profile Section Update
+Replace lines 294-310 in `src/components/shared/Topbar.jsx`:
+
+```jsx
+<div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-border shrink-0">
+  <NotificationBell />
+
+  {/* Context Switcher for Dual-Role Users */}
+  {context?.canTeach && context?.canOversight && (
+    <div className="hidden sm:flex items-center gap-1 bg-muted/50 rounded-lg p-1">
+      <button
+        onClick={() => setActiveMode('teaching')}
+        className={cn(
+          "px-2 py-1 text-[10px] font-bold rounded transition-all",
+          activeMode === 'teaching' 
+            ? "bg-white shadow text-text-primary" 
+            : "text-text-secondary hover:text-text-primary"
+        )}
+      >
+        Teaching
+      </button>
+      <button
+        onClick={() => setActiveMode('oversight')}
+        className={cn(
+          "px-2 py-1 text-[10px] font-bold rounded transition-all",
+          activeMode === 'oversight' 
+            ? "bg-white shadow text-text-primary" 
+            : "text-text-secondary hover:text-text-primary"
+        )}
+      >
+        Oversight
+      </button>
+    </div>
+  )}
+
+  <div className="hidden sm:flex flex-col text-right min-w-0">
+    <p className="text-xs font-bold text-text-primary truncate">{user?.name}</p>
+    <p className="text-[9px] font-bold text-brand-secondary/80 uppercase truncate">
+      {user?.role} {activeMode === 'oversight' && context?.canTeach ? '· Oversight' : ''}
+    </p>
+  </div>
+
+  <Avatar className="w-8 h-8 rounded-xl border border-border shrink-0">
+    <AvatarImage src={avatarSrc} alt="User Profile" />
+    <AvatarFallback className="rounded-xl bg-brand-secondary/10 text-brand-secondary text-[11px] font-bold">
+      <UserIcon size={13} />
+    </AvatarFallback>
+  </Avatar>
+</div>
+```
+
+#### 3. HODContext Update
+```javascript
+// src/context/HODContext.jsx
+// Modify refreshDepartmentProgress to check viewMode
+
+const refreshDepartmentProgress = useCallback(async () => {
+  if (!isHod) return;
+  
+  if (viewMode === 'teaching') {
+    // Show only their teaching assignments
+    const assignments = await hodService.getMyTeachingAssignments();
+    setDepartmentProgress(assignments);
+  } else {
+    // Show full department oversight
+    const data = await hodService.getDepartmentProgress();
+    setDepartmentProgress(data.items || []);
+  }
+}, [isHod, viewMode]);
+```
+
+### DATA ACCESS PATTERNS
+
+#### HOD Viewing Students (Teaching Mode)
+```typescript
+// Filter by their own teaching assignments
+const assignments = await prisma.teachingAssignment.findMany({
+  where: { teacherId: staffProfile.id }
+});
+const classSectionIds = assignments.map(a => a.classSectionId);
+const students = await prisma.studentProfile.findMany({
+  where: { currentClassId: { in: classSectionIds } }
+});
+```
+
+#### HOD Viewing Students (Oversight Mode)
+```typescript
+// Filter by their department
+const students = await prisma.studentProfile.findMany({
+  where: { departmentId: staffProfile.hodDepartmentId }
+});
+```
+
+### ADMIN PANEL UPDATES
+
+When assigning HOD status, admin should:
+1. Keep existing `departmentId` (for teaching context)
+2. Set `hodDepartmentId` to department they oversee
+3. Ensure `canTeach = true` remains set
+4. No role change needed - just flag updates
+
+### MIGRATION STEPS
+
+1. **Apply schema changes** (add hodDepartmentId, canTeach, isHod fields)
+2. **Migrate existing HODs** - copy their departmentId to hodDepartmentId
+3. **Update UserContext** to fetch and store context
+4. **Update Topbar** with mode switcher
+5. **Update HODContext** to respect viewMode
+6. **Test dual-role scenarios** - HOD who teaches vs HOD-only vs Teacher-only
+
+### BENEFITS
+
+- Single login for users with multiple responsibilities
+- No role switching required (just context toggle)
+- Maintains existing permission structure
+- Clean separation of concerns in codebase
+- Easy to understand and maintain
+
+### FILES TO MODIFY
+
+**Backend:**
+- `maais-backend/prisma/schema.prisma` (add fields)
+- `maais-backend/src/users/users.service.ts` (update queries)
+- `maais-backend/src/users/users.controller.ts` (add context endpoint)
+
+**Frontend:**
+- `front-end/src/context/RoleContext.jsx` (add activeMode state)
+- `front-end/src/context/HODContext.jsx` (respect viewMode)
+- `front-end/src/components/shared/Topbar.jsx` (add switcher UI)
+- `front-end/src/services/hodService.js` (add getMyTeachingAssignments)
+
+---
+
+Admin: admin@mandoshts.edu.gh / Admin@2024!
+HODs (5 departments): HOD@2024! password
+m.osei@mandoshts.edu.gh (GEN) - oversight only
+s.mensah@mandoshts.edu.gh (SCI) - dual-role (canTeach: true)
+d.boateng@mandoshts.edu.gh (BUS) - oversight only
+g.amoah@mandoshts.edu.gh (VTG) - oversight only
+t.brew@mandoshts.edu.gh (ART) - oversight only

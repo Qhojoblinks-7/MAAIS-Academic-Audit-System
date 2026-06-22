@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { BookOpen, Percent, AlertTriangle, Users, ShieldCheck, RefreshCw, ChevronDown, TrendingUp } from 'lucide-react';
 import { useRole } from '../../context/RoleContext';
 import { useHOD } from '../../context/HODContext';
+import { useHODStore, useCanSwitchModes } from '../../stores/hodStore';
 import { TeacherSubmissionMatrix } from '../../components/organisms/DashboardOrganisms';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -15,27 +16,41 @@ export function HODDashboard() {
     teacherSubmissions = [],
     interventionAlerts = [],
     refreshDepartmentProgress,
+    refreshMyClasses,
     refreshTeacherSubmissions,
     refreshInterventionAlerts,
     isLoading,
+    // New mode-aware props
+    activeMode,
+    canTeach,
+    canOversight,
+    teacherClasses = [],
   } = useHOD();
+  
+  const canSwitchModes = useCanSwitchModes();
+  const setActiveMode = useHODStore((state) => state.setActiveMode);
 
   const [timeFilter, setTimeFilter] = React.useState('Today');
   const [showDropdown, setShowDropdown] = React.useState(false);
   const [refreshDisabled, setRefreshDisabled] = useState(false);
 
-  useEffect(() => {
-     refreshDepartmentProgress();
-     refreshTeacherSubmissions();
-     refreshInterventionAlerts();
-   }, [refreshDepartmentProgress, refreshTeacherSubmissions, refreshInterventionAlerts]);
+   useEffect(() => {
+      refreshDepartmentProgress();
+      refreshTeacherSubmissions();
+      refreshInterventionAlerts();
+      refreshMyClasses();
+    }, [refreshDepartmentProgress, refreshTeacherSubmissions, refreshInterventionAlerts, refreshMyClasses]);
 
   const handleRefreshAll = async () => {
     setRefreshDisabled(true);
+    if (activeMode === 'teaching') {
+      await refreshMyClasses();
+    }
     await Promise.all([
       refreshDepartmentProgress(),
       refreshTeacherSubmissions(),
-      refreshInterventionAlerts()
+      refreshInterventionAlerts(),
+      refreshMyClasses()
     ]);
     setTimeout(() => setRefreshDisabled(false), 1000);
   };
@@ -47,12 +62,15 @@ export function HODDashboard() {
     await Promise.all([
       refreshDepartmentProgress(),
       refreshTeacherSubmissions(),
-      refreshInterventionAlerts()
+      refreshInterventionAlerts(),
+      refreshMyClasses()
     ]);
     setTimeout(() => setRefreshDisabled(false), 1000);
   };
 
-  const baseProgress = departmentProgress?.items || departmentProgress || [];
+  const baseProgress = activeMode === 'teaching' 
+    ? (teacherClasses?.items || teacherClasses || [])
+    : (departmentProgress?.items || departmentProgress || []);
   const filteredProgress = timeFilter === 'Today' 
     ? baseProgress.slice(0, 2) 
     : timeFilter === 'Week' 
@@ -82,27 +100,45 @@ export function HODDashboard() {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-7xl mx-auto"
       >
-        <header className="mb-8 border-b border-border/60 pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-black text-foreground tracking-tight leading-none">
-              Welcome back, <span className="text-brand-primary">{user?.name?.split(' ')[0] || 'HOD'}</span>!
-            </h1>
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-2 flex items-center gap-1.5">
-              <ShieldCheck size={10} className="text-muted-foreground" />
-              Department Oversight & Academic Integrity Console
-            </p>
-          </div>
-          <Button
-            onClick={handleRefreshAll}
-            disabled={isLoading || refreshDisabled}
-            variant="outline"
-            size="sm"
-            className="self-start sm:self-center"
-          >
-            <RefreshCw size={13} className={isLoading || refreshDisabled ? 'animate-spin' : ''} />
-            Refresh Dashboard
-          </Button>
-        </header>
+<header className="mb-8 border-b border-border/60 pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+           <div>
+             <h1 className="text-3xl md:text-4xl font-black text-foreground tracking-tight leading-none">
+               Welcome back, <span className="text-brand-primary">{user?.name?.split(' ')[0] || 'HOD'}</span>!
+             </h1>
+             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-2 flex items-center gap-1.5">
+               <ShieldCheck size={10} className="text-muted-foreground" />
+               {activeMode === 'teaching' ? 'Teaching Workspace' : 'Department Oversight & Academic Integrity Console'}
+             </p>
+           </div>
+           <div className="flex items-center gap-2">
+             {canSwitchModes && (
+               <div className="hidden sm:flex items-center gap-1 bg-muted/50 rounded-lg p-1 mr-2">
+                 <button
+                   onClick={() => setActiveMode('teaching')}
+                   className={`px-2 py-1 text-[10px] font-bold rounded transition-all ${activeMode === 'teaching' ? 'bg-white shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                 >
+                   Teaching
+                 </button>
+                 <button
+                   onClick={() => setActiveMode('oversight')}
+                   className={`px-2 py-1 text-[10px] font-bold rounded transition-all ${activeMode === 'oversight' ? 'bg-white shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                 >
+                   Oversight
+                 </button>
+               </div>
+             )}
+             <Button
+               onClick={handleRefreshAll}
+               disabled={isLoading || refreshDisabled}
+               variant="outline"
+               size="sm"
+               className="self-start sm:self-center"
+             >
+               <RefreshCw size={13} className={isLoading || refreshDisabled ? 'animate-spin' : ''} />
+               Refresh Dashboard
+             </Button>
+           </div>
+         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
          

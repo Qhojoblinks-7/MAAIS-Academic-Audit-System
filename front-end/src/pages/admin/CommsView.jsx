@@ -1,4 +1,4 @@
-﻿import React from 'react';
+﻿import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Calendar, 
@@ -28,7 +28,16 @@ import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
 import { useTimetableEntries } from '../../lib/hooks';
 
-  const timetableData = React.useMemo(() => {
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+const HOURS = Array.from({ length: 10 }, (_, i) => i + 8); // 8 AM to 5 PM
+
+export function CommsView() {
+  const { user } = useRole();
+  const navigate = useNavigate();
+  const timetableQuery = useTimetableEntries();
+  const timetableEntries = timetableQuery.data || [];
+
+  const timetableData = useMemo(() => {
     if (timetableEntries.length > 0) {
       return timetableEntries.map((entry) => ({
         id: entry.id,
@@ -47,15 +56,6 @@ import { useTimetableEntries } from '../../lib/hooks';
     }
     return [];
   }, [timetableEntries]);
-
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-const HOURS = Array.from({ length: 10 }, (_, i) => i + 8); // 8 AM to 5 PM
-
-export function CommsView() {
-  const { user } = useRole();
-  const navigate = useNavigate();
-  const timetableQuery = useTimetableEntries();
-  const timetableEntries = timetableQuery.data || [];
 
   const [view, setView] = React.useState('weekly');
   const [selectedDay, setSelectedDay] = React.useState('Monday');
