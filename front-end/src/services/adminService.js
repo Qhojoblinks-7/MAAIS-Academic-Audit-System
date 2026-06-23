@@ -22,7 +22,7 @@ async function request(method, path, body) {
     headers: getHeaders(),
     credentials: 'include',
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-  });
+  };
 
   if (!res.ok) {
     const err = new Error(`Request failed: ${res.status} ${method} ${path}`);

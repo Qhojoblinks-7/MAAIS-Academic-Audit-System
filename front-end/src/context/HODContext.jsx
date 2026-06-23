@@ -1,23 +1,14 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-
-
-// Note: The Zustand store (useHODStore) handles mode state separately
-// This context provides all other HOD-related state and actions
 import { useRole } from './RoleContext';
 import { hodService } from '../services/hodService';
 import { cacheLayer } from '../services';
 import { useUI } from './UIContext';
-import { useHODStore } from '../stores/hodStore';
 
 const HODContext = createContext(undefined);
 
 export function HODProvider({ children }) {
   const { user } = useRole();
-  
-  // Use Zustand store for mode state
-  const activeMode = useHODStore((state) => state.activeMode);
-  const setActiveMode = useHODStore((state) => state.setActiveMode);
-  const context = useHODStore((state) => state.context);
+  const isHod = user?.role === 'HOD';
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [auditLogs, setAuditLogs] = useState([]);
@@ -29,7 +20,6 @@ export function HODProvider({ children }) {
   const [archiveSearchQuery, setArchiveSearchQuery] = useState('');
   const [archivePage, setArchivePage] = useState(1);
   const [departmentProgress, setDepartmentProgress] = useState([]);
-  const [teacherClasses, setTeacherClasses] = useState([]);
   const [teacherSubmissions, setTeacherSubmissions] = useState([]);
   const [gradeComparison, setGradeComparison] = useState(null);
   const [lockedTerms, setLockedTerms] = useState([]);
@@ -79,9 +69,6 @@ export function HODProvider({ children }) {
 
   // Derive effective offline state: network offline OR user opted for draft mode
   const isEffectivelyOffline = !isOnline || isDraftMode;
-
-  // ── Authorization flags (MUST be declared before any usage) ───────────────
-  const isHod = user?.role === 'HOD' || context?.canOversight || context?.canTeach;
 
   // Save a record as draft locally (for offline access)
   const saveDraftRecord = useCallback((recordId, recordData) => {
@@ -198,10 +185,8 @@ export function HODProvider({ children }) {
   const [escalatedIssues, setEscalatedIssues] = useState([]);
   const [contactChannels, setContactChannels] = useState(null);
   // ── Phase 7: Impersonation ────────────────────────────────────────────────────
-  const viewAsTeacherId = useHODStore((state) => state.viewAsTeacherId);
-  const viewAsTeacherName = useHODStore((state) => state.viewAsTeacherName);
-  const setViewAsTeacher = useHODStore((state) => state.setViewAsTeacher);
-  const setViewAsTeacherName = useHODStore((state) => state.setViewAsTeacherName);
+  const [viewAsTeacherId, setViewAsTeacherId] = useState(null);
+  const [viewAsTeacherName, setViewAsTeacherName] = useState(null);
   const [departmentTeachers, setDepartmentTeachers] = useState([]);
    // ── Phase 9: Intervention counseling notes & aggregated alerts ─────────────────
    const [alertNotes, setAlertNotes] = useState({});
@@ -479,17 +464,7 @@ export function HODProvider({ children }) {
       }
     }, [isHod]);
 
-    const refreshMyClasses = useCallback(async () => {
-      if (!isHod) return;
-      try {
-        const data = await hodService.getMyTeachingAssignments();
-        setTeacherClasses(Array.isArray(data?.items ?? data) ? (data?.items ?? data) : []);
-      } catch (e) {
-        console.warn('[HODContext] my-teaching-classes fetch failed:', e);
-      }
-    }, [isHod]);
-
- const refreshArchivedClasses = useCallback(async () => {
+const refreshArchivedClasses = useCallback(async () => {
       if (!isHod) return [];
       try {
         const data = await hodService.getArchivedDepartmentData({
@@ -720,14 +695,14 @@ const refreshPromotionRecommendations = useCallback(async () => {
      const impersonateTeacherAction = useCallback(async (teacherId, reason = '') => {
        if (!isHod) throw new Error('Not authorized');
        const result = await hodService.impersonateTeacher(teacherId, { reason, timestamp: new Date().toISOString() });
-       setViewAsTeacher(teacherId);
+       setViewAsTeacherId(teacherId);
        return result;
      }, [isHod]);
 
      const stopImpersonationAction = useCallback(async () => {
        if (!isHod) throw new Error('Not authorized');
        await hodService.stopImpersonation();
-       setViewAsTeacher(null);
+       setViewAsTeacherId(null);
        setViewAsTeacherName(null);
      }, [isHod]);
 
@@ -760,8 +735,7 @@ const refreshPromotionRecommendations = useCallback(async () => {
        refreshAuditLogs();
        refreshInterventionAlerts();
        refreshDepartmentProgress();
-        refreshMyClasses();
-        refreshTeacherSubmissions();
+       refreshTeacherSubmissions();
        refreshLockedTerms();
        refreshArchivedClasses();
        refreshPromotionRecommendations();
@@ -776,8 +750,7 @@ const refreshPromotionRecommendations = useCallback(async () => {
        refreshAuditLogs,
        refreshInterventionAlerts,
        refreshDepartmentProgress,
-        refreshMyClasses,
-        refreshTeacherSubmissions,
+       refreshTeacherSubmissions,
        refreshLockedTerms,
        refreshArchivedClasses,
        refreshPromotionRecommendations,
@@ -983,10 +956,6 @@ const rejectRevision = useCallback(async (recordId, reason) => {
     return () => clearInterval(interval);
   }, [isHod, refreshSystemHealth]);
 
-
-  const canTeach = context?.canTeach ?? false;
-  const canOversight = context?.canOversight ?? false;
-
 const value = {
       // state
       auditLogs,
@@ -998,7 +967,6 @@ const value = {
       alertFilter,
       setAlertFilter,
       departmentProgress,
-      teacherClasses,
       teacherSubmissions,
       gradeComparison,
       lockedTerms,
@@ -1007,142 +975,135 @@ const value = {
       revisions,
       // ── Phase 5: Settings ────────────────────────────────────────────────────
       hodSettings,
-      setHodSettings,
-      activeSessions,
-      // ── Phase 6: Support ─────────────────────────────────────────────────────
-      supportTickets,
-      setSupportTickets,
-      ticketFilter,
-      setTicketFilter,
-      ticketTabs,
-      setTicketTabs,
-      systemHealth,
-      setSystemHealth,
-      escalatedIssues,
-      setEscalatedIssues,
-      contactChannels,
-      setContactChannels,
-       // ── Phase 7: Impersonation ─────────────────────────────────────────────────
-       viewAsTeacherId,
-       setViewAsTeacher,
-       viewAsTeacherName,
-       setViewAsTeacherName,
-       departmentTeachers,
-       setDepartmentTeachers,
-       // ── Phase 9: Intervention counseling ────────────────────────────────────────
-       alertNotes,
-       setAlertNotes,
-       alertAggregationMode,
-       setAlertAggregationMode,
-       isLoading,
-      isExporting,
-      error,
-      activeActionMenu,
-      setActiveActionMenu,
+     setHodSettings,
+     activeSessions,
+     // ── Phase 6: Support ─────────────────────────────────────────────────────
+     supportTickets,
+     setSupportTickets,
+     ticketFilter,
+     setTicketFilter,
+     ticketTabs,
+     setTicketTabs,
+     systemHealth,
+     setSystemHealth,
+     escalatedIssues,
+     setEscalatedIssues,
+     contactChannels,
+     setContactChannels,
+      // ── Phase 7: Impersonation ─────────────────────────────────────────────────
+      viewAsTeacherId,
+      setViewAsTeacherId,
+      viewAsTeacherName,
+      setViewAsTeacherName,
+      departmentTeachers,
+      setDepartmentTeachers,
+      // ── Phase 9: Intervention counseling ────────────────────────────────────────
+      alertNotes,
+      setAlertNotes,
+      alertAggregationMode,
+      setAlertAggregationMode,
+      isLoading,
+     isExporting,
+     error,
+     activeActionMenu,
+     setActiveActionMenu,
 
-      // archive filters
-      archiveFilter,
-      setArchiveFilter,
-      archiveYearFilter,
-      setArchiveYearFilter,
-      archiveSearchQuery,
-      setArchiveSearchQuery,
-      archivePage,
-      setArchivePage,
-      getFilteredArchive,
+     // archive filters
+     archiveFilter,
+     setArchiveFilter,
+     archiveYearFilter,
+     setArchiveYearFilter,
+     archiveSearchQuery,
+     setArchiveSearchQuery,
+     archivePage,
+     setArchivePage,
+     getFilteredArchive,
 
-      // filtered + helpers
-      getFilteredAuditLogs,
-      getFilteredAlerts,
-      getFilteredTickets,
-      totalAlerts,
-      unresolvedAlerts,
-      atRiskStudentCount,
-      submissionPct,
-      hasShortJustification,
-      calcTicketAge,
-      isTicketSLABreach,
+     // filtered + helpers
+     getFilteredAuditLogs,
+     getFilteredAlerts,
+     getFilteredTickets,
+     totalAlerts,
+     unresolvedAlerts,
+     atRiskStudentCount,
+     submissionPct,
+     hasShortJustification,
+     calcTicketAge,
+     isTicketSLABreach,
 
-      // interactions (Phase 1–5)
-      resolveAlert,
-      addHODComment,
-      fetchGradeComparison,
+     // interactions (Phase 1–5)
+     resolveAlert,
+     addHODComment,
+     fetchGradeComparison,
 
-      // support actions (Phase 6)
-      createTicket,
-      updateTicketAction,
-      escalateTicketAction,
-      updateChannelPrefsAction,
+     // support actions (Phase 6)
+     createTicket,
+     updateTicketAction,
+     escalateTicketAction,
+     updateChannelPrefsAction,
 
-       // impersonation actions (Phase 7)
-       impersonateTeacherAction,
-       stopImpersonationAction,
-       resetTeacherPasswordAction,
+      // impersonation actions (Phase 7)
+      impersonateTeacherAction,
+      stopImpersonationAction,
+      resetTeacherPasswordAction,
 
-       // counseling actions (Phase 9)
-       addAlertNote,
-       getAggregatedAlerts,
-       alertClusterCount,
+      // counseling actions (Phase 9)
+      addAlertNote,
+      getAggregatedAlerts,
+      alertClusterCount,
 
- // data fetching
-        refreshAuditLogs,
-        refreshInterventionAlerts,
-        refreshDepartmentProgress,
-        refreshMyClasses,
-        refreshTeacherSubmissions,
-       refreshLockedTerms,
-       refreshArchivedClasses,
-       refreshPromotionRecommendations,
-       refreshRevisions,
-       refreshSettings,
-      refreshActiveSessions,
-      refreshSupportTickets,
-      refreshSystemHealth,
-      refreshEscalatedIssues,
-      refreshContactChannels,
-      refreshDepartmentTeachers,
-      refreshAll,
-      saveSettings,
-      changePassword,
-      revokeSession,
-      mfaEnroll,
-      mfaVerify,
+// data fetching
+      refreshAuditLogs,
+      refreshInterventionAlerts,
+      refreshDepartmentProgress,
+      refreshTeacherSubmissions,
+      refreshLockedTerms,
+      refreshArchivedClasses,
+      refreshPromotionRecommendations,
+      refreshRevisions,
+      refreshSettings,
+     refreshActiveSessions,
+     refreshSupportTickets,
+     refreshSystemHealth,
+     refreshEscalatedIssues,
+     refreshContactChannels,
+     refreshDepartmentTeachers,
+     refreshAll,
+     saveSettings,
+     changePassword,
+     revokeSession,
+     mfaEnroll,
+     mfaVerify,
 
- // export helpers
-         startExport,
-         lockTerm,
-         lockTermWithValidation,
-         unlockTerm,
-         exportClassCSV,
-         rejectRevision,
-         approveRevision,
-         lockClass,
-        bulkApproveRevisions,
-        bulkRejectRevisions,
-        markClassLocked,
-        markClassArchived,
-        archiveClass,
-        exportArchivedDataCtx,
+// export helpers
+        startExport,
+        lockTerm,
+        lockTermWithValidation,
+        unlockTerm,
+        exportClassCSV,
+        rejectRevision,
+        approveRevision,
+        lockClass,
+       bulkApproveRevisions,
+       bulkRejectRevisions,
+       markClassLocked,
+       markClassArchived,
+       archiveClass,
+       exportArchivedDataCtx,
 
-     // offline/draft mode
-       isOnline,
-       setIsOnline,
-       isDraftMode,
-       setIsDraftMode,
-       isEffectivelyOffline,
-       pendingChanges,
-       draftRecords,
-       queueChange,
-       saveDraftRecord,
-       loadDraftRecord,
-       getAllDraftRecords,
-       
-       // mode state from Zustand
-       activeMode,
-       setActiveMode,
-       canTeach,
-       canOversight
-      };
+    // offline/draft mode
+      isOnline,
+      setIsOnline,
+      isDraftMode,
+      setIsDraftMode,
+      isEffectivelyOffline,
+      pendingChanges,
+      draftRecords,
+      queueChange,
+      saveDraftRecord,
+      loadDraftRecord,
+      getAllDraftRecords
+     };
 
   return <HODContext.Provider value={value}>{children}</HODContext.Provider>;
 }

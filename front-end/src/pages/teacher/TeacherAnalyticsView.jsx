@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid,
@@ -7,7 +7,7 @@ import {
 } from 'recharts';
 import {
   Star, GraduationCap, Users, BarChart3, AlertTriangle, TrendingUp,
-  Search, FileText, Activity, Eye
+  Search, X, Plus, FileText, Activity, Eye, ArrowRight
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -17,66 +17,34 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../../
 
 const OBS_TYPES_MODULE = ['Behavioral', 'Academic', 'Lab Safety', 'Collaboration', 'Punctuality'];
 const OBS_COLORS_MODULE = ['#1D4D4F', '#f59e0b', '#ef4444', '#3b82f6', '#a855f7'];
-const GRADE_BANDS = [
-  { label: 'A1', min: 75, max: 100, fill: '#166534' },
-  { label: 'B2', min: 70, max: 74, fill: '#1d4d4f' },
-  { label: 'B3', min: 65, max: 69, fill: '#0369a1' },
-  { label: 'C4', min: 60, max: 64, fill: '#6d28d9' },
-  { label: 'C5', min: 55, max: 59, fill: '#b45309' },
-  { label: 'C6', min: 50, max: 54, fill: '#92400e' },
-  { label: 'D7', min: 45, max: 49, fill: '#9f1239' },
-  { label: 'E8', min: 40, max: 44, fill: '#7f1d1d' },
-  { label: 'F9', min: 0, max: 39, fill: '#4b5563' },
+const FALLBACK_STUDENT_SCORES = [
+  { student: "Ama Serwaa", score: 78, trend: "+3", trendUp: true },
+  { student: "Kwame Mensah", score: 65, trend: "-2", trendUp: false },
+  { student: "Angela Owusu", score: 82, trend: "+5", trendUp: true },
+  { student: "Yaw Boateng", score: 55, trend: "–", trendUp: false },
+  { student: "Kofi Mensah", score: 70, trend: "+1", trendUp: true },
+  { student: "Abena Owusu", score: 48, trend: "-4", trendUp: false },
+  { student: "Esi Asare", score: 90, trend: "+7", trendUp: true },
+  { student: "Kojo Annan", score: 61, trend: "+2", trendUp: true },
+  { student: "Akua Mensah", score: 53, trend: "–", trendUp: false },
+  { student: "Kweku Nkrumah", score: 74, trend: "+4", trendUp: true },
 ];
-
-function getNumericTrend(trend) {
-  const value = Number(String(trend ?? '').replace(/[+%]/g, ''));
-  return Number.isFinite(value) ? value : 0;
-}
-
-function getGradeBand(pct, gradeConfig = GRADE_BANDS) {
-  const score = Number(pct) || 0;
-  const bands = gradeConfig || GRADE_BANDS;
-  const band = bands.find((g) => score >= Number(g.min ?? g.minScore) && score <= Number(g.max ?? g.maxScore));
-
-  if (band) return band.label;
-  if (score >= 75) return 'A1';
-  if (score >= 70) return 'B2';
-  if (score >= 65) return 'B3';
-  if (score >= 60) return 'C4';
-  if (score >= 55) return 'C5';
-  if (score >= 50) return 'C6';
-  if (score >= 45) return 'D7';
-  if (score >= 40) return 'E8';
-  return 'F9';
-}
-
-function getGradeColor(grade, gradeConfig = GRADE_BANDS) {
-  const band = (gradeConfig || GRADE_BANDS).find((g) => g.label === grade);
-  return band?.fill || band?.color || '#64748b';
-}
-
-function getObservationType(observation) {
-  return observation?.type || observation?.subject || observation?.subjectName || '';
-}
-
-function getObservationTypes(observations) {
-  const types = Array.from(new Set(observations.map(getObservationType).filter(Boolean)));
-  return types.length > 0 ? types : OBS_TYPES_MODULE;
-}
-
-function getObservationColor(type, index) {
-  const fallbackIndex = OBS_TYPES_MODULE.indexOf(type);
-  return OBS_COLORS_MODULE[fallbackIndex] || OBS_COLORS_MODULE[index % OBS_COLORS_MODULE.length] || '#1D4D4F';
-}
-
-function getTrendSymbol(trend) {
-  if (trend === '–') return '';
-  const value = getNumericTrend(trend);
-  if (value > 0) return '↑';
-  if (value < 0) return '↓';
-  return '→';
-}
+const FALLBACK_CLASS_PROGRESS = [
+  { subject: "General Agriculture", completions: 38, students: 38, avgScore: 82 },
+  { subject: "Core Mathematics", completions: 17, students: 38, avgScore: 65 },
+  { subject: "English Language", completions: 0, students: 38, avgScore: 0 },
+];
+const GRADE_BANDS = [
+  { label: 'A1', min: 80, max: 100, fill: '#16a34a' },
+  { label: 'B2', min: 70, max: 79, fill: '#15803d' },
+  { label: 'B3', min: 65, max: 69, fill: '#65a30d' },
+  { label: 'C4', min: 60, max: 64, fill: '#eab308' },
+  { label: 'C5', min: 55, max: 59, fill: '#f59e0b' },
+  { label: 'C6', min: 50, max: 54, fill: '#f97316' },
+  { label: 'D7', min: 45, max: 49, fill: '#ef4444' },
+  { label: 'E8', min: 40, max: 44, fill: '#dc2626' },
+  { label: 'F9', min: 0, max: 39, fill: '#991b1b' },
+];
 
 export function TeacherAnalyticsView() {
   const { user } = useRole();
@@ -104,10 +72,10 @@ export function TeacherAnalyticsView() {
         const obsData = await teacherService.getAnalytics(teacherId);
 
         setObservations(obsData?.observations || []);
-        setClassProgress(obsData?.classProgress || []);
-        setStudentScores(obsData?.studentScores || []);
+        setClassProgress(obsData?.classProgress || FALLBACK_CLASS_PROGRESS);
+        setStudentScores(obsData?.studentScores || FALLBACK_STUDENT_SCORES);
         setTermTrends(obsData?.termTrends || []);
-        setGradeConfig(obsData?.gradeConfig || GRADE_BANDS);
+        setGradeConfig(GRADE_BANDS);
       } catch (err) {
         setError('Failed to load analytics');
       } finally {
@@ -117,39 +85,49 @@ export function TeacherAnalyticsView() {
     fetchAnalytics();
   }, [user?.staffId, user?.profileId, user?.id]);
 
+  function getGradeBand(pct) {
+    if (pct >= 75) return 'A1';
+    if (pct >= 70) return 'B2';
+    if (pct >= 65) return 'B3';
+    if (pct >= 60) return 'C4';
+    if (pct >= 55) return 'C5';
+    if (pct >= 50) return 'C6';
+    if (pct >= 45) return 'D7';
+    if (pct >= 40) return 'E8';
+    return 'F9';
+  }
+
   const gradeDist = useMemo(() =>
     (gradeConfig || GRADE_BANDS).map((g) => ({
       label: g.label,
-      count: studentScores.filter(s => getGradeBand(s.score, gradeConfig) === g.label).length,
-      fill: g.fill || g.color,
+      count: studentScores.filter(s => getGradeBand(s.score) === g.label).length,
+      fill: g.fill,
     })),
     [studentScores, gradeConfig]
   );
 
-  const observationTypes = useMemo(() => getObservationTypes(observations), [observations]);
-
   const obsTypePieData = useMemo(() => {
-    return observationTypes.map((t, i) => ({
+    return OBS_TYPES_MODULE.map((t, i) => ({
       name: t,
-      value: observations.filter((o) => getObservationType(o) === t).length,
-      fill: getObservationColor(t, i),
+      value: observations.filter(o => o.type === t).length,
+      fill: OBS_COLORS_MODULE[i],
     }));
-  }, [observations, observationTypes]);
+  }, [observations]);
 
   const statCards = useMemo(() => {
     const safeScores = studentScores || [];
     const totalScore = safeScores.reduce((a, b) => a + (b.score || 0), 0);
     const meanScore = safeScores.length > 0 ? Math.round(totalScore / safeScores.length) : 0;
-    const totalCompletions = classProgress.reduce((s, c) => s + (c.completions || 0), 0);
-    const totalStudents = classProgress.reduce((s, c) => s + (c.students || 0), 0);
-    const submissionRate = totalStudents > 0 ? Math.round((totalCompletions / totalStudents) * 100) : 0;
-    const trendedStudents = safeScores.filter((s) => getNumericTrend(s.trend) !== 0).length;
+    const submissionRate = classProgress.length > 0
+      ? Math.round((classProgress.reduce((s, c) => s + (c.completions || 0), 0) /
+        classProgress.reduce((s, c) => s + (c.students || 1), 0)) * 100)
+      : 0;
 
     return [
-      { label: 'Class Avg Score', value: safeScores.length > 0 ? `${meanScore}%` : 'No data', icon: GraduationCap, color: 'bg-success/10 text-success border-success/20', delta: trendedStudents > 0 ? `${trendedStudents} with term movement` : 'Awaiting previous term data' },
-      { label: 'Submission Rate', value: classProgress.length > 0 ? `${totalCompletions}/${totalStudents}` : 'No data', icon: FileText, color: 'bg-brand-secondary/10 text-brand-secondary border-brand-secondary/20', delta: classProgress.length > 0 ? `${submissionRate}% complete` : 'No class data' },
+      { label: 'Class Avg Score', value: `${meanScore}%`, icon: GraduationCap, color: 'bg-success/10 text-success border-success/20', delta: '+2% vs last term' },
+      { label: 'Submission Rate', value: `${classProgress.reduce((s, c) => s + (c.completions || 0), 0)}/${classProgress.reduce((s, c) => s + (c.students || 0), 0)}`, icon: FileText, color: 'bg-brand-secondary/10 text-brand-secondary border-brand-secondary/20', delta: `${submissionRate}% complete` },
       { label: 'At-Risk Students', value: safeScores.filter(s => (s.score || 0) < 60).length, icon: AlertTriangle, color: 'bg-danger/10 text-danger border-danger/20', delta: 'Score below 60' },
-      { label: 'Total Observations', value: observations.length, icon: Activity, color: 'bg-warning/10 text-warning border-warning/20', delta: `${observations.filter(o => o.status === 'Active').length} active` },
+      { label: 'Total Observations', value: observations.length, icon: Activity, color: 'bg-warning/10 text-warning border-warning/20', delta: `${observations.filter(o => o.status === 'active').length} active` },
     ];
   }, [studentScores, classProgress, observations]);
 
@@ -186,14 +164,11 @@ export function TeacherAnalyticsView() {
     { id: 'students', label: 'Student Trends', icon: TrendingUp },
   ];
 
-  const filteredObs = observations.filter((o) => {
-    const student = o.student || o.studentName || o.name || '';
-    const type = getObservationType(o);
-    const comment = o.comment || o.observationText || o.remark || '';
-    const matchesSearch = student.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          comment.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = obsFilter === 'All' || type === obsFilter;
+  const filteredObs = observations.filter(o => {
+    const matchesSearch = o.student.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          o.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          o.comment.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = obsFilter === 'All' || o.type === obsFilter;
     return matchesSearch && matchesType;
   });
 
@@ -285,7 +260,7 @@ export function TeacherAnalyticsView() {
                         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                         <XAxis dataKey="term" tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 700 }} tickLine={false} axisLine={false} />
                         <YAxis domain={[60, 90]} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 700 }} tickLine={false} axisLine={false} />
-                        <RechartsTooltip
+                        <Tooltip
                           contentStyle={{ fontSize: 11, fontWeight: 700, borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}
                           formatter={(val, label) => [val, label]}
                         />
@@ -308,7 +283,7 @@ export function TeacherAnalyticsView() {
                           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
                           <XAxis type="number" tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 700 }} tickLine={false} axisLine={false} />
                           <YAxis type="category" dataKey="label" tick={{ fontSize: 11, fill: '#64748b', fontWeight: 700 }} tickLine={false} axisLine={false} width={36} />
-                          <RechartsTooltip
+                          <Tooltip
                             contentStyle={{ fontSize: 11, fontWeight: 700, borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}
                             formatter={(val) => [val, 'Students']}
                           />
@@ -344,7 +319,7 @@ export function TeacherAnalyticsView() {
                               <Cell key={d.name} fill={d.fill} />
                             ))}
                           </Pie>
-                          <RechartsTooltip
+                          <Tooltip
                             contentStyle={{ fontSize: 11, fontWeight: 700, borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}
                             formatter={(val) => [val, 'Records']}
                           />
@@ -366,7 +341,7 @@ export function TeacherAnalyticsView() {
                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                         <XAxis dataKey="subject" tick={{ fontSize: 10, fill: '#64748b', fontWeight: 700 }} tickLine={false} axisLine={false} />
                         <YAxis tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 700 }} tickLine={false} axisLine={false} />
-                        <RechartsTooltip
+                        <Tooltip
                           contentStyle={{ fontSize: 11, fontWeight: 700, borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}
                           formatter={(val, name) => [`${val}`, name === 'meanAvg' ? 'Avg Score' : 'Completion']}
                         />
@@ -401,7 +376,7 @@ export function TeacherAnalyticsView() {
                     />
                   </div>
                   <div className="flex gap-1.5 flex-wrap">
-                    {['All', ...observationTypes].map((f) => (
+                    {['All', ...OBS_TYPES_MODULE].map((f) => (
                       <button
                         key={f}
                         onClick={() => setObsFilter(f)}
@@ -427,10 +402,8 @@ export function TeacherAnalyticsView() {
                   <div className="divide-y divide-border">
                     <AnimatePresence>
                       {filteredObs.map((o, i) => {
-                        const type = getObservationType(o);
-                        const typeIdx = observationTypes.indexOf(type);
-                        const typeColor = getObservationColor(type, typeIdx);
-                        const normalizedStatus = o.status === 'Pending' ? 'Pending' : o.status === 'Resolved' ? 'Resolved' : 'Active';
+                        const typeIdx = OBS_TYPES_MODULE.indexOf(o.type);
+                        const typeColor = OBS_COLORS_MODULE[typeIdx] || '#1D4D4F';
                         return (
                           <motion.div
                             key={o.id}
@@ -443,7 +416,7 @@ export function TeacherAnalyticsView() {
                             <div className="col-span-2 font-black text-sm text-text-primary truncate">{o.student}</div>
 
                             <div className="col-span-2">
-                              <span className="inline-flex px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest text-surface" style={{ backgroundColor: typeColor }}>{type}</span>
+                              <span className="inline-flex px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest text-surface" style={{ backgroundColor: typeColor }}>{o.type}</span>
                             </div>
 
                             <div className="col-span-2">
@@ -456,21 +429,17 @@ export function TeacherAnalyticsView() {
                             <div className="col-span-1 text-right text-[10px] font-bold text-text-secondary whitespace-nowrap">{o.date}</div>
 
                             <div className="col-span-1 text-center">
-                              {normalizedStatus === 'Active'
+                              {o.status === 'Active'
                                 ? <span className="inline-flex items-center gap-1 text-[8px] font-black px-2.5 py-1 rounded-xl bg-success/10 text-success border border-success/20 uppercase tracking-widest">
                                     <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" /> Active
                                   </span>
-                                : normalizedStatus === 'Pending'
-                                  ? <span className="inline-flex items-center gap-1 text-[8px] font-black px-2.5 py-1 rounded-xl bg-warning/10 text-warning border border-warning/20 uppercase tracking-widest">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-warning shrink-0" /> Pending
-                                    </span>
-                                  : <span className="inline-flex text-[8px] font-black px-2.5 py-1 rounded-xl bg-muted text-text-secondary border border-border uppercase tracking-widest">Resolved</span>}
+                                : <span className="inline-flex text-[8px] font-black px-2.5 py-1 rounded-xl bg-muted text-text-secondary border border-border uppercase tracking-widest">Resolved</span>}
                             </div>
 
                             <div className="col-span-1 flex items-center justify-end gap-1">
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <button onClick={() => navigate(`/grading?subject=${encodeURIComponent(type)}&class=${encodeURIComponent(o.class)}`)} className="p-1.5 hover:bg-brand-primary/10 rounded-lg transition-all text-text-secondary hover:text-brand-primary">
+                                  <button onClick={() => navigate(`/grading?subject=${o.type}&class=${encodeURIComponent(o.class)}`)} className="p-1.5 hover:bg-brand-primary/10 rounded-lg transition-all text-text-secondary hover:text-brand-primary">
                                     <Eye size={14} />
                                   </button>
                                 </TooltipTrigger>
@@ -539,14 +508,6 @@ export function TeacherAnalyticsView() {
                     </span>
                   </div>
 
-                  {studentScores.length === 0 && (
-                    <div className="py-16 text-center text-muted-foreground text-sm font-medium">
-                      No student trend data available yet.
-                    </div>
-                  )}
-
-                  {studentScores.length > 0 && (
-                    <>
                   <div className="px-6 py-2.5 border-b border-border bg-muted grid grid-cols-5 gap-3 text-[9px] font-black text-text-secondary uppercase tracking-widest">
                     <span className="col-span-2">Student</span>
                     <span className="text-center">Score</span>
@@ -556,12 +517,12 @@ export function TeacherAnalyticsView() {
 
                   <div className="divide-y divide-border">
                     {filteredStudents.map((s, i) => {
-                      const grade = getGradeBand(s.score, gradeConfig);
-                      const trendValue = getNumericTrend(s.trend);
+                      const grade = getGradeBand(s.score);
+                      const gradeDef = gradeConfig.find(g => g.label === grade);
                       const isAtRisk = s.score < 60;
                       const isTop = s.score >= 80;
                       const scoreColor = isAtRisk ? 'text-danger' : isTop ? 'text-success' : 'text-text-primary';
-                      const trendColor = s.trend === '–' || trendValue === 0 ? 'text-text-secondary' : trendValue > 0 ? 'text-success' : 'text-danger';
+                      const trendColor = s.trendUp ? 'text-success' : s.trend === '–' ? 'text-text-secondary' : 'text-danger';
 
                       return (
                         <motion.div
@@ -591,21 +552,20 @@ export function TeacherAnalyticsView() {
                           <div className="text-center">
                             <span
                               className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest text-surface"
-                              style={{ backgroundColor: getGradeColor(grade, gradeConfig) }}
+                              style={{ backgroundColor: gradeDef?.color || '#64748b' }}
                             >
                               {grade}
                             </span>
                           </div>
 
                           <div className="text-right">
-                            <span className={cn("text-[10px] font-black", trendColor)}>{getTrendSymbol(s.trend)} {s.trend}</span>
+                            <span className={cn("text-[10px] font-black", trendColor)}>{s.trendUp ? '↑' : s.trend === '–' ? '–' : '↓'} {s.trend}</span>
                           </div>
                         </motion.div>
                       );
                     })}
                   </div>
-                    </>
-                  )}
+                </div>
 
                 <div className="bg-danger/10 border border-danger/20 rounded-2xl p-5 flex items-start gap-4">
                   <div className="w-10 h-10 bg-danger rounded-xl flex items-center justify-center text-surface shrink-0 mt-0.5">
@@ -619,8 +579,7 @@ export function TeacherAnalyticsView() {
                     </p>
                   </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
             )}
 
           </AnimatePresence>

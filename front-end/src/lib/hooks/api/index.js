@@ -64,13 +64,7 @@ export {
   useTeacherSubjectConfig,
   useTeacherGradingStatusMeta,
   useTeacherGradingFilterOptions,
-  useTeacherObservationTypes,
-  useTeacherObservationColors,
-  useTeacherAnalyticsObservationColors,
   useTeacherGradeConfig,
-  useCreateObservation,
-  useUpdateObservation,
-  useDeleteObservation,
   useSubmitGradeRevision,
   useUpdateGradeRevision,
 } from './api/teacher';

@@ -4,17 +4,6 @@ import App from './App.jsx';
 import './index.css';
 import { RoleProvider } from './context/RoleContext';
 import { SplashScreen } from './components/SplashScreen';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000,
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
 
 function Root() {
   const [showSplash, setShowSplash] = useState(() => {
@@ -22,18 +11,16 @@ function Root() {
   });
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <RoleProvider>
-        {showSplash ? (
-          <SplashScreen onComplete={() => {
-            setShowSplash(false);
-            sessionStorage.setItem('splashShown', 'true');
-          }} />
-        ) : (
-          <App />
-        )}
-      </RoleProvider>
-    </QueryClientProvider>
+    <RoleProvider>
+      {showSplash ? (
+        <SplashScreen onComplete={() => {
+          setShowSplash(false);
+          sessionStorage.setItem('splashShown', 'true');
+        }} />
+      ) : (
+        <App />
+      )}
+    </RoleProvider>
   );
 }
 
