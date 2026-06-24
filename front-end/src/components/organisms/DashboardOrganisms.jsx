@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, RefreshCw, AlertOctagon, CheckCircle2 } from 'lucide-react';
+import { BookOpen, RefreshCw } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useHOD } from '../../context/HODContext';
 
@@ -12,27 +12,20 @@ const STAGGER = {
 
 export function TeacherSubmissionMatrix({ onRefresh }) {
   const { teacherSubmissions, refreshTeacherSubmissions } = useHOD();
-  
+   
   const teacherProgress = useMemo(() => {
-    const map = new Map();
-    teacherSubmissions.forEach((s) => {
-      const t = s.teacherName || s.teacherId || '—';
-      if (!map.has(t)) map.set(t, { teacherName: t, total: 0, graded: 0, classes: 0, pctSum: 0, subjects: new Set() });
-      const entry = map.get(t);
-      entry.total += s.studentCount || 0;
-      entry.graded += s.gradedCount || 0;
-      entry.subjects.add(s.subjectName || s.subject || '—');
-      entry.classes = entry.subjects.size;
-    });
-    const list = Array.from(map.values()).map((e) => ({
-      ...e,
-      pct: e.total > 0 ? Math.round((e.graded / e.total) * 100) : 0,
+    const list = teacherSubmissions.map((s) => ({
+      teacherName: s.name || s.teacherId || '—',
+      teacherId: s.teacherId,
+      progress: s.progress ?? 0,
+      status: s.status || 'PENDING',
+      email: s.email || '',
     }));
-    list.sort((a, b) => a.pct - b.pct);
+    list.sort((a, b) => a.progress - b.progress);
     return list;
   }, [teacherSubmissions]);
 
-  const atRiskTeachers = teacherProgress.filter((t) => t.pct < 80 && t.total > 0);
+  const atRiskTeachers = teacherProgress.filter((t) => t.progress < 80 && t.progress > 0);
 
   const handleRefresh = useCallback(() => {
     if (refreshTeacherSubmissions) refreshTeacherSubmissions();
@@ -49,7 +42,6 @@ export function TeacherSubmissionMatrix({ onRefresh }) {
             <BookOpen size={18} className="text-blue-600" />
             Submission Progress by Teacher
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">Real submission counts from API — sort will sort ascending (lowest first)</p>
         </div>
         <button
           onClick={handleRefresh}
@@ -60,11 +52,11 @@ export function TeacherSubmissionMatrix({ onRefresh }) {
       </div>
       <div className="divide-y divide-slate-100">
         {teacherProgress.map((t, i) => {
-          const low = t.pct < 80;
-          const fillColor = low ? 'bg-red-500' : t.pct < 95 ? 'bg-amber-400' : 'bg-emerald-500';
+          const hue = Math.round((t.progress / 100) * 120);
+          const barGradient = `linear-gradient(90deg, hsl(${hue}, 80%, 50%), hsl(${Math.min(hue + 20, 120)}, 80%, 60%))`;
           return (
             <motion.div
-              key={`${t.teacherName || t.teacherId}-${i}`}
+              key={`${t.teacherId}-${i}`}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.03 }}
@@ -72,37 +64,25 @@ export function TeacherSubmissionMatrix({ onRefresh }) {
             >
               <div className="w-36 min-w-[144px] shrink-0">
                 <p className="text-sm font-bold text-slate-900 truncate">{t.teacherName}</p>
-                <p className="text-[9px] text-slate-400 font-bold uppercase">{t.subjects} subject{t.subjects > 1 ? 's' : ''}</p>
+                <p className="text-[9px] text-slate-400 font-bold uppercase">{t.status.replace('_', ' ')}</p>
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-[10px] font-bold text-slate-500">
-                    {t.graded}/{t.total} graded
-                  </span>
-                  <span className={cn("text-[10px] font-black", low ? 'text-red-600' : 'text-emerald-700')}>
-                    {t.pct}%
+                    {t.progress}% complete
                   </span>
                 </div>
                 <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
                   <div
-                    className={cn("h-full rounded-full transition-all duration-700", fillColor)}
-                    style={{ width: `${Math.min(100, Math.max(0, t.pct))}%` }}
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{ width: `${Math.min(100, Math.max(0, t.progress))}%`, background: barGradient }}
                   />
                 </div>
               </div>
-              {low && <span className="text-[9px] font-black text-red-500 uppercase tracking-wider shrink-0">⚠ At-Risk</span>}
             </motion.div>
           );
         })}
       </div>
-      {atRiskTeachers.length > 0 && (
-        <div className="px-5 py-3 bg-red-50/50 border-t border-red-100 flex items-center gap-2">
-          <AlertOctagon size={14} className="text-red-500 shrink-0" />
-          <span className="text-[10px] font-bold text-red-700">
-            {atRiskTeachers.length} teacher{atRiskTeachers.length > 1 ? 's have' : ' has'} below 80% completion
-          </span>
-        </div>
-      )}
     </section>
   );
 }

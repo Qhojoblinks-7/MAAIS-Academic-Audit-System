@@ -2,73 +2,13 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertTriangle, CheckCircle2, ChevronRight, X, ArrowLeft,
-  RefreshCw, Layers, ShieldCheck, MessageSquare, Flame, Check, Plus
+  RefreshCw, ShieldCheck, MessageSquare, Flame, Check, Plus
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
-
-const INITIAL_ALERTS = [
-  {
-    id: 'alt_01',
-    studentId: 't_s_f3_01',
-    studentName: 'Kingsley Boateng',
-    subject: 'Practical Chemistry Lab Prep',
-    severity: 'HIGH',
-    description: 'Slide preparation accuracy dropped below 60% departmental standard. Failing to calibrate laboratory balancing controls safely.',
-    resolved: false,
-    timestamp: '2026-05-24T08:30:00Z',
-    notes: [
-      { id: 'n1', author: 'Mr. Anthony Hackman', text: 'First remedial microscope balance lab assigned.', date: '2026-05-24' },
-      { id: 'n2', author: 'Systems Audit', text: 'Performance drop identified by automatic WAEC tracking protocol.', date: '2026-05-24' }
-    ]
-  },
-  {
-    id: 'alt_02',
-    studentId: 't_s_f1_01',
-    studentName: 'Emmanuel Eshun',
-    subject: 'General Agric (SBA Theory)',
-    severity: 'HIGH',
-    description: 'First-quarter classroom continuous assessments (SBA) show incomplete reports on animal nutrition modules. Critical risk of SBA non-compliance.',
-    resolved: false,
-    timestamp: '2026-05-25T10:15:00Z',
-    notes: [
-      { id: 'n3', author: 'Mr. Anthony Hackman', text: 'Coaching module on ruminants delivered. Student asked for brief extension.', date: '2026-05-25' }
-    ]
-  },
-  {
-    id: 'alt_03',
-    studentId: 't_s_f2_01',
-    studentName: 'Priscilla Baah',
-    subject: 'Soil Chemistry calculations',
-    severity: 'MEDIUM',
-    description: 'Quantitative calculations for cation-exchange capacity have hit repeated bottlenecks during active classroom exercises.',
-    resolved: false,
-    timestamp: '2026-05-26T09:00:00Z',
-    notes: []
-  },
-  {
-    id: 'alt_04',
-    studentId: 't_s01',
-    studentName: 'Angela Owusu',
-    subject: 'Integrated Science',
-    severity: 'HIGH',
-    description: 'Decline in practical exams during SHS 2. Prompted targeted HOD remedial assigned loops.',
-    resolved: true,
-    timestamp: '2026-05-20T14:00:00Z',
-    notes: [
-      { id: 'n4', author: 'Martha Baah (HOD)', text: 'Assigned to individual tutoring sessions with lab technician.', date: '2026-05-20' },
-      { id: 'n5', author: 'Systems Audit', text: 'Resolved: Practical assessment score improved by 14% peak. Sealed & certified.', date: '2026-05-22' }
-    ]
-  }
-];
+import { useHOD } from '../../context/HODContext';
 
 export function HODInterventions() {
-  const [alerts, setAlerts] = useState(() => {
-    const cached = localStorage.getItem('hod_interventions_alerts');
-    return cached ? JSON.parse(cached) : INITIAL_ALERTS;
-  });
+  const { interventionAlerts = [], refreshInterventionAlerts, isLoading } = useHOD();
 
   const [alertFilter, setAlertFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -78,74 +18,78 @@ export function HODInterventions() {
   const [toastMessage, setToastMessage] = useState(null);
   const [mobileFocusActive, setMobileFocusActive] = useState(false);
 
-  useEffect(() => {
-    localStorage.setItem('hod_interventions_alerts', JSON.stringify(alerts));
-  }, [alerts]);
-
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleSyncEngine = () => {
+  const handleSyncEngine = async () => {
     setIsSyncing(true);
-    setTimeout(() => {
-      setIsSyncing(false);
-      showToast('Department safety-net logs synchronized successfully.');
-    }, 1200);
+    await refreshInterventionAlerts();
+    setIsSyncing(false);
+    showToast('Department safety-net logs synchronized successfully.');
   };
 
   const handleResolveAlert = (alertId) => {
-    setAlerts((prev) =>
-      prev.map((a) => {
-        if (a.id === alertId) {
-          const updatedNotes = [
-            ...a.notes,
+    const updatedAlerts = interventionAlerts.map((item) => {
+      if (item.id === alertId) {
+        return {
+          ...item,
+          resolved: true,
+          notes: [
+            ...item.notes,
             {
               id: `n_res_${Date.now()}`,
               author: 'Martha Baah (HOD)',
               text: 'Intervention successfully approved and marked as resolved.',
               date: new Date().toISOString().split('T')[0]
             }
-          ];
-          return { ...a, resolved: true, notes: updatedNotes };
-        }
-        return a;
-      })
-    );
+          ]
+        };
+      }
+      return item;
+    });
+    setAlerts(updatedAlerts);
     showToast('Case file resolved and logs archived.');
   };
 
   const handleAddCounselingNote = (alertId) => {
     if (!newNoteText.trim()) return;
-    setAlerts((prev) =>
-      prev.map((a) => {
-        if (a.id === alertId) {
-          return {
-            ...a,
-            notes: [
-              ...a.notes,
-              {
-                id: `n_usr_${Date.now()}`,
-                author: 'Martha Baah (HOD)',
-                text: newNoteText.trim(),
-                date: new Date().toISOString().split('T')[0]
-              }
-            ]
-          };
-        }
-        return a;
-      })
-    );
+    const updatedAlerts = alerts.map((item) => {
+      if (item.id === alertId) {
+        return {
+          ...item,
+          notes: [
+            ...item.notes,
+            {
+              id: `n_usr_${Date.now()}`,
+              author: 'Martha Baah (HOD)',
+              text: newNoteText.trim(),
+              date: new Date().toISOString().split('T')[0]
+            }
+          ]
+        };
+      }
+      return item;
+    });
+    setAlerts(updatedAlerts);
     setNewNoteText('');
     showToast('Counseling note appended.');
   };
 
+  const [alerts, setAlerts] = useState(interventionAlerts);
+
+  useEffect(() => {
+    if (interventionAlerts.length > 0) {
+      setAlerts(interventionAlerts);
+    }
+  }, [interventionAlerts]);
+
   const tabs = [
-    { id: 'all',       label: 'Active',    count: alerts.filter(a => !a.resolved).length },
-    { id: 'HIGH',      label: 'Critical',  count: alerts.filter(a => a.severity === 'HIGH' && !a.resolved).length },
-    { id: 'MEDIUM',    label: 'Medium',    count: alerts.filter(a => a.severity === 'MEDIUM' && !a.resolved).length },
-    { id: 'resolved',  label: 'Resolved',  count: alerts.filter(a => a.resolved).length },
+    { id: 'all',      label: 'Active',    count: alerts.filter(a => !a.resolved).length },
+    { id: 'HIGH',     label: 'Critical',  count: alerts.filter(a => a.severity === 'HIGH' && !a.resolved).length },
+    { id: 'MEDIUM',   label: 'Medium',    count: alerts.filter(a => a.severity === 'MEDIUM' && !a.resolved).length },
+    { id: 'resolved', label: 'Resolved',  count: alerts.filter(a => a.resolved).length }
   ];
 
   const filteredAlerts = useMemo(() => {
@@ -170,8 +114,8 @@ export function HODInterventions() {
 
   useEffect(() => {
     if (filteredAlerts.length > 0) {
-      const match = filteredAlerts.find(a => a.id === activeClusterId);
-      if (!match && !mobileFocusActive) {
+      const hasMatch = filteredAlerts.some(a => a.id === activeClusterId);
+      if (!hasMatch && !mobileFocusActive) {
         setActiveClusterId(filteredAlerts[0].id);
       }
     } else {
@@ -188,6 +132,14 @@ export function HODInterventions() {
     return Math.round((alerts.filter(a => a.resolved).length / alerts.length) * 100);
   }, [alerts]);
 
+  if (isLoading) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center bg-[#f8fafc]">
+        <RefreshCw size={20} className="animate-spin text-indigo-600" />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-screen flex flex-col bg-[#f8fafc] text-slate-900 font-sans antialiased overflow-hidden">
       
@@ -198,6 +150,7 @@ export function HODInterventions() {
             <button 
               onClick={() => setMobileFocusActive(false)}
               className="md:hidden p-2 text-slate-500 hover:text-slate-800 bg-slate-100 rounded-lg transition-colors"
+              aria-label="Back to dossier list"
             >
               <ArrowLeft size={16} />
             </button>
@@ -237,7 +190,7 @@ export function HODInterventions() {
       </header>
 
       {/* Main Workspace Frame */}
-      <main className="flex-1 flex h-[calc(100vh-73px)] w-full overflow-hidden relative">
+      <main className="flex-1 flex h-[calc(100vh-72px)] w-full overflow-hidden relative">
         
         {/* Left Side Navigation & Feed Panel */}
         <div 
@@ -265,14 +218,17 @@ export function HODInterventions() {
               )}
             </div>
 
-            {/* Custom Modern Sub-tabs Segments */}
+            {/* Sub-tabs Segments */}
             <div className="grid grid-cols-4 bg-slate-100 p-0.5 rounded-lg border border-slate-200/20">
               {tabs.map((tab) => {
                 const active = alertFilter === tab.id;
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => setAlertFilter(tab.id)}
+                    onClick={() => {
+                      setAlertFilter(tab.id);
+                      setMobileFocusActive(false);
+                    }}
                     className={cn(
                       'py-1.5 text-[11px] font-semibold rounded-md transition-all text-center relative flex items-center justify-center gap-1',
                       active 
@@ -297,7 +253,7 @@ export function HODInterventions() {
           <div className="flex-1 overflow-y-auto p-2 space-y-1 bg-slate-50/50">
             {filteredAlerts.length === 0 ? (
               <div className="py-12 text-center">
-                <p className="text-xs text-slate-400 font-medium italic">No active exceptions logged.</p>
+                <p className="text-xs text-slate-400 font-medium italic">No exceptions logged.</p>
               </div>
             ) : (
               filteredAlerts.map((alt) => {
@@ -309,6 +265,8 @@ export function HODInterventions() {
                       setActiveClusterId(alt.id);
                       setMobileFocusActive(true);
                     }}
+                    aria-selected={active}
+                    role="tab"
                     className={cn(
                       "w-full text-left p-3 rounded-xl transition-all border flex flex-col gap-1.5 relative group",
                       active
@@ -348,7 +306,7 @@ export function HODInterventions() {
           </div>
         </div>
 
-        {/* Right Active Resolution Interactive Console Pane */}
+        {/* Right Console Pane */}
         <div 
           className={cn(
             "flex-1 bg-white flex flex-col h-full overflow-hidden",
@@ -438,7 +396,10 @@ export function HODInterventions() {
                           placeholder="Type directive action guidelines..."
                           className="flex-1 px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 font-medium transition-all"
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleAddCounselingNote(selectedAlert.id);
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddCounselingNote(selectedAlert.id);
+                            }
                           }}
                         />
                         <button
@@ -512,4 +473,4 @@ export function HODInterventions() {
       </AnimatePresence>
     </div>
   );
-}
+} 

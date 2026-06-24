@@ -371,10 +371,11 @@ return (
                      <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
                        Grade Discussion
                      </h4>
-                     <GradeDiscussionThread 
-                       subjectId={selectedStudent.subjects?.[0]?.id || 'unknown'} 
-                       studentId={selectedStudent.id} 
-                     />
+<GradeDiscussionThread 
+                        subjectId={selectedStudent.subjects?.[0]?.id || 'unknown'} 
+                        studentId={selectedStudent.id}
+                        sender="HOD"
+                      />
                    </div>
 
                 </div>

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useRole } from './RoleContext';
 import { hodService } from '../services/hodService';
 import { cacheLayer } from '../services';
@@ -26,49 +26,107 @@ export function HODProvider({ children }) {
   const [archivedClasses, setArchivedClasses] = useState([]);
   const [promotionRecommendations, setPromotionRecommendations] = useState([]);
   const [revisions, setRevisions] = useState([]);
-    // ── Phase 5: HOD Settings state ──────────────────────────────────────────────
-    const [hodSettings, setHodSettings] = useState({
-      profile: {
-        name: '',
-        email: '',
-        phone: '',
-        department: ''
-      },
-      notifications: {
-        grading: true,
-        certification: true,
-        security: true,
-        gradeSubmissionReminders: true,
-        interventionAlerts: true,
-        systemAnnouncements: true,
-        weeklyDigest: false
-      },
-      security: {
-        mfaEnabled: false,
-        mfaEnforced: false,
-        sessionTimeout: 30,
-        passwordLastChanged: '',
-        mfaEnrolledUsers: []
-      },
-      uiPreferences: {
-        theme: 'light',
-        density: 'comfortable',
-        defaultView: 'dashboard'
-      },
-      departmentConfig: {
-        autoAlertThreshold: 15,
-        autoResolveDays: 7
-      },
-      auditFrequency: 'daily'
-    });
+  const [hodSettings, setHodSettings] = useState({
+    profile: { name: '', email: '', phone: '', department: '' },
+    notifications: { grading: true, certification: true, security: true, gradeSubmissionReminders: true, interventionAlerts: true, systemAnnouncements: true, weeklyDigest: false },
+    security: { mfaEnabled: false, mfaEnforced: false, sessionTimeout: 30, passwordLastChanged: '', mfaEnrolledUsers: [] },
+    uiPreferences: { theme: 'light', density: 'comfortable', defaultView: 'dashboard' },
+    departmentConfig: { autoAlertThreshold: 15, autoResolveDays: 7 },
+    auditFrequency: 'daily'
+  });
   const [activeSessions, setActiveSessions] = useState([]);
-  // ── Offline/Draft mode state ─────────────────────────────────────────────────
   const { isOnline, setIsOnline, isDraftMode, setIsDraftMode } = useUI();
   const [pendingChanges, setPendingChanges] = useState([]);
   const [draftRecords, setDraftRecords] = useState({});
-
-  // Derive effective offline state: network offline OR user opted for draft mode
   const isEffectivelyOffline = !isOnline || isDraftMode;
+  const [supportTickets, setSupportTickets] = useState([]);
+  const [ticketFilter, setTicketFilter] = useState('all');
+  const [ticketTabs, setTicketTabs] = useState('all');
+  const [systemHealth, setSystemHealth] = useState(null);
+  const [escalatedIssues, setEscalatedIssues] = useState([]);
+  const [contactChannels, setContactChannels] = useState(null);
+  const [viewAsTeacherId, setViewAsTeacherId] = useState(null);
+  const [viewAsTeacherName, setViewAsTeacherName] = useState(null);
+  const [departmentTeachers, setDepartmentTeachers] = useState([]);
+  const [academicYears, setAcademicYears] = useState([]);
+  const [alertNotes, setAlertNotes] = useState({});
+  const [alertAggregationMode, setAlertAggregationMode] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [error, setError] = useState(null);
+  const [activeActionMenu, setActiveActionMenu] = useState(null);
+  const [departmentProgressPage, setDepartmentProgressPage] = useState(1);
+  const [departmentProgressLimit, setDepartmentProgressLimit] = useState(50);
+  const [departmentProgressTotal, setDepartmentProgressTotal] = useState(0);
+
+  const BASELINE_KEY = 'hod_dashboard_baseline_v1';
+  const [baselineLoaded, setBaselineLoaded] = useState(false);
+
+  // Derived values used by baseline and dashboard badges
+  const baseProgress = departmentProgress?.items || departmentProgress || [];
+  const avgProgress = baseProgress.length > 0
+    ? Math.round(baseProgress.reduce((sum, c) => sum + (c.progress || c.submissionPct || 0), 0) / baseProgress.length)
+    : 0;
+  const unresolvedAlerts = interventionAlerts.filter(a => !a.resolved).length;
+  const teacherCompletion = teacherSubmissions.length > 0
+    ? Math.round(teacherSubmissions.reduce((sum, s) => sum + (s.progress || 0), 0) / teacherSubmissions.length)
+    : 0;
+
+  function loadBaseline() {
+    try {
+      const raw = localStorage.getItem(BASELINE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return null;
+  }
+
+  function saveBaseline(bl) {
+    try {
+      localStorage.setItem(BASELINE_KEY, JSON.stringify({ ...bl, savedAt: new Date().toISOString() }));
+    } catch {}
+  }
+
+  const ensureBaseline = () => {
+    const existing = loadBaseline();
+    const hasData = baseProgress.length > 0 || avgProgress > 0 || unresolvedAlerts > 0 || teacherCompletion > 0;
+    const isStale = existing && (
+      existing.departmentClassCount === 0 &&
+      existing.avgProgressPct === 0 &&
+      existing.atRiskStudentCount === 0 &&
+      existing.teacherCompletionPct === 0
+    );
+    if ((!existing || isStale) && hasData) {
+      saveBaseline({
+        departmentClassCount: baseProgress.length,
+        avgProgressPct: avgProgress,
+        atRiskStudentCount: unresolvedAlerts,
+        teacherCompletionPct: teacherCompletion,
+      });
+    }
+    return loadBaseline();
+  };
+
+  const baseline = useMemo(() => {
+    const bl = ensureBaseline();
+    setBaselineLoaded(true);
+    return bl;
+  }, [baseProgress.length, avgProgress, unresolvedAlerts, teacherCompletion]);
+
+  const computeDelta = (current, base) => {
+    if (base === null || base === undefined || base === 0) return null;
+    const diff = current - base;
+    if (Math.abs(diff) < 0.01) return 0;
+    return Math.round((diff / Math.abs(base)) * 100);
+  };
+
+  const baselineDeltas = useMemo(() => ({
+    departmentClassCount: computeDelta(baseProgress.length, baseline?.departmentClassCount),
+    avgProgressPct: computeDelta(avgProgress, baseline?.avgProgressPct),
+    atRiskStudentCount: computeDelta(unresolvedAlerts, baseline?.atRiskStudentCount),
+    teacherCompletionPct: computeDelta(teacherCompletion, baseline?.teacherCompletionPct),
+  }), [departmentProgress.length, avgProgress, unresolvedAlerts, teacherCompletion, baseline]);
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
 
   // Save a record as draft locally (for offline access)
   const saveDraftRecord = useCallback((recordId, recordData) => {
@@ -177,30 +235,9 @@ export function HODProvider({ children }) {
       console.warn('Failed to load drafts from localStorage on init:', e);
     }
   }, []);
-  // ── Phase 6: Support data ─────────────────────────────────────────────────────
-  const [supportTickets, setSupportTickets] = useState([]);
-  const [ticketFilter, setTicketFilter] = useState('all');
-  const [ticketTabs, setTicketTabs] = useState('all');
-  const [systemHealth, setSystemHealth] = useState(null);
-  const [escalatedIssues, setEscalatedIssues] = useState([]);
-  const [contactChannels, setContactChannels] = useState(null);
-  // ── Phase 7: Impersonation ────────────────────────────────────────────────────
-  const [viewAsTeacherId, setViewAsTeacherId] = useState(null);
-  const [viewAsTeacherName, setViewAsTeacherName] = useState(null);
-  const [departmentTeachers, setDepartmentTeachers] = useState([]);
+   // ── Phase 6: Support data ─────────────────────────────────────────────────────
+   // ── Phase 7: Impersonation ────────────────────────────────────────────────────
    // ── Phase 9: Intervention counseling notes & aggregated alerts ─────────────────
-   const [alertNotes, setAlertNotes] = useState({});
-   const [alertAggregationMode, setAlertAggregationMode] = useState(true);
-
-    // ── Shared UI state ─────────────────────────────────────────────────────
-    const [isLoading, setIsLoading] = useState(false);
-    const [isExporting, setIsExporting] = useState(false);
-    const [error, setError] = useState(null);
-    const [activeActionMenu, setActiveActionMenu] = useState(null);
-    // ── Pagination state ────────────────────────────────────────────────────
-    const [departmentProgressPage, setDepartmentProgressPage] = useState(1);
-    const [departmentProgressLimit, setDepartmentProgressLimit] = useState(50);
-    const [departmentProgressTotal, setDepartmentProgressTotal] = useState(0);
 
   // ── Filters ─────────────────────────────────────────────────────────────────
   const getFilteredAuditLogs = useCallback(
@@ -319,7 +356,6 @@ export function HODProvider({ children }) {
 
   // ── Complaint count helpers (KPI) ───────────────────────────────────────────
   const totalAlerts = interventionAlerts.length;
-  const unresolvedAlerts = interventionAlerts.filter((a) => !a.resolved).length;
   const atRiskStudentCount = unresolvedAlerts;
 
   const submissionPct = (teacherSubmissions.length / Math.max(teacherSubmissions.length, 1)) * 100;
@@ -381,45 +417,45 @@ export function HODProvider({ children }) {
      }
    }, [isHod]);
 
-   const refreshInterventionAlerts = useCallback(async () => {
-     if (!isHod) return;
-     try {
-       const data = await hodService.getInterventionAlerts();
-       setInterventionAlerts(Array.isArray(data) ? data : []);
-     } catch (e) {
-       console.warn('[HODContext] intervention-alerts fetch failed:', e);
-     }
-   }, [isHod]);
+    const refreshInterventionAlerts = useCallback(async (filters = {}) => {
+      if (!isHod) return;
+      try {
+        const data = await hodService.getInterventionAlerts(filters);
+        setInterventionAlerts(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.warn('[HODContext] intervention-alerts fetch failed:', e);
+      }
+    }, [isHod]);
 
-      const refreshDepartmentProgress = useCallback(async (page = departmentProgressPage, limit = departmentProgressLimit) => {
-        if (!isHod) return;
-        
-        // Create cache key based on pagination parameters
-        const cacheKey = `departmentProgress_page-${page}_limit-${limit}`;
-        
-        // Try to get from cache first
-        const cachedData = cacheLayer.get(cacheKey);
-        if (cachedData) {
-          // We need to recalculate submissionPct for cached data too?
-          // For simplicity, we'll recalculate here as well.
-          const items = Array.isArray(cachedData.items) ? cachedData.items : [];
-          const updatedItems = items.map(item => ({
-            ...item,
-            submissionPct: calculateSubmissionPct(item)
-          }));
-          setDepartmentProgress(updatedItems);
-          setDepartmentProgressTotal(cachedData.total || 0);
-          setDepartmentProgressPage(page);
-          return;
-        }
-        
-        try {
-          const data = await hodService.getDepartmentProgress({ page, limit });
-          if (data) {
-            // Cache the response for 5 minutes (300000 ms)
-            cacheLayer.set(cacheKey, data, 300000);
-            
-            const items = Array.isArray(data.items) ? data.items : [];
+     const refreshDepartmentProgress = useCallback(async (page = departmentProgressPage, limit = departmentProgressLimit, academicYearId, termNumber) => {
+       if (!isHod) return;
+       
+       // Create cache key based on pagination parameters
+       const cacheKey = `departmentProgress_page-${page}_limit-${limit}_year-${academicYearId || 'active'}_term-${termNumber || 'active'}`;
+       
+       // Try to get from cache first
+       const cachedData = cacheLayer.get(cacheKey);
+       if (cachedData) {
+         // We need to recalculate submissionPct for cached data too?
+         // For simplicity, we'll recalculate here as well.
+         const items = Array.isArray(cachedData.items) ? cachedData.items : [];
+         const updatedItems = items.map(item => ({
+           ...item,
+           submissionPct: calculateSubmissionPct(item)
+         }));
+         setDepartmentProgress(updatedItems);
+         setDepartmentProgressTotal(cachedData.total || 0);
+         setDepartmentProgressPage(page);
+         return;
+       }
+       
+       try {
+         const data = await hodService.getDepartmentProgress({ page, limit, academicYearId, termNumber });
+         if (data) {
+           // Cache the response for 5 minutes (300000 ms)
+           cacheLayer.set(cacheKey, data, 300000);
+           
+           const items = Array.isArray(data.items) ? data.items : [];
             const updatedItems = items.map(item => ({
               ...item,
               submissionPct: calculateSubmissionPct(item)
@@ -444,15 +480,15 @@ export function HODProvider({ children }) {
         return Math.round((submitted / students.length) * 100);
       };
 
-   const refreshTeacherSubmissions = useCallback(async () => {
-     if (!isHod) return;
-     try {
-       const data = await hodService.getTeacherSubmissionStatus();
-       setTeacherSubmissions(Array.isArray(data) ? data : []);
-     } catch (e) {
-       console.warn('[HODContext] teacher-submissions fetch failed:', e);
-     }
-   }, [isHod]);
+    const refreshTeacherSubmissions = useCallback(async (academicYearId, termNumber) => {
+      if (!isHod) return;
+      try {
+        const data = await hodService.getTeacherSubmissionStatus(academicYearId, termNumber);
+        setTeacherSubmissions(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.warn('[HODContext] teacher-submissions fetch failed:', e);
+      }
+    }, [isHod]);
 
     const refreshLockedTerms = useCallback(async () => {
       if (!isHod) return;
@@ -690,9 +726,19 @@ const refreshPromotionRecommendations = useCallback(async () => {
        } catch (e) {
          console.warn('[HODContext] department-teachers fetch failed:', e);
        }
-     }, [isHod]);
+      }, [isHod]);
 
-     const impersonateTeacherAction = useCallback(async (teacherId, reason = '') => {
+      const refreshAcademicYears = useCallback(async () => {
+        if (!isHod) return;
+        try {
+          const data = await hodService.getAllAcademicYears();
+          setAcademicYears(Array.isArray(data) ? data : []);
+        } catch (e) {
+          console.warn('[HODContext] academic-years fetch failed:', e);
+        }
+      }, [isHod]);
+
+      const impersonateTeacherAction = useCallback(async (teacherId, reason = '') => {
        if (!isHod) throw new Error('Not authorized');
        const result = await hodService.impersonateTeacher(teacherId, { reason, timestamp: new Date().toISOString() });
        setViewAsTeacherId(teacherId);
@@ -731,37 +777,39 @@ const refreshPromotionRecommendations = useCallback(async () => {
     }, [isHod]);
 
 
-      const refreshAll = useCallback(() => {
-       refreshAuditLogs();
-       refreshInterventionAlerts();
-       refreshDepartmentProgress();
-       refreshTeacherSubmissions();
-       refreshLockedTerms();
-       refreshArchivedClasses();
-       refreshPromotionRecommendations();
-       refreshSettings();
-       refreshActiveSessions();
-       refreshSupportTickets();
-       refreshSystemHealth();
-       refreshEscalatedIssues();
-       refreshContactChannels();
-       refreshDepartmentTeachers();
-     }, [
-       refreshAuditLogs,
-       refreshInterventionAlerts,
-       refreshDepartmentProgress,
-       refreshTeacherSubmissions,
-       refreshLockedTerms,
-       refreshArchivedClasses,
-       refreshPromotionRecommendations,
-       refreshSettings,
-       refreshActiveSessions,
-       refreshSupportTickets,
-       refreshSystemHealth,
-       refreshEscalatedIssues,
-       refreshContactChannels,
-       refreshDepartmentTeachers,
-     ]);
+       const refreshAll = useCallback(() => {
+        refreshAuditLogs();
+        refreshInterventionAlerts();
+        refreshDepartmentProgress();
+        refreshTeacherSubmissions();
+        refreshLockedTerms();
+        refreshArchivedClasses();
+        refreshPromotionRecommendations();
+        refreshSettings();
+        refreshActiveSessions();
+        refreshSupportTickets();
+        refreshSystemHealth();
+        refreshEscalatedIssues();
+        refreshContactChannels();
+        refreshDepartmentTeachers();
+        refreshAcademicYears();
+      }, [
+        refreshAuditLogs,
+        refreshInterventionAlerts,
+        refreshDepartmentProgress,
+        refreshTeacherSubmissions,
+        refreshLockedTerms,
+        refreshArchivedClasses,
+        refreshPromotionRecommendations,
+        refreshSettings,
+        refreshActiveSessions,
+        refreshSupportTickets,
+        refreshSystemHealth,
+        refreshEscalatedIssues,
+        refreshContactChannels,
+        refreshDepartmentTeachers,
+        refreshAcademicYears,
+      ]);
 
   // ── Actions ─────────────────────────────────────────────────────────────────
   const fetchGradeComparison = useCallback(async (subjectId, termA, termB) => {
@@ -808,24 +856,30 @@ const unlockTerm = useCallback(async (termId) => {
     return result;
   }, [isHod, setDepartmentProgress]);
 
-   const lockTermWithValidation = useCallback(async (termId) => {
+  const validateLock = useCallback(async (termId) => {
     if (!isHod) throw new Error('Not authorized');
     const validation = await hodService.validateLock(termId);
-    if (!validation.canLock) {
-      throw new Error(`Cannot lock: ${validation.blockingIssues?.join(', ') || '100% completion required'}`);
-    }
-    const result = await hodService.lockDepartmentMatrix(termId);
-    // Update local state - lock all classes belonging to this term
-    setDepartmentProgress((prev) =>
-      prev.map((cls) =>
-        cls.termId === termId ? { ...cls, status: 'LOCKED' } : cls,
-      ),
-    );
-    if (validation.completionPct < 100) {
-      console.warn(`Locking with ${validation.completionPct}% completion`);
-    }
-    return result;
-  }, [isHod, setDepartmentProgress]);
+    return validation;
+  }, [isHod]);
+
+    const lockTermWithValidation = useCallback(async (termId) => {
+     if (!isHod) throw new Error('Not authorized');
+     const validation = await validateLock(termId);
+     if (!validation.canLock) {
+       throw new Error(`Cannot lock: ${validation.blockingIssues?.join(', ') || '100% completion required'}`);
+     }
+     const result = await hodService.lockDepartmentMatrix(termId);
+     // Update local state - lock all classes belonging to this term
+     setDepartmentProgress((prev) =>
+       prev.map((cls) =>
+         cls.termId === termId ? { ...cls, status: 'LOCKED' } : cls,
+       ),
+     );
+     if (validation.completionPct < 100) {
+       console.warn(`Locking with ${validation.completionPct}% completion`);
+     }
+     return result;
+   }, [isHod, setDepartmentProgress, validateLock]);
 
   const exportClassCSV = useCallback(async (classId) => {
     if (!isHod) throw new Error('Not authorized');
@@ -947,6 +1001,12 @@ const rejectRevision = useCallback(async (recordId, reason) => {
     refreshDepartmentTeachers();
   }, [isHod, refreshDepartmentTeachers]);
 
+  // ── Load academic years on mount for HOD ─────────────────────────────────────
+  useEffect(() => {
+    if (!isHod) return;
+    refreshAcademicYears();
+  }, [isHod, refreshAcademicYears]);
+
   // ── Periodic system health refresh (every 30 seconds) ────────────────────────
   useEffect(() => {
     if (!isHod) return;
@@ -997,6 +1057,8 @@ const value = {
       setViewAsTeacherName,
       departmentTeachers,
       setDepartmentTeachers,
+      academicYears,
+      refreshAcademicYears,
       // ── Phase 9: Intervention counseling ────────────────────────────────────────
       alertNotes,
       setAlertNotes,
@@ -1010,14 +1072,16 @@ const value = {
 
      // archive filters
      archiveFilter,
-     setArchiveFilter,
-     archiveYearFilter,
-     setArchiveYearFilter,
-     archiveSearchQuery,
-     setArchiveSearchQuery,
-     archivePage,
-     setArchivePage,
-     getFilteredArchive,
+setArchiveFilter,
+      archiveYearFilter,
+      setArchiveYearFilter,
+      archiveSearchQuery,
+      setArchiveSearchQuery,
+      archivePage,
+      setArchivePage,
+      getFilteredArchive,
+      departmentProgressPage,
+      departmentProgressLimit,
 
      // filtered + helpers
      getFilteredAuditLogs,
@@ -1053,6 +1117,7 @@ const value = {
       alertClusterCount,
 
 // data fetching
+      validateLock,
       refreshAuditLogs,
       refreshInterventionAlerts,
       refreshDepartmentProgress,
@@ -1066,9 +1131,9 @@ const value = {
      refreshSupportTickets,
      refreshSystemHealth,
      refreshEscalatedIssues,
-     refreshContactChannels,
-     refreshDepartmentTeachers,
-     refreshAll,
+    refreshContactChannels,
+    refreshDepartmentTeachers,
+    refreshAll,
      saveSettings,
      changePassword,
      revokeSession,
@@ -1102,8 +1167,11 @@ const value = {
       queueChange,
       saveDraftRecord,
       loadDraftRecord,
-      getAllDraftRecords
-     };
+      getAllDraftRecords,
+
+        baselineDeltas,
+        resetBaseline: () => saveBaseline({}),
+      };
 
   return <HODContext.Provider value={value}>{children}</HODContext.Provider>;
 }

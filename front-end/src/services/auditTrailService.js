@@ -1,6 +1,6 @@
 import { getAuthToken } from './auth';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 const USE_MOCK = !BASE_URL || import.meta.env.VITE_USE_MOCK_API === 'true';
 
 function getHeaders() {
@@ -42,7 +42,7 @@ class AuditTrailService {
        timestamp: new Date().toISOString(),
        userId: this.getCurrentUserId(),
      };
-     return request('POST', '/api/audit-trail', payload);
+      return request('POST', '/audit-trail', payload);
    }
 
    async logHODAction(actionType, actorId, targetId, details = {}, severity = 'INFO') {
@@ -63,7 +63,7 @@ class AuditTrailService {
        userId: actorId,
        auditLevel: 'HIGH',
      };
-     return request('POST', '/api/audit-trail/hod-actions', payload);
+      return request('POST', '/audit-trail/hod-actions', payload);
    }
 
    async logImpersonation(teacherId, hodId, reason, sessionStart = true) {
@@ -83,16 +83,16 @@ class AuditTrailService {
 
    async getViewAsLogs(filters = {}) {
      const params = new URLSearchParams(filters).toString();
-     return request('GET', `/api/audit-trail/view-as?${params}`);
+      return request('GET', `/audit-trail/view-as?${params}`);
    }
 
    async getHistory(entityType, entityId, options = {}) {
      const params = new URLSearchParams(options).toString();
-     return request('GET', `/api/audit-trail/${entityType}/${entityId}?${params}`);
+      return request('GET', `/audit-trail/${entityType}/${entityId}?${params}`);
    }
 
    async getEntityChanges(entityType, startDate, endDate) {
-     return request('GET', `/api/audit-trail/${entityType}/changes?start=${startDate}&end=${endDate}`);
+      return request('GET', `/audit-trail/${entityType}/changes?start=${startDate}&end=${endDate}`);
    }
 
    getCurrentUserId() {

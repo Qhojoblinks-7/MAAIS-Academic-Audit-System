@@ -117,30 +117,38 @@ const HODRevisionsFeed = () => {
      }
    };
  
-   const sendDiscussionMessage = async () => {
-     if (!discussionInput.trim() || !selected) return;
- 
-     try {
-       setIsDiscussionLoading(true);
-       
-       // In a real implementation, this would send to backend and notify via notification service
-       // For now, we'll just show a toast/alert
-       alert('Discussion message sent: ' + discussionInput);
-       
-       // Clear input
-       setDiscussionInput('');
-       
-       // In a real app, you would:
-       // 1. Send message to backend API to persist it
-       // 2. Use notificationService to alert the other party (HOD/Teacher)
-       // 3. Update the discussion thread with the new message
-     } catch (err) {
-       console.error('Failed to send discussion message:', err);
-       alert('Failed to send message');
-     } finally {
-       setIsDiscussionLoading(false);
-     }
-   };
+const sendDiscussionMessage = async () => {
+    if (!discussionInput.trim() || !selected) return;
+
+    try {
+      setIsDiscussionLoading(true);
+
+      const newMessage = {
+        id: Date.now(),
+        role: 'HOD',
+        user: 'HOD',
+        message: discussionInput,
+        time: 'Just now'
+      };
+
+      const updatedRevision = {
+        ...selected,
+        history: [...(selected.history || []), newMessage]
+      };
+
+      await hodService.updateHODComment(selected.id, discussionInput);
+      await notification.notifyTeacherOfHODAction(selected.teacherId || selected.teacher_id, 'DIRECT_MESSAGE', selected.id, discussionInput);
+
+      setSelected(updatedRevision);
+      setDiscussionInput('');
+      refreshRevisions?.();
+    } catch (err) {
+      console.error('Failed to send discussion message:', err);
+      alert('Failed to send message');
+    } finally {
+      setIsDiscussionLoading(false);
+    }
+  };
 
   return (
     <div className="flex-1 flex w-full h-full min-h-0 overflow-hidden bg-slate-50/40 font-sans antialiased">
@@ -344,46 +352,49 @@ const HODRevisionsFeed = () => {
                    </div>
                  </div>
                  
-                 {discussionExpanded && (
-                   <div className="space-y-2">
-                     {selected.history?.length === 0 ? (
-                       <p className="text-center py-4 text-slate-500 italic">
-                         No discussion yet. Start the conversation!
-                       </p>
-                     ) : (
-                       <div className="space-y-2">
-                         {selected.history.map((msg) => (
-                           <div key={msg.id} className={cn(
-                             "flex gap-3",
-                             msg.role === 'TEACHER' ? 'flex-row' : 'flex-row-reverse'
-                           )}>
-                             <div className="w-8 h-8 flex items-center justify-center rounded-full 
-                               {msg.role === 'HOD' ? 'bg-amber-100 text-amber-600' : 'bg-sky-100 text-sky-600'}">
-                               {msg.role === 'HOD' ? 'H' : 'T'}
-                             </div>
-                             <div className="flex-1 max-w-[80%]">
-                               <div className={cn(
-                                 "px-3 py-2 rounded-xl",
-                                 msg.role === 'HOD' ? 'bg-amber-50 text-slate-800 rounded-tr-none' : 
-                                   'bg-sky-50 text-slate-800 rounded-tl-none'
-                               )}>
-                                 <p className="text-xs font-medium text-slate-500 mb-0.5">
-                                   {msg.user}
-                                 </p>
-                                 <p className="text-sm text-slate-800 whitespace-pre-wrap break-words">
-                                   {msg.message}
-                                 </p>
-                                 <p className="text-xs text-slate-400 mt-1">
-                                   {msg.time}
-                                 </p>
-                               </div>
-                             </div>
-                           </div>
-                         ))}
-                       </div>
-                     )}
-                   </div>
-                 )}
+{discussionExpanded && (
+                    <div className="space-y-2">
+                      {selected.history?.length === 0 ? (
+                        <p className="text-center py-4 text-slate-500 italic">
+                          No discussion yet. Start the conversation!
+                        </p>
+                      ) : (
+                        <div className="space-y-2">
+                          {selected.history.map((msg) => (
+                            <div key={msg.id} className={cn(
+                              "flex gap-3",
+                              msg.role === 'TEACHER' ? 'flex-row' : 'flex-row-reverse'
+                            )}>
+                              <div className={cn(
+                                "w-8 h-8 flex items-center justify-center rounded-full",
+                                msg.role === 'HOD' ? 'bg-amber-100 text-amber-600' : msg.role === 'TEACHER' ? 'bg-sky-100 text-sky-600' : 'bg-slate-200 text-slate-600'
+                              )}>
+                                {msg.role === 'HOD' ? 'H' : msg.role === 'TEACHER' ? 'T' : '?'}
+                              </div>
+                              <div className="flex-1 max-w-[80%]">
+                                <div className={cn(
+                                  "px-3 py-2 rounded-xl",
+                                  msg.role === 'HOD' ? 'bg-amber-50 text-slate-800 rounded-tr-none' : 
+                                    msg.role === 'TEACHER' ? 'bg-sky-50 text-slate-800 rounded-tl-none' :
+                                    'bg-slate-100 text-slate-800 rounded-tl-none'
+                                )}>
+                                  <p className="text-xs font-medium text-slate-500 mb-0.5">
+                                    {msg.user}
+                                  </p>
+                                  <p className="text-sm text-slate-800 whitespace-pre-wrap break-words">
+                                    {msg.message}
+                                  </p>
+                                  <p className="text-xs text-slate-400 mt-1">
+                                    {msg.time}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                  
                  <div className="mt-3 pt-2 border-t border-slate-200">
                    <div className="flex items-center gap-2">

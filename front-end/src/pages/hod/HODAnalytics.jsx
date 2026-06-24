@@ -10,7 +10,6 @@ import {
   TrendingUp,
   ChevronDown,
 } from "lucide-react";
-import { motion } from "framer-motion";
 import { cn } from "../../lib/utils";
 import { CardLayout as Card } from "../../components/templates/CardLayout";
 import { useHOD } from "../../context/HODContext";
@@ -25,10 +24,12 @@ import {
 
 // Explicit Sub-layout wrappers
 const CardHeader = ({ children, className }) => (
-  <div className={className}>{children}</div>
+  <div className={cn("px-5 py-4 border-b border-slate-100 flex items-center justify-between", className)}>
+    {children}
+  </div>
 );
 const CardContent = ({ children, className }) => (
-  <div className={className}>{children}</div>
+  <div className={cn("p-5", className)}>{children}</div>
 );
 
 // Helper function to safely isolate date strings
@@ -37,122 +38,121 @@ const getLocalDateString = () => {
   return new Date(Date.now() - tzoffset).toISOString().slice(0, 10);
 };
 
-// Memoized Sub-Row to prevent layout rendering drop frames across large datasets
-const CoursePerformanceRow = React.memo(({ subject, average, passRate }) => {
+// Memoized Sub-Row for department progress table
+const ClassProgressRow = React.memo(({ className, progress, status }) => {
+  const pctColor = progress >= 90 ? 'text-emerald-600' : progress >= 70 ? 'text-amber-600' : 'text-rose-600';
+  const barColor = progress >= 90 ? 'bg-emerald-500' : progress >= 70 ? 'bg-amber-500' : 'bg-rose-500';
   return (
-    <TableRow className="hover:bg-slate-50/60 transition-colors group">
-      <TableCell className="py-3 px-5 font-bold text-gray-900 group-hover:text-indigo-950 transition-colors">
-        {subject}
+    <TableRow className="hover:bg-slate-50/80 transition-all duration-200">
+      <TableCell className="py-3 px-6 font-semibold text-slate-900">
+        {className}
       </TableCell>
-      <TableCell className="py-3 px-5">
-        <div className="flex items-center gap-3">
-          <span className="w-10 shrink-0 text-gray-700 font-bold">
-            {average}%
+      <TableCell className="py-3 px-6">
+        <div className="flex items-center gap-4">
+          <span className={`w-12 shrink-0 font-bold tabular-nums ${pctColor}`}>
+            {progress}%
           </span>
-          <div className="w-full max-w-[160px] h-1.5 bg-slate-100 rounded-full overflow-hidden hidden sm:block">
+          <div className="w-full max-w-[180px] h-2 bg-slate-100 rounded-full overflow-hidden hidden sm:block">
             <div
-              className={cn(
-                "h-full rounded-full transition-all duration-500",
-                average >= 85
-                  ? "bg-emerald-500"
-                  : average >= 75
-                    ? "bg-indigo-500"
-                    : "bg-amber-500",
-              )}
-              style={{ width: `${average}%` }}
+              className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+              style={{ width: `${Math.min(100, progress)}%` }}
             />
           </div>
         </div>
       </TableCell>
-      <TableCell className="py-3 px-5 text-right font-bold text-slate-600">
-        {passRate}%
+      <TableCell className="py-3 px-6 text-right">
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${progress >= 90 ? 'bg-emerald-50 text-emerald-700' : progress >= 70 ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'}`}>
+          {status || 'active'}
+        </span>
       </TableCell>
     </TableRow>
   );
 });
 
-CoursePerformanceRow.displayName = "CoursePerformanceRow";
+ClassProgressRow.displayName = "ClassProgressRow";
 
-// Animated Progress Bar Component
-function AnimatedProgressBar({ value, max = 100, label, color = "indigo" }) {
-  const percentage = Math.min(100, Math.max(0, (value / max) * 100));
-  return (
-    <div className="space-y-1.5">
-      <div className="flex justify-between items-center text-xs">
-        <span className="text-gray-600 font-medium">{label}</span>
-        <span className="text-gray-900 font-bold">{value}%</span>
-      </div>
-      <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${percentage}%` }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className={cn(
-            "h-full rounded-full",
-            color === "emerald" ? "bg-emerald-500" :
-            color === "amber" ? "bg-amber-500" :
-            color === "rose" ? "bg-rose-500" : "bg-indigo-500"
-          )}
-        />
-      </div>
-    </div>
-  );
-}
+// Score Distribution from real intervention alert data
+function ScoreDistributionChart({ alerts }) {
+  const scores = (alerts || [])
+    .filter((a) => a?.currentScore != null)
+    .map((a) => a.currentScore);
 
-// Year-over-Year Performance Trend Component
-function PerformanceTrendChart() {
-  const years = ["2021/22", "2022/23", "2023/24", "2024/25", "2025/26"];
-  const [selectedMetric, setSelectedMetric] = useState("average");
-  
-  const metrics = useMemo(() => ({
-    average: { label: "Average Score", data: [72, 75, 78, 82, 85], color: "indigo" },
-    passRate: { label: "Pass Rate", data: [65, 68, 72, 76, 80], color: "emerald" },
-    distinction: { label: "Distinction Rate", data: [15, 18, 22, 25, 28], color: "amber" },
-  }), []);
-  
-  const currentMetric = metrics[selectedMetric];
-  const maxValue = useMemo(() => Math.max(...currentMetric.data) + 10, [currentMetric.data]);
-  
+  const buckets = useMemo(() => {
+    if (scores.length === 0) return [];
+    const ranges = [
+      { label: '0–39', min: 0, max: 39, color: 'rose' },
+      { label: '40–49', min: 40, max: 49, color: 'orange' },
+      { label: '50–59', min: 50, max: 59, color: 'amber' },
+      { label: '60–69', min: 60, max: 69, color: 'yellow' },
+      { label: '70–79', min: 70, max: 79, color: 'lime' },
+      { label: '80–89', min: 80, max: 89, color: 'indigo' },
+      { label: '90–100', min: 90, max: 100, color: 'emerald' },
+    ];
+    const maxCount = Math.max(...ranges.map((r) => scores.filter((s) => s >= r.min && s <= r.max).length), 1);
+    return ranges.map((r) => ({
+      ...r,
+      count: scores.filter((s) => s >= r.min && s <= r.max).length,
+      pct: Math.round((scores.filter((s) => s >= r.min && s <= r.max).length / scores.length) * 100),
+      width: Math.max(8, (scores.filter((s) => s >= r.min && s <= r.max).length / maxCount) * 100),
+    }));
+  }, [scores]);
+
+  const colorMap = {
+    rose: 'bg-rose-500',
+    orange: 'bg-orange-500',
+    amber: 'bg-amber-500',
+    yellow: 'bg-yellow-400',
+    lime: 'bg-lime-400',
+    indigo: 'bg-indigo-500',
+    emerald: 'bg-emerald-500',
+  };
+
+  const maxCount = buckets.length > 0 ? Math.max(...buckets.map((b) => b.count)) : 1;
+
   return (
-    <div className="bg-white rounded-xl border border-gray-200/70 shadow-2xs p-5">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <BarChart3 size={14} className="text-indigo-500" />
-          <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
-            Performance Trend Across Academic Years
-          </h3>
-        </div>
-        <div className="relative">
-          <select
-            value={selectedMetric}
-            onChange={(e) => setSelectedMetric(e.target.value)}
-            className="text-xs font-medium bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1 appearance-none pr-7 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-          >
-            <option value="average">Average Score</option>
-            <option value="passRate">Pass Rate</option>
-            <option value="distinction">Distinction Rate</option>
-          </select>
-          <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+    <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+            <BarChart3 size={16} />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+              Score Distribution
+            </h3>
+            <p className="text-xs text-slate-500 font-medium">Current department scores across {scores.length} intervention alerts</p>
+          </div>
         </div>
       </div>
-      
-      <div className="space-y-4">
-        {currentMetric.data.map((value, idx) => (
-          <AnimatedProgressBar
-            key={idx}
-            value={value}
-            max={maxValue}
-            label={years[idx]}
-            color={currentMetric.color}
-          />
-        ))}
-      </div>
-      
-      <div className="mt-4 pt-3 border-t border-gray-100">
-        <div className="flex items-center justify-between text-[10px] text-gray-500">
-          <span>Trend: <span className="text-emerald-600 font-bold">+13.9% improvement</span></span>
-          <span>Projected Year 3 Target: <span className="font-bold">88%</span></span>
+
+      {buckets.length === 0 ? (
+        <p className="text-xs text-slate-400 text-center py-8">No scored alerts available yet</p>
+      ) : (
+        <div className="flex items-end gap-2 h-[140px]">
+          {buckets.map((bucket, idx) => (
+            <div key={idx} className="flex-1 flex flex-col items-center gap-1.5">
+              <span className="text-[10px] font-bold text-slate-600 tabular-nums">{bucket.count}</span>
+              <div
+                className={cn("w-full rounded-t-md transition-all duration-500", colorMap[bucket.color])}
+                style={{ height: `${Math.max(12, (bucket.count / maxCount) * 100)}%` }}
+              />
+              <span className="text-[9px] font-bold text-slate-400">{bucket.label}</span>
+            </div>
+          ))}
         </div>
+      )}
+
+      <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
+        <span className="text-slate-500 font-medium">
+          Dept average: <span className="text-slate-900 font-bold">
+            {scores.length > 0 ? Math.round(scores.reduce((s, v) => s + v, 0) / scores.length) : 0}%
+          </span>
+        </span>
+        <span className="text-slate-500 font-medium">
+          Passing (≥50): <span className="text-emerald-600 font-bold">
+            {scores.length > 0 ? Math.round(scores.filter((s) => s >= 50).length / scores.length * 100) : 0}%
+          </span>
+        </span>
       </div>
     </div>
   );
@@ -160,59 +160,50 @@ function PerformanceTrendChart() {
 
 export function HODAnalytics() {
   const context = useHOD();
-  
+   
   const {
     departmentProgress = [],
     teacherSubmissions = [],
     interventionAlerts = [],
-    gradeComparison = [],
-    refreshDepartmentProgress,
-    refreshTeacherSubmissions,
-    refreshInterventionAlerts,
+    academicYears = [],
   } = context || {};
 
-  // Operational State Filters
-  const [department, setDepartment] = useState("");
-  const [semester, setSemester] = useState("");
-  const [startThreshold, setStartThreshold] = useState(() => getLocalDateString());
-  const [endThreshold, setEndThreshold] = useState(() => getLocalDateString());
-  const [syncLoading, setSyncLoading] = useState(false);
+  const [analyticsAcademicYearId, setAnalyticsAcademicYearId] = useState('');
+  const [analyticsTermNumber, setAnalyticsTermNumber] = useState('');
+  const [analyticsStartDate, setAnalyticsStartDate] = useState(() => getLocalDateString());
+  const [analyticsEndDate, setAnalyticsEndDate] = useState(() => getLocalDateString());
+  const [analyticsSemester, setAnalyticsSemester] = useState('');
+
+  const yearLabel = analyticsAcademicYearId;
+  const termNumber = analyticsTermNumber === 'sem-1' ? 'TERM_1' : analyticsTermNumber === 'sem-2' ? 'TERM_2' : undefined;
 
   const handleResetFilters = useCallback(() => {
     const freshDate = getLocalDateString();
-    setDepartment("");
-    setSemester("");
-    setStartThreshold(freshDate);
-    setEndThreshold(freshDate);
-  }, []);
+    setAnalyticsStartDate(freshDate);
+    setAnalyticsEndDate(freshDate);
+    setAnalyticsAcademicYearId('');
+    setAnalyticsTermNumber('');
+    setAnalyticsSemester('');
+  }, [setAnalyticsStartDate, setAnalyticsEndDate, setAnalyticsAcademicYearId, setAnalyticsTermNumber, setAnalyticsSemester]);
 
-  // Sync effect context fetching with memory cleanup to prevent race conditions
-  useEffect(() => {
-    let isMounted = true;
-    
-    const syncContextStorage = async () => {
-      if (!refreshDepartmentProgress && !refreshTeacherSubmissions && !refreshInterventionAlerts) return;
-      
-      try {
-        setSyncLoading(true);
-        await Promise.allSettled([
-          typeof refreshDepartmentProgress === "function" ? refreshDepartmentProgress() : Promise.resolve(),
-          typeof refreshTeacherSubmissions === "function" ? refreshTeacherSubmissions() : Promise.resolve(),
-          typeof refreshInterventionAlerts === "function" ? refreshInterventionAlerts() : Promise.resolve(),
-        ]);
-      } catch (err) {
-        console.error("Context re-synchronization error:", err);
-      } finally {
-        if (isMounted) setSyncLoading(false);
+  const filteredAlerts = useMemo(() => {
+    const start = analyticsStartDate ? new Date(analyticsStartDate) : new Date(0);
+    const end = analyticsEndDate ? new Date(analyticsEndDate) : new Date();
+    end.setHours(23, 59, 59, 999);
+    return (interventionAlerts || []).filter((a) => {
+      if (!a.createdAt) return true;
+      const date = new Date(a.createdAt);
+      if (date < start || date > end) return false;
+      if (analyticsSemester === 'sem-1') {
+        const month = date.getMonth() + 1;
+        if (month < 8 || month > 12) return false;
+      } else if (analyticsSemester === 'sem-2') {
+        const month = date.getMonth() + 1;
+        if (month < 1 || month > 5) return false;
       }
-    };
-
-    syncContextStorage();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [department, semester, startThreshold, endThreshold, refreshDepartmentProgress, refreshTeacherSubmissions, refreshInterventionAlerts]);
+      return true;
+    });
+  }, [interventionAlerts, analyticsStartDate, analyticsEndDate, analyticsSemester]);
 
   // Derived structural calculations cleanly broken into pure workflows
   const dataMetrics = useMemo(() => {
@@ -221,236 +212,277 @@ export function HODAnalytics() {
       ? Math.round((departmentProgress || []).reduce((sum, c) => sum + (c?.progress || 0), 0) / totalClasses)
       : 0;
 
-    const gradedPct = (teacherSubmissions || []).length
-      ? Math.round(
-          ((teacherSubmissions || []).filter((s) => (s?.gradedCount || 0) >= (s?.studentCount || 0)).length /
-            (teacherSubmissions || []).length) * 100
-        )
+    const teacherCount = (teacherSubmissions || []).length;
+    const avgTeacherCompletion = teacherCount > 0
+      ? Math.round((teacherSubmissions || []).reduce((sum, s) => sum + (s?.progress || 0), 0) / teacherCount)
       : 0;
 
-const unresolvedAlerts = interventionAlerts?.filter((a) => !a?.resolved).length || 0;
+    const unresolvedAlerts = (filteredAlerts || []).filter((a) => !a?.resolved).length;
+    const resolvedAlerts = (filteredAlerts || []).filter((a) => a?.resolved).length;
 
-    const derivedSubjectPerformance = gradeComparison?.length
-      ? gradeComparison.map((r) => ({
-          subject: r.subject ?? r.name ?? "Subject",
-          average: typeof r.average === "number" ? r.average : (r.avg ?? 0),
-          passRate: typeof r.passRate === "number" ? r.passRate : (r.rate ?? 0),
-        }))
-      : (teacherSubmissions || []).slice(0, 8).map((s) => ({
-          subject: s.subject ?? s.name ?? "Subject",
-          average: s.avgScore ?? s.average ?? 0,
-          passRate: s.passRate ?? 0,
-        }));
+    const uniqueStudentIds = new Set((filteredAlerts || []).map((a) => a?.studentId).filter(Boolean));
+    const studentCount = uniqueStudentIds.size;
 
-    const studentCount = (teacherSubmissions || []).reduce((sum, s) => sum + (s?.studentCount || 0), 0);
+    const scoresWithScore = (filteredAlerts || [])
+      .filter((a) => a?.currentScore != null);
+    const scoresWithPrevious = (filteredAlerts || [])
+      .filter((a) => a?.currentScore != null && a?.previousAverageScore != null);
+    const deptAvgScore = scoresWithScore.length > 0
+      ? Math.round(scoresWithScore.reduce((s, a) => s + (a.currentScore || 0), 0) / scoresWithScore.length)
+      : null;
+    const deptPrevAvg = scoresWithPrevious.length > 0
+      ? Math.round(scoresWithPrevious.reduce((s, a) => s + (a.previousAverageScore || 0), 0) / scoresWithPrevious.length)
+      : null;
+    const academicTrend = deptPrevAvg != null && deptPrevAvg > 0 ? Math.round(((deptAvgScore - deptPrevAvg) / deptPrevAvg) * 100) : null;
+
+    const passRate = scoresWithScore.length > 0
+      ? Math.round(scoresWithScore.filter((a) => (a.currentScore || 0) >= 50).length / scoresWithScore.length * 100)
+      : null;
+
+    const distinctionRate = passRate != null ? Math.round((passRate / 100) * 45) : null;
+
+    const classPerformance = (departmentProgress || []).map((c) => ({
+      className: c.className || c.name || c.class || 'Unknown Class',
+      progress: c.progress ?? c.submissionPct ?? 0,
+      status: c.status || 'active',
+    })).sort((a, b) => a.progress - b.progress);
 
     return {
       performanceMetrics: {
-        averageScore: avgProgress,
-        passRate: gradedPct,
-        distinctionRate: Math.round((gradedPct / 100) * 45),
-        improvementTrend: 0,
+        averageScore: deptAvgScore,
+        passRate,
+        distinctionRate,
+        improvementTrend: academicTrend,
       },
-      subjectPerformance: derivedSubjectPerformance,
+      classPerformance,
       studentCount,
-      facultyCount: teacherSubmissions.length,
+      facultyCount: teacherCount,
       observationsThisMonth: unresolvedAlerts,
       pendingRevisions: unresolvedAlerts,
     };
-  }, [departmentProgress, teacherSubmissions, interventionAlerts, gradeComparison]);
+  }, [departmentProgress, teacherSubmissions, filteredAlerts]);
 
   const metricCards = useMemo(() => {
+    const fmt = (v) => v == null ? '—' : `${v}%`;
+    const trendVal = dataMetrics.performanceMetrics.improvementTrend;
+    const trendColor = trendVal > 0 ? "text-emerald-700" : trendVal < 0 ? "text-rose-700" : "text-slate-700";
+    const trendBg = trendVal > 0 ? "bg-emerald-50/50 border-emerald-100" : trendVal < 0 ? "bg-rose-50/50 border-rose-100" : "bg-white";
     return [
       {
-        label: "Average Score Target",
-        value: `${dataMetrics.performanceMetrics.averageScore}%`,
+        label: "Dept Average Score",
+        value: fmt(dataMetrics.performanceMetrics.averageScore),
         color: "text-slate-900",
         highlight: "bg-white",
+        badge: "Current"
       },
       {
-        label: "Pass Rate Threshold",
-        value: `${dataMetrics.performanceMetrics.passRate}%`,
+        label: "Pass Rate",
+        value: fmt(dataMetrics.performanceMetrics.passRate),
         color: "text-slate-900",
         highlight: "bg-white",
+        badge: "Passing"
       },
       {
-        label: "Distinction Velocity",
-        value: `${dataMetrics.performanceMetrics.distinctionRate}%`,
+        label: "Distinction Rate",
+        value: fmt(dataMetrics.performanceMetrics.distinctionRate),
         color: "text-slate-900",
         highlight: "bg-white",
+        badge: "Top Performers"
       },
       {
-        label: "Improvement Index",
-        value: `+${dataMetrics.performanceMetrics.improvementTrend}%`,
-        color: "text-emerald-700",
-        highlight: "bg-emerald-50/40 border-emerald-200/40",
+        label: "Academic Trend",
+        value: trendVal == 0 ? '0%' : `${trendVal >= 0 ? '+' : ''}${trendVal}%`,
+        color: trendColor,
+        highlight: trendBg,
+        badge: "vs Previous"
       },
     ];
   }, [dataMetrics]);
 
-  if (syncLoading && !dataMetrics.facultyCount) {
-    return (
-      <div className="flex-1 flex flex-col justify-center items-center min-h-[420px] bg-slate-50/30">
-        <div className="relative flex items-center justify-center">
-          <div className="inline-block animate-spin rounded-full border-4 border-slate-200/80 border-t-indigo-600 w-9 h-9" />
-          <TrendingUp size={14} className="absolute text-indigo-600 animate-pulse" />
-        </div>
-        <p className="mt-4 text-xs font-bold text-gray-400 uppercase tracking-widest">
-          Syncing analytics database...
-        </p>
-      </div>
-    );
-  }
+   if (!dataMetrics.facultyCount && !departmentProgress.length && !interventionAlerts.length) {
+     return (
+       <div className="flex-1 flex flex-col justify-center items-center min-h-[450px] bg-slate-50/50">
+         <div className="relative flex items-center justify-center">
+           <div className="inline-block animate-spin rounded-full border-4 border-slate-200 border-t-indigo-600 w-10 h-10" />
+           <TrendingUp size={16} className="absolute text-indigo-600 animate-pulse" />
+         </div>
+         <p className="mt-4 text-xs font-bold text-slate-500 uppercase tracking-widest">
+           Syncing analytics database...
+         </p>
+       </div>
+     );
+   }
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto bg-slate-50/50 p-6 space-y-6 font-sans antialiased max-w-6xl mx-auto w-full">
+    <div className="flex-1 min-h-0 overflow-y-auto bg-slate-50/30 p-6 space-y-6 font-sans antialiased max-w-7xl mx-auto w-full">
+      
       {/* 1. Header & Controls Workspace Container */}
-      <div className="bg-white rounded-xl border border-gray-200/80 shadow-2xs p-4 flex flex-col gap-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div className="flex items-center gap-2">
-            <span className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
-              <SlidersHorizontal size={13} />
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-5 space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-2.5">
+            <span className="p-2 bg-slate-50 border border-slate-100 text-slate-700 rounded-lg">
+              <SlidersHorizontal size={14} />
             </span>
-            <h2 className="text-xs font-bold uppercase tracking-wider text-gray-700">
-              Analytics Parameter Scope
-            </h2>
+            <div>
+              <h2 className="text-sm font-bold tracking-tight text-slate-900">
+                Analytics Control Matrix
+              </h2>
+              <p className="text-xs text-slate-500">Configure real-time filter scopes</p>
+            </div>
           </div>
           <button
             onClick={handleResetFilters}
-            className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 hover:text-indigo-600 transition-colors cursor-pointer border-none bg-transparent"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-indigo-600 bg-slate-50 hover:bg-slate-100/80 px-3 py-1.5 border border-slate-200/60 rounded-lg transition-all cursor-pointer"
           >
-            <RefreshCw size={11} className={cn(syncLoading && "animate-spin")} /> Reset Matrix
+            <RefreshCw size={12} /> Reset Filters
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
-              Department Scope
-            </label>
-            <select
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/10 text-gray-700 font-semibold cursor-pointer"
-            >
-              <option value="">All Departments</option>
-              <option value="computer-science">Computer Science</option>
-              <option value="engineering">Engineering</option>
-              <option value="business">Business</option>
-              <option value="arts">Arts &amp; Humanities</option>
-            </select>
-          </div>
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+           <div className="space-y-1.5">
+             <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+               Academic Year
+             </label>
+             <div className="relative">
+               <select
+                 value={analyticsAcademicYearId}
+                 onChange={(e) => setAnalyticsAcademicYearId(e.target.value)}
+                 className="w-full px-3 py-2 text-xs bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-700 font-semibold cursor-pointer appearance-none"
+                >
+                  <option value="">All Years</option>
+                  {(academicYears || []).map((yr) => (
+                    <option key={yr.id} value={yr.id}>{yr.label}</option>
+                  ))}
+                </select>
+               <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+             </div>
+           </div>
 
-          <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
-              Academic Cycle
-            </label>
-            <select
-              value={semester}
-              onChange={(e) => setSemester(e.target.value)}
-              className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/10 text-gray-700 font-semibold cursor-pointer"
-            >
-              <option value="">All Semesters</option>
-              <option value="fall-2025">Fall 2025</option>
-              <option value="spring-2026">Spring 2026</option>
-              <option value="summer-2026">Summer 2026</option>
-            </select>
-          </div>
+           <div className="space-y-1.5">
+             <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+               Semester
+             </label>
+             <div className="relative">
+               <select
+                 value={analyticsTermNumber}
+                 onChange={(e) => setAnalyticsTermNumber(e.target.value)}
+                 className="w-full px-3 py-2 text-xs bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-700 font-semibold cursor-pointer appearance-none"
+               >
+                 <option value="">All Semesters</option>
+                 <option value="sem-1">Semester 1</option>
+                 <option value="sem-2">Semester 2</option>
+               </select>
+               <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+             </div>
+           </div>
 
-          <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
-              Start Threshold
-            </label>
-            <input
-              type="date"
-              value={startThreshold}
-              onChange={(e) => setStartThreshold(e.target.value)}
-              className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/10 text-gray-600 font-medium"
-            />
-          </div>
+           <div className="space-y-1.5">
+             <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+               Start Date
+             </label>
+             <input
+               type="date"
+               value={analyticsStartDate}
+               onChange={(e) => setAnalyticsStartDate(e.target.value)}
+               className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-600 font-medium"
+             />
+           </div>
 
-          <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
-              End Threshold
-            </label>
-            <input
-              type="date"
-              value={endThreshold}
-              onChange={(e) => setEndThreshold(e.target.value)}
-              className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/10 text-gray-600 font-medium"
-            />
-          </div>
-        </div>
+           <div className="space-y-1.5">
+             <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+               End Date
+             </label>
+             <input
+               type="date"
+               value={analyticsEndDate}
+               onChange={(e) => setAnalyticsEndDate(e.target.value)}
+               className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-600 font-medium"
+             />
+           </div>
+         </div>
       </div>
 
       {/* 2. Primary KPI Performance Tiles */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {metricCards.map((card, idx) => (
           <div
             key={idx}
             className={cn(
-              "p-4 rounded-xl border border-gray-200/70 shadow-3xs flex flex-col justify-between h-[92px]",
+              "p-5 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between group hover:shadow-sm transition-all duration-200 min-h-[110px]",
               card.highlight,
             )}
           >
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-              {card.label}
-            </p>
-            <p className={cn("text-2xl font-black tracking-tight", card.color)}>
+            <div className="flex justify-between items-start">
+              <p className="text-xs font-semibold text-slate-500">
+                {card.label}
+              </p>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
+                {card.badge}
+              </span>
+            </div>
+            <p className={cn("text-3xl font-bold tracking-tight mt-2 tabular-nums", card.color)}>
               {card.value}
             </p>
           </div>
         ))}
       </div>
 
-      {/* 3. Performance Trend Visualization */}
-      <div className="w-full">
-        <PerformanceTrendChart />
-      </div>
+       {/* 3. Performance Trend Visualization */}
+       <div className="w-full">
+         <ScoreDistributionChart alerts={filteredAlerts} />
+       </div>
 
       {/* 4. Operational Grid Division Module */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Left Column Section: Subject Ledger Directory Table */}
-        <div className="bg-white rounded-xl border border-gray-200/70 shadow-3xs overflow-hidden lg:col-span-2">
-          <div className="px-5 py-3.5 border-b border-slate-100 bg-gray-50/40 flex items-center gap-1.5">
-            <BarChart3 size={13} className="text-indigo-500" />
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-700">
-              Course Tracking Profiles
-            </h3>
-          </div>
-<div className="overflow-x-auto">
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden lg:col-span-2">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-md">
+                <BarChart3 size={14} />
+              </div>
+              <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+                Course Tracking Profiles
+              </h3>
+            </div>
+          </CardHeader>
+          <div className="overflow-x-auto">
              <Table>
                <TableHeader>
-                 <TableRow className="bg-slate-50/20 border-b border-slate-100 text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-                   <TableHead className="py-3 px-5">Subject Header</TableHead>
-                   <TableHead className="py-3 px-5">Performance Mean</TableHead>
-                   <TableHead className="py-3 px-5 text-right">Pass Parameter Quota</TableHead>
-                 </TableRow>
-               </TableHeader>
-               <TableBody className="divide-y divide-slate-100 text-xs text-gray-700 font-medium">
-                 {dataMetrics.subjectPerformance.map((subject, index) => (
-                   <CoursePerformanceRow
-                     key={index}
-                     subject={subject.subject}
-                     average={subject.average}
-                     passRate={subject.passRate}
-                   />
-                 ))}
-               </TableBody>
+                  <TableRow className="bg-slate-50/70 border-b border-slate-100 text-[11px] font-bold text-slate-500 tracking-wider uppercase">
+                    <TableHead className="py-3 px-6">Class Name</TableHead>
+                    <TableHead className="py-3 px-6">Submission Progress</TableHead>
+                    <TableHead className="py-3 px-6 text-right">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-slate-100 text-xs text-slate-700 font-medium">
+                  {dataMetrics.classPerformance.map((cls, index) => (
+                    <ClassProgressRow
+                      key={index}
+                      className={cls.className}
+                      progress={cls.progress}
+                      status={cls.status}
+                    />
+                  ))}
+                </TableBody>
              </Table>
            </div>
         </div>
 
         {/* Right Column Section: Meta Analytics Ledger Panels */}
         <div className="space-y-6 lg:col-span-1">
-          <Card className="bg-white rounded-xl border border-gray-200/70 shadow-3xs overflow-hidden">
-            <CardHeader className="px-4 py-3 border-b border-slate-100 bg-gray-50/40 flex items-center gap-1.5">
-              <GraduationCap size={13} className="text-indigo-500" />
-              <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-700">
-                Department Registry
-              </h3>
+          <Card className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-md">
+                  <GraduationCap size={14} />
+                </div>
+                <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+                  Department Registry
+                </h3>
+              </div>
             </CardHeader>
-            <CardContent className="p-4 space-y-3 text-xs font-semibold text-gray-600">
+            <CardContent className="space-y-4 text-xs font-semibold text-slate-600">
               {[
                 {
                   label: "Total Enrolled Cohort",
@@ -474,14 +506,14 @@ const unresolvedAlerts = interventionAlerts?.filter((a) => !a?.resolved).length 
                   alert: true,
                 },
               ].map((row, rIdx) => (
-                <div key={rIdx} className="flex justify-between items-center py-0.5">
-                  <span className="text-gray-400 font-medium flex items-center gap-1.5">
-                    <row.icon size={12} className="text-gray-300" /> {row.label}
+                <div key={rIdx} className="flex justify-between items-center py-1 border-b border-slate-50 last:border-0">
+                  <span className="text-slate-500 font-medium flex items-center gap-2">
+                    <row.icon size={14} className="text-slate-400" /> {row.label}
                   </span>
                   <span
                     className={cn(
-                      "font-black text-xs text-slate-900",
-                      row.alert && row.value > 0 && "text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md",
+                      "font-bold text-xs text-slate-900 tabular-nums",
+                      row.alert && row.value > 0 ? "text-rose-600 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-md" : "bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-md",
                     )}
                   >
                     {row.value}
@@ -491,27 +523,40 @@ const unresolvedAlerts = interventionAlerts?.filter((a) => !a?.resolved).length 
             </CardContent>
           </Card>
 
-          <Card className="bg-white rounded-xl border border-gray-200/70 shadow-3xs overflow-hidden">
-            <CardHeader className="px-4 py-3 border-b border-slate-100 bg-gray-50/40 flex items-center gap-1.5">
-              <CalendarRange size={13} className="text-indigo-500" />
-              <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-700">
-                Audit Stream
-              </h3>
-            </CardHeader>
-            <CardContent className="p-4 space-y-3 text-xs text-gray-500 font-medium">
-              {[
-                "5 new lesson plans submitted today",
-                "3 observations completed this week",
-                "2 grading sheets ready for review",
-                "1 faculty development session scheduled",
-              ].map((activity, aIdx) => (
-                <div key={aIdx} className="flex items-start gap-2 group">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0 group-hover:scale-110 transition-transform" />
-                  <p className="leading-normal group-hover:text-slate-800 transition-colors">
-                    {activity}
-                  </p>
+          <Card className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-md">
+                  <CalendarRange size={14} />
                 </div>
-              ))}
+                <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+                  Audit Stream
+                </h3>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3.5 text-xs text-slate-600 font-medium">
+              {filteredAlerts.length === 0 ? (
+                <p className="text-slate-400 text-xs">No alerts in selected date range</p>
+              ) : (
+                filteredAlerts
+                  .slice(0, 5)
+                  .map((alert, aIdx) => {
+                    const date = alert.createdAt ? new Date(alert.createdAt).toLocaleDateString() : '';
+                    const student = alert.studentName || 'Unknown student';
+                    const action = alert.resolved ? 'Resolved' : `Opened — ${(alert.severity || 'MEDIUM').toLowerCase()} priority`;
+                    return (
+                      <div key={alert.id || aIdx} className="flex items-start gap-3 group">
+                        <span className={cn(
+                          "w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 group-hover:scale-120 transition-transform",
+                          alert.resolved ? 'bg-emerald-400' : 'bg-amber-400'
+                        )} />
+                        <p className="leading-relaxed group-hover:text-slate-900 transition-colors">
+                          {student} — {action} {date ? `on ${date}` : ''}
+                        </p>
+                      </div>
+                    );
+                  })
+              )}
             </CardContent>
           </Card>
         </div>
