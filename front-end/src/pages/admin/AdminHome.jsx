@@ -11,7 +11,6 @@ import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
 import { useTickets, useUnreadNotifications, useAnalyticsPulse as useAdminAnalyticsPulse, useArchiveStats as useAdminArchiveStats, useAllStudents, useAllStaff, useApprovals, useResolveApproval, useSystemFreeze, useToggleSystemFreeze } from '../../lib/hooks';
 import { useQueryClient } from '@tanstack/react-query';
-import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { Textarea } from '../../components/ui/textarea';
