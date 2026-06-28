@@ -11,6 +11,7 @@ import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
 import { useTickets, useUnreadNotifications, useAnalyticsPulse as useAdminAnalyticsPulse, useArchiveStats as useAdminArchiveStats, useAllStudents, useAllStaff, useApprovals, useResolveApproval, useSystemFreeze, useToggleSystemFreeze } from '../../lib/hooks';
 import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { Textarea } from '../../components/ui/textarea';
@@ -54,6 +55,7 @@ export function AdminHome() {
   const staffQuery = useAllStaff();
   const systemFreezeQuery = useSystemFreeze();
   const toggleSystemFreezeMutation = useToggleSystemFreeze();
+  const qc = useQueryClient();
 
   const [currentTime, setCurrentTime] = React.useState(new Date());
   const [fabOpen, setFabOpen] = React.useState(false);
@@ -63,6 +65,7 @@ export function AdminHome() {
   const [freezeReason, setFreezeReason] = React.useState('');
   const [selectedChannel, setSelectedChannel] = React.useState('In-App Push');
   const [broadcastPayload, setBroadcastPayload] = React.useState('');
+  const [freezeError, setFreezeError] = React.useState(null);
 
   const isFreezeActive = systemFreezeQuery.data?.systemFrozen ?? false;
 
@@ -646,14 +649,20 @@ export function AdminHome() {
                       className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-[11px] font-medium focus:outline-none focus:ring-2 focus:ring-rose-500"
                     />
                   </div>
-                )}
-                 <div className="flex gap-2.5">
+                 )}
+                 {freezeError && (
+                   <p className="text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-3 py-2 rounded-lg mb-3">
+                     {freezeError}
+                   </p>
+                 )}
+                  <div className="flex gap-2.5">
                    <Button variant="outline" className="flex-1 py-2.5" onClick={() => { setActiveAction(null); setFreezeReason(''); }}>
                      {isFreezeActive ? 'Dismiss' : 'Abort'}
                    </Button>
                     <Button 
                       disabled={toggleSystemFreezeMutation.isPending}
                       onClick={() => { 
+                        setFreezeError(null);
                         toggleSystemFreezeMutation.mutate(
                           { enabled: !isFreezeActive, reason: freezeReason },
                           {
@@ -667,6 +676,10 @@ export function AdminHome() {
                               setActivities(prev => [freezeLog, ...prev]);
                               setActiveAction(null);
                               setFreezeReason('');
+                            },
+                            onError: (err) => {
+                              setFreezeError(err?.message || 'Failed to toggle system freeze');
+                              console.error('[AdminHome] Freeze toggle failed:', err);
                             }
                           }
                         );
