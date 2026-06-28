@@ -862,17 +862,17 @@ export const StudentRegistry = () => {
             </div>
           </div>
           <div className="md:col-span-1 xl:col-span-2 bg-slate-50 p-5 rounded-[2rem] border border-slate-100 flex items-center gap-8">
-             {programPerformanceData.slice(0, 2).map(prog => (
-              <div key={house.name} className="flex-1 space-y-3">
-                <div className="flex justify-between items-center">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{house.name}</p>
-                  <p className="text-[10px] font-black text-slate-900">{house.average}%</p>
-                </div>
-                <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${house.average}%` }} transition={{ duration: 1 }} className="h-full bg-slate-900" />
-                </div>
-              </div>
-            ))}
+{programPerformanceData.slice(0, 2).map(prog => (
+               <div key={prog.name} className="flex-1 space-y-3">
+                 <div className="flex justify-between items-center">
+                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{prog.name}</p>
+                   <p className="text-[10px] font-black text-slate-900">{prog.average}%</p>
+                 </div>
+                 <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                   <motion.div initial={{ width: 0 }} animate={{ width: `${prog.average}%` }} transition={{ duration: 1 }} className="h-full bg-slate-900" />
+                 </div>
+               </div>
+             ))}
           </div>
         </div>
       </header>

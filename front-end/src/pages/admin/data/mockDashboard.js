@@ -44,7 +44,7 @@ export const vitalSigns = [
 export const fabActions = [
   { label: 'Register Node', icon: 'UserPlus', color: 'bg-white text-slate-900', hover: 'hover:bg-slate-100' },
   { label: 'Broadcast Pulse', icon: 'Radio', color: 'bg-white text-slate-900', hover: 'hover:bg-slate-100' },
-  { label: 'Grade Entry Freeze', icon: 'Lock', color: 'bg-rose-600 text-white', hover: 'hover:bg-rose-700' },
+  { label: 'Emergency Freeze', icon: 'Lock', color: 'bg-rose-600 text-white', hover: 'hover:bg-rose-700' },
 ];
 
 export const registerNodeProtocols = [

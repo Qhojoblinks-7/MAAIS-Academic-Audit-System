@@ -54,7 +54,6 @@ export function AdminHome() {
   const staffQuery = useAllStaff();
   const systemFreezeQuery = useSystemFreeze();
   const toggleSystemFreezeMutation = useToggleSystemFreeze();
-  const qc = useQueryClient();
 
   const [currentTime, setCurrentTime] = React.useState(new Date());
   const [fabOpen, setFabOpen] = React.useState(false);
