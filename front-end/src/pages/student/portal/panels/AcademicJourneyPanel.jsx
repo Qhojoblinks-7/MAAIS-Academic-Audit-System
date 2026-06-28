@@ -71,7 +71,7 @@ export function AcademicJourneyPanel({ studentData }) {
 
         {selectedSubject && chartData.length > 0 ? (
           <div className="h-96 w-full pr-4">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis 

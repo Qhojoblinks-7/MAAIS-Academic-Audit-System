@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, Search, RefreshCw, Eye, Key, AlertTriangle, 
@@ -132,6 +132,10 @@ export function HODTeachers() {
     isLoading
   } = useHOD();
 
+  useEffect(() => {
+    auditTrail.setUseHodApi(true);
+  }, []);
+
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTeacher, setSelectedTeacher] = useState(null);
@@ -152,6 +156,10 @@ export function HODTeachers() {
       setRefreshing(false);
     }
   };
+
+  useEffect(() => {
+    refreshDepartmentTeachers();
+  }, [refreshDepartmentTeachers]);
 
   const filteredTeachers = useMemo(() => {
     const list = Array.isArray(departmentTeachers) ? departmentTeachers : [];

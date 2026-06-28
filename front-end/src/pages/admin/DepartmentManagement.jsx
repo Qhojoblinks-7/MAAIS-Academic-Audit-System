@@ -1,5 +1,6 @@
 ﻿import React from "react";
 import {
+  normalizeDeptFromApi,
   buildInitialDepartments,
 } from "./hooks/useDepartments";
 import { useDepartmentActions } from "./hooks/useDepartmentActions";
@@ -7,7 +8,14 @@ import DepartmentManagementView from "./components/DepartmentManagementView";
 import { AlertModal } from "./components/AlertModal";
 import { authorizeTemplate } from "../../services/departmentService";
 import { auditTrail } from "../../services/auditTrailService";
-import { useAllDepartments } from "../../lib/hooks";
+import {
+  useAllDepartments,
+  useCreateDepartment,
+  useAssignHOD,
+  useDeleteDepartment,
+  useTransferTeacher,
+  useDeactivateUser,
+} from "../../lib/hooks";
 
 const DEPARTMENT_COLORS = [
   "bg-blue-500",
@@ -20,21 +28,35 @@ export function DepartmentManagement() {
   const departmentsQuery = useAllDepartments();
   const apiDepartments = departmentsQuery.data || [];
 
-  const [departments, setDepartments] = React.useState(() => {
+  const [selectedDeptId, setSelectedDeptId] = React.useState(null);
+  const [selectedDeptName, setSelectedDeptName] = React.useState(null);
+
+  const departments = React.useMemo(() => {
     if (apiDepartments.length > 0) {
-      return apiDepartments.map((d, idx) => ({
-        id: d.id || `dept-${idx}`,
-        name: d.name || 'Unknown',
-        code: d.code || '',
-        head: d.head || null,
-        teacherCount: d.teacherCount || 0,
-        staff: d.staff || [],
-        color: DEPARTMENT_COLORS[idx % DEPARTMENT_COLORS.length],
-      }));
+      return apiDepartments.map((d, idx) => normalizeDeptFromApi(d, idx));
     }
     return buildInitialDepartments();
-  });
-  const [selectedDeptId, setSelectedDeptId] = React.useState(null);
+  }, [apiDepartments]);
+
+  const departmentsRef = React.useRef(departments);
+  departmentsRef.current = departments;
+
+  const handleSelectDept = React.useCallback((deptId) => {
+    if (deptId == null) {
+      setSelectedDeptId(null);
+      setSelectedDeptName(null);
+      return;
+    }
+    setSelectedDeptId(deptId);
+    const dept = departmentsRef.current.find((d) => d.id === deptId);
+    if (dept) setSelectedDeptName(dept.name);
+  }, []);
+
+  const selectedDept = React.useMemo(() => {
+    if (!selectedDeptName) return null;
+    return departments.find((d) => d.name === selectedDeptName);
+  }, [selectedDeptName, departments]);
+
   const [activeTab, setActiveTab] = React.useState("staff");
   const [viewType, setViewType] = React.useState("grid");
   const [assigningHOD, setAssigningHOD] = React.useState(null);
@@ -49,10 +71,15 @@ export function DepartmentManagement() {
 
   const {
     exportDossier,
-    initiateFreeze,
-    openTransferModal: openTransferModalFromHook,
+    initiateFreeze: initiateFreezeFromHook,
     handleCredentialReset,
   } = useDepartmentActions();
+
+  const createDepartmentMutation = useCreateDepartment();
+  const assignHODMutation = useAssignHOD();
+  const deleteDepartmentMutation = useDeleteDepartment();
+  const transferMutation = useTransferTeacher();
+  const deactivateMutation = useDeactivateUser();
 
   const [transferModal, setTransferModal] = React.useState({ isOpen: false, deptId: null, deptName: '', availableStaff: [] });
 
@@ -78,41 +105,31 @@ export function DepartmentManagement() {
     setTransferModal({ isOpen: false, deptId: null, deptName: '', availableStaff: [] });
   };
 
-  const executeTransfer = (staffId, toDeptId) => {
+  const executeTransfer = async (staffId, toDeptId) => {
     const staffToTransfer = transferModal.availableStaff.find(s => s.id === staffId);
     if (!staffToTransfer) return;
 
-    setDepartments((prev) => {
-      const fromDept = prev.find((d) => d.id === staffToTransfer.currentDeptId);
-      const toDept = prev.find((d) => d.id === toDeptId);
-      if (!fromDept || !toDept) return prev;
-
-      return prev.map((dept) => {
-        if (dept.id === fromDept.id) {
-          return {
-            ...dept,
-            staff: dept.staff.filter((s) => s.id !== staffId),
-            teacherCount: dept.teacherCount - 1,
-          };
-        }
-        if (dept.id === toDept.id) {
-          return {
-            ...dept,
-            staff: [...dept.staff, { ...staffToTransfer, isHOD: false }],
-            teacherCount: dept.teacherCount + 1,
-          };
-        }
-        return dept;
+    try {
+      await transferMutation.mutateAsync({
+        teacherId: staffId,
+        fromDeptId: staffToTransfer.currentDeptId,
+        toDeptId,
       });
-    });
-
-    setAlertState({ 
-      isOpen: true, 
-      title: 'Transfer Complete', 
-      message: `${staffToTransfer.name} transferred from ${staffToTransfer.currentDept} to ${transferModal.deptName}.`, 
-      type: 'success' 
-    });
-    closeTransferModal();
+      setAlertState({ 
+        isOpen: true, 
+        title: 'Transfer Complete', 
+        message: `${staffToTransfer.name} transferred from ${staffToTransfer.currentDept} to ${transferModal.deptName}.`, 
+        type: 'success' 
+      });
+      closeTransferModal();
+    } catch (error) {
+      setAlertState({ 
+        isOpen: true, 
+        title: 'Transfer Failed', 
+        message: error?.response?.data?.message || 'Transfer operation failed.', 
+        type: 'danger' 
+      });
+    }
   };
 
   React.useEffect(() => {
@@ -121,74 +138,58 @@ export function DepartmentManagement() {
     return () => window.removeEventListener("click", closeMenu);
   }, []);
 
-  const selectedDept = departments.find((d) => d.id === selectedDeptId);
-
   const toggleKebab = (e, id) => {
     e.stopPropagation();
     setOpenKebabId(openKebabId === id ? null : id);
   };
 
-  const handleSpawnSubmit = () => {
+  const handleSpawnSubmit = async () => {
     if (!spawnForm.name.trim()) {
       setAlertState({ isOpen: true, title: 'Validation Error', message: 'Department name is required.', type: 'danger' });
       return;
     }
-    const nextId = String(departments.length + 1);
-    const newColorIndex = departments.length % DEPARTMENT_COLORS.length;
-    const newDepartment = {
-      id: nextId,
-      name: spawnForm.name,
-      description:
-        spawnForm.description ||
-        `${spawnForm.name} department covering various academic disciplines.`,
-      hodName: "Unassigned",
-      hodId: null,
-      teacherCount: 0,
-      validationStatus: 0,
-      color: DEPARTMENT_COLORS[newColorIndex],
-      iconColor: DEPARTMENT_COLORS[newColorIndex].replace("bg-", "text-"),
-      programs: [`${spawnForm.name} Program`],
-      staff: [],
-    };
-    setDepartments([...departments, newDepartment]);
-    setSpawnForm({ name: "", description: "" });
-    setShowSpawnModal(false);
+    try {
+      await createDepartmentMutation.mutateAsync({
+        name: spawnForm.name,
+        code: spawnForm.name.substring(0, 4).toUpperCase(),
+        description: spawnForm.description || `${spawnForm.name} department covering various academic disciplines.`,
+      });
+      setSpawnForm({ name: "", description: "" });
+      setShowSpawnModal(false);
+      setAlertState({
+        isOpen: true,
+        title: 'Department Spawned',
+        message: `${spawnForm.name} department created successfully.`,
+        type: 'success',
+      });
+    } catch (error) {
+      setAlertState({
+        isOpen: true,
+        title: 'Creation Failed',
+        message: error?.response?.data?.message || 'Failed to create department.',
+        type: 'danger',
+      });
+    }
   };
 
   const handleNodeOperation = (operation, staffId, staffName, deptId) => {
     setActiveOperation({ type: operation, staffId, staffName, deptId });
   };
 
-  const handleRegistryTransfer = (toDeptId) => {
+  const handleRegistryTransfer = async (toDeptId) => {
     if (!activeOperation) return;
     const { staffId, staffName } = activeOperation;
-    setDepartments((prev) => {
-      const fromDept = prev.find((d) => d.staff?.some((s) => s.id === staffId));
-      const toDept = prev.find((d) => d.id === toDeptId);
-      if (!fromDept || !toDept || fromDept.id === toDept.id) return prev;
-      const staffMember = fromDept.staff.find((s) => s.id === staffId);
-      if (!staffMember) return prev;
-      return prev.map((dept) => {
-        if (dept.id === fromDept.id) {
-          return {
-            ...dept,
-            staff: dept.staff.filter((s) => s.id !== staffId),
-            teacherCount: dept.teacherCount - 1,
-          };
-        }
-        if (dept.id === toDept.id) {
-          const updatedStaff = dept.staff.map((s) => ({ ...s, isHOD: false }));
-          return {
-            ...dept,
-            staff: [...updatedStaff, { ...staffMember, isHOD: false }],
-            teacherCount: dept.teacherCount + 1,
-          };
-        }
-        return dept;
+    try {
+      await transferMutation.mutateAsync({
+        teacherId: staffId,
+        fromDeptId: selectedDeptId,
+        toDeptId,
       });
-    });
-    setAlertState({ isOpen: true, title: 'Registry Transfer', message: `Staff "${staffName}" transferred to ${departments.find((d) => d.id === toDeptId)?.name} cluster.`, type: 'success' });
-    setActiveOperation(null);
+      setAlertState({ isOpen: true, title: 'Registry Transfer', message: `Staff "${staffName}" transferred to ${departments.find((d) => d.id === toDeptId)?.name} cluster.`, type: 'success' });
+      setActiveOperation(null);
+    } catch (error) {
+      setAlertState({ isOpen: true, title: 'Transfer Failed', message: error?.response?.data?.message || 'Registry transfer failed.', type: 'danger' });
+    }
   };
 
   const performCredentialReset = async () => {
@@ -199,50 +200,33 @@ export function DepartmentManagement() {
     setActiveOperation(null);
   };
 
-  const handleRevokeAuthority = () => {
+  const handleRevokeAuthority = async () => {
     if (!activeOperation) return;
-    const { staffId, staffName } = activeOperation;
-    setDepartments((prev) =>
-      prev.map((dept) => {
-        const isHOD = dept.staff?.some((s) => s.id === staffId && s.isHOD);
-        if (!isHOD) return dept;
-        const hod = dept.staff.find((s) => s.id === staffId);
-        return {
-          ...dept,
-          staff: dept.staff.map((s) => ({ ...s, isHOD: false })),
-          hodName: dept.hodName === hod?.name ? "Unassigned" : dept.hodName,
-          hodId: dept.hodId === staffId ? null : dept.hodId,
-        };
-      }),
-    );
-    setAlertState({ isOpen: true, title: 'Revoke Authority', message: `Authority revoked for "${staffName}".`, type: 'info' });
-    setActiveOperation(null);
+    const { deptId } = activeOperation;
+    try {
+      await assignHODMutation.mutateAsync({ deptId, staffId: null });
+      setAlertState({ isOpen: true, title: 'Revoke Authority', message: 'Authority revoked successfully.', type: 'info' });
+      setActiveOperation(null);
+    } catch (error) {
+      setAlertState({ isOpen: true, title: 'Revoke Failed', message: error?.response?.data?.message || 'Failed to revoke authority.', type: 'danger' });
+    }
   };
 
-  const handleDeepArchive = () => {
+  const handleDeepArchive = async () => {
     if (!activeOperation) return;
     const { staffId, staffName } = activeOperation;
-    setDepartments((prev) =>
-      prev.map((dept) => {
-        const staffMember = dept.staff?.find((s) => s.id === staffId);
-        if (!staffMember) return dept;
-        const isHOD = staffMember.isHOD;
-        return {
-          ...dept,
-          staff: dept.staff.filter((s) => s.id !== staffId),
-          teacherCount: dept.teacherCount - 1,
-          hodName: isHOD ? "Unassigned" : dept.hodName,
-          hodId: isHOD ? null : dept.hodId,
-        };
-      }),
-    );
-    setAlertState({ isOpen: true, title: 'Deep Archive', message: `Staff "${staffName}" archived. Account deactivated.`, type: 'warning' });
-    setActiveOperation(null);
+    try {
+      await deactivateMutation.mutateAsync(staffId);
+      setAlertState({ isOpen: true, title: 'Deep Archive', message: `Staff "${staffName}" archived. Account deactivated.`, type: 'warning' });
+      setActiveOperation(null);
+    } catch (error) {
+      setAlertState({ isOpen: true, title: 'Archive Failed', message: error?.response?.data?.message || 'Archive operation failed.', type: 'danger' });
+    }
   };
 
   const handleAuthorizeTemplateUpdate = async () => {
     if (!activeOperation) return;
-    const { deptId, staffName } = activeOperation;
+    const { deptId } = activeOperation;
     const template = "20% threshold update";
     const result = await authorizeTemplate(deptId, template);
     setAlertState({ isOpen: true, title: 'Template Update Authorized', message: result.message, type: result.success ? 'success' : 'info' });
@@ -282,54 +266,42 @@ export function DepartmentManagement() {
     setAssigningHOD({ staffId, staffName, deptId, deptName });
   };
 
-  const confirmAssignment = () => {
+  const confirmAssignment = async () => {
     if (!assigningHOD) return;
-    const { staffId, deptId, staffName, deptName } = assigningHOD;
+    const { staffId, deptId } = assigningHOD;
 
-    setDepartments((prev) =>
-      prev.map((dept) => {
-        if (dept.id !== deptId) return dept;
-        const updatedStaff = dept.staff.map((member) => ({
-          ...member,
-          isHOD: member.id === staffId,
-        }));
-        const newHOD = updatedStaff.find((m) => m.id === staffId);
-        return {
-          ...dept,
-          staff: updatedStaff,
-          hodName: newHOD?.name || dept.hodName,
-          hodId: staffId,
-        };
-      }),
-    );
-
-    setAlertState({ isOpen: true, title: 'Authority Assigned', message: `Institutional Authority Dispatched: ${staffName} is now certified HOD for ${deptName}.`, type: 'success' });
-    setAssigningHOD(null);
+    try {
+      const result = await assignHODMutation.mutateAsync({ deptId, staffId });
+      setAlertState({ isOpen: true, title: 'Authority Assigned', message: result.message, type: 'success' });
+      setAssigningHOD(null);
+    } catch (error) {
+      setAlertState({ isOpen: true, title: 'Assignment Failed', message: error?.response?.data?.message || 'Failed to assign HOD.', type: 'danger' });
+    }
   };
 
-const handleOpenSpawnModal = () => {
-     setShowSpawnModal(true);
-   };
+  const handleOpenSpawnModal = () => {
+    setShowSpawnModal(true);
+  };
 
-   const closeSpawnModal = () => {
-     setShowSpawnModal(false);
-   };
+  const closeSpawnModal = () => {
+    setShowSpawnModal(false);
+  };
 
-   const closeAlert = () => {
+  const closeAlert = () => {
     setAlertState({ ...alertState, isOpen: false });
   };
 
-return (
+  return (
     <>
       <DepartmentManagementView
         departments={departments}
         selectedDept={selectedDept}
         viewType={viewType}
         setViewType={setViewType}
-        setSelectedDeptId={setSelectedDeptId}
+        setSelectedDeptId={handleSelectDept}
         onSpawnClick={handleOpenSpawnModal}
         exportDossier={exportDossier}
-        initiateFreeze={initiateFreeze}
+        initiateFreeze={initiateFreezeFromHook}
         setAlert={setAlertState}
         setAssigningHOD={setAssigningHOD}
         assigningHOD={assigningHOD}

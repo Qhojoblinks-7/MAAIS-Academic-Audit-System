@@ -179,7 +179,7 @@ export function StudentReport({ selectedStudent, reportConfig, setReportConfig }
             <h3 className="text-[11px] font-black text-emerald-950 uppercase tracking-wider">2. Longitudinal Trajectory</h3>
           </header>
           <div className="bg-gray-50/40 p-3 rounded-xl border border-gray-100 h-[180px] sm:h-[220px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <AreaChart data={selectedStudent.history} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
                 <defs>
                   <linearGradient id="subScreenTrend" x1="0" y1="0" x2="0" y2="1">

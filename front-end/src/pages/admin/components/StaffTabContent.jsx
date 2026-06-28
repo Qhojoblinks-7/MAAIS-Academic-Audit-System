@@ -145,27 +145,30 @@ export function StaffTabContent({
                       </div>
 <div className="p-1 space-y-0.5">
 {[
-                           { label: 'Registry Transfer', icon: ArrowRight, color: 'hover:text-blue-600 hover:bg-blue-50/80' },
-                           { label: 'Credential Reset', icon: RotateCcw, color: 'hover:text-amber-600 hover:bg-amber-50/80' },
-                           { label: 'Audit Trail View', icon: Search, color: 'hover:text-indigo-600 hover:bg-indigo-50/80' },
-                           { label: 'Revoke Authority', icon: ShieldCheck, color: 'hover:text-rose-600 hover:bg-rose-50/80' },
-                           { label: 'Authorize Template Update', icon: FileText, color: 'hover:text-blue-600 hover:bg-blue-50/80', useDeptId: true },
-                         ].map((item) => (
-                           <button
-                             key={item.label}
-onClick={(e) => {
+                            { label: 'Registry Transfer', icon: ArrowRight, color: 'hover:text-blue-600 hover:bg-blue-50/80', isDeptLevel: false },
+                            { label: 'Credential Reset', icon: RotateCcw, color: 'hover:text-amber-600 hover:bg-amber-50/80', isDeptLevel: false },
+                            { label: 'Audit Trail View', icon: Search, color: 'hover:text-indigo-600 hover:bg-indigo-50/80', isDeptLevel: true },
+                            { label: 'Revoke Authority', icon: ShieldCheck, color: 'hover:text-rose-600 hover:bg-rose-50/80', isDeptLevel: false },
+                            { label: 'Authorize Template Update', icon: FileText, color: 'hover:text-blue-600 hover:bg-blue-50/80', isDeptLevel: true },
+                          ].map((item) => (
+                            <button
+                              key={item.label}
+                              onClick={(e) => {
                                 e.stopPropagation();
-                                handleNodeOperation(item.label, dept.id, dept.name, dept.id);
+                                // For department-level operations, pass dept info; for staff-level, pass member info
+                                const targetId = item.isDeptLevel ? dept.id : member.id;
+                                const targetName = item.isDeptLevel ? dept.name : member.name;
+                                handleNodeOperation(item.label, targetId, targetName, dept.id);
                               }}
-                             className={cn(
-                               "w-full flex items-center gap-2 px-2 py-1.5 text-[10px] font-bold text-slate-600 rounded-lg transition-all text-left cursor-pointer",
-                               item.color
-                             )}
-                           >
-                             <item.icon size={11} className="shrink-0 opacity-70" />
-                             <span className="truncate">{item.label}</span>
-                           </button>
-                         ))}
+                              className={cn(
+                                "w-full flex items-center gap-2 px-2 py-1.5 text-[10px] font-bold text-slate-600 rounded-lg transition-all text-left cursor-pointer",
+                                item.color
+                              )}
+                            >
+                              <item.icon size={11} className="shrink-0 opacity-70" />
+                              <span className="truncate">{item.label}</span>
+                            </button>
+                          ))}
                       </div>
                       <div className="p-1 bg-slate-50/60 border-t border-slate-100">
 <button 

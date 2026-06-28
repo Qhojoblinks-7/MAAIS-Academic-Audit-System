@@ -7,6 +7,7 @@ import {
   uploadStrategyPulseFile,
   resetTeacherCredentials,
 } from '../../../services/departmentService';
+import { useAssignHOD, useTransferTeacher, useDeactivateUser, useDeleteDepartment } from '../../../lib/hooks';
 
 export function useDepartmentActions() {
   const [isExporting, setIsExporting] = useState(false);
@@ -28,6 +29,11 @@ export function useDepartmentActions() {
     deptId: null,
     files: null,
   });
+
+  const assignHODMutation = useAssignHOD();
+  const transferMutation = useTransferTeacher();
+  const deactivateMutation = useDeactivateUser();
+  const deleteMutation = useDeleteDepartment();
 
   const exportDossier = async (department) => {
     setIsExporting(true);
@@ -55,7 +61,7 @@ export function useDepartmentActions() {
 
   const openTransferModal = (deptId, deptName, allDepartments) => {
     const otherDepartments = allDepartments.filter(d => d.id !== deptId);
-    const availableStaff = otherDepartments.flatMap(dept => 
+    const availableStaff = otherDepartments.flatMap(dept =>
       (dept.staff || []).map(s => ({
         ...s,
         currentDept: dept.name,
@@ -71,11 +77,64 @@ export function useDepartmentActions() {
     });
   };
 
-  const transferTeacherToCluster = (departments, setDepartments, staffId, toDeptId) => {
+  const transferTeacherToCluster = async (departments, setDepartments, staffId, toDeptId) => {
+    const fromDept = departments.find(d => d.staff?.some(s => s.id === staffId));
+    const toDept = departments.find(d => d.id === toDeptId);
+
+    if (!fromDept || !toDept || fromDept.id === toDept.id) {
+      return { success: false, message: 'Invalid transfer operation.' };
+    }
+
+    const staffMember = fromDept.staff.find(s => s.id === staffId);
+    if (!staffMember) {
+      return { success: false, message: 'Staff member not found.' };
+    }
+
     try {
-      return transferTeacher(departments, setDepartments, staffId, toDeptId);
+      await transferMutation.mutateAsync({
+        teacherId: staffId,
+        fromDeptId: fromDept.id,
+        toDeptId,
+      });
+      return { success: true, message: `Teacher transferred to cluster successfully.` };
     } catch (error) {
-      return { success: false, message: 'Transfer operation failed.' };
+      return { success: false, message: 'Transfer operation failed on server.' };
+    }
+  };
+
+  const assignHOD = async (deptId, staffId) => {
+    try {
+      const result = await assignHODMutation.mutateAsync({ deptId, staffId });
+      return result;
+    } catch (error) {
+      return { success: false, message: 'Failed to assign HOD.' };
+    }
+  };
+
+  const revokeHOD = async (deptId) => {
+    try {
+      const result = await assignHODMutation.mutateAsync({ deptId, staffId: null });
+      return result;
+    } catch (error) {
+      return { success: false, message: 'Failed to revoke HOD.' };
+    }
+  };
+
+  const deepArchiveStaff = async (staffId) => {
+    try {
+      await deactivateMutation.mutateAsync(staffId);
+      return { success: true, message: 'Staff archived successfully.' };
+    } catch (error) {
+      return { success: false, message: 'Archive operation failed.' };
+    }
+  };
+
+  const deleteDepartment = async (deptId) => {
+    try {
+      const result = await deleteMutation.mutateAsync(deptId);
+      return result;
+    } catch (error) {
+      return { success: false, message: 'Delete operation failed.' };
     }
   };
 

@@ -887,7 +887,10 @@
         "subject": "Integrated Science",
         "teacherId": "teacher002",
         "teacherName": "Dr. Yaw Boateng",
-        "timestamp": "2026-05-20T10:30:00Z"
+        "timestamp": "2026-05-20T10:30:00Z",
+        "currentScore": 35,
+        "previousAverageScore": 75,
+        "createdAt": "2026-05-20T10:30:00Z"
       },
       {
         "id": "alert002",
@@ -900,7 +903,10 @@
         "subject": "General Agriculture",
         "teacherId": "teacher001",
         "teacherName": "Mr. Kwame Mensah",
-        "timestamp": "2025-03-10T09:00:00Z"
+        "timestamp": "2025-03-10T09:00:00Z",
+        "currentScore": 45,
+        "previousAverageScore": 55,
+        "createdAt": "2025-03-10T09:00:00Z"
       },
       {
         "id": "alert003",
@@ -913,7 +919,10 @@
         "subject": "General Agriculture",
         "teacherId": "teacher001",
         "teacherName": "Mr. Kwame Mensah",
-        "timestamp": "2024-08-15T14:00:00Z"
+        "timestamp": "2024-08-15T14:00:00Z",
+        "currentScore": 65,
+        "previousAverageScore": 60,
+        "createdAt": "2024-08-15T14:00:00Z"
       }
     ]
   },

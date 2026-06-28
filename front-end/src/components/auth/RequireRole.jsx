@@ -28,11 +28,18 @@ export function RequireRole({ allowedRoles = [], children, redirectTo = '/login'
   const { user } = useRole();
   const location = useLocation();
 
-  if (!user?.role) {
+  // Normalize roles: SUPER_ADMIN and HEADMASTER have admin privileges
+  const normalizedRole = user?.role === 'SUPER_ADMIN' || user?.role === 'HEADMASTER' ? 'ADMIN' : user?.role;
+  
+  if (!normalizedRole) {
     return <Navigate to={redirectTo} replace state={{ from: location }} />;
   }
 
-  if (!allowedRoles.includes(user.role)) {
+  // SUPER_ADMIN and HEADMASTER can access admin routes
+  const isAdminUser = user?.role === 'SUPER_ADMIN' || user?.role === 'HEADMASTER';
+  const hasAccess = allowedRoles.includes(normalizedRole) || (isAdminUser && allowedRoles.includes('ADMIN'));
+  
+  if (!hasAccess) {
     return <Navigate to={redirectTo} replace state={{ from: location }} />;
   }
 

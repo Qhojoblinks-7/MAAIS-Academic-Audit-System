@@ -6,7 +6,6 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
-import { Toaster } from "./components/ui/toast.tsx";
 import {
   AdminSidebar,
   HODSidebar,
@@ -96,12 +95,9 @@ import { UIProvider, useUI } from "./context/UIContext";
 import { useRole } from "./context/RoleContext";
 import { HODProvider } from "./context/HODContext";
 import { RequireRole } from "./components/auth/RequireRole";
-import { X, Lock } from "lucide-react";
+import { X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NotificationsPage } from "./pages/NotificationsPage";
-import { useSystemFreeze } from "./lib/hooks";
-import { Button } from "./components/ui/button";
-import { cn } from "./lib/utils";
 
 // Helper Component for Dynamic Missing Observations Layout
 function RoleBasedMissingObservations() {
@@ -308,8 +304,6 @@ function AppContent() {
     setSupportModalOpen,
     rightPanelVisible,
   } = useUI();
-  const systemFreezeQuery = useSystemFreeze();
-  const isSystemFrozen = systemFreezeQuery.data?.systemFrozen ?? false;
 
   // Inactivity Timeout Auto Log-Out Handler (15 Mins)
   React.useEffect(() => {
@@ -357,50 +351,6 @@ function AppContent() {
 
   return (
     <div className="flex h-screen bg-background font-sans selection:bg-success/20 selection:text-success">
-      {isSystemFrozen && user?.role !== "STUDENT" && user?.role !== "PARENT" && (
-        <>
-          {user?.role === "SUPER_ADMIN" || user?.role === "HEADMASTER" ? (
-            <div className="fixed top-0 left-0 right-0 z-[300] bg-rose-600 text-white px-4 py-2.5 flex items-center justify-center gap-3 shadow-lg">
-              <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Emergency System Freeze Active</span>
-              {systemFreezeQuery.data?.systemFreezeReason && (
-                <span className="text-[9px] font-bold uppercase tracking-wider bg-white/20 px-2 py-1 rounded">
-                  {systemFreezeQuery.data.systemFreezeReason}
-                </span>
-              )}
-            </div>
-          ) : (
-            <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
-              <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
-              <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl text-center p-6 border-2 border-rose-100">
-                <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-sm bg-rose-50 text-rose-600">
-                  <Lock size={28} />
-                </div>
-                <h3 className="text-xl font-black italic font-display text-slate-900 mb-2">
-                  Emergency System Freeze Active
-                </h3>
-                <p className="text-slate-500 text-[11px] font-medium leading-normal mb-2">
-                  Immediate administrative intervention activated. All write operations are currently suspended.
-                </p>
-                {systemFreezeQuery.data?.systemFreezeReason && (
-                  <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider mb-4 bg-rose-50 px-3 py-2 rounded-lg">
-                    Reason: {systemFreezeQuery.data.systemFreezeReason}
-                  </p>
-                )}
-                <p className="text-[10px] font-medium text-slate-400 mb-4">
-                  Read-only access remains available. Contact your administrator for more information.
-                </p>
-                <Button 
-                  onClick={() => {}}
-                  className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white"
-                >
-                  Understood
-                </Button>
-              </motion.div>
-            </div>
-          )}
-        </>
-      )}
       {/* Sidebar Context */}
       <div className="hidden lg:block">
         {user?.role === "STUDENT" ? (
@@ -912,7 +862,6 @@ export default function App() {
             <AppContent />
           </HODProvider>
         </TooltipProvider>
-        <Toaster />
       </UIProvider>
     </Router>
   );

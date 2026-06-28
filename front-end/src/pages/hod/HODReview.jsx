@@ -1,19 +1,23 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Search, GraduationCap, CheckCircle2, XCircle,
-  RefreshCw, AlertTriangle, ChevronRight, BookOpen, X, ShieldAlert
+  Search,
+  GraduationCap,
+  CheckCircle2,
+  XCircle,
+  RefreshCw,
+  AlertTriangle,
+  ChevronRight,
+  BookOpen,
+  X,
 } from 'lucide-react';
 
-import { cn } from '../../lib/utils';
-import { useHOD } from '../../context/HODContext';
-import { hodService } from '../../services/hodService';
-import { auditTrail } from '../../services/auditTrailService';
-import { notification } from '../../services/notificationService';
-import { eventBus } from '../../services/eventBus';
+import { cn } from '@/lib/utils';
+import { useDepartmentProgress, useRejectGradeRevision, useUpdateHODComment } from '@/lib/hooks/api/hod';
+import { useQueryClient } from '@tanstack/react-query';
 import { HODCommentInput, ActionButtonGroup, StatusBadge, SubmissionProgressSparkline, ConfirmationDialog }
-  from '../../components/molecules';
-import { CurrentPreviousTermComparisonView, GradeDiscussionThread } from '../../components/organisms';
+  from '@/components/molecules';
+import { CurrentPreviousTermComparisonView, GradeDiscussionThread } from '@/components/organisms';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -38,7 +42,7 @@ function SubjectRow({ subject, studentName, onAddRemark, onReject }) {
             <p className="text-xs font-bold text-gray-900">{subject?.subject || subject?.name || 'Unassigned Curriculum'}</p>
             <SubmissionProgressSparkline value={subject?.progress || 0} size="sm" />
           </div>
-          
+
           <div className="grid grid-cols-3 gap-2 max-w-xs bg-slate-50 p-2 rounded-lg border border-gray-200/40">
             <div>
               <p className="text-[8px] font-bold uppercase tracking-wider text-gray-400">SBA</p>
@@ -53,7 +57,7 @@ function SubjectRow({ subject, studentName, onAddRemark, onReject }) {
               <p className="text-xs font-bold text-gray-950">{subject?.final ?? '—'}</p>
             </div>
           </div>
-          
+
           <div className="text-[10px] text-gray-400 font-medium flex items-center gap-1.5">
             Status Boundary: <StatusBadge status={subject?.grade || 'N/A'} />
           </div>
@@ -96,30 +100,36 @@ function SubjectRow({ subject, studentName, onAddRemark, onReject }) {
 
 export function HODReview() {
   const {
-    departmentProgress = [], 
-    refreshDepartmentProgress, 
+    data: departmentProgress = [],
     isLoading,
-    rejectRevision,
-  } = useHOD();
+    error,
+    refetch,
+  } = useDepartmentProgress();
+
+  const rejectMutation = useRejectGradeRevision();
+  const commentMutation = useUpdateHODComment();
+  const qc = useQueryClient();
 
   const [search, setSearch] = useState('');
   const [activeStudentId, setActiveStudentId] = useState(null);
   const [rejectConfirm, setRejectConfirm] = useState(null);
 
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
   useEffect(() => {
-    if (typeof refreshDepartmentProgress === 'function') {
-      refreshDepartmentProgress();
-    }
-  }, [refreshDepartmentProgress]);
+    handleRefresh();
+  }, [handleRefresh]);
 
   // Flatten students safely across classes
   const allStudents = useMemo(() => {
     if (!Array.isArray(departmentProgress)) return [];
     const list = [];
-    departmentProgress.forEach(cls => {
+    departmentProgress.forEach((cls) => {
       if (!cls) return;
       const studentArray = Array.isArray(cls.students) ? cls.students : [];
-      studentArray.forEach(s => {
+      studentArray.forEach((s) => {
         if (!s) return;
         list.push({
           ...s,
@@ -137,7 +147,7 @@ export function HODReview() {
 
   const filteredStudents = useMemo(() => {
     const query = search.trim().toLowerCase();
-    const students = !query ? allStudents : allStudents.filter(s =>
+    const students = !query ? allStudents : allStudents.filter((s) =>
       String(s?.name || '').toLowerCase().includes(query) ||
       String(s?.indexNumber || '').toLowerCase().includes(query) ||
       String(s?.className || '').toLowerCase().includes(query)
@@ -150,55 +160,31 @@ export function HODReview() {
   }, [allStudents, search, activeStudentId]);
 
   const selectedStudent = useMemo(() => {
-    return allStudents.find(s => s.id === activeStudentId) || filteredStudents[0] || null;
+    return allStudents.find((s) => s.id === activeStudentId) || filteredStudents[0] || null;
   }, [allStudents, activeStudentId, filteredStudents]);
 
-  const handleAddRemark = async ({ studentId, studentName, remark }) => {
-    if (!remark || remark.trim().length < 10) { 
-      alert('Validation Error: Remarks must meet a 10-character threshold.'); 
-      return; 
+  const handleAddRemark = useCallback(async ({ studentId, studentName, remark }) => {
+    if (!remark || remark.trim().length < 10) {
+      alert('Validation Error: Remarks must meet a 10-character threshold.');
+      return;
     }
     try {
-      const oldVal = typeof auditTrail?.captureSnapshot === 'function' ? auditTrail.captureSnapshot({}) : {};
-      const result = await hodService.updateHODComment(studentId, remark);
-      const newVal = typeof auditTrail?.captureSnapshot === 'function' ? auditTrail.captureSnapshot({ comment: remark }) : { comment: remark };
-      
-      if (auditTrail?.logChange) {
-        await auditTrail.logChange('student_result', studentId, oldVal, newVal, remark);
-      }
-      if (eventBus?.emit) {
-        eventBus.emit('hod-comment-added', { studentId, studentName, remark });
-      }
-      if (notification?.notifyTeacherOfHODAction) {
-        await notification.notifyTeacherOfHODAction(studentId, 'COMMENT_ADDED', result?.id || studentId, remark);
-      }
+      await commentMutation.mutateAsync({ recordId: studentId, comment: remark });
+      qc.invalidateQueries({ queryKey: ['hod', 'department-progress'] });
     } catch (e) {
-      console.error('Failed to append comment payload:', e);
+      console.error('Failed to append comment:', e);
     }
-  };
+  }, [commentMutation, qc]);
 
-  const handleReject = async ({ subjectId, studentName, remark, subjectName }) => {
-    if (!subjectId || typeof rejectRevision !== 'function') return;
+  const handleReject = useCallback(({ subjectId, studentName, remark, subjectName }) => {
+    if (!subjectId) return;
     setRejectConfirm({
       studentName: studentName || 'this student',
       subjectName: subjectName || subjectId,
       onConfirm: async () => {
         try {
-          const oldVal = typeof auditTrail?.captureSnapshot === 'function' ? auditTrail.captureSnapshot({ rejected: false }) : {};
-          await rejectRevision(subjectId, remark || 'No verification description supplied.');
-          const newVal = typeof auditTrail?.captureSnapshot === 'function' ? auditTrail.captureSnapshot({ rejected: true }) : {};
-          
-          if (auditTrail?.logChange) {
-            await auditTrail.logChange(
-              'grade_revision', subjectId, oldVal, newVal, `HOD rejected revision for ${studentName}: ${remark}`
-            );
-          }
-          if (eventBus?.emit) {
-            eventBus.emit('grade-revision-rejected', { recordId: subjectId, studentName, reason: remark });
-          }
-          if (notification?.notifyTeacherOfHODAction) {
-            await notification.notifyTeacherOfHODAction(subjectId, 'GRADE_REVISION_REJECTED', subjectId, remark);
-          }
+          await rejectMutation.mutateAsync({ recordId: subjectId, reason: remark || 'No verification description supplied.' });
+          qc.invalidateQueries({ queryKey: ['hod', 'department-progress'] });
         } catch (e) {
           console.error('Rejection flow termination exception:', e);
         } finally {
@@ -206,9 +192,60 @@ export function HODReview() {
         }
       },
     });
-  };
+  }, [rejectMutation, qc]);
 
-return (
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex flex-col min-h-0 bg-background/50 font-sans antialiased">
+        <header className="bg-card border-b border-border/80 px-6 py-4 sticky top-0 z-10 backdrop-blur-md bg-card/95">
+          <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-base font-bold text-foreground tracking-tight">Grade Review Pipeline</h1>
+              <p className="text-xs text-muted-foreground mt-0.5">Approve grade revisions, append override signatures, and handle approvals.</p>
+            </div>
+            <Button variant="outline" size="sm" disabled>
+              <RefreshCw size={12} className="animate-spin" />
+              Syncing...
+            </Button>
+          </div>
+        </header>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <RefreshCw size={24} className="animate-spin text-muted-foreground" />
+            <p className="text-xs text-muted-foreground font-medium">Loading grade review queue...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 flex flex-col min-h-0 bg-background/50 font-sans antialiased">
+        <header className="bg-card border-b border-border/80 px-6 py-4 sticky top-0 z-10 backdrop-blur-md bg-card/95">
+          <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-base font-bold text-foreground tracking-tight">Grade Review Pipeline</h1>
+              <p className="text-xs text-muted-foreground mt-0.5">Approve grade revisions, append override signatures, and handle approvals.</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleRefresh}>
+              <RefreshCw size={12} />
+              Retry
+            </Button>
+          </div>
+        </header>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center max-w-sm px-4">
+            <AlertTriangle size={32} className="text-rose-500 mx-auto mb-3" />
+            <h4 className="text-sm font-bold text-foreground">Failed to load grade review data</h4>
+            <p className="text-xs text-muted-foreground mt-1">{error?.message || 'Unknown error'}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
     <div className="flex-1 flex flex-col min-h-0 bg-background/50 font-sans antialiased">
 
       {/* Roster View Header */}
@@ -218,8 +255,8 @@ return (
             <h1 className="text-base font-bold text-foreground tracking-tight">Grade Review Pipeline</h1>
             <p className="text-xs text-muted-foreground mt-0.5">Approve grade revisions, append override signatures, and handle approvals.</p>
           </div>
-          <Button 
-            onClick={refreshDepartmentProgress} 
+          <Button
+            onClick={handleRefresh}
             disabled={isLoading}
             variant="outline"
             size="sm"
@@ -232,10 +269,10 @@ return (
 
       {/* Main Workspace Frame */}
       <main className="flex-1 overflow-hidden max-w-6xl w-full mx-auto p-6 flex gap-6 items-start">
-         
+
         {/* Master Panel Side Roster */}
         <div className="w-full md:w-80 shrink-0 flex flex-col space-y-3 h-full overflow-hidden">
-           
+
           {/* Roster Search Input */}
           <div className="bg-card rounded-xl border border-border shadow-sm p-3">
             <div className="relative">
@@ -267,24 +304,29 @@ return (
                     key={s.id}
                     onClick={() => setActiveStudentId(s.id)}
                     className={cn(
-                      "w-full text-left p-2.5 rounded-lg text-xs transition-all border group flex items-center gap-3",
+                      'w-full text-left p-2.5 rounded-lg text-xs transition-all border group flex items-center gap-3',
                       active
-                        ? "bg-foreground text-white border-foreground font-medium"
-                        : "bg-card border-transparent text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                        ? 'bg-foreground text-white border-foreground font-medium'
+                        : 'bg-card border-transparent text-muted-foreground hover:bg-muted/80 hover:text-foreground',
                     )}
                   >
-                    <div className={cn(
-                      "w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-black shrink-0",
-                      active ? "bg-muted text-brand-primary" : "bg-muted text-foreground"
-                    )}>
+                    <div
+                      className={cn(
+                        'w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-black shrink-0',
+                        active ? 'bg-muted text-brand-primary' : 'bg-muted text-foreground',
+                      )}
+                    >
                       {(s.name || '?').charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
                         <p className="font-bold truncate">{s.name || 'Anonymous Log'}</p>
-                        <ChevronRight size={12} className={cn("shrink-0 transition-transform", active ? "text-brand-primary translate-x-0.5" : "text-muted-foreground group-hover:text-muted-foreground")} />
+                        <ChevronRight
+                          size={12}
+                          className={cn('shrink-0 transition-transform', active ? 'text-brand-primary translate-x-0.5' : 'text-muted-foreground group-hover:text-muted-foreground')}
+                        />
                       </div>
-                      <p className={cn("text-[10px] truncate mt-0.5", active ? "text-muted-foreground" : "text-muted-foreground")}>
+                      <p className={cn('text-[10px] truncate mt-0.5', active ? 'text-muted-foreground' : 'text-muted-foreground')}>
                         {s.indexNumber || '—'} · {s.className}
                       </p>
                     </div>
@@ -327,7 +369,7 @@ return (
 
                 {/* Submodule Review Presentation Space */}
                 <div className="flex-1 overflow-y-auto p-5 space-y-5">
-                  
+
                   {/* Delta Variance Interactive Engine Graph */}
                   {Array.isArray(selectedStudent.subjects) && selectedStudent.subjects.length > 0 && (
                     <div className="border border-border/60 rounded-xl p-4 bg-muted/40">
@@ -335,12 +377,12 @@ return (
                         <AlertTriangle size={13} className="text-brand-primary" />
                         <h4 className="text-[11px] font-bold text-foreground uppercase tracking-wide">Comparative Evaluation Delta</h4>
                       </div>
-                        <CurrentPreviousTermComparisonView
-                          subjects={selectedStudent.subjects.slice(0, 6)}
-                          currentTerm="Term 3"
-                          previousTerm="Term 2"
-                          className="w-full bg-card p-3 rounded-lg border border-border/40"
-                        />
+                      <CurrentPreviousTermComparisonView
+                        subjects={selectedStudent.subjects.slice(0, 6)}
+                        currentTerm="Term 3"
+                        previousTerm="Term 2"
+                        className="w-full bg-card p-3 rounded-lg border border-border/40"
+                      />
                     </div>
                   )}
 
@@ -348,9 +390,9 @@ return (
                   <div className="space-y-2">
                     <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Course Matrices Override Channels</h4>
                     {Array.isArray(selectedStudent.subjects) && selectedStudent.subjects.map((s, i) => (
-                      <SubjectRow 
-                        key={s?.id || i} 
-                        subject={s} 
+                      <SubjectRow
+                        key={s?.id || i}
+                        subject={s}
                         studentName={selectedStudent.name}
                         onAddRemark={(payload) => handleAddRemark({ studentId: selectedStudent.id, studentName: selectedStudent.name, ...payload })}
                         onReject={(payload) => handleReject({ studentName: selectedStudent.name, ...payload })}
@@ -358,25 +400,25 @@ return (
                     ))}
                   </div>
 
-                   {/* Overall Institutional Comment Node */}
-                   <div className="border-t border-border/60 pt-4">
-                     <HODCommentInput
-                       onSubmit={(remark) => handleAddRemark({ studentId: selectedStudent.id, studentName: selectedStudent.name, remark })}
-                       placeholder={`Compile institutional HOD remark envelope for ${selectedStudent.name}...`}
-                       maxLength={500}
-                     />
-                   </div>
-                   {/* Grade Discussion Thread */}
-                   <div className="border-t border-border/60 pt-6">
-                     <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                       Grade Discussion
-                     </h4>
-<GradeDiscussionThread 
-                        subjectId={selectedStudent.subjects?.[0]?.id || 'unknown'} 
-                        studentId={selectedStudent.id}
-                        sender="HOD"
-                      />
-                   </div>
+                  {/* Overall Institutional Comment Node */}
+                  <div className="border-t border-border/60 pt-4">
+                    <HODCommentInput
+                      onSubmit={(remark) => handleAddRemark({ studentId: selectedStudent.id, studentName: selectedStudent.name, remark })}
+                      placeholder={`Compile institutional HOD remark envelope for ${selectedStudent.name}...`}
+                      maxLength={500}
+                    />
+                  </div>
+                  {/* Grade Discussion Thread */}
+                  <div className="border-t border-border/60 pt-6">
+                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                      Grade Discussion
+                    </h4>
+                    <GradeDiscussionThread
+                      subjectId={selectedStudent.subjects?.[0]?.id || 'unknown'}
+                      studentId={selectedStudent.id}
+                      sender="HOD"
+                    />
+                  </div>
 
                 </div>
               </motion.div>
@@ -405,5 +447,5 @@ return (
         onCancel={() => setRejectConfirm(null)}
       />
     </div>
-);
+  );
 }

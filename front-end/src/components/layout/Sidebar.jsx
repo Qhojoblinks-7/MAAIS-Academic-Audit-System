@@ -41,16 +41,17 @@ export function Sidebar() {
 
   const sidebarRef = useRef(null);
 
-  useEffect(() => {
-    teacherService.getMissingObservations?.()
-      .then((data) => {
-        const missing = Array.isArray(data)
-          ? data.filter((item) => item.status === 'Missing').length
-          : 0;
-        setMissingObservationCount(missing);
-      })
-      .catch(() => setMissingObservationCount(0));
-  }, [setMissingObservationCount]);
+useEffect(() => {
+     if (user?.role !== 'TEACHER') return;
+     teacherService.getMissingObservations?.()
+       .then((data) => {
+         const missing = Array.isArray(data)
+           ? data.filter((item) => item.status === 'Missing').length
+           : 0;
+         setMissingObservationCount(missing);
+       })
+       .catch(() => setMissingObservationCount(0));
+   }, [setMissingObservationCount, user?.role]);
 
   const navItems = [
     {

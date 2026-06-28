@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useUI } from '../../context/UIContext';
 import {
   GRADE_SCALE,
@@ -10,6 +10,7 @@ import {
 } from '../../constants/grading';
 import { notification } from '../../services/notificationService';
 import { teacherService } from '../../services/teacherService';
+import { gradingApi } from '../../lib/api/grading';
 
 /**
  * useGradingSheetLogic — single custom hook owning all GradingSheet state.
@@ -129,6 +130,9 @@ export function useGradingSheetLogic({
   // Backend ID cache — resolved once per sheet mount
   const [backendIds, setBackendIds] = useState(null);
   const [idResolutionError, setIdResolutionError] = useState(null);
+
+  // Track pending grade corrections with justifications for audit trail sync
+  const pendingCorrections = useRef(new Map());
 
   useEffect(() => {
     let cancelled = false;
@@ -273,9 +277,13 @@ export function useGradingSheetLogic({
   }, [isTermFinalized, students, showJustificationPopup, calculateScores]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
+  const fieldMap = { sba: 'classScore', exam: 'examScore', remark: 'remark' };
+
   const handleJustificationSave = useCallback(() => {
     if (!justification.trim()) return;
     const numValue = valueToUpdate === '' ? '' : (parseFloat(valueToUpdate) || 0);
+    const backendField = fieldMap[fieldToUpdate] || fieldToUpdate;
+
     setStudents(prev =>
       prev.map(s =>
         s.id === studentToUpdate
@@ -283,6 +291,13 @@ export function useGradingSheetLogic({
           : s
       )
     );
+
+    pendingCorrections.current.set(studentToUpdate, {
+      field: backendField,
+      newValue: String(numValue),
+      justification,
+    });
+
     setShowJustificationPopup(false);
     setJustification('');
     setFieldToUpdate(null);
@@ -320,9 +335,37 @@ export function useGradingSheetLogic({
         .filter((e) => e.studentId && e.subjectId && e.termId);
       if (cleaned.length === 0) return null;
       const result = await teacherService.bulkUpsertGradeEntries(cleaned);
+
+      if (result && Array.isArray(result)) {
+        const entryMap = new Map(result.map((e) => [e.studentId, e.id]));
+        const corrections = Array.from(pendingCorrections.current.entries());
+        if (corrections.length > 0) {
+          await Promise.all(
+            corrections.map(([studentId, data]) => {
+              const gradeEntryId = entryMap.get(studentId);
+              if (!gradeEntryId) return null;
+              return gradingApi
+                .correctGrade(
+                  {
+                    gradeEntryId,
+                    fieldChanged: data.field,
+                    newValue: data.newValue,
+                    reason: data.justification,
+                  },
+                  teacherId,
+                )
+                .catch((err) => {
+                  console.error('[GradingSheet] correction sync failed:', err);
+                });
+            }),
+          );
+          pendingCorrections.current.clear();
+        }
+      }
+
       return result;
     },
-    [backendReady, backendIds, teacherService],
+    [backendReady, backendIds, teacherService, gradingApi, teacherId],
   );
 
   const handleSaveDraft = useCallback(() => {

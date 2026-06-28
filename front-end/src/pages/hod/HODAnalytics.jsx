@@ -166,6 +166,10 @@ export function HODAnalytics() {
     teacherSubmissions = [],
     interventionAlerts = [],
     academicYears = [],
+    refreshDepartmentProgress,
+    refreshTeacherSubmissions,
+    refreshInterventionAlerts,
+    refreshAcademicYears,
   } = context || {};
 
   const [analyticsAcademicYearId, setAnalyticsAcademicYearId] = useState('');
@@ -185,6 +189,32 @@ export function HODAnalytics() {
     setAnalyticsTermNumber('');
     setAnalyticsSemester('');
   }, [setAnalyticsStartDate, setAnalyticsEndDate, setAnalyticsAcademicYearId, setAnalyticsTermNumber, setAnalyticsSemester]);
+
+  useEffect(() => {
+    refreshAcademicYears();
+  }, [refreshAcademicYears]);
+
+  useEffect(() => {
+    const termNumber = analyticsTermNumber === 'sem-1' ? 'TERM_1' : analyticsTermNumber === 'sem-2' ? 'TERM_2' : undefined;
+    refreshDepartmentProgress(1, 50, analyticsAcademicYearId || undefined, termNumber);
+    refreshTeacherSubmissions(analyticsAcademicYearId || undefined, termNumber);
+    refreshInterventionAlerts({
+      startDate: analyticsStartDate || undefined,
+      endDate: analyticsEndDate || undefined,
+      semester: analyticsSemester || undefined,
+      academicYearId: analyticsAcademicYearId || undefined,
+      termNumber,
+    });
+  }, [
+    refreshDepartmentProgress,
+    refreshTeacherSubmissions,
+    refreshInterventionAlerts,
+    analyticsAcademicYearId,
+    analyticsTermNumber,
+    analyticsStartDate,
+    analyticsEndDate,
+    analyticsSemester,
+  ]);
 
   const filteredAlerts = useMemo(() => {
     const start = analyticsStartDate ? new Date(analyticsStartDate) : new Date(0);
@@ -299,7 +329,9 @@ export function HODAnalytics() {
     ];
   }, [dataMetrics]);
 
-   if (!dataMetrics.facultyCount && !departmentProgress.length && !interventionAlerts.length) {
+   const isLoading = !dataMetrics.classPerformance.length && !filteredAlerts.length && !departmentProgress.length && !interventionAlerts.length;
+  
+   if (isLoading) {
      return (
        <div className="flex-1 flex flex-col justify-center items-center min-h-[450px] bg-slate-50/50">
          <div className="relative flex items-center justify-center">

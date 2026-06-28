@@ -17,7 +17,7 @@ export function NotificationBell() {
 
     const fetchNotifications = async () => {
       try {
-        const unread = await notification.getUnread(userId);
+        const unread = await notification.getUnread();
         setNotifications(unread || []);
         setUnreadCount(unread ? unread.length : 0);
       } catch (err) {

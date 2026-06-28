@@ -9,6 +9,7 @@ export function HODArchiveStudentRow({ student, onClick }) {
 
   const getStatusColor = (status) => {
     switch (status) {
+      case 'SECURE': return 'bg-rose-50 text-rose-800 border-rose-100';
       case 'Archived & Verified': return 'bg-emerald-50 text-emerald-800 border-emerald-100';
       case 'Archive Inbound': return 'bg-blue-50 text-blue-800 border-blue-100';
       default: return 'bg-slate-50 text-slate-600 border-slate-200';

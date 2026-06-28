@@ -4,7 +4,9 @@ export const adminApi = {
   // ── Users / Staff Management ───────────────────────────────────────────────
   createStaff: (dto) => api.post('/users/staff', dto),
   createStudent: (dto) => api.post('/users/students', dto),
+  batchImportStudents: (students) => api.post('/users/students/batch', { students }),
   createParent: (dto) => api.post('/users/parents', dto),
+  getAllParents: () => api.get('/users/parents'),
   getAllStudents: () => api.get('/users/students'),
   getStudentProfile: (id) => api.get(`/users/students/${id}`),
   updateStudentProfile: (id, body) => api.patch(`/users/students/${id}`, body),
@@ -23,6 +25,16 @@ export const adminApi = {
   getAllSubjects: () => api.get('/academic/subjects'),
   createClass: (dto) => api.post('/academic/classes', dto),
   getAllClasses: () => api.get('/academic/classes'),
+  assignHOD: (deptId, staffId) => api.patch(`/admin/departments/${deptId}/hod`, { staffId }),
+  freezeDepartment: (deptId) => api.post(`/admin/departments/${deptId}/freeze`),
+  transferTeacher: (toDeptId, teacherId, fromDeptId) =>
+    api.post(`/admin/departments/${toDeptId}/transfer-teacher`, {
+      teacherId,
+      fromDepartmentId: fromDeptId,
+    }),
+  deleteDepartment: (deptId) => api.delete(`/admin/departments/${deptId}`),
+  getAuditLogs: (params) => api.get('/admin/audit-logs', { params }),
+  authorizeTemplate: (deptId, template) => api.post(`/admin/departments/${deptId}/template`, { template }),
   assignClassTeacher: (id, dto) => api.patch(`/academic/classes/${id}/teacher`, dto),
   assignTeacher: (dto) => api.post('/academic/assignments', dto),
   getTeacherAssignments: (teacherId) => api.get(`/academic/assignments/teacher/${teacherId}`),
@@ -40,10 +52,8 @@ export const adminApi = {
 
   // ── Archive / Vault ────────────────────────────────────────────────────────
   promoteStudent: (dto) => api.post('/archive/promote', dto),
-  getPromotionHistory: (studentId) =>
-    api.get(`/archive/students/${studentId}/promotions`),
   searchVault: (query) => api.get('/archive/vault/search', { params: query }),
-  getAcademicYears: () => api.get('/archive/academic-years'),
+  getAcademicYears: () => api.get('/academic/years'),
   getArchiveStats: () => api.get('/archive/stats'),
   lockTerm: (id) => api.patch(`/archive/terms/${id}/lock`),
   getDatabaseHealth: () => api.get('/archive/health'),
@@ -76,7 +86,7 @@ export const adminApi = {
     api.patch(`/grading/entries/${gradeEntryId}/approve`, { approvedById }),
   bulkApproveGrades: (ids, approvedById) =>
     api.post('/grading/entries/bulk-approve', { ids, approvedById }),
-  correctGrade: (dto, changedById) => api.post('/grading/correct', { ...dto, changedById }),
+  correctGrade: (dto, changedById) => api.post('/grading/corrections', { ...dto, changedById }),
   getMissingObservations: (termId) =>
     api.get(`/grading/missing-observations?termId=${termId}`),
   getGradeEntry: (id) => api.get(`/grading/entries/${id}`),
@@ -134,8 +144,40 @@ export const adminApi = {
   refresh: (refreshToken, userId) => api.post('/auth/refresh', { refreshToken, userId }),
   logout: (refreshToken) => api.post('/auth/logout', { refreshToken }),
 
-  // ── Archive (Admin) ────────────────────────────────────────────────────────
-  runPromotion: (dto) => api.post('/archive/promote', dto),
+  // ── Approvals ──────────────────────────────────────────────────────────────
+  getApprovals: (query = {}) => api.get('/approvals', { params: query }),
+  getApprovalStats: () => api.get('/approvals/stats'),
+  createApproval: (dto) => api.post('/approvals', dto),
+  getApproval: (id) => api.get(`/approvals/${id}`),
+  resolveApproval: (id, dto) => api.patch(`/approvals/${id}/resolve`, dto),
+  deleteApproval: (id) => api.delete(`/approvals/${id}`),
+
+  // ── Grading Rules ──────────────────────────────────────────────────────────
+  getGradingRules: (termId) => api.get('/grading/rules', { params: { termId } }),
+  updateGradingRules: (body) => api.put('/grading/rules', body),
+
+  // ── Reports (Admin Generation) ─────────────────────────────────────────────
+  getStudentsForReportGeneration: (query) => api.get('/reports/generation/students', { params: query }),
+  compileBatchReports: (dto) => api.post('/reports/generation/compile', dto),
+  getReportBlockingIssues: (classSectionId) => api.get('/reports/generation/blocking-issues', { params: { classSectionId } }),
+  sendReportNudge: (dto) => api.post('/reports/generation/send-nudge', dto),
+
+// ── Admin Settings ─────────────────────────────────────────────────────────
+   getAdminSettings: () => api.get('/admin/settings'),
+   updateAdminMfa: (enabled) => api.patch('/admin/settings/mfa', { enabled }),
+   toggleMaintenanceMode: (enabled) => api.patch('/admin/settings/maintenance', { enabled }),
+   getSystemFreeze: () => api.get('/admin/settings/freeze'),
+   toggleSystemFreeze: (enabled, reason) => api.post('/admin/settings/freeze', { enabled, reason }),
+   updateAdminCredentials: (body) => api.post('/admin/settings/credentials', body),
+
+ resetStaffCredentials: (staffId) => api.post(`/admin/staff/${staffId}/reset-credentials`, {}),
+
+   // ── Strategy Pulse ─────────────────────────────────────────────────────────
+   uploadStrategyPulse: (deptId) => api.post('/admin/strategy-pulse', { departmentId: deptId }),
+
+   // ── Archive (Admin) ────────────────────────────────────────────────────────
+   runPromotion: (dto) => api.post('/archive/promote', dto),
+   unlockTerm: (id) => api.patch(`/archive/terms/${id}/unlock`),
 };
 
 export default adminApi;

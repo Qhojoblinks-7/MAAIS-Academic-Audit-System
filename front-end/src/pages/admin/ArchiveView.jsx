@@ -5,7 +5,7 @@ import { Database, FileText, Filter, Calendar, Search, ShieldCheck, User, Trendi
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer
 } from 'recharts';
-import { useArchiveStats as useAdminArchiveStats, useAcademicYears as useAdminAcademicYears } from '../../lib/hooks';
+import { useArchiveStats as useAdminArchiveStats, useAcademicYears as useAdminAcademicYears, useStudentProfile, useStudentBehavior, useStudentInterventions } from '../../lib/hooks';
 import { SubTabSelector } from './components/SubTabSelector';
 import { PromotionTab, MaintenanceTab } from './components/ArchiveTabs';
 import { VaultHeader } from './components/VaultHeader';
@@ -54,10 +54,74 @@ export function ArchiveView() {
   const academicYears = academicYearsQuery.data || [];
 
   const vaultEntries = React.useMemo(() => {
-    if (archiveStats?.recentPromotions) return archiveStats.recentPromotions;
+    if (archiveStats?.recentPromotions) {
+      return archiveStats.recentPromotions.map((p) => ({
+        id: p.studentId || p.id,
+        name: p.studentName || 'Unknown',
+        index: p.studentIndex || '—',
+        fromClass: p.fromClass,
+        toClass: p.toClass,
+        status: p.status,
+        academicYear: p.academicYear,
+        performedAt: p.performedAt,
+        history: p.status === 'GRADUATED' ? [{ finalGrade: 75 }] : [{ finalGrade: null }],
+      }));
+    }
     if (archiveStats?.recentArchives) return archiveStats.recentArchives;
     return [];
   }, [archiveStats]);
+
+  const selectedStudentId = selectedStudent?.id || selectedStudent?.studentId;
+  const studentProfileQuery = useStudentProfile(selectedStudentId);
+  const behaviorQuery = useStudentBehavior(selectedStudentId);
+  const interventionsQuery = useStudentInterventions(selectedStudentId);
+
+  const enrichedSelectedStudent = React.useMemo(() => {
+    if (!selectedStudent) return null;
+    const profile = studentProfileQuery.data;
+    const behaviors = behaviorQuery.data || [];
+    const interventions = interventionsQuery.data || [];
+
+    const base = {
+      id: selectedStudent.id || selectedStudent.studentId,
+      name: selectedStudent.name || profile ? `${profile.firstName} ${profile.lastName}` : 'Unknown',
+      index: selectedStudent.index || profile?.indexNumber || '—',
+      department: selectedStudent.department || profile?.department?.name || '—',
+      consistencyScore: selectedStudent.consistencyScore || 'N/A',
+    };
+
+    const grades = profile?.grades || [];
+    const sortedGrades = [...grades].sort((a, b) => {
+      const ayA = a.term?.academicYear?.startDate ? new Date(a.term.academicYear.startDate).getTime() : 0;
+      const ayB = b.term?.academicYear?.startDate ? new Date(b.term.academicYear.startDate).getTime() : 0;
+      return ayB - ayA;
+    });
+    const history = sortedGrades.slice(0, 6).map((g) => ({ finalGrade: Math.round(g.totalScore ?? 0) }));
+    while (history.length < 6) history.push({ finalGrade: null });
+
+    const observations = behaviors.map((b) => ({
+      id: b.id,
+      type: 'Behavior',
+      date: new Date(b.createdAt).toLocaleDateString(),
+      comment: b.remarks || '—',
+      teacherName: b.recordedBy ? `${b.recordedBy.firstName} ${b.recordedBy.lastName}` : 'System',
+    }));
+
+    const studentInterventions = interventions.map((int) => ({
+      id: int.id,
+      year: int.createdAt ? new Date(int.createdAt).getFullYear().toString() : '—',
+      term: '—',
+      action: int.notes || 'Grade drop detected',
+      outcome: int.status,
+    }));
+
+    return {
+      ...base,
+      history,
+      observations,
+      interventions: studentInterventions,
+    };
+  }, [selectedStudent, studentProfileQuery.data, behaviorQuery.data, interventionsQuery.data]);
 
   const terms = ['SHS 1-T1', 'SHS 1-T2', 'SHS 1-T3', 'SHS 2-T1', 'SHS 2-T2', 'SHS 2-T3'];
   const coreSubjects = ['Core Math', 'English', 'Int. Science', 'Social Studies'];
@@ -328,7 +392,7 @@ export function ArchiveView() {
           )}
 
 
-          {activeSubTab === 'VAULT' && selectedStudent && (
+          {activeSubTab === 'VAULT' && selectedStudent && enrichedSelectedStudent && (
 
           <motion.div
             key="report"
@@ -350,7 +414,7 @@ export function ArchiveView() {
                 </select>
                 <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-900 rounded-xl text-[10px] font-black uppercase tracking-widest border border-emerald-100 italic">
                    <ShieldCheck size={14} />
-                   Audit ID: {selectedStudent.index}-99X
+                    Audit ID: {enrichedSelectedStudent.index}-99X
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-4 justify-center md:justify-end">
@@ -374,8 +438,8 @@ export function ArchiveView() {
                 <div className="flex flex-col items-center md:flex-row md:items-center gap-8 text-center md:text-left">
                   <div className="relative">
                     <img 
-                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedStudent.name}`} 
-                      alt={selectedStudent.name} 
+                       src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${enrichedSelectedStudent.name}`} 
+                       alt={enrichedSelectedStudent.name} 
                       className="w-28 h-28 rounded-3xl bg-gray-50 p-1 border-4 border-white shadow-2xl"
                     />
                     <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-emerald-900 text-white rounded-2xl flex items-center justify-center border-4 border-white shadow-lg shadow-emerald-900/20">
@@ -383,12 +447,12 @@ export function ArchiveView() {
                     </div>
                   </div>
                   <div>
-                    <h2 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tighter mb-2 italic">{selectedStudent.name}</h2>
+                     <h2 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tighter mb-2 italic">{enrichedSelectedStudent.name}</h2>
                     <p className="text-emerald-800 font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Scholastic Longitudinal Portfolio</p>
                     <div className="flex flex-wrap gap-2 md:gap-3 mt-4 justify-center md:justify-start">
-                       <span className="px-3 py-1 bg-gray-100 rounded-lg text-[10px] font-black text-gray-400 uppercase tracking-widest">ID: {selectedStudent.index}</span>
-                       <span className="px-3 py-1 bg-gray-100 rounded-lg text-[10px] font-black text-gray-400 uppercase tracking-widest">{selectedStudent.department} Dept.</span>
-                       <span className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-[10px] font-black uppercase tracking-widest">{selectedStudent.consistencyScore} Performer</span>
+                        <span className="px-3 py-1 bg-gray-100 rounded-lg text-[10px] font-black text-gray-400 uppercase tracking-widest">ID: {enrichedSelectedStudent.index}</span>
+                        <span className="px-3 py-1 bg-gray-100 rounded-lg text-[10px] font-black text-gray-400 uppercase tracking-widest">{enrichedSelectedStudent.department} Dept.</span>
+                        <span className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-[10px] font-black uppercase tracking-widest">{enrichedSelectedStudent.consistencyScore} Performer</span>
                     </div>
                   </div>
                 </div>
@@ -436,7 +500,7 @@ export function ArchiveView() {
                            </TableHeader>
                            <TableBody>
                              {['Core Mathematics', 'English Language', 'Integrated Science', 'Social Studies', 'Elective Subject 1', 'Elective Subject 2'].map((subj, sIdx) => {
-                               const baseGrade = selectedStudent.history[tIdx]?.finalGrade || 70;
+                                const baseGrade = enrichedSelectedStudent.history[tIdx]?.finalGrade || 70;
                                const classScore = Math.round((baseGrade * 0.3) + (sIdx % 2 === 0 ? 2 : -2));
                                const examScore = Math.round((baseGrade * 0.7) + (sIdx % 3 === 0 ? -3 : 4));
                                const total = classScore + examScore;
@@ -486,12 +550,12 @@ export function ArchiveView() {
                    <div className="bg-emerald-50/30 p-8 rounded-3xl border border-emerald-100/50">
                       <p className="text-[9px] font-black text-emerald-700 uppercase tracking-widest mb-1">Cumulative GPA</p>
                       <p className="text-3xl font-black text-emerald-900 italic tracking-tighter">
-                         {(selectedStudent.history.reduce((acc, h) => acc + h.finalGrade, 0) / selectedStudent.history.length).toFixed(1)}%
+                          {(enrichedSelectedStudent.history.reduce((acc, h) => acc + h.finalGrade, 0) / enrichedSelectedStudent.history.length).toFixed(1)}%
                       </p>
                    </div>
                    <div className="bg-emerald-50/30 p-8 rounded-3xl border border-emerald-100/50">
                       <p className="text-[9px] font-black text-emerald-700 uppercase tracking-widest mb-1">Consistency Score</p>
-                      <p className="text-3xl font-black text-emerald-900 italic tracking-tighter">{selectedStudent.consistencyScore}</p>
+                       <p className="text-3xl font-black text-emerald-900 italic tracking-tighter">{enrichedSelectedStudent.consistencyScore}</p>
                    </div>
                    <div className="bg-emerald-50/30 p-8 rounded-3xl border border-emerald-100/50">
                       <p className="text-[9px] font-black text-emerald-700 uppercase tracking-widest mb-1">Mastery Percentile</p>
@@ -512,8 +576,8 @@ export function ArchiveView() {
                     <h3 className="text-sm font-black text-emerald-950 uppercase tracking-[0.1em]">2. Longitudinal Performance Trajectory</h3>
                   </header>
                   <div className="bg-gray-50/50 p-12 rounded-[3rem] border border-gray-100 h-[400px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={selectedStudent.history}>
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                       <AreaChart data={enrichedSelectedStudent.history}>
                         <defs>
                           <linearGradient id="subScreenTrend" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="#065F46" stopOpacity={0.2}/>
@@ -545,7 +609,7 @@ export function ArchiveView() {
                     <h3 className="text-sm font-black text-emerald-950 uppercase tracking-[0.1em]">4. Observation Archive</h3>
                   </header>
                   <div className="space-y-4">
-                    {selectedStudent.observations.map((obs) => (
+                     {enrichedSelectedStudent.observations.map((obs) => (
                       <div key={obs.id} className="p-6 bg-white border-l-4 border-amber-400 border-y border-r border-gray-100 rounded-r-2xl shadow-sm">
                         <div className="flex justify-between items-center mb-2">
                            <span className="text-[9px] font-black text-amber-900 bg-amber-50 px-2 py-0.5 rounded italic uppercase leading-none">{obs.type}</span>
@@ -564,7 +628,7 @@ export function ArchiveView() {
                     <h3 className="text-sm font-black text-emerald-950 uppercase tracking-[0.1em]">5. Intervention History</h3>
                   </header>
                   <div className="space-y-6">
-                    {selectedStudent.interventions.map((int) => (
+                     {enrichedSelectedStudent.interventions.map((int) => (
                       <div key={int.id} className="bg-gray-900 text-white p-8 rounded-[2.5rem] relative overflow-hidden ring-4 ring-gray-100">
                         <div className="absolute top-4 right-6 text-[8px] font-black text-emerald-400 bg-emerald-900/50 px-2 py-1 rounded">AUDIT VERIFIED</div>
                         <div className="flex items-center gap-3 mb-6">

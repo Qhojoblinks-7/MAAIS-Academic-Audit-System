@@ -1,8 +1,7 @@
 import { getAuthToken } from './auth';
 import { adminApi } from '../lib/api/admin';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-const USE_MOCK = !BASE_URL || import.meta.env.VITE_USE_MOCK_API === 'true';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 function getHeaders() {
   const token = getAuthToken();
@@ -22,7 +21,7 @@ async function request(method, path, body) {
     headers: getHeaders(),
     credentials: 'include',
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-  };
+  });
 
   if (!res.ok) {
     const err = new Error(`Request failed: ${res.status} ${method} ${path}`);
@@ -81,7 +80,7 @@ function createRealService() {
     getPromotionHistory: (studentId) =>
       request('GET', `/archive/students/${studentId}/promotions`),
     searchVault: (query = {}) => request('GET', '/archive/vault/search', query),
-    getAcademicYears: () => request('GET', '/archive/academic-years'),
+    getAcademicYears: () => request('GET', '/academic/years'),
     getArchiveStats: () => request('GET', '/archive/stats'),
     lockTerm: (id) => request('PATCH', `/archive/terms/${id}/lock`, null),
     getDatabaseHealth: () => request('GET', '/archive/health'),
@@ -117,7 +116,7 @@ function createRealService() {
     bulkApproveGrades: (ids, approvedById) =>
       request('POST', '/grading/entries/bulk-approve', { ids, approvedById }),
     correctGrade: (dto, changedById) =>
-      request('POST', '/grading/correct', { ...dto, changedById }),
+      request('POST', '/grading/corrections', { ...dto, changedById }),
     getMissingObservations: (termId) =>
       request('GET', `/grading/missing-observations?termId=${termId}`),
     getGradeEntry: (id) => request('GET', `/grading/entries/${id}`),
@@ -185,9 +184,33 @@ function createRealService() {
 
     // ── Archive (Admin) ──────────────────────────────────────────────────────
     runPromotion: (dto) => request('POST', '/archive/promote', dto),
+
+    // ── Approvals ──────────────────────────────────────────────────────────────
+    getApprovals: (query = {}) => request('GET', '/approvals', query),
+    getApprovalStats: () => request('GET', '/approvals/stats'),
+    createApproval: (dto) => request('POST', '/approvals', dto),
+    getApproval: (id) => request('GET', `/approvals/${id}`),
+    resolveApproval: (id, dto) => request('PATCH', `/approvals/${id}/resolve`, dto),
+    deleteApproval: (id) => request('DELETE', `/approvals/${id}`),
+
+    // ── Grading Rules ──────────────────────────────────────────────────────────
+    getGradingRules: (termId) => request('GET', '/grading/rules', { termId }),
+    updateGradingRules: (body) => request('PUT', '/grading/rules', body),
+
+    // ── Report Generation (Admin) ──────────────────────────────────────────────
+    getStudentsForReportGeneration: (query) => request('GET', '/reports/generation/students', query),
+    compileBatchReports: (dto) => request('POST', '/reports/generation/compile', dto),
+    getReportBlockingIssues: (classSectionId) => request('GET', '/reports/generation/blocking-issues', { classSectionId }),
+    sendReportNudge: (dto) => request('POST', '/reports/generation/send-nudge', dto),
+
+    // ── Admin Settings ─────────────────────────────────────────────────────────
+    getAdminSettings: () => request('GET', '/admin/settings'),
+    updateAdminMfa: (enabled) => request('PATCH', '/admin/settings/mfa', { enabled }),
+    toggleMaintenanceMode: (enabled) => request('PATCH', '/admin/settings/maintenance', { enabled }),
+    updateAdminCredentials: (body) => request('POST', '/admin/settings/credentials', body),
   };
 }
 
-export const adminService = USE_MOCK ? createRealService() : createRealService();
+export const adminService = createRealService();
 
 export default adminService;

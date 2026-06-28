@@ -12,6 +12,7 @@ import { cn } from '../../lib/utils';
 import { useUI } from '../../context/UIContext';
 import { useNavigate } from 'react-router-dom';
 import { auditTrail } from '../../services/auditTrailService';
+import { useActiveYear, useLockTerm } from '../../lib/hooks';
 import {
   Table,
   TableHeader,
@@ -47,13 +48,18 @@ export const GradingRulesView = () => {
   const [examWeight, setExamWeight] = useState(70);
   const [boundaries, setBoundaries] = useState(DEFAULT_BOUNDARIES);
   const [normalizationEnabled, setNormalizationEnabled] = useState(true);
-  
+   
    const [deadlineDate, setDeadlineDate] = useState('2026-07-15');
    const [deadlineTime, setDeadlineTime] = useState('23:59');
    const [showSealConfirm, setShowSealConfirm] = useState(false);
    const [initialState, setInitialState] = useState({});
    
    const navigate = useNavigate();
+
+   const activeYearQuery = useActiveYear();
+   const lockTermMutation = useLockTerm();
+
+   const activeTerm = activeYearQuery.data?.terms?.find(t => t.isActive);
 
     useEffect(() => {
       setInitialState({
@@ -204,15 +210,24 @@ export const GradingRulesView = () => {
                    >
                      Abort
                    </button>
-                   <button 
-                     onClick={() => {
-                       setIsTermFinalized(true);
-                       setShowSealConfirm(false);
-                     }}
-                     className="flex-1 py-4 bg-rose-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-rose-900/20 hover:bg-rose-700 transition-all"
-                   >
-                     Finalize Term
-                   </button>
+                    <button 
+                      onClick={() => {
+                        if (activeTerm?.id) {
+                          lockTermMutation.mutate(activeTerm.id, {
+                            onSuccess: () => {
+                              setIsTermFinalized(true);
+                              setShowSealConfirm(false);
+                            },
+                          });
+                        } else {
+                          setIsTermFinalized(true);
+                          setShowSealConfirm(false);
+                        }
+                      }}
+                      className="flex-1 py-4 bg-rose-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-rose-900/20 hover:bg-rose-700 transition-all"
+                    >
+                      {lockTermMutation.isPending ? 'Sealing...' : 'Finalize Term'}
+                    </button>
                 </div>
              </motion.div>
           </div>

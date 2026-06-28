@@ -1,132 +1,211 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import mockApiData from '../../data/mockApiData.json';
 import { HODArchiveHeader } from '../../components/atoms/HODArchiveHeader';
 import { HODVaultView } from '../../components/organisms/HODVaultView';
 import { HODPromotionTerminal } from '../../components/organisms/HODPromotionTerminal';
 import { HODComplianceAudits } from '../../components/organisms/HODComplianceAudits';
 import { HODArchiveDetailView } from './HODArchiveDetailView';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { useArchivedDepartmentData } from '@/lib/hooks/api/hod';
+import { useComplianceCohortPerformance, useComplianceTimeline, usePromotionMetrics, useTriggerPromotion, useLockedTerms } from '@/lib/hooks/api/hod';
+import { useSearchVault } from '@/lib/hooks/api/archive';
+
+function normalizeStudent(record, lockedTermIds = []) {
+  if (!record) return null;
+  const hasSealedGrades = (record.grades || []).some(g => lockedTermIds.includes(g.termId));
+  const baseStatus = record.status || 'Archive Inbound';
+  return {
+    id: record.id,
+    name: record.name || '',
+    index: String(record.indexNumber || ''),
+    graduationYear: String(record.year || ''),
+    currentClass: record.className || '',
+    department: '',
+    consistencyScore: 0,
+    status: hasSealedGrades ? 'SECURE' : baseStatus,
+    hodComment: '',
+    finalWassce: 'Pending',
+    history: [],
+    observations: [],
+    interventions: [],
+  };
+}
 
 export function HODArchiveView() {
   const [activeSubTab, setActiveSubTab] = useState('VAULT');
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
   
-  // Search & Filters State
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('ALL');
   const [selectedYear, setSelectedYear] = useState('ALL');
 
-  // Promotion Pipeline state
+  const {
+    data: archivedData = [],
+    isLoading: archiveLoading,
+    isFetching: archiveFetching,
+    refetch: refetchArchives,
+  } = useArchivedDepartmentData();
+
+  const {
+    data: complianceCohorts = [],
+    isLoading: cohortLoading,
+  } = useComplianceCohortPerformance();
+
+  const {
+    data: timelineData = [],
+    isLoading: timelineLoading,
+  } = useComplianceTimeline();
+
+  const complianceLoading = cohortLoading || timelineLoading;
+
+  const {
+    data: lockedTerms = [],
+    isLoading: lockedTermsLoading,
+  } = useLockedTerms();
+
+  const transformedCohorts = useMemo(() => {
+    return (complianceCohorts || []).map(item => ({
+      ...item,
+      year: String(item.year || '').replace('Cohort', '').trim(),
+    }));
+  }, [complianceCohorts]);
+
+  const transformedTimeline = useMemo(() => {
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return (timelineData || []).map(item => {
+      let formattedTime = item.time || '';
+      if (formattedTime.length === 7 && formattedTime.includes('-')) {
+        const [, m] = formattedTime.split('-');
+        const month = MONTHS[parseInt(m, 10) - 1] || m;
+        formattedTime = `${month} ${formattedTime.split('-')[0]}`;
+      }
+      return {
+        ...item,
+        time: formattedTime,
+      };
+    });
+  }, [timelineData]);
+
+  const {
+    data: promotionMetrics = { seniorSize: 0, clearedCount: 0, clearanceRate: 0 },
+    isLoading: metricsLoading,
+  } = usePromotionMetrics();
+
+  const promotionMutation = useTriggerPromotion();
   const [isPromoting, setIsPromoting] = useState(false);
   const [promotionProgress, setPromotionProgress] = useState(0);
   const [promotionLogged, setPromotionLogged] = useState(false);
 
-  // 1. Memoize raw array structural normalization
+  const {
+    data: vaultSearchResult,
+    isLoading: vaultDetailLoading,
+  } = useSearchVault(selectedStudentId ? { indexNumber: selectedStudentId } : {});
+
+  useEffect(() => {
+    if (selectedStudentId && vaultSearchResult) {
+      const raw = vaultSearchResult?.[0];
+      if (raw) {
+        const reportCards = raw.reportCards || [];
+        const history = reportCards.map(rc => ({
+          term: rc.term?.academicYear?.label || '—',
+          finalGrade: rc.averageScore || 0,
+        }));
+        setSelectedStudent({
+          id: raw.id,
+          name: raw.name || `${raw.firstName || ''} ${raw.lastName || ''}`,
+          index: raw.indexNumber || '',
+          graduationYear: raw.graduationYear || '',
+          currentClass: raw.currentClass?.name || '',
+          department: raw.department?.name || '',
+          consistencyScore: 0,
+          status: raw.archivedAt ? 'Archived & Verified' : 'Archive Inbound',
+          hodComment: '',
+          finalWassce: 'Pending',
+          history,
+          observations: [],
+          interventions: [],
+        });
+      }
+    }
+  }, [selectedStudentId, vaultSearchResult]);
+
   const students = useMemo(() => {
-    const currentYear = new Date().getFullYear();
+    const lockedIds = (lockedTerms || []).map(t => t.id);
+    return (archivedData || []).map(record => normalizeStudent(record, lockedIds));
+  }, [archivedData, lockedTerms]);
 
-    const getDynamicStatus = (graduationYear) => {
-      const year = parseInt(graduationYear, 10);
-      if (isNaN(year) || year < currentYear) return 'Archived & Verified';
-      if (year === currentYear || year === currentYear + 1) return 'Archive Inbound';
-      return 'Empty Archive';
-    };
-
-    const getDynamicComment = (graduationYear) => {
-      const year = parseInt(graduationYear, 10);
-      if (isNaN(year) || year < currentYear) return `Student record certified. ${graduationYear} cohort securely archived.`;
-      if (year === currentYear || year === currentYear + 1) return 'Active student file. Historical records compiling.';
-      return 'Student profile initialized. Awaiting academic history.';
-    };
-
-    const items = mockApiData?.archive?.items || [];
-    
-    return items.flatMap(archiveItem => 
-      (archiveItem?.students || []).map(student => ({
-        id: student.id,
-        name: student.name || '',
-        index: String(student.indexNumber || student.index || ''),
-        graduationYear: String(student.graduationYear || ''),
-        currentClass: student.currentClass || '',
-        department: archiveItem.subject || '',
-        consistencyScore: student.consistencyScore || 0,
-        status: getDynamicStatus(student.graduationYear),
-        hodComment: getDynamicComment(student.graduationYear),
-        finalWassce: student.finalWassce || 'Pending',
-        history: student.history || [],
-        observations: student.observations || [],
-        interventions: student.interventions || []
-      }))
-    );
-  }, []); // Re-computes only if mock data reference updates
-
-  // 2. Memoize structural statistics based on base dataset
-  const globalStats = useMemo(() => {
-    const totalAlumniCount = students.length;
-    const verifiedSealsCount = students.filter(s => s.status === 'Archived & Verified').length;
-    const totalGradesArray = students.flatMap(s => s.history.map(h => h.finalGrade));
-    
-    const departmentAverage = totalGradesArray.length > 0 
-      ? (totalGradesArray.reduce((a, b) => a + b, 0) / totalGradesArray.length).toFixed(1) 
-      : 'N/A';
-
-    return {
-      totalAlumniCount,
-      verifiedSealsCount,
-      departmentAverage
-    };
-  }, [students]);
-
-  // 3. Lightweight down-stream sorting & filtering calculations
   const filteredStudents = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-    
+    const q = searchTerm.trim().toLowerCase();
     return students.filter(s => {
-      const matchesSearch = !normalizedSearch || 
-        s.name.toLowerCase().includes(normalizedSearch) || 
-        s.index.toLowerCase().includes(normalizedSearch);
-      
+      const matchesSearch = !q || s.name.toLowerCase().includes(q) || s.index.toLowerCase().includes(q);
       const matchesClass = selectedClass === 'ALL' || s.currentClass === selectedClass;
       const matchesYear = selectedYear === 'ALL' || s.graduationYear === selectedYear;
-      
       return matchesSearch && matchesClass && matchesYear;
     });
   }, [students, searchTerm, selectedClass, selectedYear]);
 
-  // 4. Clean simulation side-effect protection
-  const handleGlobalPromotion = () => {
-    setIsPromoting(true);
-    setPromotionProgress(0);
+  const uniqueClasses = useMemo(() => {
+    const classes = [...new Set(students.map(s => s.currentClass))].filter(Boolean);
+    return ['ALL', ...classes.sort()];
+  }, [students]);
+
+  const uniqueYears = useMemo(() => {
+    const years = [...new Set(students.map(s => s.graduationYear))].filter(Boolean);
+    return ['ALL', ...years.sort()];
+  }, [students]);
+
+  const handleBack = () => {
+    setSelectedStudent(null);
+    setSelectedStudentId(null);
   };
 
-  useEffect(() => {
-    let intervalId;
-    if (isPromoting) {
-      intervalId = setInterval(() => {
-        setPromotionProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(intervalId);
-            setIsPromoting(false);
-            setPromotionLogged(true);
-            return 100;
-          }
-          return prev + 10;
-        });
-      }, 200);
+  const handleStudentSelect = (student) => {
+    setSelectedStudent(student);
+    setSelectedStudentId(student.id);
+  };
+
+  const handleGlobalPromotion = async () => {
+    setIsPromoting(true);
+    setPromotionProgress(0);
+
+    const interval = setInterval(() => {
+      setPromotionProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          return 100;
+        }
+        return prev + 10;
+      });
+    }, 200);
+
+    try {
+      const activeYearRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || '/api/v1'}/academic/years/active`, {
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!activeYearRes.ok) throw new Error('Failed to fetch active academic year');
+      const activeYear = await activeYearRes.json();
+
+      await promotionMutation.mutateAsync(activeYear.id || activeYear.data?.id);
+
+      setTimeout(() => {
+        setIsPromoting(false);
+        setPromotionLogged(true);
+        refetchArchives();
+      }, 400);
+    } catch (err) {
+      console.error('Promotion failed:', err);
+      setIsPromoting(false);
+      setPromotionProgress(0);
     }
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [isPromoting]);
+  };
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#F9F9F7] relative">
       <HODArchiveHeader 
         activeSubTab={activeSubTab} 
         onTabChange={setActiveSubTab}
-        onStudentSelect={setSelectedStudent}
+        onStudentSelect={handleStudentSelect}
       />
 
       {/* Global Decorative Watermark */}
@@ -145,10 +224,16 @@ export function HODArchiveView() {
               transition={{ duration: 0.2, ease: 'easeOut' }}
               className="flex-1 h-full w-full overflow-hidden"
             >
-              <HODArchiveDetailView 
-                student={selectedStudent} 
-                onBack={() => setSelectedStudent(null)} 
-              />
+              {vaultDetailLoading ? (
+                <div className="flex-1 h-full w-full overflow-y-auto flex items-center justify-center">
+                  <div className="text-xs text-muted-foreground font-medium">Loading student record...</div>
+                </div>
+              ) : (
+                <HODArchiveDetailView 
+                  student={selectedStudent} 
+                  onBack={handleBack} 
+                />
+              )}
             </motion.div>
           ) : (
             <div className="flex-1 overflow-y-auto no-scrollbar">
@@ -156,16 +241,17 @@ export function HODArchiveView() {
                 <HODVaultView 
                   students={students}
                   filteredStudents={filteredStudents}
-                  onStudentSelect={setSelectedStudent}
+                  onStudentSelect={handleStudentSelect}
                   searchTerm={searchTerm}
                   onSearchChange={setSearchTerm}
                   selectedClass={selectedClass}
                   onClassChange={setSelectedClass}
                   selectedYear={selectedYear}
                   onYearChange={setSelectedYear}
-                  totalAlumniCount={globalStats.totalAlumniCount}
-                  departmentAverage={globalStats.departmentAverage}
-                  verifiedSealsCount={globalStats.verifiedSealsCount}
+                  totalAlumniCount={students.length}
+                  departmentAverage="N/A"
+                  verifiedSealsCount={lockedTerms.length}
+                  hasSealedTerms={lockedTerms.length > 0}
                 />
               )}
 
@@ -175,10 +261,17 @@ export function HODArchiveView() {
                   promotionProgress={promotionProgress}
                   promotionLogged={promotionLogged}
                   onInitiatePromotion={handleGlobalPromotion}
+                  seniorCount={promotionMetrics.seniorSize}
+                  clearedCount={promotionMetrics.clearedCount}
                 />
               )}
 
-              {activeSubTab === 'COMPLIANCE' && <HODComplianceAudits />}
+              {activeSubTab === 'COMPLIANCE' && (
+                <HODComplianceAudits 
+                  performanceData={transformedCohorts}
+                  auditLogs={transformedTimeline}
+                />
+              )}
             </div>
           )}
         </AnimatePresence>

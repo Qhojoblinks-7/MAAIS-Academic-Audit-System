@@ -68,10 +68,10 @@ const createMockService = () => ({
     return mockData.teacherSubmissions.items;
   },
 
-  getLockedTerms: async () => {
-    await simulateDelay();
-    return mockData.lockedTerms.items;
-  },
+getLockedTerms: async () => {
+     await simulateDelay();
+     return mockData.lockedTerms.items;
+   },
 
   validateLock: async (termId) => {
     await simulateDelay();
@@ -94,48 +94,46 @@ const createMockService = () => ({
     };
   },
 
-lockDepartmentMatrix: async (termId) => {
-     await simulateDelay();
-     // Lock all classes belonging to this term
-     mockData.departmentProgress.items.forEach((cls) => {
-       if (cls.termId === termId) {
-         cls.status = "LOCKED";
-         cls.lockedAt = new Date().toISOString();
-         cls.lockedBy = "hod001";
-       }
-     });
-     // Also update lockedTerms
-     const term = mockData.lockedTerms.items.find((t) => t.id === termId);
-     if (term) {
-       term.status = "LOCKED";
-       term.lockedAt = new Date().toISOString();
-       term.lockedBy = "hod001";
-     }
-     return { success: true, message: "Department matrix locked successfully" };
-   },
+lockDepartmentMatrix: async (classId) => {
+      await simulateDelay();
+      const cls = mockData.departmentProgress.items.find((c) => c.id === classId);
+      if (cls) {
+        cls.status = "LOCKED";
+        cls.lockedAt = new Date().toISOString();
+        cls.lockedBy = "hod001";
+        const term = mockData.lockedTerms.items.find((t) => t.id === cls.termId);
+        if (term) {
+          term.status = "LOCKED";
+          term.lockedAt = new Date().toISOString();
+          term.lockedBy = "hod001";
+        }
+      }
+      return { success: true, message: "Department matrix locked successfully" };
+    },
 
-unlockDepartmentMatrix: async (termId) => {
-     await simulateDelay();
-     // Unlock all classes belonging to this term
-     mockData.departmentProgress.items.forEach((cls) => {
-       if (cls.termId === termId) {
-         cls.status = "PENDING";
-         cls.lockedAt = null;
-         cls.lockedBy = null;
-       }
-     });
-     // Also update lockedTerms
-     const term = mockData.lockedTerms.items.find((t) => t.id === termId);
-     if (term) {
-       term.status = "UNLOCKED";
-       term.lockedAt = null;
-       term.lockedBy = null;
-     }
-     return {
-       success: true,
-       message: "Department matrix unlocked successfully",
-     };
-   },
+    unlockDepartmentMatrix: async (classId) => {
+      await simulateDelay();
+      const cls = mockData.departmentProgress.items.find((c) => c.id === classId);
+      if (cls) {
+        cls.status = "PENDING";
+        cls.lockedAt = null;
+        cls.lockedBy = null;
+        if (cls.termId) {
+          const termClasses = mockData.departmentProgress.items.filter((c) => c.termId === cls.termId);
+          const allUnlocked = termClasses.every((c) => c.status !== "LOCKED");
+          const term = mockData.lockedTerms.items.find((t) => t.id === cls.termId);
+          if (allUnlocked && term) {
+            term.status = "UNLOCKED";
+            term.lockedAt = null;
+            term.lockedBy = null;
+          }
+        }
+      }
+      return {
+        success: true,
+        message: "Department matrix unlocked successfully",
+      };
+    },
 
   getGradeComparison: async (subjectId, termA, termB) => {
     await simulateDelay();
@@ -413,6 +411,11 @@ getActiveImpersonations: async () => {
     return mockData.studentAcademicHistory?.items?.find(h => h.studentId === studentId) || null;
   },
 
+  getAllAcademicYears: async () => {
+    await simulateDelay();
+    return mockData.academicYears?.items || [];
+  },
+
   getJournalEditCaptures: async (params = {}) => {
     await simulateDelay();
     let items = mockData.auditLogs.items.filter(
@@ -476,6 +479,31 @@ getActiveImpersonations: async () => {
       message: "PDF exported",
       downloadUrl: `/exports/waec-${termId}.pdf`,
     };
+  },
+
+  resolveAlert: async (alertId) => {
+    await simulateDelay();
+    const alert = mockData.interventionAlerts.items.find((a) => a.id === alertId);
+    if (alert) {
+      alert.resolved = true;
+    }
+    return { success: true, message: "Alert resolved" };
+  },
+
+  addCounselingNote: async ({ alertId, text }) => {
+    await simulateDelay();
+    const alert = mockData.interventionAlerts.items.find((a) => a.id === alertId);
+    const note = {
+      id: `note_${Date.now()}`,
+      text,
+      author: "HOD",
+      date: new Date().toLocaleDateString(),
+    };
+    if (alert) {
+      alert.notes = alert.notes || [];
+      alert.notes.push(note);
+    }
+    return { success: true, note };
   },
 });
 

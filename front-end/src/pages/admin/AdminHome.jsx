@@ -9,7 +9,8 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
-import { useTickets, useUnreadNotifications, useAnalyticsPulse as useAdminAnalyticsPulse, useArchiveStats as useAdminArchiveStats, useAllStudents, useAllStaff } from '../../lib/hooks';
+import { useTickets, useUnreadNotifications, useAnalyticsPulse as useAdminAnalyticsPulse, useArchiveStats as useAdminArchiveStats, useAllStudents, useAllStaff, useApprovals, useResolveApproval, useSystemFreeze, useToggleSystemFreeze } from '../../lib/hooks';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { Textarea } from '../../components/ui/textarea';
@@ -43,36 +44,52 @@ function Sparkline({ color }) {
 export function AdminHome() {
   const { user } = useRole();
   const navigate = useNavigate();
-  
+  const qc = useQueryClient();
+
   const ticketsQuery = useTickets();
   const notificationsQuery = useUnreadNotifications();
   const analyticsQuery = useAdminAnalyticsPulse();
   const archiveStatsQuery = useAdminArchiveStats();
   const studentsQuery = useAllStudents();
   const staffQuery = useAllStaff();
+  const systemFreezeQuery = useSystemFreeze();
+  const toggleSystemFreezeMutation = useToggleSystemFreeze();
 
   const [currentTime, setCurrentTime] = React.useState(new Date());
   const [fabOpen, setFabOpen] = React.useState(false);
   const [notepadContent, setNotepadContent] = React.useState('Check SHS 1 enrollment CSV by 2 PM');
   const [activeMetric, setActiveMetric] = React.useState('Avg Score');
   const [activeAction, setActiveAction] = React.useState(null);
-  const [isFreezeActive, setIsFreezeActive] = React.useState(false);
+  const [freezeReason, setFreezeReason] = React.useState('');
   const [selectedChannel, setSelectedChannel] = React.useState('In-App Push');
   const [broadcastPayload, setBroadcastPayload] = React.useState('');
+
+  const isFreezeActive = systemFreezeQuery.data?.systemFrozen ?? false;
+
 
   const tickets = ticketsQuery.data || [];
   const notifications = notificationsQuery.data || [];
   const analytics = analyticsQuery.data;
-  const archiveStats = archiveStatsQuery.data;
   const students = studentsQuery.data || [];
   const staff = staffQuery.data || [];
-
-  React.useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const ticketsLoading = ticketsQuery.isLoading;
+  const approvalsQuery = useApprovals({ status: 'pending' });
+  const resolveApprovalMutation = useResolveApproval();
+  const approvals = (approvalsQuery.data || []).map(approval => ({
+    ...approval,
+    teacher: approval.teacher?.name || approval.teacher || 'Unknown Teacher',
+    time: approval.createdAt ? new Date(approval.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '—',
+    detail: approval.reason || approval.detail || 'No details provided'
+  }));
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
+  const [activities, setActivities] = React.useState([]);
+  
+  React.useEffect(() => {
+    if (analytics?.recentActivity) {
+      setActivities(analytics.recentActivity);
+    }
+  }, [analytics?.recentActivity]);
 
   const vitalSigns = [
     { label: 'Total Students', value: students.length || '—', trend: '#10b981', progress: students.length ? Math.min((students.length / 2000) * 100, 100) : 0, bg: 'bg-emerald-50', color: 'text-emerald-600', sub: `${students.length} linked profiles` },
@@ -80,11 +97,6 @@ export function AdminHome() {
     { label: 'Pending Tickets', value: tickets.length || '0', trend: '#f59e0b', progress: tickets.length ? Math.min((tickets.length / 20) * 100, 100) : 0, bg: 'bg-amber-50', color: 'text-amber-600', sub: 'Awaiting resolution' },
     { label: 'Unread Alerts', value: unreadCount || '0', trend: '#ef4444', progress: unreadCount ? Math.min((unreadCount / 10) * 100, 100) : 0, bg: 'bg-rose-50', color: 'text-rose-600', sub: 'System notifications' },
   ];
-
-  const activities = analytics?.recentActivity || [];
-
-  const approvals = [];
-  const ticketsLoading = ticketsQuery.isLoading;
 
   React.useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -101,7 +113,8 @@ export function AdminHome() {
 
   // Approval Resolution State Updaters
   const handleResolveApproval = (id, status, teacher) => {
-    setApprovals(prev => prev.filter(item => item.id !== id));
+    const apiStatus = status === 'grant' ? 'approved' : 'rejected';
+    resolveApprovalMutation.mutate({ id, dto: { status: apiStatus } });
     
     // Inject resolution update directly back down into live audit log stream
     const newLog = {
@@ -127,6 +140,7 @@ export function AdminHome() {
     setActivities(prev => [pulseLog, ...prev]);
     setBroadcastPayload('');
     setActiveAction(null);
+    qc.invalidateQueries({ queryKey: ['admin', 'comms', 'tickets'] });
   };
 
   const formatTime = (date) => date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -174,27 +188,26 @@ export function AdminHome() {
            <div className="lg:col-span-8 space-y-5">
              
          {/* Vital Signs Cards */}
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-               {vitalSigns.map((card, i) => {
-                 // Map icon names to actual components
-                 const iconMap = { Users, GraduationCap, TrendingUp, AlertCircle };
-                 const Icon = iconMap[card.icon] || Users;
-                 const displayValue = card.label === 'Flagged Activities' && isFreezeActive ? 'SYSTEM FROZEN' : card.value;
-                 
-                 return (
-                   <motion.div 
-                     key={i}
-                     initial={{ opacity: 0, y: 10 }}
-                     animate={{ opacity: 1, y: 0 }}
-                     transition={{ delay: i * 0.05 }}
-                     className="bg-white p-4 rounded-2xl border border-slate-200/50 shadow-sm hover:shadow-md transition-all relative group"
-                   >
-                     <div className="flex justify-between items-start mb-2">
-                       <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105", card.bg, card.color)}>
-                         <Icon size={18} />
-                       </div>
-                       <Sparkline color={card.trend} />
-                     </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {vitalSigns.map((card, i) => {
+                  const iconMap = { Users, GraduationCap, TrendingUp, AlertCircle };
+                  const displayValue = card.label === 'Flagged Activities' && isFreezeActive ? 'SYSTEM FROZEN' : card.value;
+                  const CardIcon = isFreezeActive ? Lock : (iconMap[card.icon] || Users);
+                  
+                  return (
+                    <motion.div 
+                      key={i}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="bg-white p-4 rounded-2xl border border-slate-200/50 shadow-sm hover:shadow-md transition-all relative group"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105", isFreezeActive ? "bg-rose-50 text-rose-600" : card.bg, isFreezeActive ? "text-rose-600" : card.color)}>
+                          <CardIcon size={18} />
+                        </div>
+                        <Sparkline color={card.trend} />
+                      </div>
                      
                      <p className="text-xl font-black text-slate-900 tracking-tight leading-none mb-1">{displayValue}</p>
                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">{card.label}</p>
@@ -245,7 +258,7 @@ export function AdminHome() {
               </div>
 
               <div className="h-[180px] w-full text-xs">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <BarChart data={performanceDatasets[activeMetric]} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 700 }} dy={5} />
@@ -605,48 +618,70 @@ export function AdminHome() {
 
         {activeAction === 'freeze' && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs" onClick={() => setActiveAction(null)} />
-             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-xs bg-white rounded-2xl shadow-xl text-center p-6">
-                <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-sm", isFreezeActive ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600")}>
-                  <Lock size={24} />
+             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setActiveAction(null)} />
+             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl text-center p-6 border-2 border-rose-100">
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-sm bg-rose-50 text-rose-600">
+                  <Lock size={28} />
                 </div>
-                <h3 className="text-lg font-black italic font-display text-slate-900 mb-2">
-                  {isFreezeActive ? 'Lift Authority Freeze?' : 'Initiate Security Freeze?'}
+                <h3 className="text-xl font-black italic font-display text-slate-900 mb-2">
+                  {isFreezeActive ? 'System Emergency Freeze Active' : 'Initiate Emergency Freeze?'}
                 </h3>
-                <p className="text-slate-500 text-[11px] font-medium leading-normal mb-6">
+                <p className="text-slate-500 text-[11px] font-medium leading-normal mb-2">
                   {isFreezeActive 
-                    ? 'Restores standard entry and transactional read/write authority parameters across all department nodes.'
+                    ? 'Immediate administrative intervention activated. All write operations are suspended.'
                     : 'Instantly locks write authority cross-institutionally to safeguard live evaluation logs.'}
                 </p>
+                {systemFreezeQuery.data?.systemFreezeReason && (
+                  <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider mb-4 bg-rose-50 px-3 py-2 rounded-lg">
+                    Reason: {systemFreezeQuery.data.systemFreezeReason}
+                  </p>
+                )}
+                {!isFreezeActive && (
+                  <div className="mb-4">
+                    <input
+                      type="text"
+                      value={freezeReason}
+                      onChange={(e) => setFreezeReason(e.target.value)}
+                      placeholder="Reason for emergency freeze..."
+                      className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-[11px] font-medium focus:outline-none focus:ring-2 focus:ring-rose-500"
+                    />
+                  </div>
+                )}
                  <div className="flex gap-2.5">
-                   <Button variant="outline" className="flex-1 py-2.5" onClick={() => setActiveAction(null)}>
-                     Abort
+                   <Button variant="outline" className="flex-1 py-2.5" onClick={() => { setActiveAction(null); setFreezeReason(''); }}>
+                     {isFreezeActive ? 'Dismiss' : 'Abort'}
                    </Button>
-                   <Button 
-                     onClick={() => { 
-                       setIsFreezeActive(!isFreezeActive); 
-                       
-                       // Push critical system action updates down into live view logger
-                       const freezeLog = {
-                         id: String(Date.now()),
-                         time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-                         event: `CRITICAL STATUS ALTERED: Global write access ${!isFreezeActive ? 'SUSPENDED/FROZEN' : 'RESTORED/UNFROZEN'}.`,
-                         type: 'security'
-                       };
-                       setActivities(prev => [freezeLog, ...prev]);
-                       setActiveAction(null); 
-                     }}
+                    <Button 
+                      disabled={toggleSystemFreezeMutation.isPending}
+                      onClick={() => { 
+                        toggleSystemFreezeMutation.mutate(
+                          { enabled: !isFreezeActive, reason: freezeReason },
+                          {
+                            onSuccess: () => {
+                              const freezeLog = {
+                                id: String(Date.now()),
+                                time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+                                event: `CRITICAL STATUS ALTERED: Grade entry ${!isFreezeActive ? 'SUSPENDED/FROZEN' : 'RESTORED/UNFROZEN'}.`,
+                                type: 'security'
+                              };
+                              setActivities(prev => [freezeLog, ...prev]);
+                              setActiveAction(null);
+                              setFreezeReason('');
+                            }
+                          }
+                        );
+                      }}
                      className={cn(
                        "flex-1 py-2.5",
                        isFreezeActive ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"
                      )}
                    >
-                     {isFreezeActive ? 'Restore Node' : 'Lock System'}
+                      {toggleSystemFreezeMutation.isPending ? 'Processing...' : (isFreezeActive ? 'Lift Institutional Freeze' : 'Lock System')}
                    </Button>
                  </div>
              </motion.div>
-          </div>
-        )}
+           </div>
+         )}
       </AnimatePresence>
     </div>
   );

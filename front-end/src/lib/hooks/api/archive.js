@@ -1,12 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { archiveApi } from '../../../lib/api';
 
+// ── Queries ──────────────────────────────────────────────────────────────────
 export function usePromotionHistory(studentId) {
   return useQuery({
     queryKey: ['archive', 'students', studentId, 'promotions'],
     queryFn: () => archiveApi.getPromotionHistory(studentId),
     enabled: !!studentId,
-    staleTime: 1000 * 60 * 30,
+    staleTime: 1000 * 60 * 30, // 30 mins
   });
 }
 
@@ -26,6 +27,16 @@ export function useArchiveStats() {
   });
 }
 
+export function useSearchVault(query = {}) {
+  return useQuery({
+    queryKey: ['archive', 'vault', 'search', query],
+    queryFn: () => archiveApi.searchVault(query).then(r => r?.data ?? r),
+    staleTime: 1000 * 60 * 5,
+    enabled: Object.keys(query).length > 0,
+  });
+}
+
+// ── Mutations ────────────────────────────────────────────────────────────────
 export function usePromoteStudent() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -38,8 +49,15 @@ export function usePromoteStudent() {
       dto.notes,
     ),
     onSuccess: (_, { studentId }) => {
+      // 1. Refresh the explicit student history timeline
       queryClient.invalidateQueries({ queryKey: ['archive', 'students', studentId] });
+      
+      // 2. Refresh aggregate historical numbers
       queryClient.invalidateQueries({ queryKey: ['archive', 'stats'] });
+      
+      // FIX: Invalidate global vault search results so lists updating 
+      // class cohorts or history display the brand-new states immediately.
+      queryClient.invalidateQueries({ queryKey: ['archive', 'vault'] });
     },
   });
 }

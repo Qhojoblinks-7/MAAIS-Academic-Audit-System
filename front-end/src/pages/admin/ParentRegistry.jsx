@@ -9,16 +9,16 @@ import {
   Phone, MessageSquare,
   BarChart3, AlertCircle, Mail,
   Send, ShieldCheck, UserCheck,
-  CreditCard, Eye, EyeOff, Bell
+   CreditCard, Eye, EyeOff, Bell, Plus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { 
   ResponsiveContainer, PieChart as RePieChart, Pie, Cell,
   Tooltip,
-  AreaChart, Area
+  AreaChart, Area,
+  XAxis
 } from 'recharts';
-import { MOCK_PARENTS, PTA_ROLES, BROADCAST_TEMPLATES, PARENT_TARGET_POPULATIONS } from './data';
 import {
   Table,
   TableHeader,
@@ -27,6 +27,7 @@ import {
   TableRow,
   TableCell,
 } from '../../components/ui/table';
+import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
@@ -37,6 +38,7 @@ import {
   SelectItem,
   SelectValue
 } from '../../components/ui/select';
+import { useAllParents, useCreateParent } from '../../lib/hooks';
 
 // --- Components ---
 
@@ -223,11 +225,20 @@ const ParentProfile = ({ parent, onClose }) => {
 };
 
 export const ParentRegistry = () => {
-  const [parents] = useState(MOCK_PARENTS);
+  const { data: parents = [], isLoading, error } = useAllParents();
+  const createParentMutation = useCreateParent();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedParentId, setSelectedParentId] = useState(null);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [isPTAHubOpen, setIsPTAHubOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newParentForm, setNewParentForm] = useState({
+    firstName: '',
+    lastName: '',
+    phone: '',
+    email: '',
+    occupation: '',
+  });
 
   const selectedParent = useMemo(() => 
     parents.find(p => p.id === selectedParentId),
@@ -243,14 +254,51 @@ export const ParentRegistry = () => {
   }, [parents, searchQuery]);
 
   // Analytics Data
-  const appAdoptionRate = (parents.filter(p => p.appAdopted).length / parents.length) * 100;
-  const invalidNumbers = 4; // Mock
+  const appAdoptionRate = parents.length ? (parents.filter(p => p.appAdopted).length / parents.length) * 100 : 0;
+  const invalidNumbers = parents.filter(p => !p.phone || p.phone.length < 10).length;
   const smsCredits = 12500;
 
   const engagementData = [
     { name: 'Adopted', value: parents.filter(p => p.appAdopted).length },
     { name: 'Pending', value: parents.filter(p => !p.appAdopted).length },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-slate-50">
+        <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">Loading parent registry...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-slate-50">
+        <p className="text-[11px] font-black uppercase tracking-widest text-rose-500">Failed to load parent registry</p>
+      </div>
+    );
+  }
+
+  const handleCreateParent = async () => {
+    if (!newParentForm.firstName || !newParentForm.lastName || !newParentForm.phone) {
+      alert('First name, last name, and phone are required.');
+      return;
+    }
+    try {
+      await createParentMutation.mutateAsync({
+        firstName: newParentForm.firstName,
+        lastName: newParentForm.lastName,
+        phone: newParentForm.phone,
+        email: newParentForm.email,
+        occupation: newParentForm.occupation,
+        password: 'Parent@123!',
+      });
+      setIsCreateModalOpen(false);
+      setNewParentForm({ firstName: '', lastName: '', phone: '', email: '', occupation: '' });
+    } catch (err) {
+      alert('Failed to create parent: ' + (err.message || err));
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden relative">
@@ -279,7 +327,7 @@ export const ParentRegistry = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-6">
           <div className="bg-slate-50 p-5 rounded-[2rem] border border-slate-100 flex items-center justify-between">
             <div className="h-16 w-16 shrink-0">
-              <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <RePieChart>
                   <Pie data={engagementData} cx="50%" cy="50%" innerRadius={20} outerRadius={30} paddingAngle={5} dataKey="value">
                     <Cell fill="#10b981" /><Cell fill="#94a3b8" />
@@ -329,9 +377,9 @@ export const ParentRegistry = () => {
              <Button variant="outline" className="px-5 py-3">
                 <Download size={16} /> Global Report
              </Button>
-             <Button className="p-3">
-                <Plus size={20} />
-             </Button>
+              <Button className="p-3" onClick={() => setIsCreateModalOpen(true)}>
+                 <Plus size={20} />
+              </Button>
           </div>
       </div>
 
@@ -541,7 +589,7 @@ export const ParentRegistry = () => {
                     <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100">
                       <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-6">Attendance Trends</h4>
                       <div className="h-48 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                           <AreaChart data={[
                             { day: 'Meeting 1', count: 45 },
                             { day: 'Meeting 2', count: 52 },
@@ -574,6 +622,54 @@ export const ParentRegistry = () => {
                    <button onClick={() => setIsPTAHubOpen(false)} className="px-10 py-5 bg-slate-900 text-white rounded-[2rem] text-[11px] font-black uppercase tracking-widest">Close Command Center</button>
                 </div>
              </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Create Parent Modal */}
+      <AnimatePresence>
+        {isCreateModalOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setIsCreateModalOpen(false)} />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-xl bg-white rounded-[3rem] shadow-2xl overflow-hidden">
+              <div className="p-8 bg-slate-900 text-white flex justify-between items-center">
+                <div>
+                  <h3 className="text-2xl font-black italic font-display">Register Guardian</h3>
+                  <p className="text-[10px] font-black uppercase text-white/50 tracking-widest mt-1">Enrol new parent into institutional registry</p>
+                </div>
+                <X className="cursor-pointer hover:text-rose-500 transition-all" onClick={() => setIsCreateModalOpen(false)} />
+              </div>
+              <div className="p-8 space-y-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">First Name</label>
+                    <Input value={newParentForm.firstName} onChange={(e) => setNewParentForm({ ...newParentForm, firstName: e.target.value })} className="w-full" placeholder="Kwame" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Last Name</label>
+                    <Input value={newParentForm.lastName} onChange={(e) => setNewParentForm({ ...newParentForm, lastName: e.target.value })} className="w-full" placeholder="Mensah" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Phone</label>
+                  <Input value={newParentForm.phone} onChange={(e) => setNewParentForm({ ...newParentForm, phone: e.target.value })} className="w-full" placeholder="+233 24 000 0000" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Email</label>
+                  <Input value={newParentForm.email} onChange={(e) => setNewParentForm({ ...newParentForm, email: e.target.value })} className="w-full" placeholder="parent@example.com" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Occupation</label>
+                  <Input value={newParentForm.occupation} onChange={(e) => setNewParentForm({ ...newParentForm, occupation: e.target.value })} className="w-full" placeholder="Trader" />
+                </div>
+                <div className="flex gap-4 pt-4">
+                  <button onClick={() => setIsCreateModalOpen(false)} className="flex-1 py-4 bg-slate-50 rounded-[2rem] text-[11px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all">Cancel</button>
+                  <button onClick={handleCreateParent} disabled={createParentMutation.isPending} className="flex-1 py-4 bg-slate-900 text-white rounded-[2rem] text-[11px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3">
+                    <UserPlus size={16} /> {createParentMutation.isPending ? 'Registering...' : 'Register Guardian'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
           </div>
         )}
       </AnimatePresence>

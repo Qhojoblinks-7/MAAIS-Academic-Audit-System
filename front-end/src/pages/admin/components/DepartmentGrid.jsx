@@ -185,7 +185,7 @@ export function DepartmentGrid({ departments, viewType, setViewType, setSelected
                 The Balance Meter
               </h4>
               <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <BarChart data={buildDistribution(departments)} layout="vertical" margin={{ left: -20, right: 20 }}>
                     <XAxis type="number" hide />
                     <YAxis 

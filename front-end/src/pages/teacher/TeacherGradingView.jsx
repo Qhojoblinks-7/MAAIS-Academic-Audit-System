@@ -8,7 +8,7 @@ import { teacherService } from '../../services';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { NotificationBell } from '../../components/shared/NotificationBell';
-import { useTeacherSubjectConfig } from '../../lib/hooks/api/teacher';
+import { useTeacherSubjectConfig, useActiveYear } from '../../lib/hooks';
 
 const SUBJECT_CONFIG = {
   'General Agriculture': {
@@ -55,6 +55,10 @@ export function TeacherGradingView() {
   const [gradingStudents, setGradingStudents] = useState([]);
   const [statusMeta, setStatusMeta] = useState({});
   const [filterOptions, setFilterOptions] = useState([]);
+
+  const activeYearQuery = useActiveYear();
+  const activeTerm = activeYearQuery.data?.terms?.find(t => t.isActive);
+  const isTermFinalized = activeTerm?.isLocked ?? false;
 
 
   useEffect(() => {
@@ -353,7 +357,7 @@ export function TeacherGradingView() {
                   { check: (s) => s.exam > 70, message: 'Exam exceeds 70% limit' },
                   { check: (s) => s.auditStatus === 'MISSING', message: 'Missing behavioral observations' },
                 ]}
-                isTermFinalized={false}
+                isTermFinalized={isTermFinalized}
               />
             </div>
           </motion.div>

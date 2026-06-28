@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
    ChevronRight,
@@ -14,6 +14,7 @@ import {
 import DepartmentGrid from "./DepartmentGrid";
 import DepartmentDetailsHeader from "./DepartmentDetailsHeader";
 import DepartmentDetailsView from "./DepartmentDetailsView";
+import { auditTrail } from "../../../services/auditTrailService";
 
 export function DepartmentManagementView({
    departments,
@@ -159,53 +160,26 @@ export function DepartmentManagementView({
               </div>
             )}
 
-            {type === "Audit Trail View" && (
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  {[
-                    {
-                      action: "Mark Validation",
-                      time: "2 hours ago",
-                      status: "Success",
-                    },
-                    {
-                      action: "Registry Entry",
-                      time: "Yesterday, 14:20",
-                      status: "Verified",
-                    },
-                    {
-                      action: "Login Attempt",
-                      time: "Oct 22, 09:12",
-                      status: "Authenticated",
-                    },
-                  ].map((log, i) => (
-                    <div
-                      key={i}
-                      className="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl"
-                    >
-                      <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                      <div>
-                        <p className="text-sm font-black italic text-slate-900">
-                          {log.action}
-                        </p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                          {log.time} • {log.status}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <button 
-                  onClick={async () => {
-                    const result = await generateFullForensicReport(selectedDept?.id, selectedDept?.name);
-                    setAlert({ isOpen: true, title: 'Forensic Report Generated', message: result.message, type: result.success ? 'success' : 'info' });
-                  }}
-                  className="w-full py-4 border border-slate-200 text-slate-900 font-black rounded-2xl text-[11px] uppercase tracking-widest hover:bg-slate-50 transition-all"
-                >
-                  Generate Full Forensic Report
-                </button>
-              </div>
-            )}
+{type === "Audit Trail View" && (
+               <div className="space-y-6">
+                 <div className="space-y-4">
+                   {activeOperation && activeOperation.deptId ? (
+                     <AuditTrailLogs deptId={activeOperation.deptId} />
+                   ) : (
+                     <p className="text-sm text-slate-500 italic">Loading audit logs...</p>
+                   )}
+                 </div>
+                 <button 
+                   onClick={async () => {
+                     const result = await generateFullForensicReport(selectedDept?.id, selectedDept?.name);
+                     setAlert({ isOpen: true, title: 'Forensic Report Generated', message: result.message, type: result.success ? 'success' : 'info' });
+                   }}
+                   className="w-full py-4 border border-slate-200 text-slate-900 font-black rounded-2xl text-[11px] uppercase tracking-widest hover:bg-slate-50 transition-all"
+                 >
+                   Generate Full Forensic Report
+                 </button>
+               </div>
+             )}
 
             {type === "Revoke Authority" && (
               <div className="space-y-8 text-center">
@@ -604,12 +578,56 @@ export function DepartmentManagementView({
                   </div>
                 </div>
               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+</motion.div>
+           </div>
+         )}
+       </AnimatePresence>
+     </div>
+   );
 }
+
+function AuditTrailLogs({ deptId }) {
+   const [logs, setLogs] = React.useState([]);
+   const [loading, setLoading] = React.useState(true);
+
+   React.useEffect(() => {
+     if (!deptId) return;
+     setLoading(true);
+     auditTrail.getHistory('department', deptId)
+       .then(setLogs)
+       .catch(() => setLogs([]))
+       .finally(() => setLoading(false));
+   }, [deptId]);
+
+   if (loading) {
+     return <p className="text-sm text-slate-500 italic">Loading audit trail...</p>;
+   }
+
+   if (!logs || logs.length === 0) {
+     return <p className="text-sm text-slate-500 italic">No audit trail entries found for this department.</p>;
+   }
+
+   return logs.map((log, i) => (
+     <div
+       key={log.id || i}
+       className="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl"
+     >
+       <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+       <div>
+         <p className="text-sm font-black italic text-slate-900">
+           {log.action || log.payload?.action || 'Action'}
+         </p>
+         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+           {new Date(log.createdAt || log.timestamp || log.time).toLocaleString()} • {log.status || log.payload?.status || 'Completed'}
+         </p>
+         {log.payload?.description && (
+           <p className="text-[9px] text-slate-500 mt-1 truncate max-w-xs">
+             {log.payload.description}
+           </p>
+         )}
+       </div>
+     </div>
+   ));
+ }
 
 export default DepartmentManagementView;

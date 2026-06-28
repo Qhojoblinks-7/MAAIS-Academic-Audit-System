@@ -13,8 +13,10 @@ export function getAuthToken() {
 
 export function setAuthToken(token) {
   localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem('accessToken', token);
   if (typeof sessionStorage !== 'undefined') {
     sessionStorage.setItem(TOKEN_KEY, token);
+    sessionStorage.setItem('accessToken', token);
   }
 }
 

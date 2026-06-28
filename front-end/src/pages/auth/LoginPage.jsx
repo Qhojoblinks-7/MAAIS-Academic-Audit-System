@@ -26,24 +26,38 @@ export function LoginPage() {
     setLoading(true);
 
     try {
+      console.group('[AdminLogin] LoginPage.handleSubmit');
+      console.log('[AdminLogin] email:', email);
+      console.log('[AdminLogin] API URL:', `${API_BASE_URL}/auth/login`);
+
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
+      console.log('[AdminLogin] Response status:', response.status);
+
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
+        console.warn('[AdminLogin] Login failed:', data);
         setError(data?.message || 'Invalid credentials');
+        console.groupEnd();
         return;
       }
 
       const data = await response.json();
+      console.log('[AdminLogin] Response data (keys):', Object.keys(data));
+      console.log('[AdminLogin] user object:', data.user);
+      console.log('[AdminLogin] role:', data.user?.role);
+
       const accessToken = data.accessToken;
       const refreshToken = data.refreshToken;
       const userId = data.userId;
       if (!accessToken) {
+        console.error('[AdminLogin] No accessToken in response');
         setError('Authentication failed');
+        console.groupEnd();
         return;
       }
 
@@ -61,14 +75,21 @@ export function LoginPage() {
         }
       }
 
+      console.log('[AdminLogin] Calling RoleContext.login() with:', { token: !!accessToken, refreshToken: !!refreshToken, user: data.user });
       const success = login({ token: accessToken, refreshToken, user: data.user });
+      console.log('[AdminLogin] login() returned:', success);
+
       if (success) {
+        console.log('[AdminLogin] Navigate to:', from);
         setMobileMenuOpen(false);
         navigate(from, { replace: true });
       } else {
+        console.error('[AdminLogin] login() returned false — role mismatch?');
         setError('Invalid role assignment');
       }
-    } catch {
+      console.groupEnd();
+    } catch (err) {
+      console.error('[AdminLogin] Network/exception error:', err);
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
@@ -76,8 +97,10 @@ export function LoginPage() {
   };
 
   // If user is already authenticated, redirect to dashboard
-  const storedUser = typeof localStorage !== 'undefined' ? localStorage.getItem('userId') : null;
-  if (storedUser) {
+  const { isAuthenticated } = useRole();
+  console.log('[AdminLogin] Auth check - isAuthenticated:', isAuthenticated, 'pathname:', location.pathname);
+  if (isAuthenticated) {
+    console.warn('[AdminLogin] Redirecting to / because user is authenticated');
     return <Navigate to="/" replace />;
   }
 

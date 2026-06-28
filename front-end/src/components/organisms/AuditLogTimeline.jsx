@@ -64,7 +64,7 @@ function TimelineEntry({ log, onComment, isExpanded, onToggle }) {
                   <span className="text-gray-300">|</span>
                   <span className="font-mono">{log.recordId || '—'}</span>
                   <span className="text-gray-300">|</span>
-                  <span className="text-gray-400">{log.recordType || '—'}</span>
+                  <span className="text-gray-400">{log.entityType || log.recordType || '—'}</span>
                 </div>
 
                 {(log.oldValue || log.newValue) && (
@@ -131,6 +131,7 @@ export function AuditLogTimeline({
     { value: 'RESOLVED', label: 'Resolved' },
     { value: 'FLAGGED', label: 'Flagged' },
     { value: 'LOCKED', label: 'Locked' },
+    { value: 'PENDING', label: 'Pending' },
     { value: 'DRAFT', label: 'Draft' },
   ];
 

@@ -9,6 +9,15 @@ export const archiveApi = {
   getAcademicYears: async () => api.get('/archive/academic-years'),
 
   getArchiveStats: async () => api.get('/archive/stats'),
+
+  searchVault: async (query = {}) => {
+    const params = new URLSearchParams();
+    Object.entries(query).forEach(([key, value]) => {
+      if (value != null && value !== '') params.set(key, value);
+    });
+    const qs = params.toString();
+    return api.get(`/archive/vault/search${qs ? `?${qs}` : ''}`);
+  },
 };
 
 export default archiveApi;

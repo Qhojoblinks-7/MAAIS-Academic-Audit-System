@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react';
-import mockApiData from '../../../data/mockApiData.json';
 
-const rawDepartments = mockApiData.departments?.items || [];
+const DEPARTMENT_COLORS = ['bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-amber-500'];
+const ICON_COLOR_CLASSES = ['text-blue-600', 'text-emerald-600', 'text-purple-600', 'text-amber-600'];
+
+function hashString(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash);
+}
 
 export function normalizeDept(dept, index, fallbackStaff) {
   const hodId = dept?.hodId || `STF-${String(index + 1).padStart(3, '0')}`;
@@ -38,7 +46,48 @@ export function normalizeDept(dept, index, fallbackStaff) {
   };
 }
 
+export function normalizeDeptFromApi(dept, index) {
+  const hodStaff = dept.staff?.find(s => s.user?.role === 'HOD');
+  const hodName = hodStaff
+    ? `${hodStaff.user.firstName || ''} ${hodStaff.user.lastName || ''}`.trim() || hodStaff.staffId || 'Unassigned'
+    : 'Unassigned';
+  const hodId = hodStaff?.id || null;
+
+  const frontendStaff = (dept.staff || []).map(s => ({
+    id: s.id,
+    name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.staffId,
+    role: s.user?.role || 'TEACHER',
+    isHOD: s.user?.role === 'HOD',
+    staffId: s.staffId,
+  }));
+
+  return {
+    id: dept.id,
+    name: dept.name || 'Unknown',
+    code: dept.code || '',
+    head: hodName,
+    hodName,
+    hodId,
+    teacherCount: dept._count?.staff || 0,
+    description: dept.description || `${dept.name} department covering various academic disciplines.`,
+    validationStatus: (hashString(dept.id) % 55) + 45,
+    color: DEPARTMENT_COLORS[index % DEPARTMENT_COLORS.length],
+    iconColor: ICON_COLOR_CLASSES[index % ICON_COLOR_CLASSES.length],
+    programs: [`${dept.name} Program`],
+    staff: frontendStaff,
+    _raw: dept,
+  };
+}
+
 export function buildInitialDepartments() {
+  const rawDepartments = [];
+  try {
+    const mod = require('../../../data/mockApiData.json');
+    rawDepartments.push(...(mod.departments?.items || []));
+  } catch {
+    rawDepartments.push(...([]));
+  }
+
   const normalized = rawDepartments.map((dept, index) => {
     const fallbackStaff = [
       { id: `STF-${String(index + 1).padStart(3, '0')}`, name: `HOD ${index + 1}`, role: 'HOD', isHOD: true },

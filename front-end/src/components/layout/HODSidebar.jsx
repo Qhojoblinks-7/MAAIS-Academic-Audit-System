@@ -25,16 +25,29 @@ import {
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
 import { useUI } from '../../context/UIContext';
+import { useHOD } from '../../context/HODContext';
 import { Tooltip, TooltipTrigger, TooltipContent } from '../ui/tooltip';
 
 export function HODSidebar() {
   const location = useLocation();
   const { user } = useRole();
   const { setSettingsModalOpen, setSupportModalOpen } = useUI();
+  const { totalAlerts, revisions, activeSessions } = useHOD();
   const [showLogoutModal, setShowLogoutModal] = React.useState(false);
-  const [unsavedMarks] = React.useState(12);
   const [activeSubMenu, setActiveSubMenu] = React.useState(null);
   const sidebarRef = useRef(null);
+  const pendingRevisionsCount = Array.isArray(revisions) 
+    ? revisions.filter(r => r.status === 'PENDING').length 
+    : 0;
+  
+  const unsavedMarks = React.useMemo(() => {
+    try {
+      const drafts = JSON.parse(localStorage.getItem('hodDraftRecords') || '{}');
+      return Object.keys(drafts || {}).length;
+    } catch {
+      return 0;
+    }
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -63,13 +76,18 @@ export function HODSidebar() {
       id: 'hod-analytics',
       path: '/hod/analytics',
     },
-    {
+    ...(pendingRevisionsCount > 0 ? [{
       icon: AlertCircle,
       label: 'Revision Approvals',
       id: 'hod-revisions',
       path: '/revisions',
-      badge: 3
-    },
+      badge: pendingRevisionsCount
+    }] : [{
+      icon: AlertCircle,
+      label: 'Revision Approvals',
+      id: 'hod-revisions',
+      path: '/revisions',
+    }]),
     {
       icon: FileText,
       label: 'Audit Log',
@@ -106,14 +124,19 @@ export function HODSidebar() {
       id: 'hod-broadsheet',
       path: '/hod/broadsheet'
     },
-    {
+    ...(totalAlerts > 0 ? [{
       icon: Award,
       label: 'Certification Desk',
       id: 'hod-certification',
       path: '/certification',
-      badge: 2,
+      badge: totalAlerts,
       badgeColor: 'bg-emerald-600'
-    },
+    }] : [{
+      icon: Award,
+      label: 'Certification Desk',
+      id: 'hod-certification',
+      path: '/certification',
+    }]),
     {
       icon: Database,
       label: 'Department Archives',
@@ -171,7 +194,7 @@ export function HODSidebar() {
                     <div className="relative flex items-center justify-center w-6 h-6">
                       <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
 
-                      {item.badge && (
+                      {item.badge > 0 && (
                         <div className={cn(
                           "absolute -top-2 -right-2 px-1.5 min-w-[1.25rem] h-5 text-surface text-[8px] font-bold rounded-full flex items-center justify-center border-2 border-background shadow-sm pointer-events-none",
                           item.badgeColor || "bg-danger"
@@ -298,6 +321,13 @@ export function HODSidebar() {
                         There are {unsavedMarks} data nodes currently sitting in your local cache.
                       </p>
                     </div>
+                  </div>
+                )}
+
+                {Array.isArray(activeSessions) && activeSessions.length > 0 && (
+                  <div className="bg-surface border border-border rounded-2xl p-4 mb-6">
+                    <p className="text-xs font-semibold text-text-primary mb-2">Active Sessions</p>
+                    <p className="text-xs text-text-secondary">{activeSessions.length} other session(s) active</p>
                   </div>
                 )}
 

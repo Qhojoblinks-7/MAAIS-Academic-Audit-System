@@ -10,8 +10,8 @@ export function DepartmentTabs({ selectedDept, activeTab, setActiveTab, handleNo
         <GradingTabContent dept={selectedDept} handleNodeOperation={handleNodeOperation} />
       )}
       {activeTab === 'vault' && (
-        <VaultTabContent />
+        <VaultTabContent selectedDept={selectedDept} />
       )}
     </div>
   );
-}
+ }

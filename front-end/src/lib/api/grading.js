@@ -5,7 +5,7 @@ export const gradingApi = {
 
   bulkUpsertGrades: async (entries, submittedById) => api.post('/grading/entries/bulk', { entries, submittedById }),
 
-  correctGrade: async (dto, changedById) => api.post('/grading/correct', { ...dto, changedById }),
+  correctGrade: async (dto, changedById) => api.post('/grading/corrections', { ...dto, changedById }),
 
   lockGrade: async (gradeEntryId, lockedById) => api.patch(`/grading/entries/${gradeEntryId}/lock`, { lockedById }),
 

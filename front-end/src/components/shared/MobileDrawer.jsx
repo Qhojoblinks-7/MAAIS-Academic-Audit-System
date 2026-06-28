@@ -17,16 +17,17 @@ export function MobileDrawer() {
   const { user } = useRole();
   const location = useLocation();
 
-  React.useEffect(() => {
-    teacherService.getMissingObservations?.()
-      .then((data) => {
-        const missing = Array.isArray(data)
-          ? data.filter((item) => item.status === 'Missing').length
-          : 0;
-        setMissingObservationCount(missing);
-      })
-      .catch(() => setMissingObservationCount(0));
-  }, [setMissingObservationCount]);
+React.useEffect(() => {
+     if (user?.role !== 'TEACHER') return;
+     teacherService.getMissingObservations?.()
+       .then((data) => {
+         const missing = Array.isArray(data)
+           ? data.filter((item) => item.status === 'Missing').length
+           : 0;
+         setMissingObservationCount(missing);
+       })
+       .catch(() => setMissingObservationCount(0));
+   }, [setMissingObservationCount, user?.role]);
 
   // Root Navigation Matrix
   const navItems = [

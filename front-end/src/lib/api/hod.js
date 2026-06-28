@@ -1,6 +1,7 @@
+import { getAuthToken } from '../../services/auth';
 import { api } from './client';
 
-const BASE = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+const BASE = '';
 
 export const hodApi = {
   getAuditLogs: (params = {}) => {
@@ -30,6 +31,9 @@ export const hodApi = {
     return api.get(qs ? `${BASE}/hod/department-progress?${qs}` : `${BASE}/hod/department-progress`);
   },
 
+  getAllAcademicYears: () =>
+    api.get(`${BASE}/hod/academic-years`),
+
   getTeacherSubmissions: () =>
     api.get(`${BASE}/hod/teachers/submissions`),
 
@@ -39,17 +43,41 @@ export const hodApi = {
   getGradeRevisions: () =>
     api.get(`${BASE}/hod/grade-revisions`),
 
-  validateLock: (termId) =>
-    api.get(`${BASE}/hod/lock-matrix/${termId}/validate`),
+validateLock: (termId) =>
+     api.get(`${BASE}/hod/lock-matrix/${termId}/validate`),
 
-  lockDepartmentMatrix: (termId) =>
-    api.post(`${BASE}/hod/lock-matrix/${termId}`),
+   lockDepartmentMatrix: (classId) =>
+     api.post(`${BASE}/hod/lock-class/${classId}`),
 
-  unlockDepartmentMatrix: (termId) =>
-    api.post(`${BASE}/hod/unlock-matrix/${termId}`),
+   unlockDepartmentMatrix: (classId) =>
+     api.post(`${BASE}/hod/unlock-class/${classId}`),
 
-  exportWAECCSV: (termId, className) =>
-    api.post(`${BASE}/hod/export-waec/${termId}?class=${encodeURIComponent(className)}&format=csv`),
+  exportWAECCSV: (termId, className) => {
+    const token = getAuthToken();
+    return fetch(`${BASE}/hod/export-waec/${termId}?class=${encodeURIComponent(className)}&format=csv`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      credentials: 'include',
+    }).then(async (res) => {
+      if (!res.ok) {
+        const text = await res.text();
+        const err = new Error(text || `HTTP ${res.status}`);
+        err.status = res.status;
+        throw err;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `WAEC_${className}_${termId}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      return { success: true };
+    });
+  },
 
   getGradeComparison: (subjectId, termA, termB) =>
     api.get(`${BASE}/hod/grades/compare?subjectId=${subjectId}&termA=${termA}&termB=${termB}`),
@@ -138,8 +166,8 @@ export const hodApi = {
   getContactChannels: () =>
     api.get(`${BASE}/hod/contact-channels`),
 
-  updateContactChannels: (channels) =>
-    api.put(`${BASE}/hod/contact-channels`, channels),
+updateContactChannels: (channels) =>
+     api.patch(`${BASE}/hod/contact-channels`, channels),
 
   resetTeacherPassword: (teacherId, newPassword) =>
     api.post(`${BASE}/hod/teachers/${teacherId}/reset-password`, { newPassword }),
@@ -164,6 +192,24 @@ export const hodApi = {
 
   getStudentAcademicHistory: (studentId) =>
     api.get(`${BASE}/hod/students/${studentId}/academic-history`),
+
+  getComplianceCohortPerformance: () =>
+    api.get(`${BASE}/hod/compliance/cohort-performance`),
+
+  getComplianceTimeline: () =>
+    api.get(`${BASE}/hod/compliance/timeline`),
+
+  getPromotionMetrics: () =>
+    api.get(`${BASE}/hod/promotion-metrics`),
+
+triggerPromotion: (academicYearId) =>
+      api.post(`${BASE}/archive/promote`, { academicYearId }),
+
+  resolveAlert: (alertId) =>
+    api.post(`${BASE}/hod/intervention-alerts/${alertId}/resolve`),
+
+  addCounselingNote: ({ alertId, text }) =>
+    api.post(`${BASE}/hod/intervention-alerts/${alertId}/notes`, { text }),
 };
 
 export default hodApi;

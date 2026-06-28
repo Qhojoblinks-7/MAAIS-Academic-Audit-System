@@ -27,6 +27,12 @@ export const statusStyles = {
   AWAITING_APPROVAL: 'bg-warning/10 text-warning border-warning/20 ring-2 ring-warning/20',
   TEACHER_REPLIED: 'bg-brand-secondary/10 text-brand-secondary border-brand-secondary/20 ring-2 ring-brand-secondary/20',
   RESOLVED: 'bg-success/10 text-success border-success/20 ring-2 ring-success/20',
+  REJECTED: 'bg-destructive/10 text-destructive border-destructive/20 ring-2 ring-destructive/20',
+  // Lowercase fallbacks for runtime safety
+  awaiting_approval: 'bg-warning/10 text-warning border-warning/20 ring-2 ring-warning/20',
+  teacher_replied: 'bg-brand-secondary/10 text-brand-secondary border-brand-secondary/20 ring-2 ring-brand-secondary/20',
+  resolved: 'bg-success/10 text-success border-success/20 ring-2 ring-success/20',
+  rejected: 'bg-destructive/10 text-destructive border-destructive/20 ring-2 ring-destructive/20',
 };
 
 export const severityStyles = {
@@ -62,16 +68,17 @@ export function RevisionsFeed({ revisions: propRevisions, onApprove, onReject, o
   }, [searchParams, revisions]);
 
   const filteredData = revisions.filter(item => {
+    const isResolved = (r) => (r.status || '').toUpperCase() === 'RESOLVED' || (r.status || '').toUpperCase() === 'REJECTED';
     const matchesTab = activeTab === 'all' 
       ? true 
       : activeTab === 'pending' 
-        ? item.status !== 'RESOLVED' 
-        : item.status === 'RESOLVED';
+        ? !isResolved(item)
+        : isResolved(item);
         
     const matchesSearch = 
-      item.student.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.subject.toLowerCase().includes(searchQuery.toLowerCase());
+      (item.student || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.subject || '').toLowerCase().includes(searchQuery.toLowerCase());
 
     return matchesTab && matchesSearch;
   });
@@ -128,31 +135,34 @@ return (
 
             <div className="hidden sm:flex items-center gap-1.5 bg-warning/10 text-warning px-2.5 py-1 rounded-lg border border-warning/20 text-[11px] font-semibold">
               <Sparkles size={12} className="animate-pulse" />
-              <span>{revisions.filter(r => r.status !== 'RESOLVED').length} Actions Required</span>
+              <span>{revisions.filter(r => r.status !== 'RESOLVED' && r.status !== 'REJECTED').length} Actions Required</span>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
-            <div className="flex p-0.5 bg-muted rounded-lg border border-border">
-              {['pending', 'resolved', 'all'].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => {
-                    setActiveTab(tab);
-                    const nextList = revisions.filter(r => tab === 'all' ? true : tab === 'pending' ? r.status !== 'RESOLVED' : r.status === 'RESOLVED');
-                    setSelected(nextList[0] || null);
-                  }}
-                  className={cn(
-                    "px-4 py-1.5 text-xs font-semibold capitalize rounded-md transition-all duration-150",
-                    activeTab === tab 
-                      ? "bg-card text-foreground shadow-sm border border-border/20 font-bold" 
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {tab === 'pending' ? 'Needs Attention' : tab}
-                </button>
-              ))}
-            </div>
+<div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+              <div className="flex p-0.5 bg-muted rounded-lg border border-border">
+                {['pending', 'resolved', 'all'].map((tab) => {
+                  const isResolved = (r) => (r.status || '').toUpperCase() === 'RESOLVED' || (r.status || '').toUpperCase() === 'REJECTED';
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => {
+                        setActiveTab(tab);
+                        const nextList = revisions.filter(r => tab === 'all' ? true : tab === 'pending' ? !isResolved(r) : isResolved(r));
+                        setSelected(nextList[0] || null);
+                      }}
+                     className={cn(
+                       "px-4 py-1.5 text-xs font-semibold capitalize rounded-md transition-all duration-150",
+                       activeTab === tab 
+                         ? "bg-card text-foreground shadow-sm border border-border/20 font-bold" 
+                         : "text-muted-foreground hover:text-foreground"
+                     )}
+                   >
+                     {tab === 'pending' ? 'Needs Attention' : tab}
+                   </button>
+                 );
+               })}
+             </div>
 
             <div className="relative flex-1 max-w-xs">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -202,16 +212,16 @@ return (
 
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded border tracking-wide", statusStyles[job.status])}>
-                        {job.status === 'AWAITING_APPROVAL' ? 'Pending Review' : job.status === 'TEACHER_REPLIED' ? 'Reply Received' : 'Resolved'}
+                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded border tracking-wide", statusStyles[(job.status || '').toUpperCase()] || 'bg-slate-100')}>
+                        {(job.status || '').toUpperCase() === 'AWAITING_APPROVAL' ? 'Pending Review' : (job.status || '').toUpperCase() === 'TEACHER_REPLIED' ? 'Reply Received' : 'Resolved'}
                       </span>
-                      <span className={cn("text-[9px] font-extrabold px-1.5 py-0.5 rounded border tracking-wider", severityStyles[job.severity])}>
+                      <span className={cn("text-[9px] font-extrabold px-1.5 py-0.5 rounded border tracking-wider", severityStyles[job.severity] || '')}>
                         {job.severity}
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 text-muted-foreground text-[11px] font-medium">
                       <Clock size={12} />
-                      <span>{job.time}</span>
+                      <span>{typeof job.time === 'string' ? job.time : formatTime(job.time)}</span>
                     </div>
                   </div>
 

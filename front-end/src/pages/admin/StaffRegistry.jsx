@@ -18,6 +18,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { toast, Toaster } from '../../components/ui/toast.tsx';
 import {
   Table,
   TableHeader,
@@ -37,8 +38,8 @@ import {
   SelectValue
 } from '../../components/ui/select';
 import { Badge } from '../../components/ui/badge';
-import { Card } from '../../components/ui/card';
-import { useAllStaff, useCreateStaff, useDeactivateUser, useAllDepartments } from '../../lib/hooks';
+ import { Card } from '../../components/ui/card';
+ import { useAllStaff, useCreateStaff, useDeactivateUser, useAllDepartments, useResetStaffCredentials } from '../../lib/hooks';
 
 export function StaffRegistry() {
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -64,6 +65,7 @@ export function StaffRegistry() {
   const departmentsQuery = useAllDepartments();
   const createStaffMutation = useCreateStaff();
   const deactivateMutation = useDeactivateUser();
+  const resetCredentialsMutation = useResetStaffCredentials();
 
   const staff = staffQuery.data || [];
   const departments = departmentsQuery.data || [];
@@ -150,6 +152,21 @@ export function StaffRegistry() {
     (s.staffId || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const displayStaff = filteredStaff.map((s) => ({
+    id: s.id,
+    name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.email || 'Unknown',
+    employeeId: s.staffId || s.id,
+    email: s.user?.email || s.email || '',
+    phone: s.phone || '',
+    department: s.department?.name || 'Unassigned',
+    role: s.user?.role || s.role || 'TEACHER',
+    status: s.user?.isActive ? 'Active' : 'Inactive',
+    joinedDate: s.hiredAt,
+    userId: s.userId,
+  }));
+
+  const handleOnboardStaff = () => setShowOnboardModal(true);
+
   return (
     <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden relative">
       {/* Header Strategy Bar */}
@@ -220,7 +237,7 @@ export function StaffRegistry() {
                   <div className="p-4 space-y-4">
                       <div>
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Department</p>
-                        <Select value={selectedDepartment} onValueChange={(e) => setSelectedDepartment(e.target.value)} className="w-full">
+                        <Select value={selectedDepartment} onValueChange={setSelectedDepartment} className="w-full">
                           <SelectTrigger>
                             <SelectValue placeholder="All Departments" />
                           </SelectTrigger>
@@ -234,7 +251,7 @@ export function StaffRegistry() {
                       </div>
                       <div>
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Role</p>
-                        <Select value={selectedRole} onValueChange={(e) => setSelectedRole(e.target.value)} className="w-full">
+                        <Select value={selectedRole} onValueChange={setSelectedRole} className="w-full">
                           <SelectTrigger>
                             <SelectValue placeholder="All Roles" />
                           </SelectTrigger>
@@ -248,7 +265,7 @@ export function StaffRegistry() {
                       </div>
                      <div>
                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Status</p>
-                       <Select value={selectedStatus} onValueChange={(e) => setSelectedStatus(e.target.value)} className="w-full">
+                       <Select value={selectedStatus} onValueChange={setSelectedStatus} className="w-full">
                          <SelectTrigger>
                            <SelectValue placeholder="All Statuses" />
                          </SelectTrigger>
@@ -288,7 +305,7 @@ export function StaffRegistry() {
       </div>
 
       {/* Registry Table */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto no-scrollbar">
         <Table>
           <TableHeader className="sticky top-0 z-10">
             <TableRow className="bg-slate-50/80 backdrop-blur-md border-b border-slate-200">
@@ -298,25 +315,25 @@ export function StaffRegistry() {
               <TableHead className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Registry Status</TableHead>
               <TableHead className="px-8 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Operations</TableHead>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredStaff.map((staff) => (
-              <TableRow 
-                key={staff.id} 
-                onClick={() => setSelectedStaff(staff)}
-                className="group hover:bg-slate-50/50 transition-colors cursor-pointer"
-              >
-                <TableCell className="px-8 py-5">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-[0.75rem] bg-slate-100 flex items-center justify-center text-slate-900 font-bold text-sm border border-slate-200 group-hover:bg-white transition-colors uppercase select-none">
-                      {staff.name.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div>
-                      <p className="text-[14px] font-black text-slate-900 leading-none mb-1 group-hover:text-emerald-800 transition-colors">{staff.name}</p>
-                      <p className="text-[11px] font-bold text-slate-400 font-mono tracking-tighter">{staff.employeeId}</p>
-                    </div>
-                  </div>
-                </TableCell>
+</TableHeader>
+           <TableBody>
+             {displayStaff.map((staff) => (
+               <TableRow
+                 key={staff.id} 
+                 onClick={() => setSelectedStaff(staff)}
+                 className="group hover:bg-slate-50/50 transition-colors cursor-pointer"
+               >
+                 <TableCell className="px-8 py-5">
+                   <div className="flex items-center gap-4">
+                     <div className="w-10 h-10 rounded-[0.75rem] bg-slate-100 flex items-center justify-center text-slate-900 font-bold text-sm border border-slate-200 group-hover:bg-white transition-colors uppercase select-none">
+                       {staff?.name?.split(' ').map(n => n[0]).join('') || ''}
+                     </div>
+                     <div>
+                       <p className="text-[14px] font-black text-slate-900 leading-none mb-1 group-hover:text-emerald-800 transition-colors">{staff?.name || ''}</p>
+                       <p className="text-[11px] font-bold text-slate-400 font-mono tracking-tighter">{staff.employeeId}</p>
+                     </div>
+                   </div>
+                 </TableCell>
                 <TableCell className="px-8 py-5">
                   <span className="text-[13px] font-bold text-slate-600">{staff.department}</span>
                 </TableCell>
@@ -393,7 +410,7 @@ export function StaffRegistry() {
           </TableBody>
         </Table>
 
-        {filteredStaff.length === 0 && (
+        {displayStaff.length === 0 && (
           <div className="py-32 flex flex-col items-center justify-center text-center">
             <div className="w-20 h-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-200 mb-6 font-display italic text-4xl select-none">
               ?
@@ -445,13 +462,13 @@ export function StaffRegistry() {
                   </button>
                 </div>
 
-                <div className="relative z-10">
-                  <div className="w-24 h-24 rounded-[2rem] bg-white text-slate-900 flex items-center justify-center text-3xl font-black italic font-display shadow-2xl mb-6 ring-4 ring-white/10 select-none">
-                    {selectedStaff.name.split(' ').map(n => n[0]).join('')}
-                  </div>
-                  <h3 className="text-3xl font-black italic font-display tracking-tight mb-2 leading-none">{selectedStaff.name}</h3>
-                  <div className="flex items-center gap-3">
-                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-400">{selectedStaff.employeeId}</span>
+<div className="relative z-10">
+                   <div className="w-24 h-24 rounded-[2rem] bg-white text-slate-900 flex items-center justify-center text-3xl font-black italic font-display shadow-2xl mb-6 ring-4 ring-white/10 select-none">
+                     {selectedStaff?.name?.split(' ').map(n => n[0]).join('') || ''}
+                   </div>
+                   <h3 className="text-3xl font-black italic font-display tracking-tight mb-2 leading-none">{selectedStaff?.name || ''}</h3>
+                   <div className="flex items-center gap-3">
+                     <span className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-400">{selectedStaff?.employeeId || ''}</span>
                     <div className="w-1 h-1 rounded-full bg-white/30" />
                     <span className="text-[11px] font-bold text-white/60">Joined {selectedStaff.joinedDate || 'Recent'}</span>
                   </div>
@@ -459,7 +476,7 @@ export function StaffRegistry() {
               </div>
 
               {/* Profile Body */}
-              <div className="flex-1 overflow-y-auto p-8 space-y-10">
+              <div className="flex-1 overflow-y-auto p-8 space-y-10 no-scrollbar">
                 {/* Status Command */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-5 bg-slate-50 border border-slate-200 rounded-3xl">
@@ -529,14 +546,19 @@ export function StaffRegistry() {
                       </div>
                     </div>
                     
-                    <button 
-                      onClick={(e) => {
+<button 
+                      onClick={async (e) => {
                         e.stopPropagation();
+                        if (!selectedStaff?.userId) return;
                         setIsResettingPassword(true);
-                        setTimeout(() => {
+                        try {
+                          await resetCredentialsMutation.mutateAsync(selectedStaff.userId);
+                          toast.success('Password Reset Link Dispatched via Secure Protocol.');
+                        } catch (err) {
+                          toast.error('Failed to reset credentials: ' + (err.message || err));
+                        } finally {
                           setIsResettingPassword(false);
-                          alert('Password Reset Link Dispatched via Secure Protocol.');
-                        }, 2000);
+                        }
                       }}
                       disabled={isResettingPassword}
                       className={cn(
@@ -600,16 +622,25 @@ export function StaffRegistry() {
                  </header>
 
                  <div className="space-y-6">
-                   <div>
-                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Full Name</p>
-                     <input
-                       type="text"
-                       value={onboardForm.name}
-                       onChange={(e) => setOnboardForm({...onboardForm, name: e.target.value})}
-                       placeholder="Enter staff full name..."
-                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-900/5"
-                     />
-                   </div>
+<div>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Full Name</p>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="First Name"
+                          value={onboardForm.firstName}
+                          onChange={(e) => setOnboardForm({...onboardForm, firstName: e.target.value})}
+                          className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-900/5"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Last Name"
+                          value={onboardForm.lastName}
+                          onChange={(e) => setOnboardForm({...onboardForm, lastName: e.target.value})}
+                          className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-900/5"
+                        />
+                      </div>
+                    </div>
 
                    <div>
                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Primary Email</p>
@@ -636,15 +667,16 @@ export function StaffRegistry() {
                    <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Department</p>
-                        <select
-                          value={onboardForm.department}
-                          onChange={(e) => setOnboardForm({...onboardForm, department: e.target.value})}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-900/5"
-                        >
-                          {departments.map(dept => (
-                            <option key={dept.id || dept.name} value={dept.name || dept.id}>{dept.name || dept.id}</option>
-                          ))}
-                        </select>
+<select
+                           value={onboardForm.department}
+                           onChange={(e) => setOnboardForm({...onboardForm, department: e.target.value})}
+                           className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-900/5"
+                         >
+                           <option value="Administration">Administration</option>
+                           {departments.map(dept => (
+                             <option key={dept.id || dept.name} value={dept.name || dept.id}>{dept.name || dept.id}</option>
+                           ))}
+                         </select>
                       </div>
 
                       <div>
@@ -681,6 +713,7 @@ export function StaffRegistry() {
            </div>
          )}
        </AnimatePresence>
+      <Toaster />
     </div>
   );
 }

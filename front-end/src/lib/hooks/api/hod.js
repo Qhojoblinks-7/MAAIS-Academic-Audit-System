@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { hodApi } from '../../../lib/api';
 
+// ── Queries ──────────────────────────────────────────────────────────────────
 export function useAuditLogs(params = {}) {
   return useQuery({
     queryKey: ['hod', 'audit-logs', params],
@@ -20,7 +21,10 @@ export function useInterventionAlerts(params = {}) {
 export function useDepartmentProgress(params = {}) {
   return useQuery({
     queryKey: ['hod', 'department-progress', params],
-    queryFn: () => hodApi.getDepartmentProgress(params).then(r => r?.data ?? r),
+    queryFn: () => hodApi.getDepartmentProgress(params).then(r => {
+      const payload = r?.data ?? r;
+      return payload?.items ?? payload ?? [];
+    }),
     staleTime: 1000 * 60 * 5,
   });
 }
@@ -34,12 +38,12 @@ export function useTeacherSubmissions() {
 }
 
 export function useLockedTerms() {
-  return useQuery({
-    queryKey: ['hod', 'locked-terms'],
-    queryFn: () => hodApi.getLockedTerms().then(r => r?.data ?? r),
-    staleTime: 1000 * 60 * 10,
-  });
-}
+   return useQuery({
+     queryKey: ['hod', 'locked-terms'],
+     queryFn: () => hodApi.getLockedTerms().then(r => r?.data ?? r),
+     staleTime: 1000 * 60 * 10,
+   });
+ }
 
 export function useGradeRevisions() {
   return useQuery({
@@ -58,13 +62,147 @@ export function useValidateLock(termId) {
   });
 }
 
+export function useGradeComparison(subjectId, termA, termB) {
+  return useQuery({
+    queryKey: ['hod', 'grades', 'compare', subjectId, termA, termB],
+    queryFn: () => hodApi.getGradeComparison(subjectId, termA, termB).then(r => r?.data ?? r),
+    enabled: !!subjectId && !!termA && !!termB,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useArchivedDepartmentData(params = {}) {
+  return useQuery({
+    queryKey: ['hod', 'archived-data', params],
+    queryFn: () => hodApi.getArchivedDepartmentData(params).then(r => r?.data ?? r),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function usePromotionRecommendations(params = {}) {
+  return useQuery({
+    queryKey: ['hod', 'promotion-recommendations', params],
+    queryFn: () => hodApi.getPromotionRecommendations(params).then(r => r?.data ?? r),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useHODSettings() {
+  return useQuery({
+    queryKey: ['hod', 'settings'],
+    queryFn: () => hodApi.getHODSettings().then(r => r?.data ?? r),
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+export function useActiveSessions() {
+  return useQuery({
+    queryKey: ['hod', 'active-sessions'],
+    queryFn: () => hodApi.getActiveSessions().then(r => r?.data ?? r),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useSupportTickets(params = {}) {
+   return useQuery({
+     queryKey: ['hod', 'support-tickets', params],
+     queryFn: () => hodApi.getSupportTickets(params).then(r => r?.data ?? r),
+     staleTime: 1000 * 60 * 2,
+   });
+ }
+
+export function useSystemHealth() {
+  return useQuery({
+    queryKey: ['hod', 'system-health'],
+    queryFn: hodApi.getSystemHealth,
+    staleTime: 1000 * 30,
+    refetchInterval: 1000 * 30,
+  });
+}
+
+export function useEscalatedIssues(params = {}) {
+  return useQuery({
+    queryKey: ['hod', 'escalated-issues', params],
+    queryFn: () => hodApi.getEscalatedIssues(params).then(r => r?.data ?? r),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useContactChannels() {
+  return useQuery({
+    queryKey: ['hod', 'contact-channels'],
+    queryFn: () => hodApi.getContactChannels(),
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+export function useDepartmentTeachers(params = {}) {
+  return useQuery({
+    queryKey: ['hod', 'department-teachers', params],
+    queryFn: () => hodApi.getDepartmentTeachers(params).then(r => r?.data ?? r),
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+export function useActiveImpersonations() {
+  return useQuery({
+    queryKey: ['hod', 'active-impersonations'],
+    queryFn: () => hodApi.getActiveImpersonations().then(r => r?.data ?? r),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useStudentAcademicHistory(studentId) {
+  return useQuery({
+    queryKey: ['hod', 'student-academic-history', studentId],
+    queryFn: () => hodApi.getStudentAcademicHistory(studentId).then(r => r?.data ?? r),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!studentId,
+  });
+}
+
+export function useComplianceCohortPerformance() {
+  return useQuery({
+    queryKey: ['hod', 'compliance', 'cohort-performance'],
+    queryFn: () => hodApi.getComplianceCohortPerformance().then(r => r?.data ?? r),
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+export function useComplianceTimeline() {
+  return useQuery({
+    queryKey: ['hod', 'compliance', 'timeline'],
+    queryFn: () => hodApi.getComplianceTimeline().then(r => r?.data ?? r),
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+export function usePromotionMetrics() {
+  return useQuery({
+    queryKey: ['hod', 'promotion-metrics'],
+    queryFn: () => hodApi.getPromotionMetrics().then(r => r?.data ?? r),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useAllAcademicYears() {
+  return useQuery({
+    queryKey: ['hod', 'academic-years'],
+    queryFn: () => hodApi.getAllAcademicYears().then(r => r?.data ?? r),
+    staleTime: 1000 * 60 * 30,
+  });
+}
+
+// ── Mutations ────────────────────────────────────────────────────────────────
 export function useLockDepartmentMatrix() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (termId) => hodApi.lockDepartmentMatrix(termId),
+    mutationFn: (classId) => hodApi.lockDepartmentMatrix(classId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['hod', 'department-progress'] });
       qc.invalidateQueries({ queryKey: ['hod', 'locked-terms'] });
+      // FIX: Invalidate active validations checking whether matrices are fully locked
+      qc.invalidateQueries({ queryKey: ['hod', 'lock-validation'] });
     },
   });
 }
@@ -72,10 +210,11 @@ export function useLockDepartmentMatrix() {
 export function useUnlockDepartmentMatrix() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (termId) => hodApi.unlockDepartmentMatrix(termId),
+    mutationFn: (classId) => hodApi.unlockDepartmentMatrix(classId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['hod', 'department-progress'] });
       qc.invalidateQueries({ queryKey: ['hod', 'locked-terms'] });
+      qc.invalidateQueries({ queryKey: ['hod', 'lock-validation'] });
     },
   });
 }
@@ -86,14 +225,7 @@ export function useExportWAECCSV() {
   });
 }
 
-export function useGradeComparison(subjectId, termA, termB) {
-  return useQuery({
-    queryKey: ['hod', 'grades', 'compare', subjectId, termA, termB],
-    queryFn: () => hodApi.getGradeComparison(subjectId, termA, termB).then(r => r?.data ?? r),
-    enabled: !!subjectId && !!termA && !!termB,
-    staleTime: 1000 * 60 * 5,
-  });
-}
+export const useExportWAEC = useExportWAECCSV;
 
 export function useUpdateHODComment() {
   const qc = useQueryClient();
@@ -123,31 +255,11 @@ export function useApproveGradeRevision() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['hod', 'grade-revisions'] });
       qc.invalidateQueries({ queryKey: ['hod', 'audit-logs'] });
+      // FIX: Approved grade changes impact structural progress indicators and statistics
+      qc.invalidateQueries({ queryKey: ['hod', 'department-progress'] });
+      qc.invalidateQueries({ queryKey: ['hod', 'teacher-submissions'] });
+      qc.invalidateQueries({ queryKey: ['hod', 'grades', 'compare'] });
     },
-  });
-}
-
-export function useArchivedDepartmentData(params = {}) {
-  return useQuery({
-    queryKey: ['hod', 'archived-data', params],
-    queryFn: () => hodApi.getArchivedDepartmentData(params).then(r => r?.data ?? r),
-    staleTime: 1000 * 60 * 5,
-  });
-}
-
-export function usePromotionRecommendations(params = {}) {
-  return useQuery({
-    queryKey: ['hod', 'promotion-recommendations', params],
-    queryFn: () => hodApi.getPromotionRecommendations(params).then(r => r?.data ?? r),
-    staleTime: 1000 * 60 * 5,
-  });
-}
-
-export function useHODSettings() {
-  return useQuery({
-    queryKey: ['hod', 'settings'],
-    queryFn: () => hodApi.getHODSettings().then(r => r?.data ?? r),
-    staleTime: 1000 * 60 * 10,
   });
 }
 
@@ -180,14 +292,6 @@ export function useMFAVerify() {
   });
 }
 
-export function useActiveSessions() {
-  return useQuery({
-    queryKey: ['hod', 'active-sessions'],
-    queryFn: () => hodApi.getActiveSessions().then(r => r?.data ?? r),
-    staleTime: 1000 * 60 * 5,
-  });
-}
-
 export function useRevokeSession() {
   const qc = useQueryClient();
   return useMutation({
@@ -195,14 +299,6 @@ export function useRevokeSession() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['hod', 'active-sessions'] });
     },
-  });
-}
-
-export function useSupportTickets(params = {}) {
-  return useQuery({
-    queryKey: ['hod', 'support-tickets', params],
-    queryFn: () => hodApi.getSupportTickets(params).then(r => r?.data ?? r),
-    staleTime: 1000 * 60 * 2,
   });
 }
 
@@ -233,31 +329,6 @@ export function useEscalateTicket() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['hod', 'support-tickets'] });
     },
-  });
-}
-
-export function useSystemHealth() {
-  return useQuery({
-    queryKey: ['hod', 'system-health'],
-    queryFn: hodApi.getSystemHealth,
-    staleTime: 1000 * 30,
-    refetchInterval: 1000 * 30,
-  });
-}
-
-export function useEscalatedIssues(params = {}) {
-  return useQuery({
-    queryKey: ['hod', 'escalated-issues', params],
-    queryFn: () => hodApi.getEscalatedIssues(params).then(r => r?.data ?? r),
-    staleTime: 1000 * 60 * 5,
-  });
-}
-
-export function useContactChannels() {
-  return useQuery({
-    queryKey: ['hod', 'contact-channels'],
-    queryFn: () => hodApi.getContactChannels(),
-    staleTime: 1000 * 60 * 10,
   });
 }
 
@@ -292,20 +363,13 @@ export function useResetTeacherPassword() {
   });
 }
 
-export function useDepartmentTeachers(params = {}) {
-  return useQuery({
-    queryKey: ['hod', 'department-teachers', params],
-    queryFn: () => hodApi.getDepartmentTeachers(params).then(r => r?.data ?? r),
-    staleTime: 1000 * 60 * 10,
-  });
-}
-
 export function useImpersonateTeacher() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ teacherId, body }) => hodApi.impersonateTeacher(teacherId, body),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['hod', 'active-impersonations'] });
+      // FIX: Full cache reset avoids viewing prior credentials' structural data lines
+      qc.clear();
     },
   });
 }
@@ -315,17 +379,38 @@ export function useStopImpersonation() {
   return useMutation({
     mutationFn: hodApi.stopImpersonation,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['hod', 'active-impersonations'] });
+      qc.clear();
     },
   });
 }
 
-export function useActiveImpersonations() {
-  return useQuery({
-    queryKey: ['hod', 'active-impersonations'],
-    queryFn: () => hodApi.getActiveImpersonations().then(r => r?.data ?? r),
-    staleTime: 1000 * 60 * 5,
+export function useTriggerPromotion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (academicYearId) => hodApi.triggerPromotion(academicYearId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['hod', 'promotion-metrics'] });
+      qc.invalidateQueries({ queryKey: ['hod', 'promotion-recommendations'] });
+    },
   });
 }
 
-export function useStudentAcademicHistory(studentId) {
+export function useResolveAlert() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (alertId) => hodApi.resolveAlert(alertId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['hod', 'intervention-alerts'] });
+    },
+  });
+}
+
+export function useAddCounselingNote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ alertId, text }) => hodApi.addCounselingNote({ alertId, text }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['hod', 'intervention-alerts'] });
+    },
+  });
+}

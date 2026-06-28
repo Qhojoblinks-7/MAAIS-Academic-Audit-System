@@ -24,6 +24,19 @@ import { teacherService } from '../../services';
 import { notification } from '../../services/notificationService';
 import { statusStyles, severityStyles } from '../shared/RevisionsFeed';
 
+function formatTime(isoString) {
+  if (!isoString) return 'Unknown';
+  const date = new Date(isoString);
+  const now = new Date();
+  const diffMinutes = Math.floor((now - date) / (1000 * 60));
+  if (diffMinutes < 1) return 'Just now';
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+}
+
 const TeacherRevisionsFeed = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -44,7 +57,7 @@ const TeacherRevisionsFeed = () => {
       try {
         const data = await teacherService.getGradeRevisions?.(user.id || user.profileId) || [];
         setRevisions(data);
-        setRevisionCount(Array.isArray(data) ? data.filter(r => r.status !== 'RESOLVED').length : 0);
+        setRevisionCount(Array.isArray(data) ? data.filter(r => r.status !== 'RESOLVED' && r.status !== 'REJECTED').length : 0);
       } catch (e) {
         console.error('Failed to fetch revisions:', e);
       }
@@ -62,17 +75,18 @@ const TeacherRevisionsFeed = () => {
     }
   }, [searchParams, revisions]);
 
-  const filteredData = revisions.filter(item => {
+const filteredData = revisions.filter(item => {
+    const isResolved = (r) => (r.status || '').toUpperCase() === 'RESOLVED' || (r.status || '').toUpperCase() === 'REJECTED';
     const matchesTab = activeTab === 'all' 
       ? true 
       : activeTab === 'pending' 
-        ? item.status !== 'RESOLVED' 
-        : item.status === 'RESOLVED';
+        ? !isResolved(item)
+        : isResolved(item);
         
     const matchesSearch = 
-      item.student.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.subject.toLowerCase().includes(searchQuery.toLowerCase());
+      (item.student || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.subject || '').toLowerCase().includes(searchQuery.toLowerCase());
 
     return matchesTab && matchesSearch;
   });
@@ -155,26 +169,27 @@ const sendDiscussionMessage = async () => {
 
             <div className="hidden sm:flex items-center gap-1.5 bg-amber-50 text-amber-800 px-2.5 py-1 rounded-lg border border-amber-200/30 text-[11px] font-semibold">
               <AlertTriangle size={12} className="text-amber-600 animate-pulse" />
-              <span>{revisions.filter(r => r.status !== 'RESOLVED').length} Active Requests</span>
+              <span>{revisions.filter(r => r.status !== 'RESOLVED' && r.status !== 'REJECTED').length} Active Requests</span>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
 <div className="flex p-0.5 bg-slate-100 rounded-lg border border-slate-200/40">
-               {['pending', 'resolved', 'all'].map((tab) => {
-                 const count = tab === 'all' 
-                   ? revisions.length 
-                   : tab === 'pending' 
-                     ? revisions.filter(r => r.status !== 'RESOLVED').length 
-                     : revisions.filter(r => r.status === 'RESOLVED').length;
-                 return (
-                   <button
-                     key={tab}
-                     onClick={() => {
-                       setActiveTab(tab);
-                       const nextList = revisions.filter(r => tab === 'all' ? true : tab === 'pending' ? r.status !== 'RESOLVED' : r.status === 'RESOLVED');
-                       setSelected(nextList[0] || null);
-                     }}
+                {['pending', 'resolved', 'all'].map((tab) => {
+                  const isResolved = (r) => (r.status || '').toUpperCase() === 'RESOLVED' || (r.status || '').toUpperCase() === 'REJECTED';
+                  const count = tab === 'all' 
+                    ? revisions.length 
+                    : tab === 'pending' 
+                      ? revisions.filter(r => !isResolved(r)).length 
+                      : revisions.filter(r => isResolved(r)).length;
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => {
+                        setActiveTab(tab);
+                        const nextList = revisions.filter(r => tab === 'all' ? true : tab === 'pending' ? !isResolved(r) : isResolved(r));
+                        setSelected(nextList[0] || null);
+                      }}
                      className={cn(
                        "px-4 py-1.5 text-xs font-semibold capitalize rounded-md transition-all duration-150 flex items-center gap-1.5",
                        activeTab === tab 
@@ -246,16 +261,16 @@ const sendDiscussionMessage = async () => {
 
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded border tracking-wide", statusStyles[job.status])}>
-                        {job.status === 'AWAITING_APPROVAL' ? 'Awaiting HOD' : job.status === 'TEACHER_REPLIED' ? 'HOD Reviewing' : 'Resolved'}
+                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded border tracking-wide", statusStyles[(job.status || '').toUpperCase()] || 'bg-slate-100')}>
+                        {(job.status || '').toUpperCase() === 'AWAITING_APPROVAL' ? 'Awaiting HOD' : (job.status || '').toUpperCase() === 'TEACHER_REPLIED' ? 'HOD Reviewing' : 'Resolved'}
                       </span>
-                      <span className={cn("text-[9px] font-extrabold px-1.5 py-0.5 rounded border tracking-wider", severityStyles[job.severity])}>
+                      <span className={cn("text-[9px] font-extrabold px-1.5 py-0.5 rounded border tracking-wider", severityStyles[job.severity] || '')}>
                         {job.severity}
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 text-slate-400 text-[11px] font-medium">
                       <Clock size={12} />
-                      <span>{job.time}</span>
+                      <span>{typeof job.time === 'string' ? job.time : formatTime(job.time)}</span>
                     </div>
                   </div>
 
@@ -330,7 +345,7 @@ const sendDiscussionMessage = async () => {
                       <div className="flex-1 bg-slate-50 border border-slate-200/60 rounded-xl p-3">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-[11px] font-bold text-slate-800">{node.user}</span>
-                          <span className="text-[10px] text-slate-400">{node.time}</span>
+                          <span className="text-[10px] text-slate-400">{formatTime(node.time)}</span>
                         </div>
                         <p className="text-xs text-slate-600 leading-relaxed font-mono">"{node.message}"</p>
                       </div>
@@ -387,22 +402,22 @@ const sendDiscussionMessage = async () => {
                                   <p className="text-xs font-medium text-slate-500 mb-0.5">
                                     {msg.user}
                                   </p>
-                                  <p className="text-sm text-slate-800 whitespace-pre-wrap break-words">
-                                    {msg.message}
-                                  </p>
-                                  <p className="text-xs text-slate-400 mt-1">
-                                    {msg.time}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+<p className="text-sm text-slate-800 whitespace-pre-wrap break-words">
+                                     {msg.message}
+                                   </p>
+                                   <p className="text-xs text-slate-400 mt-1">
+                                     {formatTime(msg.time)}
+                                   </p>
+                                 </div>
+                               </div>
+                             </div>
+                           ))}
                         </div>
                       )}
                     </div>
                   )}
                  
-                 <div className="mt-3 pt-2 border-t border-slate-200">
+                  <div className="mt-3 pt-2 border-t border-slate-200">
                    <div className="flex items-center gap-2">
                      <div className="flex-1">
                        <textarea

@@ -28,10 +28,28 @@ import { auditTrail } from '../../services/auditTrailService';
 import { notification } from '../../services/notificationService';
 import { eventBus } from '../../services/eventBus';
 
+function formatTime(isoString) {
+  if (!isoString) return 'Unknown';
+  const date = new Date(isoString);
+  const now = new Date();
+  const diffMinutes = Math.floor((now - date) / (1000 * 60));
+  if (diffMinutes < 1) return 'Just now';
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+}
+
 const HODRevisionsFeed = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { revisions = [], refreshRevisions, isLoading } = useHOD();
+
+  useEffect(() => {
+    auditTrail.setUseHodApi(true);
+  }, []);
+
   const [activeTab, setActiveTab] = useState('pending');
   const [selected, setSelected] = useState(null);
   const [hodComment, setHodComment] = useState('');
@@ -57,16 +75,17 @@ const HODRevisionsFeed = () => {
   }, [searchParams, revisions]);
 
   const filteredData = revisions.filter(item => {
+    const isResolved = (r) => (r.status || '').toUpperCase() === 'RESOLVED' || (r.status || '').toUpperCase() === 'REJECTED';
     const matchesTab = activeTab === 'all' 
       ? true 
       : activeTab === 'pending' 
-        ? item.status !== 'RESOLVED' 
-        : item.status === 'RESOLVED';
+        ? !isResolved(item)
+        : isResolved(item);
         
     const matchesSearch = 
-      item.student.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.subject.toLowerCase().includes(searchQuery.toLowerCase());
+      (item.student || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.subject || '').toLowerCase().includes(searchQuery.toLowerCase());
 
     return matchesTab && matchesSearch;
   });
@@ -169,44 +188,47 @@ const sendDiscussionMessage = async () => {
 
             <div className="hidden sm:flex items-center gap-1.5 bg-amber-50 text-amber-800 px-2.5 py-1 rounded-lg border border-amber-200/30 text-[11px] font-semibold">
               <AlertTriangle size={12} className="text-amber-600 animate-pulse" />
-              <span>{revisions.filter(r => r.status !== 'RESOLVED').length} Pending Approvals</span>
+              <span>{revisions.filter(r => (r.status || '').toUpperCase() !== 'RESOLVED' && (r.status || '').toUpperCase() !== 'REJECTED').length} Pending Approvals</span>
+            </div>
+</div>
+
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+              <div className="flex p-0.5 bg-slate-100 rounded-lg border border-slate-200/40">
+                {['pending', 'resolved', 'all'].map((tab) => {
+                  const isResolved = (r) => (r.status || '').toUpperCase() === 'RESOLVED' || (r.status || '').toUpperCase() === 'REJECTED';
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => {
+                        setActiveTab(tab);
+                        const nextList = revisions.filter(r => tab === 'all' ? true : tab === 'pending' ? !isResolved(r) : isResolved(r));
+                        setSelected(nextList[0] || null);
+                      }}
+                      className={cn(
+                        "px-4 py-1.5 text-xs font-semibold capitalize rounded-md transition-all duration-150",
+                        activeTab === tab 
+                          ? "bg-white text-slate-900 shadow-sm border border-slate-200/20 font-bold" 
+                          : "text-slate-500 hover:text-slate-800"
+                      )}
+                    >
+                      {tab === 'pending' ? 'Needs Approval' : tab}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="relative flex-1 max-w-xs">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search student, code, course..."
+                  className="w-full pl-9 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-950/5 focus:border-slate-400 transition-all placeholder:text-slate-400"
+                />
+              </div>
             </div>
           </div>
-
-          <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
-            <div className="flex p-0.5 bg-slate-100 rounded-lg border border-slate-200/40">
-              {['pending', 'resolved', 'all'].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => {
-                    setActiveTab(tab);
-                    const nextList = revisions.filter(r => tab === 'all' ? true : tab === 'pending' ? r.status !== 'RESOLVED' : r.status === 'RESOLVED');
-                    setSelected(nextList[0] || null);
-                  }}
-                  className={cn(
-                    "px-4 py-1.5 text-xs font-semibold capitalize rounded-md transition-all duration-150",
-                    activeTab === tab 
-                      ? "bg-white text-slate-900 shadow-sm border border-slate-200/20 font-bold" 
-                      : "text-slate-500 hover:text-slate-800"
-                  )}
-                >
-                  {tab === 'pending' ? 'Needs Approval' : tab}
-                </button>
-              ))}
-            </div>
-
-            <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search student, code, course..."
-                className="w-full pl-9 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-950/5 focus:border-slate-400 transition-all placeholder:text-slate-400"
-              />
-            </div>
-          </div>
-        </div>
 
         <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30 space-y-3 min-h-0 no-scrollbar">
           {filteredData.length === 0 ? (
@@ -234,22 +256,22 @@ const sendDiscussionMessage = async () => {
                       : "border-slate-200/70 hover:border-slate-350 hover:shadow-sm"
                   )}
                 >
-                  {isSelected && (
+{isSelected && (
                     <div className="absolute top-0 bottom-0 left-0 w-1 bg-slate-900 rounded-l-xl" />
                   )}
 
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded border tracking-wide", statusStyles[job.status])}>
-                        {job.status === 'AWAITING_APPROVAL' ? 'Awaiting Approval' : job.status === 'TEACHER_REPLIED' ? 'Teacher Replied' : 'Resolved'}
+                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded border tracking-wide", statusStyles[(job.status || '').toUpperCase()] || 'bg-slate-100')}>
+                        {(job.status || '').toUpperCase() === 'AWAITING_APPROVAL' ? 'Awaiting Approval' : (job.status || '').toUpperCase() === 'TEACHER_REPLIED' ? 'Teacher Replied' : (job.status || '').toUpperCase() === 'REJECTED' ? 'Rejected' : 'Resolved'}
                       </span>
-                      <span className={cn("text-[9px] font-extrabold px-1.5 py-0.5 rounded border tracking-wider", severityStyles[job.severity])}>
+                      <span className={cn("text-[9px] font-extrabold px-1.5 py-0.5 rounded border tracking-wider", severityStyles[job.severity] || '')}>
                         {job.severity}
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 text-slate-400 text-[11px] font-medium">
                       <Clock size={12} />
-                      <span>{job.time}</span>
+                      <span>{typeof job.time === 'string' ? job.time : formatTime(job.time)}</span>
                     </div>
                   </div>
 
@@ -324,7 +346,7 @@ const sendDiscussionMessage = async () => {
                       <div className="flex-1 bg-slate-50 border border-slate-200/60 rounded-xl p-3">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-[11px] font-bold text-slate-800">{node.user}</span>
-                          <span className="text-[10px] text-slate-400">{node.time}</span>
+                          <span className="text-[10px] text-slate-400">{formatTime(node.time)}</span>
                         </div>
                         <p className="text-xs text-slate-600 leading-relaxed font-mono">"{node.message}"</p>
                       </div>
@@ -384,9 +406,9 @@ const sendDiscussionMessage = async () => {
                                   <p className="text-sm text-slate-800 whitespace-pre-wrap break-words">
                                     {msg.message}
                                   </p>
-                                  <p className="text-xs text-slate-400 mt-1">
-                                    {msg.time}
-                                  </p>
+<p className="text-xs text-slate-400 mt-1">
+                                     {formatTime(msg.time)}
+                                   </p>
                                 </div>
                               </div>
                             </div>

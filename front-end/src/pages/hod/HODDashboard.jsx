@@ -17,6 +17,7 @@ export function HODDashboard() {
     baselineDeltas = {},
     refreshDepartmentProgress,
     refreshTeacherSubmissions,
+    refreshSubmissionTrends,
     refreshInterventionAlerts,
     isLoading,
   } = useHOD();
@@ -24,10 +25,11 @@ export function HODDashboard() {
   const [refreshDisabled, setRefreshDisabled] = useState(false);
 
   useEffect(() => {
-     refreshDepartmentProgress();
-     refreshTeacherSubmissions();
-     refreshInterventionAlerts();
-   }, [refreshDepartmentProgress, refreshTeacherSubmissions, refreshInterventionAlerts]);
+    refreshDepartmentProgress();
+    refreshTeacherSubmissions();
+    refreshSubmissionTrends();
+    refreshInterventionAlerts();
+  }, []);
 
   const handleRefreshAll = async () => {
     setRefreshDisabled(true);
@@ -82,7 +84,7 @@ export function HODDashboard() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#F4F4F9] p-6 md:p-8 select-none scrollbar-hide">
+    <div className="flex-1 overflow-y-auto bg-[#F4F4F9] p-6 md:p-8 select-none scrollbar-hide no-scrollbar">
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}

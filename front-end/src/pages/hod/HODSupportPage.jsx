@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   LifeBuoy, Send, AlertTriangle, Search, RefreshCw,
   Cpu, HardDrive, ThermometerSun, Zap, Plus, XCircle,
-  Users, PhoneIcon, Globe, Mail
+  Users, PhoneIcon, Globe, Mail, CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';

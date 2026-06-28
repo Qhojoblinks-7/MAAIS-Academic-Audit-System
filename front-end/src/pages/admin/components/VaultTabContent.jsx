@@ -1,32 +1,92 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '../../../lib/utils';
-import { FileUp, FileText, Download } from 'lucide-react';
-import mockApiData from '../../../data/mockApiData.json';
+import { FileText, Download, Upload } from 'lucide-react';
+import { uploadStrategyPulseFile } from '../../../services/departmentService';
 
-export function VaultTabContent({ files }) {
-  const vaultFiles = files || mockApiData.engineRoom?.vaultFiles || [];
-  
+export function VaultTabContent({ selectedDept }) {
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState('');
+
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    
+    setUploading(true);
+    setUploadMessage('');
+    
+    try {
+      const result = await uploadStrategyPulseFile(files, selectedDept?.id);
+      if (result.success) {
+        setUploadMessage(result.message);
+        setUploadedFiles(prev => [...prev, ...files.map(f => ({
+          id: `PULSE-${Date.now()}-${f.name}`,
+          name: f.name,
+          size: `${(f.size / 1024).toFixed(1)} KB`,
+          date: new Date().toISOString().split('T')[0],
+        }))]);
+      } else {
+        setUploadMessage(result.message);
+      }
+    } catch (error) {
+      setUploadMessage('Upload failed. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDownload = (file) => {
+    const blob = new Blob([`Mock content for ${file.name}`], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = file.name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const vaultFiles = uploadedFiles.length > 0 ? uploadedFiles : [
+    { id: 'default-1', name: 'Department Meeting Minutes - Q1 2024.pdf', size: '245 KB', date: '2024-01-15' },
+    { id: 'default-2', name: 'Curriculum Review - Mathematics.pdf', size: '182 KB', date: '2024-02-20' },
+  ];
+   
   return (
     <div className="space-y-4 sm:space-y-6 w-full">
+      {uploadMessage && (
+        <div className="p-3 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium">
+          {uploadMessage}
+        </div>
+      )}
+      
       {/* Upload Drag & Drop Area */}
-      <div className="border border-dashed border-slate-300 rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-10 flex flex-col items-center justify-center text-center bg-slate-50/50 hover:bg-slate-100/50 transition-all group cursor-pointer w-full">
+      <label className="border border-dashed border-slate-300 rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-10 flex flex-col items-center justify-center text-center bg-slate-50/50 hover:bg-slate-100/50 transition-all group cursor-pointer w-full">
+        <input
+          type="file"
+          accept="application/pdf"
+          multiple
+          onChange={handleFileUpload}
+          disabled={uploading}
+          className="hidden"
+        />
         <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-2xl flex items-center justify-center text-slate-400 mb-4 sm:mb-6 shadow-sm group-hover:scale-110 transition-transform flex-shrink-0">
-          <FileUp size={22} className="sm:hidden" />
-          <FileUp size={28} className="hidden sm:block" />
+          <Upload size={22} className="sm:hidden" />
+          <Upload size={28} className="hidden sm:block" />
         </div>
         <p className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-widest mb-1 sm:mb-2">
-          Upload Strategy Pulse
+          {uploading ? 'Uploading...' : 'Upload Strategy Pulse'}
         </p>
         <p className="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest max-w-[180px] sm:max-w-[200px]">
           PDF format strictly required for departmental meeting minutes.
         </p>
-      </div>
+      </label>
 
       {/* File Registry List */}
       <div className="space-y-2.5 sm:space-y-3 w-full">
-        {files.map((file, i) => (
+        {vaultFiles.map((file, i) => (
           <div 
-            key={i} 
+            key={file.id || i} 
             className="p-3 sm:p-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-between gap-4 group hover:border-slate-300 transition-all w-full"
           >
             {/* File Info Block */}
@@ -47,6 +107,7 @@ export function VaultTabContent({ files }) {
 
             {/* Action Item */}
             <button 
+              onClick={() => handleDownload(file)}
               className="p-2 text-slate-300 hover:text-slate-900 transition-colors flex-shrink-0 rounded-lg hover:bg-slate-50"
               aria-label={`Download ${file.name}`}
             >
@@ -58,4 +119,4 @@ export function VaultTabContent({ files }) {
       </div>
     </div>
   );
-}
+ }

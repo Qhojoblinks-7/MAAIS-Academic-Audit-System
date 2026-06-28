@@ -1,8 +1,8 @@
 import { getAuthToken } from './auth';
 import { dataSync } from './dataSyncLayer';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-const USE_MOCK = !BASE_URL || import.meta.env.VITE_USE_MOCK_API === 'true';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+const USE_MOCK = import.meta.env.VITE_USE_MOCK_API === 'true';
 const NOTIFICATION_SOUND_URL = '/sounds/notification.mp3';
 
 function getHeaders() {
@@ -15,20 +15,27 @@ function getHeaders() {
 
 async function request(method, path, body) {
   if (USE_MOCK) {
-    // Mock response for local development
     return { success: true, id: Date.now() };
   }
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers: getHeaders(),
-    credentials: 'include',
-    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-  });
+  try {
+    const res = await fetch(`${BASE_URL}${path}`, {
+      method,
+      headers: getHeaders(),
+      credentials: 'include',
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+    });
 
-  if (!res.ok) {
-    throw new Error(`Notification request failed: ${res.status}`);
+    if (!res.ok) {
+      throw new Error(`Notification request failed: ${res.status}`);
+    }
+    return res.status === 204 ? undefined : res.json();
+  } catch (err) {
+    if (err instanceof TypeError && err.message === 'Failed to fetch') {
+      console.warn(`[NotificationService] Network error for ${method} ${path}: backend may be unreachable`);
+      return null;
+    }
+    throw err;
   }
-  return res.status === 204 ? undefined : res.json();
 }
 
 class NotificationService {
@@ -228,8 +235,8 @@ class NotificationService {
     return request('PATCH', `/comms/notifications/${notificationId}/read`);
   }
 
-  async getUnread(userId) {
-    return request('GET', `/comms/notifications/unread?userId=${userId}`);
+  async getUnread() {
+    return request('GET', `/comms/notifications/unread`);
   }
 
   subscribe(callback) {

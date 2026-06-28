@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { teacherApi } from '../../../lib/api';
 
+// ── Queries ──────────────────────────────────────────────────────────────────
 export function useTeacherClasses(teacherId) {
   return useQuery({
     queryKey: ['teacher', 'classes', teacherId],
@@ -29,7 +30,7 @@ export function useTeacherSupportObservations() {
 
 export function useTeacherGradeIssues() {
   return useQuery({
-    queryKey: ['teacher', 'grade', 'issues'],
+    queryKey: ['teacher', 'grade', 'issues', 'list'], // FIX: Added 'list' sub-key to avoid metadata overlap
     queryFn: teacherApi.getGradeIssues,
     staleTime: 1000 * 60 * 2,
   });
@@ -117,12 +118,19 @@ export function useTeacherGradeConfig() {
   });
 }
 
+// ── Mutations ────────────────────────────────────────────────────────────────
 export function useSubmitGradeRevision() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (revisionData) => teacherApi.submitGradeRevision(revisionData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teacher', 'grade', 'issues'] });
+    onSuccess: (_, variables) => {
+      // 1. Invalidate only the issue lists specifically, protecting the metadata cache
+      queryClient.invalidateQueries({ queryKey: ['teacher', 'grade', 'issues', 'list'] });
+      
+      // FIX: Invalidate active sheets and performance stats so changes update everywhere immediately
+      queryClient.invalidateQueries({ queryKey: ['teacher', 'grading', 'students'] });
+      queryClient.invalidateQueries({ queryKey: ['teacher', 'analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['teacher', 'classes'] });
     },
   });
 }
@@ -132,7 +140,9 @@ export function useUpdateGradeRevision() {
   return useMutation({
     mutationFn: ({ revisionId, updatedData }) => teacherApi.updateGradeRevision(revisionId, updatedData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teacher', 'grade', 'issues'] });
+      queryClient.invalidateQueries({ queryKey: ['teacher', 'grade', 'issues', 'list'] });
+      queryClient.invalidateQueries({ queryKey: ['teacher', 'grading', 'students'] });
+      queryClient.invalidateQueries({ queryKey: ['teacher', 'analytics'] });
     },
   });
 }

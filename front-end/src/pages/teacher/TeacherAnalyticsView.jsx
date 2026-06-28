@@ -255,7 +255,7 @@ export function TeacherAnalyticsView() {
                     Term Score Trend · Class Average
                   </h3>
                   <div className="h-64 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                       <LineChart data={termTrends} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                         <XAxis dataKey="term" tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 700 }} tickLine={false} axisLine={false} />
@@ -277,9 +277,9 @@ export function TeacherAnalyticsView() {
                       <GraduationCap size={14} className="text-text-secondary" />
                       Grade Distribution
                     </h3>
-                    <div className="h-64 w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={gradeDist} margin={{ top: 10, right: 20, left: -10, bottom: 0 }} layout="vertical">
+                     <div className="h-64 w-full">
+                       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                         <BarChart data={gradeDist} margin={{ top: 10, right: 20, left: -10, bottom: 0 }} layout="vertical">
                           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
                           <XAxis type="number" tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 700 }} tickLine={false} axisLine={false} />
                           <YAxis type="category" dataKey="label" tick={{ fontSize: 11, fill: '#64748b', fontWeight: 700 }} tickLine={false} axisLine={false} width={36} />
@@ -302,9 +302,9 @@ export function TeacherAnalyticsView() {
                       <Star size={14} className="text-text-secondary" />
                       Observation Breakdown
                     </h3>
-                    <div className="h-64 w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
+                     <div className="h-64 w-full">
+                       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                         <PieChart>
                           <Pie
                             data={obsTypePieData}
                             cx="50%"
@@ -335,9 +335,9 @@ export function TeacherAnalyticsView() {
                     <BarChart3 size={14} className="text-text-secondary" />
                     Class Completion Rate
                   </h3>
-                  <div className="h-64 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={classProgress} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                   <div className="h-64 w-full">
+                     <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                       <BarChart data={classProgress} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                         <XAxis dataKey="subject" tick={{ fontSize: 10, fill: '#64748b', fontWeight: 700 }} tickLine={false} axisLine={false} />
                         <YAxis tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 700 }} tickLine={false} axisLine={false} />

@@ -54,6 +54,8 @@ export {
   useExportWAECCSV,
   useGradeComparison,
   useUpdateHODComment,
+  useResolveAlert,
+  useAddCounselingNote,
   useRejectGradeRevision,
   useApproveGradeRevision,
   useArchivedDepartmentData,
@@ -80,4 +82,9 @@ export {
   useActiveImpersonations,
   useStudentAcademicHistory,
   useCreateEscalation,
+  useComplianceCohortPerformance,
+  useComplianceTimeline,
+  usePromotionMetrics,
+  useTriggerPromotion,
+  useAllAcademicYears,
 } from './api/hod';

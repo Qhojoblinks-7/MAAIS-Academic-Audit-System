@@ -1,9 +1,7 @@
 import { getAuthToken } from './auth';
 import { calcRoman } from '../constants/grading';
-import mockHodService from './mockHodService';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
-const USE_MOCK = !BASE_URL || import.meta.env.VITE_USE_MOCK_API === 'true';
 
 function getHeaders() {
   const token = getAuthToken();
@@ -127,19 +125,41 @@ function createRealService() {
     getTeacherSubmissionStatus: () => request('GET', '/hod/teachers/submissions').then(r => r?.data ?? r),
     getLockedTerms: () => request('GET', '/hod/locked-terms').then(r => r?.data ?? r),
     validateLock: (termId) => request('GET', `/hod/lock-matrix/${termId}/validate`).then(r => r?.data ?? r),
-    lockDepartmentMatrix: (termId) => request('POST', `/hod/lock-matrix/${termId}`),
-    unlockDepartmentMatrix: (termId) => request('POST', `/hod/unlock-matrix/${termId}`),
+    lockDepartmentMatrix: (classId) => request('POST', `/hod/lock-class/${classId}`),
+    unlockDepartmentMatrix: (classId) => request('POST', `/hod/unlock-class/${classId}`),
     exportWAECCSV: (termId, className) => exportWAECCSVDownload(termId, className, 'Subject', null),
-    exportWAECPDF: (termId) => request('POST', `/hod/export-waec/${termId}`, { format: 'pdf' }),
+    exportDepartmentWAECCSV: (termId) => requestExport('GET', `/hod/export-waec/${encodeURIComponent(termId)}/department`).then(res => downloadResponse(res, `WAEC_Department_${termId}.csv`)),
+    exportWAECPDF: (termId, className) => requestExport('GET', `/hod/export-waec/${encodeURIComponent(termId)}/pdf?class=${encodeURIComponent(className)}`).then(res => downloadResponse(res, `WAEC_${className}_${termId}.pdf`)),
+    exportDepartmentWAECPDF: (termId) => requestExport('GET', `/hod/export-waec/${encodeURIComponent(termId)}/pdf/department`).then(res => downloadResponse(res, `WAEC_Department_${termId}.pdf`)),
     getGradeComparison: (subjectId, termA, termB) =>
       request('GET', `/hod/grades/compare`, undefined, { subjectId, termA, termB }).then(r => r?.data ?? r),
     updateHODComment: (recordId, comment) => request('PATCH', `/hod/records/${recordId}/comment`, { comment }),
+    updateAuditLogComment: (logId, comment) => request('PATCH', `/hod/audit-logs/${logId}/comment`, { comment }),
     rejectGradeRevision: (recordId, reason) => request('POST', `/hod/records/${recordId}/reject`, { reason }),
     approveGradeRevision: (recordId, comment) =>
       request('POST', `/hod/records/${recordId}/approve`, { comment }),
     getGradeRevisions: () => request('GET', '/hod/grade-revisions').then(r => r?.data ?? r),
     getArchivedDepartmentData: (params = {}) => request('GET', '/hod/archive', undefined, params).then(r => r?.data ?? r),
     getPromotionRecommendations: (params = {}) => request('GET', '/hod/archive/promotions', undefined, params).then(r => r?.data ?? r),
+    bulkApproveRevisions: (recordIds, remark = 'Bulk approved') =>
+      request('POST', '/hod/records/bulk-approve', { recordIds, remark }).then(r => r?.data ?? r),
+    bulkRejectRevisions: (recordIds, reason = 'Bulk rejected') =>
+      request('POST', '/hod/records/bulk-reject', { recordIds, reason }).then(r => r?.data ?? r),
+    exportArchivedData: (params = {}) => {
+      const url = new URL(`${BASE_URL}/hod/archive/export`, window.location.origin);
+      Object.entries(params).forEach(([key, value]) => {
+        if (value != null && value !== '') url.searchParams.set(key, value);
+      });
+      const token = getAuthToken();
+      return fetch(url.toString(), {
+        method: 'GET',
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        credentials: 'include',
+      }).then(res => {
+        if (!res.ok) throw new Error(`Archive export failed: ${res.status}`);
+        return res.blob();
+      });
+    },
 
     // ── Phase 5: HOD Settings ─────────────────────────────────────────────────
     getHODSettings: () => request('GET', '/hod/settings').then(r => r?.data ?? r),
@@ -169,14 +189,25 @@ function createRealService() {
     resetTeacherPassword: (teacherId, newPassword) =>
       request('POST', `/hod/teachers/${teacherId}/reset-password`, { newPassword }).then(r => r?.data ?? r),
     getDepartmentTeachers: (params = {}) => request('GET', '/hod/teachers', undefined, params).then(r => r?.data ?? r),
+    getTeacherSubmissionTrends: () =>
+       request('GET', '/hod/teachers/submissions/trends').then(r => r?.data ?? r),
     impersonateTeacher: (teacherId, body = {}) =>
       request('POST', `/hod/impersonate/${teacherId}`, body).then(r => r?.data ?? r),
     stopImpersonation: () => request('POST', '/hod/impersonate/stop').then(r => r?.data ?? r),
     getActiveImpersonations: () => request('GET', '/hod/impersonate/active').then(r => r?.data ?? r),
     getStudentAcademicHistory: (studentId) =>
        request('GET', `/hod/students/${studentId}/academic-history`).then(r => r?.data ?? r),
-    getAllAcademicYears: () => request('GET', '/academic/years').then(r => r?.data ?? r),
-   };
- }
+    getComplianceCohortPerformance: () =>
+       request('GET', '/hod/compliance/cohort-performance').then(r => r?.data ?? r),
+    getComplianceTimeline: () =>
+       request('GET', '/hod/compliance/timeline').then(r => r?.data ?? r),
+    getAllAcademicYears: () =>
+       request('GET', '/hod/academic-years').then(r => r?.data ?? r),
+    resolveAlert: (alertId) =>
+       request('POST', `/hod/intervention-alerts/${alertId}/resolve`).then(r => r?.data ?? r),
+    addCounselingNote: ({ alertId, text }) =>
+       request('POST', `/hod/intervention-alerts/${alertId}/notes`, { text }).then(r => r?.data ?? r),
+  };
+}
 
-export const hodService = USE_MOCK ? mockHodService : createRealService();
+export const hodService = createRealService();

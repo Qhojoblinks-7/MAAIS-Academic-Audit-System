@@ -21,7 +21,7 @@ export function NotificationsPage() {
           return;
         }
         
-        const unread = await notification.getUnread(userId);
+        const unread = await notification.getUnread();
         setNotifications(unread || []);
       } catch (err) {
         console.error('Failed to fetch notifications:', err);
