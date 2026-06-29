@@ -7,6 +7,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
 import { useUI } from '../../context/UIContext';
 import { useNavigate } from 'react-router-dom';
@@ -126,7 +127,10 @@ const handleAuditTrailClick = () => {
     };
 
  const handleCommitChanges = async () => {
-      if (isTermFinalized) return;
+      if (isTermFinalized) {
+        toast.info('Unlock the term first before committing changes.');
+        return;
+      }
 
       try {
         const submissionDeadline = `${deadlineDate}T${deadlineTime}:00`;
@@ -144,10 +148,11 @@ const handleAuditTrailClick = () => {
           ...initialState,
           ...payload,
         });
-        alert('Changes committed successfully!');
+        toast.success('Changes committed successfully!');
       } catch (error) {
         console.error('Failed to commit changes:', error);
-        alert('Failed to commit changes. Please try again.');
+        const reason = error?.response?.data?.freezeReason || error?.message || 'Please try again.';
+        toast.error(`Failed to commit changes: ${reason}`);
       }
      };
 
@@ -224,20 +229,25 @@ const handleAuditTrailClick = () => {
                    >
                      Abort
                    </button>
-                    <button 
-                      onClick={() => {
-                        if (activeTerm?.id) {
-                          lockTermMutation.mutate(activeTerm.id, {
-                            onSuccess: () => {
-                              setIsTermFinalized(true);
-                              setShowSealConfirm(false);
-                            },
-                          });
-                        } else {
-                          setIsTermFinalized(true);
-                          setShowSealConfirm(false);
-                        }
-                      }}
+                     <button 
+                       onClick={() => {
+                         if (activeTerm?.id) {
+                           lockTermMutation.mutate(activeTerm.id, {
+                             onSuccess: () => {
+                               setIsTermFinalized(true);
+                               setShowSealConfirm(false);
+                               toast.success('Term sealed successfully. Grading is now locked.');
+                             },
+                             onError: (error) => {
+                               const reason = error?.response?.data?.freezeReason || error?.message || 'Please try again.';
+                               toast.error(`Failed to seal term: ${reason}`);
+                             },
+                           });
+                         } else {
+                           setIsTermFinalized(true);
+                           setShowSealConfirm(false);
+                         }
+                       }}
                       className="flex-1 py-4 bg-rose-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-rose-900/20 hover:bg-rose-700 transition-all"
                     >
                       {lockTermMutation.isPending ? 'Sealing...' : 'Finalize Term'}
@@ -561,15 +571,27 @@ const handleAuditTrailClick = () => {
                  <Lock size={200} />
                </div>
                
-               <div className="relative z-10">
-                 <div className="w-16 h-16 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[1.5rem] flex items-center justify-center mb-8">
-                   {isTermFinalized ? <Lock className="text-rose-400" size={32} /> : <Unlock className="text-emerald-400" size={32} />}
-                 </div>
-                 
-                 <h3 className="text-2xl font-black text-white italic font-display tracking-tight leading-none mb-3">Terminal Validation Lock</h3>
-                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed mb-10">
-                   Encrypt and freeze the database for report generation. Once locked, no teacher can modify marks.
-                 </p>
+                <div className="relative z-10">
+                  <div className="flex items-start justify-between mb-8">
+                    <div className="w-16 h-16 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[1.5rem] flex items-center justify-center">
+                      {isTermFinalized ? <Lock className="text-rose-400" size={32} /> : <Unlock className="text-emerald-400" size={32} />}
+                    </div>
+                    <span className={cn(
+                      "text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-lg border",
+                      isTermFinalized 
+                        ? "bg-rose-500/20 text-rose-300 border-rose-400/30 animate-pulse" 
+                        : "bg-emerald-500/20 text-emerald-300 border-emerald-400/30"
+                    )}>
+                      {isTermFinalized ? 'TERM LOCKED' : 'TERM UNLOCKED'}
+                    </span>
+                  </div>
+                  
+                  <h3 className="text-2xl font-black text-white italic font-display tracking-tight leading-none mb-3">Terminal Validation Lock</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed mb-10">
+                    {isTermFinalized 
+                      ? 'Grading is suspended. No teacher can modify marks. Use Emergency Unlock to restore access.' 
+                      : 'Encrypt and freeze the database for report generation. Once locked, no teacher can modify marks.'}
+                  </p>
                  
                  <div className="space-y-6 mb-12">
                    <div className="flex justify-between items-end">
@@ -605,18 +627,26 @@ const handleAuditTrailClick = () => {
 
                   <button 
                    onClick={() => {
-                     if (isTermFinalized) {
-                       if (activeTerm?.id) {
-                         unlockTermMutation.mutate(activeTerm.id, {
-                           onSuccess: () => setIsTermFinalized(false),
-                         });
-                       } else {
-                         setIsTermFinalized(false);
-                       }
-                     } else {
-                       setShowSealConfirm(true);
-                     }
-                   }}
+                      if (isTermFinalized) {
+                        if (activeTerm?.id) {
+                          unlockTermMutation.mutate(activeTerm.id, {
+                            onSuccess: () => {
+                              setIsTermFinalized(false);
+                              toast.success('Term unlocked. Teachers can now modify grades.');
+                            },
+                            onError: (error) => {
+                              const reason = error?.response?.data?.freezeReason || error?.message || 'Please try again.';
+                              toast.error(`Failed to unlock term: ${reason}`);
+                            },
+                          });
+                        } else {
+                          setIsTermFinalized(false);
+                          toast.success('Term unlocked. Teachers can now modify grades.');
+                        }
+                      } else {
+                        setShowSealConfirm(true);
+                      }
+                    }}
                   className={cn(
                     "w-full py-5 rounded-[2rem] text-[11px] font-black uppercase tracking-widest transition-all shadow-2xl flex items-center justify-center gap-3",
                     isTermFinalized 
