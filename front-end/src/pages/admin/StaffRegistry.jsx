@@ -305,8 +305,8 @@ export function StaffRegistry() {
       </div>
 
       {/* Registry Table */}
-      <div className="flex-1 overflow-auto no-scrollbar">
-        <Table>
+      <div className="flex-1 overflow-auto no-scrollbar scrollbar-hide">
+        <Table containerClassName="overflow-visible">
           <TableHeader className="sticky top-0 z-10">
             <TableRow className="bg-slate-50/80 backdrop-blur-md border-b border-slate-200">
               <TableHead className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Full Name / ID</TableHead>
@@ -476,7 +476,7 @@ export function StaffRegistry() {
               </div>
 
               {/* Profile Body */}
-              <div className="flex-1 overflow-y-auto p-8 space-y-10 no-scrollbar">
+               <div className="flex-1 overflow-y-auto p-8 space-y-10 no-scrollbar scrollbar-hide">
                 {/* Status Command */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-5 bg-slate-50 border border-slate-200 rounded-3xl">

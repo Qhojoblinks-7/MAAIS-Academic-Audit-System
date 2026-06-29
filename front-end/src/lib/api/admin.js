@@ -24,6 +24,8 @@ export const adminApi = {
   createSubject: (dto) => api.post('/academic/subjects', dto),
   getAllSubjects: () => api.get('/academic/subjects'),
   createClass: (dto) => api.post('/academic/classes', dto),
+  updateClass: (id, dto) => api.patch(`/academic/classes/${id}`, dto),
+  deleteClass: (id) => api.delete(`/academic/classes/${id}`),
   getAllClasses: () => api.get('/academic/classes'),
   assignHOD: (deptId, staffId) => api.patch(`/admin/departments/${deptId}/hod`, { staffId }),
   freezeDepartment: (deptId) => api.post(`/admin/departments/${deptId}/freeze`),
@@ -38,6 +40,7 @@ export const adminApi = {
   assignClassTeacher: (id, dto) => api.patch(`/academic/classes/${id}/teacher`, dto),
   assignTeacher: (dto) => api.post('/academic/assignments', dto),
   getTeacherAssignments: (teacherId) => api.get(`/academic/assignments/teacher/${teacherId}`),
+  getClassAssignments: (classId) => api.get(`/academic/assignments/class/${classId}`),
   getMyAssignments: () => api.get('/academic/my-assignments'),
 
   // ── Reports ────────────────────────────────────────────────────────────────
@@ -51,12 +54,21 @@ export const adminApi = {
     api.get(`/reports/students/${studentId}/transcript`),
 
   // ── Archive / Vault ────────────────────────────────────────────────────────
-  promoteStudent: (dto) => api.post('/archive/promote', dto),
-  searchVault: (query) => api.get('/archive/vault/search', { params: query }),
-  getAcademicYears: () => api.get('/academic/years'),
-  getArchiveStats: () => api.get('/archive/stats'),
-  lockTerm: (id) => api.patch(`/archive/terms/${id}/lock`),
-  getDatabaseHealth: () => api.get('/archive/health'),
+   promoteStudent: (dto) => api.post('/archive/promote', dto),
+   promoteLevel: (dto) => api.post('/archive/promote', dto),
+   searchVault: (query) => api.get('/archive/vault/search', { params: query }),
+   getAcademicYears: () => api.get('/academic/years'),
+   getArchiveStats: () => api.get('/archive/stats'),
+   lockTerm: (id) => api.patch(`/archive/terms/${id}/lock`),
+   getDatabaseHealth: () => api.get('/archive/health'),
+
+   archiveYear: (yearId) => api.post(`/archive/years/${yearId}/archive`),
+   transferStudents: ({ sourceClassId, targetClassId, studentIds }) =>
+     api.post('/archive/classes/transfer', { sourceClassId, targetClassId, studentIds }),
+   updateClassCapacity: (classId, capacity) =>
+     api.patch(`/archive/classes/${classId}/capacity`, { capacity }),
+   rebalanceHouses: (classId) => api.post(`/archive/classes/${classId}/rebalance`),
+   dissolveClass: (classId) => api.delete(`/academic/classes/${classId}`),
 
   // ── Communications ─────────────────────────────────────────────────────────
   sendNotification: (dto) => api.post('/comms/notify', dto),
@@ -153,8 +165,9 @@ export const adminApi = {
   deleteApproval: (id) => api.delete(`/approvals/${id}`),
 
   // ── Grading Rules ──────────────────────────────────────────────────────────
-  getGradingRules: (termId) => api.get('/grading/rules', { params: { termId } }),
-  updateGradingRules: (body) => api.put('/grading/rules', body),
+   getGradingRules: (termId) => api.get('/grading/rules', { params: { termId } }),
+   updateGradingRules: (body) => api.put('/grading/rules', body),
+   getComplianceWarnings: () => api.get('/grading/compliance/warnings'),
 
   // ── Reports (Admin Generation) ─────────────────────────────────────────────
   getStudentsForReportGeneration: (query) => api.get('/reports/generation/students', { params: query }),
@@ -170,14 +183,17 @@ export const adminApi = {
    toggleSystemFreeze: (enabled, reason) => api.post('/admin/settings/freeze', { enabled, reason }),
    updateAdminCredentials: (body) => api.post('/admin/settings/credentials', body),
 
- resetStaffCredentials: (staffId) => api.post(`/admin/staff/${staffId}/reset-credentials`, {}),
+resetStaffCredentials: (staffId) => api.post(`/admin/staff/${staffId}/reset-credentials`, {}),
 
-   // ── Strategy Pulse ─────────────────────────────────────────────────────────
-   uploadStrategyPulse: (deptId) => api.post('/admin/strategy-pulse', { departmentId: deptId }),
+  // ── Curriculum Mapping ───────────────────────────────────────────────────────
+  deployCurriculumMapping: (mappings) => api.post('/academic/curriculum/deploy', { mappings }),
 
-   // ── Archive (Admin) ────────────────────────────────────────────────────────
-   runPromotion: (dto) => api.post('/archive/promote', dto),
-   unlockTerm: (id) => api.patch(`/archive/terms/${id}/unlock`),
+  // ── Strategy Pulse ───────────────────────────────────────────────────────────
+  uploadStrategyPulse: (deptId) => api.post('/admin/strategy-pulse', { departmentId: deptId }),
+
+  // ── Archive (Admin) ─────────────────────────────────────────────────────────
+  runPromotion: (dto) => api.post('/archive/promote', dto),
+  unlockTerm: (id) => api.post(`/hod/unlock-matrix/${id}`),
 };
 
 export default adminApi;

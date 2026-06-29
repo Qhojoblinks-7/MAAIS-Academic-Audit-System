@@ -246,6 +246,22 @@ export function useCreateClass() {
   });
 }
 
+export function useUpdateClass() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, dto }) => adminApi.updateClass(id, dto),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'academic'] }),
+  });
+}
+
+export function useDeleteClass() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => adminApi.deleteClass(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'academic'] }),
+  });
+}
+
 export function useAssignClassTeacher() {
   const qc = useQueryClient();
   return useMutation({
@@ -259,6 +275,15 @@ export function useAssignTeacher() {
   return useMutation({
     mutationFn: (dto) => adminApi.assignTeacher(dto),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'academic'] }),
+  });
+}
+
+export function useClassAssignments(classId) {
+  return useQuery({
+    queryKey: ['admin', 'academic', 'assignments', classId],
+    queryFn: () => adminApi.getClassAssignments(classId),
+    enabled: !!classId,
+    staleTime: 1000 * 60 * 5,
   });
 }
 
@@ -595,6 +620,14 @@ export function useUpdateGradingRules() {
   });
 }
 
+export function useComplianceWarnings() {
+  return useQuery({
+    queryKey: ['admin', 'grading', 'compliance'],
+    queryFn: adminApi.getComplianceWarnings,
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
 // ── Report Generation (Admin) ─────────────────────────────────────────────────
 export function useStudentsForReportGeneration(query) {
   return useQuery({
@@ -690,6 +723,85 @@ export function useUnlockTerm() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin', 'academic'] });
       qc.invalidateQueries({ queryKey: ['admin', 'archive'] });
+    },
+  });
+}
+
+// ── Year Group Actions ───────────────────────────────────────────────────────
+export function usePromoteLevel() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (dto) => adminApi.promoteLevel(dto),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'archive'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'students'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'academic'] });
+    },
+  });
+}
+
+export function useArchiveYear() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (yearId) => adminApi.archiveYear(yearId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'archive'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'students'] });
+    },
+  });
+}
+
+// ── Classroom Actions ───────────────────────────────────────────────────────
+export function useTransferStudents() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (dto) => adminApi.transferStudents(dto),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'archive'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'students'] });
+    },
+  });
+}
+
+export function useUpdateClassCapacity() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ classId, capacity }) => adminApi.updateClassCapacity(classId, capacity),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'academic'] });
+    },
+  });
+}
+
+export function useRebalanceHouses() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (classId) => adminApi.rebalanceHouses(classId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'academic'] });
+    },
+  });
+}
+
+export function useDissolveClass() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (classId) => adminApi.dissolveClass(classId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'academic'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'students'] });
+    },
+  });
+}
+
+// ── Curriculum Mapping ───────────────────────────────────────────────────────────
+export function useDeployCurriculumMapping() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (mappings) => adminApi.deployCurriculumMapping(mappings),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'academic'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'timetable'] });
     },
   });
 }

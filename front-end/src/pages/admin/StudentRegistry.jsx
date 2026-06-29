@@ -7,6 +7,7 @@ import {
    MoreVertical, GraduationCap,
    HeartPulse, Phone, MessageSquare, Activity,
    BarChart3, AlertCircle, Users, CheckCircle,
+   Flag, Shield, ShieldCheck, AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
@@ -96,7 +97,7 @@ const StudentDossier = ({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-8 bg-slate-50">
+      <div className="flex-1 overflow-y-auto p-8 bg-slate-50 scrollbar-hide">
         {activeTab === 'Academic' && (
           <div className="space-y-6">
             <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
@@ -570,35 +571,6 @@ export const StudentRegistry = () => {
     }
   };
 
-  const displayStudents = useMemo(() => students.map((s) => {
-    const parentLink = s.parentLinks?.[0];
-    const grades = s.grades || [];
-    const avgGrade = grades.length > 0 
-      ? Math.round(grades.reduce((sum, g) => sum + (g.totalScore || g.score || 0), 0) / grades.length) 
-      : 0;
-    return {
-      id: s.id || s.userId,
-      name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.user?.email || 'Unknown',
-      indexNumber: s.indexNumber,
-      dob: s.dateOfBirth,
-      program: s.currentClass?.name || s.department?.name || 'General',
-      currentClassId: s.currentClassId,
-      averageGrade: avgGrade,
-      atRisk: avgGrade < 50,
-      gender: s.gender === 'MALE' ? 'Male' : s.gender === 'FEMALE' ? 'Female' : 'N/A',
-      subjects: grades,
-      email: s.user?.email || s.email,
-      phone: s.user?.phone || s.phone,
-      role: s.user?.role || s.role,
-      emergencyContact: parentLink ? {
-        name: `${parentLink.parent?.firstName || ''} ${parentLink.parent?.lastName || ''}`.trim() || 'Unknown',
-        relation: parentLink.relationship || 'Guardian',
-      } : null,
-      healthNotes: s.bio || '',
-      disciplinaryNotes: '',
-    };
-  }), [students]);
-
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProgram, setSelectedProgram] = useState('All');
   const [viewMode, setViewMode] = useState('Academic');
@@ -614,13 +586,46 @@ export const StudentRegistry = () => {
     firstName: '', lastName: '', indexNumber: '', gender: 'MALE', dateOfBirth: '', email: '', classId: '',
   });
   const [creatingStudent, setCreatingStudent] = useState(false);
-  
-  // CSSPS Upload states
+  const [openKebabId, setOpenKebabId] = useState(null);
+  const [studentAtRisk, setStudentAtRisk] = useState({});
+  const [studentFunding, setStudentFunding] = useState({});
+  const [adminPassword, setAdminPassword] = useState('');
   const [csspsFile, setCsspsFile] = useState(null);
   const [csspsPreview, setCsspsPreview] = useState([]);
   const [csspsError, setCsspsError] = useState('');
   const [isProcessingCssps, setIsProcessingCssps] = useState(false);
   const [importResults, setImportResults] = useState(null);
+
+  const displayStudents = useMemo(() => students.map((s) => {
+    const parentLink = s.parentLinks?.[0];
+    const grades = s.grades || [];
+    const avgGrade = grades.length > 0 
+      ? Math.round(grades.reduce((sum, g) => sum + (g.totalScore || g.score || 0), 0) / grades.length) 
+      : 0;
+    const baseAtRisk = avgGrade < 50;
+    return {
+      id: s.id || s.userId,
+      name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.user?.email || 'Unknown',
+      indexNumber: s.indexNumber,
+      dob: s.dateOfBirth,
+      program: s.currentClass?.name || s.department?.name || 'General',
+      currentClassId: s.currentClassId,
+      averageGrade: avgGrade,
+      atRisk: studentAtRisk[s.id] ?? baseAtRisk,
+      fundingStatus: studentFunding[s.id] || s.feesStatus || 'Free SHS',
+      gender: s.gender === 'MALE' ? 'Male' : s.gender === 'FEMALE' ? 'Female' : 'N/A',
+      subjects: grades,
+      email: s.user?.email || s.email,
+      phone: s.user?.phone || s.phone,
+      role: s.user?.role || s.role,
+      emergencyContact: parentLink ? {
+        name: `${parentLink.parent?.firstName || ''} ${parentLink.parent?.lastName || ''}`.trim() || 'Unknown',
+        relation: parentLink.relationship || 'Guardian',
+      } : null,
+      healthNotes: s.bio || '',
+      disciplinaryNotes: '',
+    };
+  }), [students, studentAtRisk, studentFunding]);
 
   const selectedStudent = useMemo(() => 
     displayStudents.find(s => s.id === selectedStudentId), 
@@ -664,9 +669,14 @@ export const StudentRegistry = () => {
       if (action === 'export-all') {
         toast.success('Generating Global Institutional Dossier...');
       } else if (action === 'delete-student' && selectedStudentId) {
+        if (!adminPassword || adminPassword.length < 4) {
+          toast.error('Invalid administrative password override');
+          return;
+        }
         await deactivateUserMutation.mutateAsync(selectedStudentId);
-        toast.success('Student deactivated from registry');
+        toast.success('Student record purged from registry');
         setSelectedStudentId(null);
+        setAdminPassword('');
       } else if (action === 'batch-reports') {
         toast.success('Generating Terminal Reports for Category...');
       }
@@ -677,6 +687,40 @@ export const StudentRegistry = () => {
 
   const executeSensitiveAction = (action) => {
     setShowReverification({ active: true, action });
+  };
+
+  const handleKebabAction = (studentId, action) => {
+    setOpenKebabId(null);
+    switch (action) {
+      case 'dossier':
+        setSelectedStudentId(studentId);
+        break;
+      case 'toggle-risk':
+        setStudentAtRisk(prev => {
+          const current = prev[studentId];
+          const next = current === undefined ? true : !current;
+          const newState = { ...prev, [studentId]: next };
+          toast.info(next ? 'Academic risk flagged' : 'Academic risk cleared');
+          return newState;
+        });
+        break;
+      case 'cycle-funding':
+        setStudentFunding(prev => {
+          const current = prev[studentId] || 'Free SHS';
+          const cycle = ['Free SHS', 'Fully Funded', "Gov't Covered"];
+          const idx = cycle.indexOf(current);
+          const next = cycle[(idx + 1) % cycle.length];
+          toast.success(`Funding updated to ${next}`);
+          return { ...prev, [studentId]: next };
+        });
+        break;
+      case 'purge':
+        executeSensitiveAction('delete-student');
+        setSelectedStudentId(studentId);
+        break;
+      default:
+        break;
+    }
   };
 
   const handleCreateStudent = async () => {
@@ -939,9 +983,9 @@ export const StudentRegistry = () => {
           </div>
       </div>
 
-<div className="flex-1 overflow-y-auto p-8 relative">
+      <div className="flex-1 overflow-y-auto p-8 relative scrollbar-hide">
         <Card>
-          <Table>
+          <Table containerClassName="overflow-visible">
             <TableHeader>
               <TableRow className="bg-slate-50/80 border-b border-slate-100">
                 <TableHead className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Index / Name</TableHead>
@@ -972,9 +1016,25 @@ export const StudentRegistry = () => {
                        {stu.averageGrade}%
                      </Badge>
                   </TableCell>
-                  <TableCell className="px-8 py-5 text-right">
-                     <button className="p-3 bg-slate-50 text-slate-400 hover:bg-slate-900 hover:text-white rounded-xl transition-all"><MoreVertical size={18} /></button>
-                  </TableCell>
+                   <TableCell className="px-8 py-5 text-right">
+                      <div className="relative inline-block">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setOpenKebabId(openKebabId === stu.id ? null : stu.id); }}
+                          className="p-3 bg-slate-50 text-slate-400 hover:bg-slate-900 hover:text-white rounded-xl transition-all"
+                        >
+                          <MoreVertical size={18} />
+                        </button>
+                        {openKebabId === stu.id && (
+                          <div className="absolute right-0 top-12 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1">
+                            <button onClick={() => handleKebabAction(stu.id, 'dossier')} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><FileText size={12} className="text-blue-500" /> View Full Dossier</button>
+                            <button onClick={() => handleKebabAction(stu.id, 'toggle-risk')} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><AlertTriangle size={12} className={cn("text-amber-500", stu.atRisk && "fill-amber-500")} /> {stu.atRisk ? 'Clear Academic Risk' : 'Flag Academic Risk'}</button>
+                            <button onClick={() => handleKebabAction(stu.id, 'cycle-funding')} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><ShieldCheck size={12} className="text-emerald-600" /> Funding: {stu.fundingStatus}</button>
+                            <div className="h-px bg-slate-100 my-1" />
+                            <button onClick={() => handleKebabAction(stu.id, 'purge')} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2"><Trash2 size={12} /> Purge Student Record</button>
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -999,20 +1059,31 @@ export const StudentRegistry = () => {
       </AnimatePresence>
 
       <AnimatePresence>
-       {showReverification.active && (
-            <div className="fixed inset-0 z-[300] flex items-center justify-center p-6">
-                <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" />
-                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-10 text-center">
-                    <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-6"><Lock size={32} /></div>
-                    <h3 className="text-2xl font-black italic font-display text-slate-900 mb-2">Confirm Action</h3>
-                    <p className="text-[13px] text-slate-600 mb-8">This action requires administrative authorization. Please confirm to proceed.</p>
-                    <div className="flex gap-3">
-                       <button onClick={() => setShowReverification({ active: false, action: null })} className="flex-1 py-4 bg-slate-50 rounded-xl text-[10px] font-black uppercase tracking-widest">Abort</button>
-                       <button onClick={confirmVerification} className="flex-1 py-4 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Authorize</button>
-                    </div>
-                </motion.div>
-            </div>
-          )}
+        {showReverification.active && (
+             <div className="fixed inset-0 z-[300] flex items-center justify-center p-6">
+                 <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" />
+                 <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-10 text-center">
+                     <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-6"><Lock size={32} /></div>
+                     <h3 className="text-2xl font-black italic font-display text-slate-900 mb-2">Confirm Action</h3>
+                     <p className="text-[13px] text-slate-600 mb-6">This action requires administrative authorization. Please confirm to proceed.</p>
+                     {showReverification.action === 'delete-student' && (
+                       <div className="mb-6">
+                         <input
+                           type="password"
+                           placeholder="Enter admin password override"
+                           value={adminPassword}
+                           onChange={(e) => setAdminPassword(e.target.value)}
+                           className="w-full px-4 py-3 border border-slate-200 rounded-xl text-[11px] font-bold text-center outline-none focus:ring-2 focus:ring-rose-500"
+                         />
+                       </div>
+                     )}
+                     <div className="flex gap-3">
+                        <button onClick={() => { setShowReverification({ active: false, action: null }); setAdminPassword(''); }} className="flex-1 py-4 bg-slate-50 rounded-xl text-[10px] font-black uppercase tracking-widest">Abort</button>
+                        <button onClick={confirmVerification} className="flex-1 py-4 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Authorize</button>
+                     </div>
+                 </motion.div>
+             </div>
+           )}
 {isBatchUploading && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
              <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setIsBatchUploading(false)} />
@@ -1043,7 +1114,7 @@ export const StudentRegistry = () => {
                    </div>
 
                    {csspsPreview.length > 0 && (
-                     <div className="mb-6 max-h-64 overflow-y-auto border border-slate-100 rounded-2xl p-4">
+                      <div className="mb-6 max-h-64 overflow-y-auto border border-slate-100 rounded-2xl p-4 scrollbar-hide">
                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Preview ({csspsPreview.length} records)</p>
                        <div className="space-y-1">
                          {csspsPreview.slice(0, 5).map((record, i) => (
