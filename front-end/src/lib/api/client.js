@@ -54,8 +54,16 @@ async function getRefreshTokenLock() {
       };
 
       // Atomic commit to storage layers
+      localStorage.setItem('auth_token', payload.accessToken);
       localStorage.setItem('accessToken', payload.accessToken);
       localStorage.setItem('refreshToken', payload.refreshToken);
+      localStorage.setItem('userId', userId);
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('auth_token', payload.accessToken);
+        sessionStorage.setItem('accessToken', payload.accessToken);
+        sessionStorage.setItem('refreshToken', payload.refreshToken);
+        sessionStorage.setItem('userId', userId);
+      }
 
       return payload;
     } catch {
@@ -120,10 +128,16 @@ async function request(endpoint, options = {}) {
         credentials: 'omit',
       });
     } else {
-      // Complete cleanup upon terminal validation breakdown
+      localStorage.removeItem('auth_token');
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('userId');
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem('auth_token');
+        sessionStorage.removeItem('accessToken');
+        sessionStorage.removeItem('refreshToken');
+        sessionStorage.removeItem('userId');
+      }
       window.dispatchEvent(new Event('auth:logout'));
     }
   }

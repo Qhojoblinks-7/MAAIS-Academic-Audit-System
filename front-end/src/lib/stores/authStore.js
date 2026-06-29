@@ -47,6 +47,7 @@ const useAuthStore = create((set) => ({
   },
 
   setTokens: (accessToken, refreshToken) => {
+    localStorage.setItem('auth_token', accessToken);
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
     set({ accessToken, refreshToken });
@@ -55,9 +56,18 @@ const useAuthStore = create((set) => ({
   setLoading: (loading) => set({ isLoading: loading }),
 
   logout: () => {
+    localStorage.removeItem('auth_token');
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    localStorage.removeItem('userId');
     localStorage.removeItem('user');
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem('auth_token');
+      sessionStorage.removeItem('accessToken');
+      sessionStorage.removeItem('refreshToken');
+      sessionStorage.removeItem('userId');
+      sessionStorage.removeItem('user');
+    }
     set({ user: null, accessToken: null, refreshToken: null });
   },
 }));

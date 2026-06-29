@@ -22,7 +22,13 @@ export function setAuthToken(token) {
 
 export function clearAuthToken() {
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+  localStorage.removeItem('userId');
   if (typeof sessionStorage !== 'undefined') {
     sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem('accessToken');
+    sessionStorage.removeItem('refreshToken');
+    sessionStorage.removeItem('userId');
   }
 }
