@@ -125,24 +125,25 @@ const handleAuditTrailClick = () => {
       }
     };
 
-const handleCommitChanges = async () => {
+ const handleCommitChanges = async () => {
       if (isTermFinalized) return;
 
       try {
-const payload = {
-           caWeight,
-           examWeight,
-           boundaries,
-           normalizationEnabled,
-           departmentalOverrideEnabled,
-           departmentOverrides,
-           deadlineDate,
-           deadlineTime
-         };
+        const submissionDeadline = `${deadlineDate}T${deadlineTime}:00`;
+
+        const payload = {
+          caWeight,
+          examWeight,
+          normalizationEnabled,
+          submissionDeadline,
+        };
 
         await updateGradingRulesMutation.mutateAsync(payload);
 
-        setInitialState(payload);
+        setInitialState({
+          ...initialState,
+          ...payload,
+        });
         alert('Changes committed successfully!');
       } catch (error) {
         console.error('Failed to commit changes:', error);
