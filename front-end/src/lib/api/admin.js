@@ -164,10 +164,11 @@ export const adminApi = {
   resolveApproval: (id, dto) => api.patch(`/approvals/${id}/resolve`, dto),
   deleteApproval: (id) => api.delete(`/approvals/${id}`),
 
-  // ── Grading Rules ──────────────────────────────────────────────────────────
-   getGradingRules: (termId) => api.get('/grading/rules', { params: { termId } }),
-   updateGradingRules: (body) => api.put('/grading/rules', body),
-   getComplianceWarnings: () => api.get('/grading/compliance/warnings'),
+   // ── Grading Rules ──────────────────────────────────────────────────────────
+    getGradingRules: (termId) => api.get('/grading/rules', { params: { termId } }),
+    updateGradingRules: (body) => api.put('/grading/rules', body),
+    getComplianceWarnings: () => api.get('/grading/compliance/warnings'),
+    getTermSummary: (termId) => api.get(`/grading/term-summary/${termId}`),
 
   // ── Reports (Admin Generation) ─────────────────────────────────────────────
   getStudentsForReportGeneration: (query) => api.get('/reports/generation/students', { params: query }),

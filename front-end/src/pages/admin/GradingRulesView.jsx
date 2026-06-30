@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
 import { useUI } from '../../context/UIContext';
 import { useNavigate } from 'react-router-dom';
-import { useActiveYear, useLockTerm, useUnlockTerm, useComplianceWarnings, useAllClasses, useUpdateGradingRules, useAllDepartments } from '../../lib/hooks';
+import { useActiveYear, useLockTerm, useUnlockTerm, useComplianceWarnings, useTermSummary, useAllClasses, useUpdateGradingRules, useAllDepartments } from '../../lib/hooks';
 import {
   Table,
   TableHeader,
@@ -65,9 +65,11 @@ const [showSealConfirm, setShowSealConfirm] = useState(false);
     const updateGradingRulesMutation = useUpdateGradingRules();
     const departmentsQuery = useAllDepartments();
     const complianceQuery = useComplianceWarnings();
-    
+
     const departments = departmentsQuery.data || [];
     const activeTerm = activeYearQuery.data?.terms?.find(t => t.isActive);
+
+    const termSummaryQuery = useTermSummary(activeTerm?.id);
 
 useEffect(() => {
        setInitialState({
@@ -211,16 +213,22 @@ const handleAuditTrailClick = () => {
                   This action will <span className="font-black text-rose-600">permanently freeze</span> all marks and assessments for this term. Publication protocols will trigger immediately.
                 </p>
 
-                <div className="space-y-4 mb-10">
-                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Target Term</p>
-                      <p className="text-sm font-black text-slate-900">Academic Year 2025/26 - Term 2</p>
-                   </div>
-                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Impact Radius</p>
-                      <p className="text-sm font-black text-slate-900">2,450 Transcripts & 54 Grad sheets</p>
-                   </div>
-                </div>
+                 <div className="space-y-4 mb-10">
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Target Term</p>
+                       <p className="text-sm font-black text-slate-900">
+                         {termSummaryQuery.isLoading ? 'Loading...' : termSummaryQuery.data?.termLabel || '—'}
+                       </p>
+                    </div>
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Impact Radius</p>
+                       <p className="text-sm font-black text-slate-900">
+                         {termSummaryQuery.isLoading
+                           ? 'Loading...'
+                           : `${termSummaryQuery.data?.studentCount?.toLocaleString() ?? '—'} Students & ${termSummaryQuery.data?.gradeEntryCount?.toLocaleString() ?? '—'} Grade Entries`}
+                       </p>
+                    </div>
+                 </div>
 
                 <div className="flex gap-4">
                    <button 

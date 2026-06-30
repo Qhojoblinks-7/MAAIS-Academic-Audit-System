@@ -628,6 +628,15 @@ export function useComplianceWarnings() {
   });
 }
 
+export function useTermSummary(termId) {
+  return useQuery({
+    queryKey: ['admin', 'grading', 'term-summary', termId],
+    queryFn: () => adminApi.getTermSummary(termId),
+    enabled: !!termId,
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
 // ── Report Generation (Admin) ─────────────────────────────────────────────────
 export function useStudentsForReportGeneration(query) {
   return useQuery({
