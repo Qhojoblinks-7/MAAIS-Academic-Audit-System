@@ -41,6 +41,12 @@ const DEFAULT_BOUNDARIES = [
   { id: 'b-9', min: 0, max: 39, grade: 'F9', remark: 'Fail: Poor performance; remedial sessions highly recommended.', suggestionPool: DEFAULT_REMARK_POOL.Fail },
 ];
 
+const TERM_DISPLAY = {
+  TERM_1: 'Term 1',
+  TERM_2: 'Term 2',
+  TERM_3: 'Term 3',
+};
+
 export const GradingRulesView = () => {
   const { isTermFinalized, setIsTermFinalized } = useUI();
   const [caWeight, setCaWeight] = useState(30);
@@ -662,8 +668,8 @@ const handleAuditTrailClick = () => {
                       : "bg-emerald-600 text-white shadow-emerald-900/40"
                   )}
                  >
-                   {isTermFinalized ? <Unlock size={16} /> : <Lock size={16} />}
-                   {isTermFinalized ? 'Emergency Unlock Portal' : 'Apply Final Seal (Lock Term 2)'}
+                    {isTermFinalized ? <Unlock size={16} /> : <Lock size={16} />}
+                    {isTermFinalized ? 'Emergency Unlock Portal' : `Apply Final Seal (Lock ${TERM_DISPLAY[activeTerm?.termNumber] || activeTerm?.termNumber || 'Term'})`}
                  </button>
                  
                  {isTermFinalized && (
