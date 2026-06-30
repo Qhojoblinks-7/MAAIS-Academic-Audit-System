@@ -238,7 +238,7 @@ export const ExtendedLogsView = () => {
       </div>
 
       {/* Logs Content Container */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6">
+       <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 scrollbar-hide">
         <div className="max-w-7xl mx-auto pb-24">
           {filteredLogs.length > 0 ? (
             <div className="bg-white rounded-[1.5rem] sm:rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
@@ -370,7 +370,7 @@ export const ExtendedLogsView = () => {
                             {/* Column 3: Code Payload Payload */}
                             <div className="space-y-3 md:col-span-2 lg:col-span-1">
                               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Event Meta-Payload</h4>
-                              <div className="bg-slate-900 text-emerald-400 p-4 rounded-[1.25rem] font-mono text-[10px] overflow-x-auto shadow-xl max-h-[94px]">
+                               <div className="bg-slate-900 text-emerald-400 p-4 rounded-[1.25rem] font-mono text-[10px] overflow-x-auto shadow-xl max-h-[94px] scrollbar-hide">
                                 <pre className="whitespace-pre-wrap">{JSON.stringify(log.metadata, null, 2)}</pre>
                               </div>
                             </div>

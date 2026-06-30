@@ -278,13 +278,13 @@ export function useAssignTeacher() {
   });
 }
 
-export function useClassAssignments(classId) {
-  return useQuery({
-    queryKey: ['admin', 'academic', 'assignments', classId],
-    queryFn: () => adminApi.getClassAssignments(classId),
-    enabled: !!classId,
-    staleTime: 1000 * 60 * 5,
-  });
+export function useClassAssignments(classId, track) {
+   return useQuery({
+     queryKey: ['admin', 'academic', 'assignments', classId, track],
+     queryFn: () => adminApi.getClassAssignments(classId, track),
+     enabled: !!classId,
+     staleTime: 1000 * 60 * 5,
+   });
 }
 
 // ── Reports ──────────────────────────────────────────────────────────────────

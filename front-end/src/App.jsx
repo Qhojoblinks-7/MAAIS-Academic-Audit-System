@@ -42,6 +42,7 @@ import {
   MasterTimetable,
   EventCalendarView,
   AcademicArchitect,
+  AcademicArchitectErrorBoundary,
   ReportGeneratorView,
   GradingRulesView,
   ApprovalsView,
@@ -461,8 +462,10 @@ function AppContent() {
                     <StudentTimetable />
                   ) : user?.role === "ADMIN" ? (
                     <SchedulingView />
+                  ) : user?.role === "TEACHER" ? (
+                    <TeacherTimetableView />
                   ) : (
-                    <MobileTimetableView />
+                    <SchedulingView />
                   )}
                 </RequireRole>
               }
@@ -689,7 +692,9 @@ function AppContent() {
               path="/academic-architect"
               element={
                 <RequireRole allowedRoles={["ADMIN"]}>
-                  <AcademicArchitect />
+                  <AcademicArchitectErrorBoundary>
+                    <AcademicArchitect />
+                  </AcademicArchitectErrorBoundary>
                 </RequireRole>
               }
             />

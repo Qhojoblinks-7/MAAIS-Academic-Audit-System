@@ -28,11 +28,12 @@ export function useArchiveStats() {
 }
 
 export function useSearchVault(query = {}) {
+  const hasQuery = Object.keys(query).length > 0;
   return useQuery({
     queryKey: ['archive', 'vault', 'search', query],
-    queryFn: () => archiveApi.searchVault(query).then(r => r?.data ?? r),
+    queryFn: () => hasQuery ? archiveApi.searchVault(query).then(r => r?.data ?? r) : Promise.resolve([]),
     staleTime: 1000 * 60 * 5,
-    enabled: Object.keys(query).length > 0,
+    enabled: hasQuery,
   });
 }
 

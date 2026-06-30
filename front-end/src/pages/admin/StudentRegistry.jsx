@@ -987,12 +987,13 @@ export const StudentRegistry = () => {
         <Card>
           <Table containerClassName="overflow-visible">
             <TableHeader>
-              <TableRow className="bg-slate-50/80 border-b border-slate-100">
-                <TableHead className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Index / Name</TableHead>
-                <TableHead className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Program</TableHead>
-                <TableHead className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Performance</TableHead>
-                <TableHead className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Protocol</TableHead>
-              </TableRow>
+                <TableRow className="bg-slate-50/80 border-b border-slate-100">
+                  <TableHead className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Index / Name</TableHead>
+                  <TableHead className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Program</TableHead>
+                  <TableHead className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Performance</TableHead>
+                  <TableHead className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Guardian</TableHead>
+                  <TableHead className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Protocol</TableHead>
+                </TableRow>
             </TableHeader>
             <TableBody>
               {filteredStudents.map((stu) => (
@@ -1015,8 +1016,17 @@ export const StudentRegistry = () => {
                      )}>
                        {stu.averageGrade}%
                      </Badge>
-                  </TableCell>
-                   <TableCell className="px-8 py-5 text-right">
+                   </TableCell>
+                   <TableCell className="px-6 py-5 text-center">
+                      <Badge className={cn(
+                        stu.emergencyContact
+                          ? "bg-emerald-50 text-emerald-600"
+                          : "bg-slate-100 text-slate-400"
+                      )}>
+                        {stu.emergencyContact ? 'Linked' : 'Unlinked'}
+                      </Badge>
+                   </TableCell>
+                    <TableCell className="px-8 py-5 text-right">
                       <div className="relative inline-block">
                         <button 
                           onClick={(e) => { e.stopPropagation(); setOpenKebabId(openKebabId === stu.id ? null : stu.id); }}

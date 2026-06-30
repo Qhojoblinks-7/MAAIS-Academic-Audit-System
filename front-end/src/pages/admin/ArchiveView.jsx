@@ -1,11 +1,11 @@
 ﻿import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
-import { Database, FileText, Filter, Calendar, Search, ShieldCheck, User, TrendingUp, History } from 'lucide-react';
+import { Database, FileText, Filter, Calendar, Search, ShieldCheck, User, TrendingUp, History, Printer } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer
 } from 'recharts';
-import { useArchiveStats as useAdminArchiveStats, useAcademicYears as useAdminAcademicYears, useStudentProfile, useStudentBehavior, useStudentInterventions } from '../../lib/hooks';
+import { useArchiveStats as useAdminArchiveStats, useAcademicYears as useAdminAcademicYears, useStudentProfile, useStudentBehavior, useStudentInterventions, useSearchVault } from '../../lib/hooks';
 import { SubTabSelector } from './components/SubTabSelector';
 import { PromotionTab, MaintenanceTab } from './components/ArchiveTabs';
 import { VaultHeader } from './components/VaultHeader';
@@ -32,11 +32,10 @@ export const getWAECGrade = (score) => {
   return 'F9';
 };
 
-const vaultEntries = [];
-
 export function ArchiveView() {
   const [activeSubTab, setActiveSubTab] = React.useState('VAULT');
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [searchTrigger, setSearchTrigger] = React.useState(null);
   const [selectedYear, setSelectedYear] = React.useState('2024/2025');
   const [selectedSubject, setSelectedSubject] = React.useState('Integrated Science');
   const [showCoreComparison, setShowCoreComparison] = React.useState(false);
@@ -49,11 +48,31 @@ export function ArchiveView() {
 
   const archiveStatsQuery = useAdminArchiveStats();
   const academicYearsQuery = useAdminAcademicYears();
+  const vaultSearchQuery = useSearchVault(searchTrigger || {});
 
   const archiveStats = archiveStatsQuery.data;
   const academicYears = academicYearsQuery.data || [];
+  const vaultSearchResults = vaultSearchQuery.data || [];
 
   const vaultEntries = React.useMemo(() => {
+    if (searchTrigger && vaultSearchResults.length > 0) {
+      return vaultSearchResults.map((record) => ({
+        id: record.id,
+        studentId: record.id,
+        name: record.name || `${record.firstName || ''} ${record.lastName || ''}`.trim(),
+        index: record.indexNumber || '—',
+        fromClass: record.currentClass?.level || record.fromClass || null,
+        toClass: record.toClass || null,
+        status: record.archivedAt ? 'GRADUATED' : record.status || 'Archived',
+        academicYear: record.academicYear?.label || null,
+        performedAt: record.archivedAt || record.performedAt || null,
+        department: record.department?.name || '—',
+        consistencyScore: record.consistencyScore || 'N/A',
+        history: record.grades ? record.grades.slice(0, 6).map((g) => ({ 
+          finalGrade: Math.round(g.totalScore ?? g.averageScore ?? 0) 
+        })) : [{ finalGrade: null }],
+      }));
+    }
     if (archiveStats?.recentPromotions) {
       return archiveStats.recentPromotions.map((p) => ({
         id: p.studentId || p.id,
@@ -67,9 +86,21 @@ export function ArchiveView() {
         history: p.status === 'GRADUATED' ? [{ finalGrade: 75 }] : [{ finalGrade: null }],
       }));
     }
-    if (archiveStats?.recentArchives) return archiveStats.recentArchives;
+    if (archiveStats?.recentArchives) {
+      return archiveStats.recentArchives.map((a) => ({
+        id: a.studentId || a.id,
+        name: a.studentName || 'Unknown',
+        index: a.studentIndex || '—',
+        fromClass: a.fromClass,
+        toClass: a.toClass,
+        status: a.status,
+        academicYear: a.academicYear,
+        performedAt: a.performedAt,
+        history: a.history || [{ finalGrade: null }],
+      }));
+    }
     return [];
-  }, [archiveStats]);
+  }, [archiveStats, vaultSearchResults, searchTrigger]);
 
   const selectedStudentId = selectedStudent?.id || selectedStudent?.studentId;
   const studentProfileQuery = useStudentProfile(selectedStudentId);
@@ -145,7 +176,7 @@ export function ArchiveView() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="flex-1 p-10 overflow-y-auto"
+               className="flex-1 p-10 overflow-y-auto scrollbar-hide"
             >
               <PromotionTab />
             </motion.div>
@@ -255,6 +286,12 @@ export function ArchiveView() {
                     placeholder="Lookup Student Index (e.g. 10001)..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && searchTerm.trim()) {
+                        e.preventDefault();
+                        setSearchTrigger({ indexNumber: searchTerm.trim() });
+                      }
+                    }}
                     className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all shadow-sm h-full"
                   />
                 </div>
@@ -262,7 +299,7 @@ export function ArchiveView() {
             </header>
 
             {/* Comparison Grid */}
-            <div className="flex-1 overflow-x-auto p-8 pt-4">
+            <div className="flex-1 overflow-x-auto p-8 pt-4 scrollbar-hide">
               <div className="min-w-max">
                 <Table className="border-separate border-spacing-y-4">
                   <TableHeader>
@@ -379,9 +416,9 @@ export function ArchiveView() {
                        </motion.tr>
                      )) : (
                        <TableRow>
-                         <TableCell colSpan={8} className="text-center py-12 text-slate-400 text-sm font-bold">
-                           {archiveStatsQuery.isLoading ? 'Loading archive data...' : 'No archived records found. Vault is empty.'}
-                         </TableCell>
+<TableCell colSpan={8} className="text-center py-12 text-slate-400 text-sm font-bold">
+                            {archiveStatsQuery.isLoading || vaultSearchQuery.isLoading ? 'Loading archive data...' : 'No archived records found. Vault is empty.'}
+                          </TableCell>
                        </TableRow>
                      )}
                    </TableBody>
@@ -432,7 +469,7 @@ export function ArchiveView() {
             </div>
 
             {/* Main Report Body (Full Scrollable Area) */}
-            <div className="flex-1 w-full max-w-7xl overflow-y-auto no-scrollbar relative p-6 lg:p-16 mx-auto">
+            <div className="flex-1 w-full max-w-7xl overflow-y-auto no-scrollbar relative p-6 lg:p-16 mx-auto scrollbar-hide">
               {/* Report Header & Bio */}
               <div className="flex flex-col md:justify-between md:flex-row md:items-start mb-16 gap-8">
                 <div className="flex flex-col items-center md:flex-row md:items-center gap-8 text-center md:text-left">
@@ -487,7 +524,7 @@ export function ArchiveView() {
                          <span className="text-[11px] font-black text-emerald-800 bg-emerald-100 px-4 py-1.5 rounded-full uppercase tracking-widest italic">Official Record</span>
                       </div>
                       
-<div className="p-4 overflow-x-auto no-scrollbar">
+  <div className="p-4 overflow-x-auto no-scrollbar scrollbar-hide">
                          <Table className="min-w-[600px]">
                            <TableHeader>
                              <TableRow className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50">

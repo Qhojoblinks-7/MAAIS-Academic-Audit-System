@@ -84,7 +84,7 @@ export function AuditLogsView() {
   }, [auditLogsQuery.data]);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background p-6 lg:p-12 pb-32 lg:pb-24">
+    <div className="flex-1 overflow-y-auto bg-background p-6 lg:p-12 pb-32 lg:pb-24 scrollbar-hide">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -127,7 +127,7 @@ export function AuditLogsView() {
 
         {/* Audit Log Table */}
         <Card className="rounded-[2.5rem] overflow-hidden">
-          <div className="overflow-x-auto">
+           <div className="overflow-x-auto scrollbar-hide">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/30 border-b border-border">

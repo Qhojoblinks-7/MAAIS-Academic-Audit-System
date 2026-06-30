@@ -215,7 +215,7 @@ export function CommsView() {
       {/* Main Content */}
       <div className="flex-1 overflow-hidden relative">
         {view === 'weekly' ? (
-          <div className="h-full flex flex-col p-6 overflow-auto">
+           <div className="h-full flex flex-col p-6 overflow-auto scrollbar-hide">
             <div className="min-w-[1000px] flex-1 flex flex-col">
               {/* Days Header */}
               <div className="flex border-b border-gray-200 pb-4">
@@ -357,9 +357,9 @@ export function CommsView() {
             </div>
           </div>
         ) : (
-          <div className="h-full flex flex-col p-8 overflow-y-auto">
+           <div className="h-full flex flex-col p-8 overflow-y-auto scrollbar-hide">
             <div className="max-w-3xl mx-auto w-full">
-              <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
+               <div className="flex gap-2 mb-8 overflow-x-auto pb-2 scrollbar-hide">
                 {DAYS.map(day => (
                   <button
                     key={day}
@@ -516,7 +516,7 @@ export function CommsView() {
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-8 space-y-8">
+               <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide">
                 {/* Current Materials */}
                 <div>
                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Linked Resources</h4>

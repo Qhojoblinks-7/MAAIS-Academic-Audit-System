@@ -1,0 +1,90 @@
+================================================================================
+          DETAILED GUIDE: HOW SUBJECTS ARE CREATED & IMPLEMENTED
+================================================================================
+
+This document describes both the functional interface and technical mechanisms used 
+to define, register, and allocate academic subjects inside this application.
+
+--------------------------------------------------------------------------------
+1. ARCHITECTURAL SCHEMA (UNDER-THE-HOOD)
+--------------------------------------------------------------------------------
+Every subject is represented as a structured TypeScript/JavaScript object containing
+the following core parameters:
+
+  - `id` (String): A unique identifier (e.g., "S1" for default mock items, or 
+    "S-TIMESTAMP" for dynamically spawned nodes).
+  - `name` (String): The human-readable name of the subject (e.g., "English Language").
+  - `code` (String): The institutional shorthand course code (e.g., "CORE-EN", "ELEC-PHY").
+  - `type` (String): Categorized as "Core" or "Elective".
+  - `creditHours` (Number): The weekly instructional time rating contributing to school load.
+  - `applicablePrograms` (Array of Strings): Program names (e.g., ['Science']) where 
+    this elective applies. Core subjects leave this empty as they apply globally.
+
+--------------------------------------------------------------------------------
+2. REACTIVE STATE STORAGE
+--------------------------------------------------------------------------------
+Initially, subjects were rendered statically from a mock data list. They have now
+been migrated to a fully reactive local state:
+
+  ```js
+  const [subjectsList, setSubjectsList] = useState(MOCK_SUBJECTS);
+  ```
+
+This state serves as the Single Source of Truth for the Curriculum Allocation 
+Matrix and filtering systems throughout the Academic Architect views.
+
+--------------------------------------------------------------------------------
+3. THE DYNAMIC CREATION WORKFLOW
+--------------------------------------------------------------------------------
+Administrators can register new courses directly inside the administrative interface:
+
+  1. Go to "Subject Curriculum" (/academic-architect) and select the "Subject Mapping" tab.
+  2. Click the green "+ Add Subject Unit" button on the right side of the panel header.
+  3. A custom-styled modal opens with the following interactive fields:
+     - Subject Name (e.g. "Elective Chemistry")
+     - Subject Code (e.g. "ELEC-CHEM")
+     - Subject Type Selector (Core vs. Elective)
+     - Credit Hours input
+     - Applicable Programs multi-toggle (visible only when Elective is selected)
+  4. Fill in the parameters and click "Create Subject".
+  5. The form handler handles submission, formatting inputs and appending the new 
+     object:
+     ```js
+     const handleAddSubject = (e) => {
+       e.preventDefault();
+       const newSubObj = {
+         id: `S-${Date.now()}`,
+         code: newSubCode.trim().toUpperCase(),
+         name: newSubName.trim(),
+         type: newSubType,
+         creditHours: Number(newSubCredits) || 3,
+         applicablePrograms: newSubType === 'Core' ? [] : newSubPrograms
+       };
+       setSubjectsList(prev => [...prev, newSubObj]);
+       // ...reset modal states and close...
+     };
+     ```
+
+--------------------------------------------------------------------------------
+4. MATRIX PROPAGATION & GRID ALLOCATION
+--------------------------------------------------------------------------------
+Once created, the subject immediately registers with the Curriculum matrix grid:
+
+  - Instant Row Append:
+    A new row representing the subject is appended to the bottom of the table.
+
+  - Automated Policy Verification (Core):
+    If the new subject is of type "Core", the system identifies it as globally 
+    mandatory. The switches across every classroom column are pre-selected and 
+    rendered as read-only to prevent unauthorized decertification.
+
+  - Smart Recommendation (Elective):
+    If the subject is of type "Elective", the system matches the classroom's 
+    program metadata against the subject's `applicablePrograms`. If a match is found 
+    (e.g., classroom "1 Science 3" matching program "Science"), the switch is pre-checked 
+    by default but remains fully toggleable so teachers can customize the curricula.
+
+  - Real-time Diagnostic Sync:
+    The statistics at the bottom of the page (Total Subject Logic, Weighted Unit Load) 
+    update in real-time to reflect the new curriculum specifications.
+================================================================================

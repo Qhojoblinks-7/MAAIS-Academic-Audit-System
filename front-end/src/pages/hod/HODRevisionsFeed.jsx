@@ -333,26 +333,28 @@ const sendDiscussionMessage = async () => {
               <div className="space-y-3.5">
                 <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Teacher Communication</h4>
                 
-                <div className="space-y-3 relative before:absolute before:top-2 before:bottom-2 before:left-[13px] before:w-0.5 before:bg-slate-100">
-                  {selected.history?.map((node) => (
-                    <div key={node.id} className="flex gap-3 relative z-10">
-                      <div className={cn(
-                        "w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-sm ring-4 ring-white shrink-0 mt-0.5",
-                        node.role === 'HOD' ? 'bg-amber-600' : node.role === 'TEACHER' ? 'bg-sky-600' : 'bg-slate-800'
-                      )}>
-                        {node.role[0]}
-                      </div>
-                      
-                      <div className="flex-1 bg-slate-50 border border-slate-200/60 rounded-xl p-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[11px] font-bold text-slate-800">{node.user}</span>
-                          <span className="text-[10px] text-slate-400">{formatTime(node.time)}</span>
-                        </div>
-                        <p className="text-xs text-slate-600 leading-relaxed font-mono">"{node.message}"</p>
-                      </div>
-                    </div>
-                  ))}
-                 </div>
+<div className="space-y-3 relative before:absolute before:top-2 before:bottom-2 before:left-[13px] before:w-0.5 before:bg-slate-100">
+                   {Array.isArray(selected.history) && selected.history.length > 0 ? selected.history.map((node) => (
+                     <div key={node.id} className="flex gap-3 relative z-10">
+                       <div className={cn(
+                         "w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-sm ring-4 ring-white shrink-0 mt-0.5",
+                         node.role === 'HOD' ? 'bg-amber-600' : node.role === 'TEACHER' ? 'bg-sky-600' : 'bg-slate-800'
+                       )}>
+                         {node.role[0]}
+                       </div>
+                       
+                       <div className="flex-1 bg-slate-50 border border-slate-200/60 rounded-xl p-3">
+                         <div className="flex items-center justify-between mb-1">
+                           <span className="text-[11px] font-bold text-slate-800">{node.user}</span>
+                           <span className="text-[10px] text-slate-400">{formatTime(node.time)}</span>
+                         </div>
+                         <p className="text-xs text-slate-600 leading-relaxed font-mono">"{node.message}"</p>
+                       </div>
+                     </div>
+                   )) : (
+                     <p className="text-sm text-slate-500 italic">No history available</p>
+                   )}
+                  </div>
                </div>
  
                {/* Grade Discussion Thread */}
@@ -362,9 +364,9 @@ const sendDiscussionMessage = async () => {
                      Grade Discussion
                    </h4>
                    <div className="flex items-center gap-2">
-                     <span className="text-sm text-slate-500">
-                       {selected.history?.length || 0} messages
-                     </span>
+<span className="text-sm text-slate-500">
+                        {Array.isArray(selected.history) ? selected.history.length : 0} messages
+                      </span>
                      <button
                        onClick={() => setDiscussionExpanded(!discussionExpanded)}
                        className="p-1 hover:bg-slate-100 rounded hover:text-slate-700 transition-colors"
@@ -375,14 +377,14 @@ const sendDiscussionMessage = async () => {
                  </div>
                  
 {discussionExpanded && (
-                    <div className="space-y-2">
-                      {selected.history?.length === 0 ? (
-                        <p className="text-center py-4 text-slate-500 italic">
-                          No discussion yet. Start the conversation!
-                        </p>
-                      ) : (
-                        <div className="space-y-2">
-                          {selected.history.map((msg) => (
+                     <div className="space-y-2">
+                       {!Array.isArray(selected.history) || selected.history.length === 0 ? (
+                         <p className="text-center py-4 text-slate-500 italic">
+                           No discussion yet. Start the conversation!
+                         </p>
+                       ) : (
+                         <div className="space-y-2">
+                           {selected.history.map((msg) => (
                             <div key={msg.id} className={cn(
                               "flex gap-3",
                               msg.role === 'TEACHER' ? 'flex-row' : 'flex-row-reverse'

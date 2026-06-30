@@ -444,21 +444,36 @@ export function DepartmentManagementView({
                   }}
                   className="space-y-6"
                 >
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-2">
-                      Department Name
-                    </label>
-                    <input
-                      type="text"
-                      value={spawnForm.name}
-                      onChange={(e) =>
-                        setSpawnForm({ ...spawnForm, name: e.target.value })
-                      }
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 outline-none transition-all"
-                      placeholder="Enter department name"
-                      required
-                    />
-                  </div>
+                   <div>
+                     <label className="block text-[10px] font-bold text-slate-600 mb-2">
+                       Department Name
+                     </label>
+                     <input
+                       type="text"
+                       value={spawnForm.name}
+                       onChange={(e) =>
+                         setSpawnForm({ ...spawnForm, name: e.target.value })
+                       }
+                       className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 outline-none transition-all"
+                       placeholder="Enter department name"
+                       required
+                     />
+                   </div>
+
+                   <div>
+                     <label className="block text-[10px] font-bold text-slate-600 mb-2">
+                       Initial HOD Name
+                     </label>
+                     <input
+                       type="text"
+                       value={spawnForm.hodName}
+                       onChange={(e) =>
+                         setSpawnForm({ ...spawnForm, hodName: e.target.value })
+                       }
+                       className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 outline-none transition-all"
+                       placeholder="e.g., Anthony Hackman"
+                     />
+                   </div>
 
                   <div>
                     <label className="block text-[10px] font-bold text-slate-600 mb-2">
@@ -549,7 +564,7 @@ export function DepartmentManagementView({
                   <p className="text-sm font-medium text-slate-600 leading-relaxed">
                     Select a teacher from another department to transfer to this cluster.
                   </p>
-<div className="grid grid-cols-1 gap-3 max-h-80 overflow-y-auto">
+<div className="grid grid-cols-1 gap-3 max-h-80 overflow-y-auto scrollbar-hide">
                     {transferModal?.availableStaff?.map((staff) => (
                       <button
                         key={staff.id}

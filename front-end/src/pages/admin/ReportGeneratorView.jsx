@@ -59,7 +59,7 @@ export const ReportGeneratorView = () => {
   }, [filteredReports]);
 
   return (
-    <div className="flex-1 p-8 bg-slate-50 overflow-y-auto">
+    <div className="flex-1 p-8 bg-slate-50 overflow-y-auto scrollbar-hide">
       <div className="max-w-7xl mx-auto space-y-10 pb-20">
         
         {/* Header */}
@@ -177,7 +177,7 @@ export const ReportGeneratorView = () => {
                   </div>
                </div>
 
-<div className="overflow-x-auto">
+  <div className="overflow-x-auto scrollbar-hide">
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-white border-b border-slate-100">

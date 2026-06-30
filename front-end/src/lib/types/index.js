@@ -299,7 +299,7 @@ module.exports = {
     FAILURE: 'FAILURE',
   },
   TERM_NUMBERS: { TERM_1: 'TERM_1', TERM_2: 'TERM_2', TERM_3: 'TERM_3' },
-  CLASS_LEVELS: { FORM_1: 'FORM_1', FORM_2: 'FORM_2', FORM_3: 'FORM_3' },
+  CLASS_LEVELS: { FORM_1: 'Form 1', FORM_2: 'Form 2', FORM_3: 'Form 3' },
   PROMOTION_STATUSES: {
     PROMOTED: 'PROMOTED',
     REPEATED: 'REPEATED',

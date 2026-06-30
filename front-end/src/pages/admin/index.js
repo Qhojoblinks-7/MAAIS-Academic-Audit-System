@@ -1,4 +1,5 @@
 export { AcademicArchitect } from './AcademicArchitect';
+export { AcademicArchitectErrorBoundary } from './components/AcademicErrorBoundary';
 export { AdminHome } from './AdminHome';
 export { AdminManagement } from './AdminManagement';
 export { AdminSettings } from './AdminSettings';

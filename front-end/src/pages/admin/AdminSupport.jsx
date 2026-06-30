@@ -19,7 +19,7 @@ import { cn } from '../../lib/utils';
 
 export function AdminSupport() {
   return (
-    <div className="flex-1 overflow-y-auto bg-[#F9F9F7] p-8 lg:p-12 pb-32 lg:pb-24">
+    <div className="flex-1 overflow-y-auto bg-[#F9F9F7] p-8 lg:p-12 pb-32 lg:pb-24 scrollbar-hide">
       <div className="max-w-4xl mx-auto">
         <header className="mb-12">
           <div className="flex items-center gap-4 mb-3">

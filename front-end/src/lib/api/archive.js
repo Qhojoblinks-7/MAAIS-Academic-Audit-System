@@ -6,7 +6,7 @@ export const archiveApi = {
   promoteStudent: async (studentId, academicYearId, fromClass, toClass, status, notes) =>
     api.post('/archive/promote', { studentId, academicYearId, fromClass, toClass, status, notes }),
 
-  getAcademicYears: async () => api.get('/archive/academic-years'),
+  getAcademicYears: async () => api.get('/academic/years'),
 
   getArchiveStats: async () => api.get('/archive/stats'),
 

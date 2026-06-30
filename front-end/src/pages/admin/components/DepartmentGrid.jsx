@@ -9,7 +9,8 @@ import {
   List,
   PieChart,
   ArrowRight,
-  Crown
+  Crown,
+  CheckCircle2
 } from 'lucide-react';
 import { 
   BarChart,
@@ -76,7 +77,7 @@ export function DepartmentGrid({ departments, viewType, setViewType, setSelected
       </header>
 
        <div className="flex-1 flex overflow-hidden">
-         <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+         <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-hide">
            <div className="max-w-7xl mx-auto">
              <section>
                <div className={cn(
@@ -146,6 +147,23 @@ export function DepartmentGrid({ departments, viewType, setViewType, setSelected
                         </div>
                       </div>
 
+                      {/* Compliance Checklist */}
+                      {dept.checklist && dept.checklist.length > 0 && (
+                        <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100/50">
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2">Compliance Checklist</p>
+                          <div className="space-y-1.5">
+                            {dept.checklist.slice(0, 4).map((item) => (
+                              <div key={item.id} className="flex items-center gap-2">
+                                <div className={`w-3 h-3 rounded-full border ${item.completed ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300'} flex items-center justify-center shrink-0`}>
+                                  {item.completed && <CheckCircle2 size={8} className="text-white" />}
+                                </div>
+                                <span className={`text-[9px] font-black uppercase tracking-wider ${item.completed ? 'text-slate-700' : 'text-slate-400'}`}>{item.label}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Small Progress Tracker Bar */}
                       <div className="pt-0.5">
                         <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -178,7 +196,7 @@ export function DepartmentGrid({ departments, viewType, setViewType, setSelected
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-10">
+          <div className="flex-1 overflow-y-auto p-6 space-y-10 scrollbar-hide">
             <section>
               <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.25em] mb-6 flex items-center gap-3">
                 <div className="w-6 h-[1.5px] bg-slate-200" />

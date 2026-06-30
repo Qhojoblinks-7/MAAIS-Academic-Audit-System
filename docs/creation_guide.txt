@@ -1,0 +1,67 @@
+================================================================================
+          GUIDE TO CREATING ACADEMIC STRUCTURES (YEARS, CLASSES & DEPARTMENTS)
+================================================================================
+
+This guide explains how the dynamic creation features work and how to add Year
+Groups, Classrooms, and Departments within the Administrative panel.
+
+--------------------------------------------------------------------------------
+1. HOW TO ADD A YEAR GROUP (Academic Architect)
+--------------------------------------------------------------------------------
+To establish a new academic grade level (e.g., "SHS 4"):
+  1. Navigate to "Subject Curriculum" (/academic-architect) in the sidebar.
+  2. Locate the "Institutional Blueprint" panel on the left side of the screen.
+  3. Click the "+ Add Year Group" button next to the blueprint title.
+  4. In the modal that appears:
+     - Enter the "Year Group Name" (e.g., "SHS 4").
+     - Select/toggle the programs you want associated with this level (e.g.,
+       "Science", "General Arts", "Business", "Vocational").
+  5. Click "Create Level".
+  6. The level will instantly spawn as a reactive node in the blueprint tree 
+     and automatically expand to show its associated programs.
+
+--------------------------------------------------------------------------------
+2. HOW TO ADD A CLASSROOM UNIT (Academic Architect)
+--------------------------------------------------------------------------------
+Once a Year Group and its programs exist, you can add physical classroom sections
+(e.g., "1 Science 3"):
+  1. Go to "Subject Curriculum" (/academic-architect) and expand your Year Group node.
+  2. Under the specific Program block (e.g., "Science"), click the dotted button 
+     labeled "+ Add Classroom Unit".
+  3. In the modal that appears:
+     - Enter the "Classroom Name" (e.g., "1 Science 3").
+     - Define the maximum "Capacity Load" (default is 45 students).
+     - Enter the "Initial Student Count".
+  4. Click "Add Classroom".
+  5. The classroom will immediately populate under that program, automatically
+     allocating and distributing students to the school houses (Guggisberg,
+     Aggrey, Nkrumah) and updating the Subject Curriculum Matrix table in real-time.
+
+--------------------------------------------------------------------------------
+3. HOW TO SPAWN A DEPARTMENT CLUSTER (Department Management)
+--------------------------------------------------------------------------------
+To spawn an entire academic department cluster with associated HODs:
+  1. Navigate to "Department Management" in the admin dashboard.
+  2. Click the "+ Spawn Department" button at the top right of the screen.
+  3. In the modal that appears:
+     - Enter the "Department Name" (e.g., "Vocational Department").
+     - Enter the "Initial HOD Name" (e.g., "Anthony Hackman") to assign a leader.
+     - Provide a qualitative description of the department's academic scope.
+  4. Click "Spawn Cluster".
+  5. The department is instantly created with a randomized high-fidelity color
+     theme, standard compliance checklists, auto-generated teacher profiles, and
+     added into the active school registries.
+================================================================================
+The "kebab" buttons (three-dot vertical ellipsis menus) in the class structures and year groups are contextual action points for administrative operations.
+In this system's architecture, they represent administrative controls designed for the following actions:
+1. Year Group Kebabs
+Located on the far right of each Year Group block, these are meant for broad academic level configurations:
+Level Promotion / Rollover: Programmatically rolling over students from one year group to the next (e.g., promoting SHS 1 to SHS 2).
+Program Restructuring: Adding or removing major curriculum tracks (like Business or Science) assigned to that level.
+Archiving/Deactivation: Archiving the level census data at the end of an academic year.
+2. Classroom Unit Kebabs
+Located on the right of each individual Classroom row (e.g., next to the house distribution circles), these are designed for specific section management:
+Student Transfers: Opening a portal to batch-transfer students between sister classrooms.
+Capacity Overrides: Adjusting the classroom's enrollment limits and student load thresholds in real time.
+House Rebalancing: Initiating a re-allocation of students into Guggisberg, Aggrey, and Nkrumah houses.
+Unit Dissolution: Archiving or deleting the specific class unit if it is no longer active.

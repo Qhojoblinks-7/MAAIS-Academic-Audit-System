@@ -8,8 +8,8 @@ import {
   UserPlus, Fingerprint,
   Phone, MessageSquare,
   BarChart3, AlertCircle, Mail,
-  Send, ShieldCheck, UserCheck,
-   CreditCard, Eye, EyeOff, Bell, Plus
+   Send, ShieldCheck, UserCheck,
+    CreditCard, Bell, Plus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
@@ -44,7 +44,6 @@ import { useAllParents, useCreateParent } from '../../lib/hooks';
 
 const ParentProfile = ({ parent, onClose }) => {
   const [activeTab, setActiveTab] = useState('Overview');
-  const [maskFees, setMaskFees] = useState(true);
 
   return (
     <div className="flex flex-col h-full bg-white">
@@ -85,18 +84,11 @@ const ParentProfile = ({ parent, onClose }) => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-8 bg-slate-50">
+      <div className="flex-1 overflow-y-auto p-8 bg-slate-50 scrollbar-hide">
         {activeTab === 'Overview' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Linked Households</h4>
-              <button 
-                onClick={() => setMaskFees(!maskFees)}
-                className="flex items-center gap-2 text-[10px] font-black text-emerald-600 uppercase tracking-widest"
-              >
-                {maskFees ? <Eye size={12} /> : <EyeOff size={12} />}
-                {maskFees ? 'Show Financials' : 'Mask Financials'}
-              </button>
             </div>
             <div className="space-y-4">
               {parent.wards.map((ward) => (
@@ -111,14 +103,15 @@ const ParentProfile = ({ parent, onClose }) => {
                         <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{ward.id}</p>
                       </div>
                     </div>
-                    <div className={cn(
-                      "px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest",
-                      ward.feesStatus === 'Paid' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
-                      ward.feesStatus === 'Arrears' ? "bg-rose-50 text-rose-600 border border-rose-100" :
-                      "bg-amber-50 text-amber-600 border border-amber-100"
-                    )}>
-                      {ward.feesStatus}
-                    </div>
+                     <div className={cn(
+                       "px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest",
+                       ward.feesStatus === 'Free SHS' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
+                       ward.feesStatus === 'Fully Funded' ? "bg-blue-50 text-blue-600 border border-blue-100" :
+                       ward.feesStatus === "Gov't Covered" ? "bg-indigo-50 text-indigo-600 border border-indigo-100" :
+                       "bg-amber-50 text-amber-600 border border-amber-100"
+                     )}>
+                       {ward.feesStatus}
+                     </div>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
@@ -138,7 +131,7 @@ const ParentProfile = ({ parent, onClose }) => {
                       <span className="text-[10px] font-black uppercase tracking-widest">Statement Balance</span>
                     </div>
                     <p className="text-sm font-black italic font-display text-white">
-                      GHS {maskFees ? '****.**' : ward.balance.toFixed(2)}
+                      GHS 0.00
                     </p>
                   </div>
                 </div>
@@ -383,7 +376,7 @@ export const ParentRegistry = () => {
           </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-8 relative">
+       <div className="flex-1 overflow-y-auto p-8 relative scrollbar-hide">
         <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
           <Table>
             <TableHeader>
@@ -432,16 +425,17 @@ export const ParentRegistry = () => {
                   </TableCell>
                   <TableCell className="px-6 py-5 text-center">
                     <div className="flex flex-col items-center gap-1.5">
-                       {parent.wards.map(w => (
-                         <Badge key={w.id} variant="default" className={cn(
-                           "text-[9px] font-black uppercase tracking-widest",
-                           w.feesStatus === 'Paid' ? "bg-emerald-50 text-emerald-600" :
-                           w.feesStatus === 'Arrears' ? "bg-rose-50 text-rose-600" :
-                           "bg-amber-50 text-amber-600"
-                         )}>
-                           {w.feesStatus}
-                         </Badge>
-                       ))}
+                        {parent.wards.map(w => (
+                          <Badge key={w.id} variant="default" className={cn(
+                            "text-[9px] font-black uppercase tracking-widest",
+                            w.feesStatus === 'Free SHS' ? "bg-emerald-50 text-emerald-600" :
+                            w.feesStatus === 'Fully Funded' ? "bg-blue-50 text-blue-600" :
+                            w.feesStatus === "Gov't Covered" ? "bg-indigo-50 text-indigo-600" :
+                            "bg-amber-50 text-amber-600"
+                          )}>
+                            {w.feesStatus}
+                          </Badge>
+                        ))}
                     </div>
                   </TableCell>
                   <TableCell className="px-8 py-5 text-right">
@@ -497,12 +491,12 @@ export const ParentRegistry = () => {
                          <SelectTrigger>
                            <SelectValue placeholder="Select Population" />
                          </SelectTrigger>
-                         <SelectContent>
-                           <SelectItem value="All Guardians">All Guardians</SelectItem>
-                           <SelectItem value="SHS 3 Boarder Parents">SHS 3 Boarder Parents</SelectItem>
-                           <SelectItem value="Fee Arrears Only">Fee Arrears Only</SelectItem>
-                           <SelectItem value="Day Parent Protocol">Day Parent Protocol</SelectItem>
-                         </SelectContent>
+                          <SelectContent>
+                            <SelectItem value="All Guardians">All Guardians</SelectItem>
+                            <SelectItem value="SHS 3 Boarder Parents">SHS 3 Boarder Parents</SelectItem>
+                            <SelectItem value="Gov't Funded Wards">Gov't Funded Wards</SelectItem>
+                            <SelectItem value="Day Parent Protocol">Day Parent Protocol</SelectItem>
+                          </SelectContent>
                        </Select>
                      </div>
                     <div className="space-y-4">
@@ -511,12 +505,13 @@ export const ParentRegistry = () => {
                          <SelectTrigger>
                            <SelectValue placeholder="Select Template" />
                          </SelectTrigger>
-                         <SelectContent>
-                           <SelectItem value="Custom Message">Custom Message</SelectItem>
-                           <SelectItem value="PTA Meeting Invitation">PTA Meeting Invitation</SelectItem>
-                           <SelectItem value="Terminal Report Dispatch">Terminal Report Dispatch</SelectItem>
-                           <SelectItem value="Re-opening Schedule">Re-opening Schedule</SelectItem>
-                         </SelectContent>
+                          <SelectContent>
+                            <SelectItem value="Custom Message">Custom Message</SelectItem>
+                            <SelectItem value="PTA Meeting Invitation">PTA Meeting Invitation</SelectItem>
+                            <SelectItem value="Terminal Report Dispatch">Terminal Report Dispatch</SelectItem>
+                            <SelectItem value="Re-opening Schedule">Re-opening Schedule</SelectItem>
+                            <SelectItem value="WASSCE Registration Portal Closing">WASSCE Registration Portal Closing</SelectItem>
+                          </SelectContent>
                        </Select>
                      </div>
                   </div>
@@ -563,7 +558,7 @@ export const ParentRegistry = () => {
                   <h3 className="text-3xl font-black italic font-display">PTA Executive Hub</h3>
                   <p className="text-[10px] font-black uppercase text-white/50 tracking-widest mt-2">Association Governance & Engagement Analytics</p>
                 </div>
-                <div className="flex-1 overflow-y-auto p-10">
+                 <div className="flex-1 overflow-y-auto p-10 scrollbar-hide">
                   <div className="grid grid-cols-2 gap-8 mb-10">
                     <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100">
                       <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-6">Association Leadership</h4>

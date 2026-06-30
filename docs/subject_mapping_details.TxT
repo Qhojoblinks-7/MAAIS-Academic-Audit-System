@@ -1,0 +1,73 @@
+================================================================================
+          DETAILED ARCHITECTURAL GUIDE: CURRICULUM SUBJECT MAPPING
+================================================================================
+
+This document details the inner workings of the Curriculum Allocation Matrix
+within the Academic Architect portal. It describes how subjects, credits, and
+classrooms map together dynamically.
+
+--------------------------------------------------------------------------------
+1. MATRIX CO-ORDINATES: GRID STRUCTURE
+--------------------------------------------------------------------------------
+The curriculum architect employs a two-dimensional grid to map school subjects to 
+individual classroom units in real-time:
+
+  - Rows (Y-Axis) - Subject Logic Units:
+    Each row represents a specific academic course defined in the system 
+    (e.g., "Core Mathematics", "Elective Physics", "Financial Accounting"). Each 
+    course has a distinct Code (e.g., MTH-C, PHY-E) and a Credit Hour Weight 
+    (represented by the clock icon).
+
+  - Columns (X-Axis) - Classroom Units:
+    Each column corresponds to a physical classroom section currently registered 
+    in the database (e.g., "1 Science 1", "3 Arts 2"). This list is fully dynamic; 
+    whenever an administrator creates a new classroom under any year group or 
+    program, a new column is immediately appended to this grid in real-time.
+
+--------------------------------------------------------------------------------
+2. ALLOCATION RULE SETS & AUTO-LOGIC
+--------------------------------------------------------------------------------
+To streamline registration and prevent human error, the system employs smart 
+defaults and validation rules when determining whether a subject is checked:
+
+  - Core Mandate Subjects (type: "Core"):
+    - Core subjects (such as English, Core Mathematics, and Integrated Science) are 
+      automatically allocated to EVERY single classroom.
+    - Inside the grid, their checkbox switches are pre-selected.
+    - To prevent accidental decertification of mandatory subjects, their toggles 
+      are restricted (rendered with "opacity-50 cursor-not-allowed").
+
+  - Elective / Program-Specific Subjects (type: "Elective"):
+    - Electives are program-dependent (e.g., "Physics" is relevant to Science 
+      programs, while "Cost Accounting" is relevant to Business programs).
+    - The system runs a name-based heuristic match. It checks if the classroom's 
+      name contains keywords like "science", "arts", or "business", and aligns it
+      with the subject's `applicablePrograms` metadata array.
+    - If a program match occurs, the subject is recommended and pre-selected.
+    - Unlike core subjects, elective toggles are FULLY INTERACTIVE. Administrators 
+      can click the custom-styled switches to assign or revoke elective subjects 
+      to individual classrooms dynamically.
+
+--------------------------------------------------------------------------------
+3. LIVE COMPLIANCE & VALIDATION
+--------------------------------------------------------------------------------
+At the bottom of the matrix, the interface presents a dedicated system integrity 
+panel displaying key metadata:
+
+  - Total Subject Logic: The quantity of active subjects inside the curriculum.
+  - Weighted Unit Load: The sum of Credit Hours allocated to active classes.
+  - Integrity Rating: Calculated based on conflicts or scheduling overlap 
+    ("High" is standard).
+  - Conflicting Nodes: Real-time counter monitoring errors or invalid elective 
+    assignments (should always be 0).
+
+--------------------------------------------------------------------------------
+4. STRATEGIC DEPLOYMENT ACTIONS
+--------------------------------------------------------------------------------
+  - "Auto-Sync Core": Runs a validation pass to ensure all core subjects are 
+    securely mapped across all columns.
+  - "Discard Draft": Reverts all interactive checkbox changes back to the safe, 
+    pre-configured program defaults.
+  - "Deploy Architecture": Locks in the current interactive subject map, updating 
+    class timetables and grading registers throughout the portal instantly.
+================================================================================

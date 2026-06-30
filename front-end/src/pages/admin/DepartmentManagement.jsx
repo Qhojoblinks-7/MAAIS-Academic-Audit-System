@@ -15,6 +15,7 @@ import {
   useDeleteDepartment,
   useTransferTeacher,
   useDeactivateUser,
+  useCreateStaff,
 } from "../../lib/hooks";
 
 const DEPARTMENT_COLORS = [
@@ -64,6 +65,7 @@ export function DepartmentManagement() {
   const [spawnForm, setSpawnForm] = React.useState({
     name: "",
     description: "",
+    hodName: "",
   });
   const [openKebabId, setOpenKebabId] = React.useState(null);
   const [activeOperation, setActiveOperation] = React.useState(null);
@@ -76,6 +78,7 @@ export function DepartmentManagement() {
   } = useDepartmentActions();
 
   const createDepartmentMutation = useCreateDepartment();
+  const createStaffMutation = useCreateStaff();
   const assignHODMutation = useAssignHOD();
   const deleteDepartmentMutation = useDeleteDepartment();
   const transferMutation = useTransferTeacher();
@@ -149,17 +152,50 @@ export function DepartmentManagement() {
       return;
     }
     try {
-      await createDepartmentMutation.mutateAsync({
+      const created = await createDepartmentMutation.mutateAsync({
         name: spawnForm.name,
         code: spawnForm.name.substring(0, 4).toUpperCase(),
         description: spawnForm.description || `${spawnForm.name} department covering various academic disciplines.`,
+        hodName: spawnForm.hodName || null,
       });
-      setSpawnForm({ name: "", description: "" });
+      const deptId = created?.data?.id || created?.id;
+      if (spawnForm.hodName.trim() && deptId) {
+        const staffParts = spawnForm.hodName.trim().split(/\s+/);
+        const firstName = staffParts[0] || '';
+        const lastName = staffParts.slice(1).join(' ') || '';
+        await Promise.all([
+          createStaffMutation.mutateAsync({
+            firstName,
+            lastName,
+            staffId: `HOD-${Date.now()}`,
+            email: `${firstName.toLowerCase()}.${lastName.toLowerCase().replace(/\s+/g, '.')}@maais.edu`,
+            role: 'HOD',
+            departmentId: deptId,
+          }),
+          createStaffMutation.mutateAsync({
+            firstName: 'Auto',
+            lastName: 'Teacher 1',
+            staffId: `TCH-${Date.now()}-1`,
+            email: `auto.teacher1@maais.edu`,
+            role: 'TEACHER',
+            departmentId: deptId,
+          }),
+          createStaffMutation.mutateAsync({
+            firstName: 'Auto',
+            lastName: 'Teacher 2',
+            staffId: `TCH-${Date.now()}-2`,
+            email: `auto.teacher2@maais.edu`,
+            role: 'TEACHER',
+            departmentId: deptId,
+          }),
+        ]);
+      }
+      setSpawnForm({ name: "", description: "", hodName: "" });
       setShowSpawnModal(false);
       setAlertState({
         isOpen: true,
         title: 'Department Spawned',
-        message: `${spawnForm.name} department created successfully.`,
+        message: `${spawnForm.name} department created successfully.${spawnForm.hodName.trim() ? ` Initial cluster of 3 staff profiles generated.` : ''}`,
         type: 'success',
       });
     } catch (error) {
