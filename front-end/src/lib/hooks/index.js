@@ -142,7 +142,8 @@ export {
      useCurriculumMatrix,
      useUpsertCurriculumMapping,
      useRemoveCurriculumMapping,
-     useBulkUpsertCurriculum,
-     useDeployCurriculum,
-     useCurriculumDeploymentStatus,
-   } from './api/admin';
+      useBulkUpsertCurriculum,
+      useDeployCurriculum,
+      useCurriculumDeploymentStatus,
+      useClassesWithStudents,
+    } from './api/admin';

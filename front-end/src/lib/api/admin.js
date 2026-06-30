@@ -194,6 +194,7 @@ resetStaffCredentials: (staffId) => api.post(`/admin/staff/${staffId}/reset-cred
     bulkUpsertCurriculum: (body) => api.post(`/academic/curriculum/matrix/bulk`, body),
     deployCurriculum: (academicYearId) => api.post(`/academic/curriculum/deploy`, { academicYearId }),
     getDeploymentStatus: (academicYearId) => api.get(`/academic/curriculum/deployment/status?academicYearId=${academicYearId}`),
+    getClassesWithStudents: () => api.get('/academic/curriculum/classes'),
 
   // ── Strategy Pulse ───────────────────────────────────────────────────────────
   uploadStrategyPulse: (deptId) => api.post('/admin/strategy-pulse', { departmentId: deptId }),

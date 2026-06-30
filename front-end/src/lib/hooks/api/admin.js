@@ -873,3 +873,11 @@ export function useCurriculumDeploymentStatus(academicYearId) {
     staleTime: 1000 * 60 * 5,
   });
 }
+
+export function useClassesWithStudents() {
+  return useQuery({
+    queryKey: ['admin', 'classes', 'with-students'],
+    queryFn: adminApi.getClassesWithStudents,
+    staleTime: 1000 * 60 * 5,
+  });
+}

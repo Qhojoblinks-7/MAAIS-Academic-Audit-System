@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { GradingRulesView } from './GradingRulesView';
-import { useAllDepartments, useAllSubjects, useAllClasses, useAcademicYears as useAdminAcademicYears, useCreateYear, useCreateClass } from '../../lib/hooks';
+import { useAllDepartments, useAllSubjects, useAllClasses, useAllStudents, useClassesWithStudents, useAcademicYears as useAdminAcademicYears, useCreateYear, useCreateClass } from '../../lib/hooks';
 import { BlueprintTreeView } from './components/BlueprintTreeView';
 import { InsightsPanel } from './components/InsightsPanel';
 import { CurriculumMatrixView } from './components/CurriculumMatrixView';
@@ -79,11 +79,26 @@ export function AcademicArchitect() {
   const departmentsQuery = useAllDepartments();
   const subjectsQuery = useAllSubjects();
   const classesQuery = useAllClasses();
+  const studentsQuery = useAllStudents();
+  const classesWithStudentsQuery = useClassesWithStudents();
 
   const years = yearsQuery.data || [];
   const departments = departmentsQuery.data || [];
   const subjects = subjectsQuery.data || [];
   const classes = classesQuery.data || [];
+  const allStudents = studentsQuery.data || [];
+  const classesWithStudents = classesWithStudentsQuery.data || [];
+
+
+  const studentAvatarsByClass = useMemo(() => {
+    const map = {};
+    (classesWithStudents || []).forEach((cw) => {
+      if (cw.studentPreviews?.length) {
+        map[cw.id] = cw.studentPreviews;
+      }
+    });
+    return map;
+  }, [classesWithStudents]);
 
   const displayYears = years.length > 0 ? years.map((y, idx) => {
     const yearClasses = classes.filter(c => c.level === (y.label || y.name));
@@ -104,7 +119,8 @@ export function AcademicArchitect() {
           name: c.name,
           capacity: c.capacity || 45,
           studentsCount: c._count?.students ?? 0,
-          houseDistribution: {}
+          houseDistribution: {},
+          studentAvatars: studentAvatarsByClass[c.id] || [],
         }))
       }))
     };
@@ -135,7 +151,8 @@ export function AcademicArchitect() {
             name: c.name,
             capacity: c.capacity || 45,
             studentsCount: c._count?.students ?? 0,
-            houseDistribution: {}
+            houseDistribution: {},
+            studentAvatars: studentAvatarsByClass[c.id] || [],
           }))
         }))
       };
@@ -170,7 +187,8 @@ export function AcademicArchitect() {
             name: c.name,
             capacity: c.capacity || 45,
             studentsCount: c._count?.students ?? 0,
-            houseDistribution: {}
+            houseDistribution: {},
+            studentAvatars: studentAvatarsByClass[c.id] || [],
           }))
         }))
       };
@@ -305,6 +323,7 @@ export function AcademicArchitect() {
                   toggleProgram={toggleProgram}
                   onCreateYear={handleCreateYear}
                   onCreateClassroom={handleCreateClassroom}
+                  studentAvatarsByClass={studentAvatarsByClass}
                 />
               <InsightsPanel onStructuralExport={handleStructuralExport} />
             </div>
