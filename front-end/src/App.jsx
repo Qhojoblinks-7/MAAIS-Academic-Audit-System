@@ -487,7 +487,7 @@ function AppContent() {
             <Route
               path="/student-profile"
               element={
-                <RequireRole allowedRoles={["TEACHER", "HOD"]}>
+                <RequireRole allowedRoles={["TEACHER", "HOD", "HEADMASTER", "SUPER_ADMIN"]}>
                   <StudentProfile />
                 </RequireRole>
               }

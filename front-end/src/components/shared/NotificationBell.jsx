@@ -8,6 +8,8 @@ import { useRole } from '../../context/RoleContext';
 export function NotificationBell() {
   const { user } = useRole();
   const userId = user?.id || user?.staffId;
+  const userProfileId = user?.profileId;
+  const role = user?.role;
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -17,7 +19,12 @@ export function NotificationBell() {
 
     const fetchNotifications = async () => {
       try {
-        const unread = await notification.getUnread();
+        let unread;
+        if (role === 'STUDENT' && userProfileId) {
+          unread = await notification.getUnreadForStudent(userProfileId);
+        } else {
+          unread = await notification.getUnread();
+        }
         setNotifications(unread || []);
         setUnreadCount(unread ? unread.length : 0);
       } catch (err) {
@@ -25,7 +32,6 @@ export function NotificationBell() {
       }
     };
 
-    // Fetch initial notifications
     fetchNotifications();
 
     // Subscribe to real-time notifications
@@ -57,7 +63,7 @@ export function NotificationBell() {
       unsubscribe2();
       realTimeUnsubscribe();
     };
-  }, [userId]);
+  }, [userId, role, userProfileId]);
 
   const markAsRead = async (notificationId) => {
     try {

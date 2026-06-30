@@ -36,6 +36,10 @@ const gradingService = {
   getStudentsForGrading: ({ subjectId, classId, termId }) =>
     request('GET', `/grading/students/for-grading?subjectId=${encodeURIComponent(subjectId)}&classId=${encodeURIComponent(classId)}${termId ? `&termId=${encodeURIComponent(termId)}` : ''}`)
       .then(r => r?.data ?? r ?? []),
+
+  getLastSaved: () =>
+    request('GET', '/grading/last-saved')
+      .then(r => r?.data ?? r ?? {}),
 };
 
 export { gradingService };

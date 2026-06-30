@@ -34,8 +34,16 @@ function createRealService() {
       request('GET', `/portal/students/${studentId}/portal-data`)
         .then(r => r?.data ?? r),
     searchStudents: (query) =>
-      request('GET', `/portal/search?q=${encodeURIComponent(query)}`)
-        .then(r => r?.data ?? r),
+      request('GET', `/users/students${query ? `?search=${encodeURIComponent(query)}` : ''}`)
+        .then((res) => {
+          const data = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+          return data.map((s) => ({
+            id: s.id,
+            name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.indexNumber || s.id,
+            classForm: s.currentClass?.name || '—',
+            indexNumber: s.indexNumber || '—',
+          }));
+        }),
   };
 }
 

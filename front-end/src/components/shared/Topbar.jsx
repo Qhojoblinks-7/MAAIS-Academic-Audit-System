@@ -10,6 +10,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { studentService } from "../../services/studentService";
+import { gradingService } from "../../services/gradingService";
 import { NotificationBell } from "./NotificationBell";
 
 function BreadcrumbNav() {
@@ -136,6 +137,7 @@ export function Topbar() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const searchContainerRef = useRef(null);
+  const [lastSaved, setLastSaved] = useState(null);
 
   useEffect(() => { setQuery(urlSearchQuery); }, [urlSearchQuery]);
 
@@ -151,6 +153,32 @@ export function Topbar() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const formatLastSaved = (dateStr) => {
+    if (!dateStr) return null;
+    const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return `Saved ${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `Saved ${Math.floor(diff / 3600)}h ago`;
+    return `Saved ${Math.floor(diff / 86400)}d ago`;
+  };
+
+  useEffect(() => {
+    if (user?.role === "STUDENT" || location.pathname !== "/grading") return;
+
+    const fetchLastSaved = async () => {
+      try {
+        const data = await gradingService.getLastSaved();
+        if (data?.lastSaved) setLastSaved(data.lastSaved);
+      } catch (e) {
+        // Silently fail - show nothing if no data
+      }
+    };
+
+    fetchLastSaved();
+    const interval = setInterval(fetchLastSaved, 30000);
+    return () => clearInterval(interval);
+  }, [user?.role, location.pathname]);
 
   const fetchSearchResults = React.useCallback(async (searchQuery) => {
     if (!searchQuery.trim()) {
@@ -226,11 +254,13 @@ export function Topbar() {
               </span>
               <span className={cn("w-1 h-1 rounded-full", isDraftMode ? "bg-warning animate-pulse" : "bg-success")} />
             </Button>
-            <span className="text-[10px] font-semibold text-text-secondary">Saved 2h ago</span>
+            {lastSaved && (
+              <span className="text-[10px] font-semibold text-text-secondary">{formatLastSaved(lastSaved)}</span>
+            )}
           </div>
         )}
 
-        {user?.role !== "STUDENT" && (
+        {!["STUDENT", "PARENT"].includes(user?.role) && (
           <div ref={searchContainerRef} className="relative w-full max-w-[150px] xs:max-w-[180px] sm:max-w-[240px] lg:max-w-[260px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" size={13} />
             <Input

@@ -239,6 +239,11 @@ class NotificationService {
     return request('GET', `/comms/notifications/unread`);
   }
 
+  async getUnreadForStudent(studentProfileId) {
+    const notifs = await request('GET', `/comms/notifications/${studentProfileId}`);
+    return (notifs || []).filter((n) => !n.isRead);
+  }
+
   subscribe(callback) {
     this.listeners.add(callback);
     return () => this.listeners.delete(callback);
