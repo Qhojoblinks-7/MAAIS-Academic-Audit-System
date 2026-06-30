@@ -72,7 +72,6 @@ export function useUpdateStudentProfile() {
   return useMutation({
     mutationFn: ({ id, body }) => adminApi.updateStudentProfile(id, body),
     onSuccess: (_, { id }) => {
-      // FIX: Invalidate both the specific profile AND the main user lists
       qc.invalidateQueries({ queryKey: ['admin', 'students', id] });
       qc.invalidateQueries({ queryKey: ['admin', 'students'] });
     },
@@ -131,10 +130,10 @@ export function useAllSubjects() {
   });
 }
 
-export function useAllClasses() {
+export function useAllClasses(track) {
   return useQuery({
-    queryKey: ['admin', 'academic', 'classes'],
-    queryFn: adminApi.getAllClasses,
+    queryKey: ['admin', 'academic', 'classes', track ?? 'all'],
+    queryFn: () => adminApi.getAllClasses(track),
     staleTime: 1000 * 60 * 10,
   });
 }
@@ -292,7 +291,6 @@ export function useGenerateReportCard() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ studentId, termId }) => adminApi.generateReportCard(studentId, termId),
-    // FIX: Clear report dependencies on update
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'reports'] }), 
   });
 }
@@ -301,7 +299,6 @@ export function useBatchGenerateReportCards() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ classSectionId, termId }) => adminApi.batchGenerateReportCards(classSectionId, termId),
-    // FIX: Clear report dependencies on update
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'reports'] }),
   });
 }
@@ -310,7 +307,6 @@ export function useBuildTranscript() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (studentIdOrIndex) => adminApi.buildTranscript(studentIdOrIndex),
-    // FIX: Force report layout data evaluation to drop old cache lines
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'reports'] }),
   });
 }
@@ -531,6 +527,22 @@ export function useDeleteTimetableEntry() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id) => adminApi.deleteTimetableEntry(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'timetable'] }),
+  });
+}
+
+export function useBroadcastTimetable() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body) => adminApi.broadcastTimetable(body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'timetable'] }),
+  });
+}
+
+export function useFinalizeTimetable() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body) => adminApi.finalizeTimetable(body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'timetable'] }),
   });
 }

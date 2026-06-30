@@ -26,7 +26,7 @@ export const adminApi = {
   createClass: (dto) => api.post('/academic/classes', dto),
   updateClass: (id, dto) => api.patch(`/academic/classes/${id}`, dto),
   deleteClass: (id) => api.delete(`/academic/classes/${id}`),
-  getAllClasses: () => api.get('/academic/classes'),
+  getAllClasses: (track) => api.get('/academic/classes', { params: { track } }),
   assignHOD: (deptId, staffId) => api.patch(`/admin/departments/${deptId}/hod`, { staffId }),
   freezeDepartment: (deptId) => api.post(`/admin/departments/${deptId}/freeze`),
   transferTeacher: (toDeptId, teacherId, fromDeptId) =>
@@ -40,7 +40,7 @@ export const adminApi = {
   assignClassTeacher: (id, dto) => api.patch(`/academic/classes/${id}/teacher`, dto),
   assignTeacher: (dto) => api.post('/academic/assignments', dto),
   getTeacherAssignments: (teacherId) => api.get(`/academic/assignments/teacher/${teacherId}`),
-  getClassAssignments: (classId) => api.get(`/academic/assignments/class/${classId}`),
+  getClassAssignments: (classId, track) => api.get(`/academic/assignments/class/${classId}`, { params: { track } }),
   getMyAssignments: () => api.get('/academic/my-assignments'),
 
   // ── Reports ────────────────────────────────────────────────────────────────
@@ -141,6 +141,8 @@ export const adminApi = {
   getTimetableEntry: (id) => api.get(`/timetable/${id}`),
   updateTimetableEntry: (id, body) => api.put(`/timetable/${id}`, body),
   deleteTimetableEntry: (id) => api.delete(`/timetable/${id}`),
+  broadcastTimetable: (body) => api.post('/timetable/broadcast', body),
+  finalizeTimetable: (body) => api.post('/timetable/finalize', body),
 
   // ── Students (Admin-accessible) ────────────────────────────────────────────
   getStudentBehavior: (studentId) => api.get(`/students/${studentId}/behavior`),
@@ -165,10 +167,10 @@ export const adminApi = {
   deleteApproval: (id) => api.delete(`/approvals/${id}`),
 
    // ── Grading Rules ──────────────────────────────────────────────────────────
-    getGradingRules: (termId) => api.get('/grading/rules', { params: { termId } }),
-    updateGradingRules: (body) => api.put('/grading/rules', body),
-    getComplianceWarnings: () => api.get('/grading/compliance/warnings'),
-    getTermSummary: (termId) => api.get(`/grading/term-summary/${termId}`),
+     getGradingRules: (termId) => api.get('/grading/rules', { params: { termId } }),
+     updateGradingRules: (body) => api.put('/grading/rules', body),
+     getComplianceWarnings: () => api.get('/grading/compliance/warnings'),
+     getTermSummary: (termId) => api.get(`/grading/term-summary/${termId}`),
 
   // ── Reports (Admin Generation) ─────────────────────────────────────────────
   getStudentsForReportGeneration: (query) => api.get('/reports/generation/students', { params: query }),
@@ -184,17 +186,17 @@ export const adminApi = {
    toggleSystemFreeze: (enabled, reason) => api.post('/admin/settings/freeze', { enabled, reason }),
    updateAdminCredentials: (body) => api.post('/admin/settings/credentials', body),
 
-resetStaffCredentials: (staffId) => api.post(`/admin/staff/${staffId}/reset-credentials`, {}),
+  resetStaffCredentials: (staffId) => api.post(`/admin/staff/${staffId}/reset-credentials`, {}),
 
    // ── Curriculum Mapping ───────────────────────────────────────────────────────
-    getCurriculumMatrix: (academicYearId) => api.get(`/academic/curriculum/matrix`, { params: { academicYearId } }),
-    upsertCurriculumMapping: (body) => api.post(`/academic/curriculum/matrix`, body),
-    removeCurriculumMapping: (academicYearId, subjectId, classSectionId) =>
-      api.delete(`/academic/curriculum/matrix/${subjectId}/${classSectionId}?academicYearId=${academicYearId}`),
-    bulkUpsertCurriculum: (body) => api.post(`/academic/curriculum/matrix/bulk`, body),
-    deployCurriculum: (academicYearId) => api.post(`/academic/curriculum/deploy`, { academicYearId }),
-    getDeploymentStatus: (academicYearId) => api.get(`/academic/curriculum/deployment/status?academicYearId=${academicYearId}`),
-    getClassesWithStudents: () => api.get('/academic/curriculum/classes'),
+     getCurriculumMatrix: (academicYearId) => api.get(`/academic/curriculum/matrix`, { params: { academicYearId } }),
+     upsertCurriculumMapping: (body) => api.post(`/academic/curriculum/matrix`, body),
+     removeCurriculumMapping: (academicYearId, subjectId, classSectionId) =>
+       api.delete(`/academic/curriculum/matrix/${subjectId}/${classSectionId}?academicYearId=${academicYearId}`),
+     bulkUpsertCurriculum: (body) => api.post(`/academic/curriculum/matrix/bulk`, body),
+     deployCurriculum: (academicYearId) => api.post(`/academic/curriculum/deploy`, { academicYearId }),
+     getDeploymentStatus: (academicYearId) => api.get(`/academic/curriculum/deployment/status?academicYearId=${academicYearId}`),
+     getClassesWithStudents: () => api.get('/academic/curriculum/classes'),
 
   // ── Strategy Pulse ───────────────────────────────────────────────────────────
   uploadStrategyPulse: (deptId) => api.post('/admin/strategy-pulse', { departmentId: deptId }),

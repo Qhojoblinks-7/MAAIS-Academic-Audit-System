@@ -26,6 +26,8 @@ import {
   useCreateTimetableEntry,
   useUpdateTimetableEntry,
   useDeleteTimetableEntry,
+  useBroadcastTimetable,
+  useFinalizeTimetable,
 } from '../../lib/hooks';
 
 const TIME_SLOTS = [
@@ -68,43 +70,67 @@ const getDeptColor = (subject) => {
 };
 
 export const MasterTimetable = () => {
-   const classesQuery = useAllClasses();
-   const classes = classesQuery.data || [];
-
-   const classOptions = useMemo(() => {
-     return classes
-       .filter((c) => c.level && c.name && c.track === activeTrack)
-       .map((c) => ({
-         id: c.id,
-         label: `${c.level.replace('FORM_', 'SHS ')} ${c.program || 'General'} ${c.name}`,
-         level: c.level,
-         program: c.program,
-         name: c.name,
-         track: c.track,
-       }))
-       .sort((a, b) => a.label.localeCompare(b.label));
-   }, [classes, activeTrack]);
-
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedClassLabel, setSelectedClassLabel] = useState('');
   const [activeTrack, setActiveTrack] = useState('Gold');
   const [isBroadcasted, setIsBroadcasted] = useState(false);
   const [isFinalized, setIsFinalized] = useState(false);
 
-  const selectedClass = classOptions.find((c) => c.id === selectedClassId) || classOptions[0];
+  const trackClassesQuery = useAllClasses(activeTrack);
+  const allClassesQuery = useAllClasses();
+  const rawClasses = trackClassesQuery.data;
+  const allClasses = allClassesQuery.data;
+  const allClassesArray = Array.isArray(allClasses) && allClasses.length > 0 
+    ? allClasses 
+    : (allClasses?.data || allClasses?.items || []);
+  const trackClassesArray = Array.isArray(rawClasses) 
+    ? rawClasses 
+    : (rawClasses?.data || rawClasses?.items || []);
+  const classes = trackClassesArray.length > 0 
+    ? trackClassesArray 
+    : allClassesArray;
+  const classOptions = useMemo(() => {
+    const opts = (Array.isArray(classes) ? classes : [])
+      .filter((c) => c.name || c.className)
+      .map((c) => ({
+        id: c.id,
+        label: c.name || c.className || 'Unknown Class',
+        level: c.level || null,
+        program: c.program || c.stream || null,
+        name: c.name || c.className,
+        track: c.track || activeTrack,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+    return opts;
+  }, [classes, activeTrack]);
+
+const selectedClass = classOptions.find((c) => c.id === selectedClassId) || classOptions[0];
   const selectedClassName = selectedClass?.label || selectedClassLabel;
 
-  const timetableQuery = useTimetableEntries(
-    selectedClassId ? { classId: selectedClassId, track: activeTrack } : { track: activeTrack },
-  );
-  const timetableEntries = timetableQuery.data || [];
+  const trackTimetableQuery = useTimetableEntries({ track: activeTrack });
+  const allTimetableQuery = useTimetableEntries();
+  const rawTimetableEntries = trackTimetableQuery.data;
+  const allTimetableEntriesArray = Array.isArray(allTimetableQuery.data) 
+    ? allTimetableQuery.data 
+    : (allTimetableQuery.data?.data || allTimetableQuery.data?.items || []);
+  const timetableEntries = (Array.isArray(rawTimetableEntries) && rawTimetableEntries.length > 0)
+    ? rawTimetableEntries
+    : (rawTimetableEntries?.data || rawTimetableEntries?.items || allTimetableEntriesArray || []);
 
-  const assignmentsQuery = useClassAssignments(selectedClassId, activeTrack);
-  const assignments = assignmentsQuery.data || [];
+  const trackAssignmentsQuery = useClassAssignments(selectedClassId, activeTrack);
+  const allAssignmentsQuery = useClassAssignments(selectedClassId);
+  const allAssignmentsArray = Array.isArray(allAssignmentsQuery.data) 
+    ? allAssignmentsQuery.data 
+    : (allAssignmentsQuery.data?.data || allAssignmentsQuery.data?.items || []);
+  const assignments = (trackAssignmentsQuery.data?.length > 0) 
+    ? trackAssignmentsQuery.data 
+    : (allAssignmentsArray || []);
 
   const createMutation = useCreateTimetableEntry();
   const updateMutation = useUpdateTimetableEntry();
   const deleteMutation = useDeleteTimetableEntry();
+  const broadcastMutation = useBroadcastTimetable();
+  const finalizeMutation = useFinalizeTimetable();
 
   const [schedule, setSchedule] = useState({});
   const [dragOverSlot, setDragOverSlot] = useState(null);
@@ -115,7 +141,7 @@ export const MasterTimetable = () => {
       setSelectedClassId(classOptions[0].id);
       setSelectedClassLabel(classOptions[0].label);
     }
-  }, [classOptions, selectedClassId, selectedClassLabel]);
+  }, [classOptions]);
 
   React.useEffect(() => {
     if (!selectedClassId || !timetableEntries.length) {
@@ -129,16 +155,14 @@ export const MasterTimetable = () => {
       if (!slotId) return;
       const dayKey = DAY_MAP[entry.dayOfWeek] || entry.dayOfWeek;
       const slotKey = `${dayKey}-${slotId}`;
-      const className = entry.classSection?.name
-        ? `${entry.classSection.level?.replace('FORM_', 'SHS ') || ''} ${entry.classSection.program || 'General'} ${entry.classSection.name}`
-        : 'Unknown Class';
+      const className = entry.className || entry.classSection?.name || entry.class?.name || selectedClassName || 'Unknown Class';
 
       built[slotKey] = {
         id: entry.id,
-        subject: entry.subject?.name || 'Unknown',
+        subject: entry.subject?.name || entry.subjectName || 'Unknown',
         class: className,
         teacher: entry.teacher
-          ? `${entry.teacher.firstName || ''} ${entry.teacher.lastName || ''}`.trim() || 'Unknown'
+          ? `${entry.teacher.firstName || ''} ${entry.teacher.lastName || ''}`.trim() || entry.teacherName || 'Unknown'
           : 'Unknown',
         color: getDeptColor(entry.subject),
         entryId: entry.id,
@@ -148,11 +172,11 @@ export const MasterTimetable = () => {
         startTime: entry.startTime,
         endTime: entry.endTime,
         classSectionId: entry.classId,
-        room: entry.room,
+        room: entry.room || entry.venue || '-',
       };
     });
-    setSchedule((prev) => ({ ...prev, [selectedClassName || '']: built }));
-  }, [timetableEntries, selectedClassId, selectedClassName]);
+    setSchedule({ [selectedClassName || '']: built });
+  }, [timetableEntries, selectedClassName]);
 
   const getSlotIdFromTime = (time) => {
     const slot = TIME_SLOTS.find(
@@ -191,7 +215,7 @@ export const MasterTimetable = () => {
     const [day, slotId] = slotKey.split('-');
     if (slotId.startsWith('break')) return;
 
-    const slot = TIME_SLOTS.find((s) => s.id === slotId);
+const slot = TIME_SLOTS.find((s) => s.id === slotId);
     if (!slot) return;
 
     const startTime = slot.start;
@@ -199,16 +223,16 @@ export const MasterTimetable = () => {
 
     setSavingSlot(slotKey);
 
-try {
-       const body = {
-         classId: selectedClassId,
-         subjectId: lesson.subjectId,
-         teacherId: lesson.teacherId,
-         dayOfWeek: DAY_MAP[day] || day.toUpperCase(),
-         startTime,
-         endTime,
-         track: activeTrack,
-       };
+    try {
+      const body = {
+        classId: selectedClassId,
+        subjectId: lesson.subjectId,
+        teacherId: lesson.teacherId,
+        dayOfWeek: DAY_MAP[day] || day.toUpperCase(),
+        startTime,
+        endTime,
+        track: activeTrack,
+      };
 
       const created = await createMutation.mutateAsync(body);
       const newEntry = {
@@ -266,22 +290,32 @@ try {
   };
 
   const handleDistributeToApps = async () => {
-    setIsBroadcasted(true);
-    setTimeout(() => setIsBroadcasted(false), 4000);
+    try {
+      await broadcastMutation.mutateAsync({ classId: selectedClassId, track: activeTrack });
+      setIsBroadcasted(true);
+      setTimeout(() => setIsBroadcasted(false), 4000);
+    } catch (err) {
+      toast.error(err?.message || 'Failed to broadcast timetable');
+    }
   };
 
   const handleFinalizeGrid = async () => {
-    setIsFinalized(true);
+    try {
+      await finalizeMutation.mutateAsync({ classId: selectedClassId, track: activeTrack });
+      setIsFinalized(true);
+    } catch (err) {
+      toast.error(err?.message || 'Failed to finalize timetable');
+    }
   };
 
-  const conflicts = useMemo(() => {
+const conflicts = useMemo(() => {
     const teacherTimeRegistry = {};
     const conflictMap = {};
 
     Object.entries(schedule).forEach(([className, classSlots]) => {
       Object.entries(classSlots).forEach(([slotKey, lesson]) => {
         if (!lesson || !lesson.teacher) return;
-        const registryKey = `${lesson.teacher}-${slotKey}`;
+        const registryKey = `${lesson.teacher}-${activeTrack}-${slotKey}`;
         if (!teacherTimeRegistry[registryKey]) {
           teacherTimeRegistry[registryKey] = [];
         }
@@ -292,7 +326,7 @@ try {
     Object.entries(schedule).forEach(([className, classSlots]) => {
       Object.entries(classSlots).forEach(([slotKey, lesson]) => {
         if (!lesson || !lesson.teacher) return;
-        const registryKey = `${lesson.teacher}-${slotKey}`;
+        const registryKey = `${lesson.teacher}-${activeTrack}-${slotKey}`;
         const assignedClasses = teacherTimeRegistry[registryKey] || [];
 
         if (assignedClasses.length > 1) {
@@ -306,7 +340,7 @@ try {
     });
 
     return conflictMap;
-  }, [schedule]);
+  }, [schedule, activeTrack]);
 
   const currentClassSchedule = schedule[selectedClassName || ''] || {};
   const unassignedLessons = useMemo(() => {
@@ -335,7 +369,7 @@ try {
       }));
   }, [assignments, currentClassSchedule]);
 
-  const isLoading = classesQuery.isLoading || timetableQuery.isLoading;
+  const isLoading = trackClassesQuery.isLoading || allClassesQuery.isLoading || trackTimetableQuery.isLoading || allTimetableQuery.isLoading || trackAssignmentsQuery.isLoading || allAssignmentsQuery.isLoading;
 
   return (
     <div className="flex flex-col h-full bg-slate-50 overflow-hidden">
@@ -515,7 +549,7 @@ try {
                 </p>
               </div>
             )}
-            {timetableQuery.isLoading ? (
+            {trackTimetableQuery.isLoading ? (
               <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm p-8 space-y-4">
                 <Skeleton className="h-12 w-full" />
                 {[1, 2, 3, 4, 5].map((i) => (
