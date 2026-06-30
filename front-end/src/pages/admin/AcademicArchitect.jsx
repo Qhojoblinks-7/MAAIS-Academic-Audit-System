@@ -10,65 +10,6 @@ import { InsightsPanel } from './components/InsightsPanel';
 import { CurriculumMatrixView } from './components/CurriculumMatrixView';
 import { toast } from '../../components/ui/toast.tsx';
 
-const MOCK_YEARS_FALLBACK = [
-  {
-    id: 'YG1',
-    name: 'SHS 1',
-    programs: [
-      {
-        id: 'P1-SCI',
-        name: 'Science',
-        classrooms: [
-          { id: 'C1-S1', name: '1 Science 1', capacity: 45, studentsCount: 42, houseDistribution: { 'Guggisberg': 12, 'Aggrey': 10, 'Nkrumah': 20 } },
-          { id: 'C1-S2', name: '1 Science 2', capacity: 45, studentsCount: 46, houseDistribution: { 'Guggisberg': 15, 'Aggrey': 15, 'Nkrumah': 16 } },
-        ]
-      },
-      {
-        id: 'P1-ART',
-        name: 'General Arts',
-        classrooms: [
-          { id: 'C1-A1', name: '1 Arts 1', capacity: 50, studentsCount: 48, houseDistribution: { 'Guggisberg': 22, 'Aggrey': 26 } },
-        ]
-      }
-    ]
-  },
-  {
-    id: 'YG2',
-    name: 'SHS 2',
-    programs: [
-      {
-        id: 'P2-BUS',
-        name: 'Business',
-        classrooms: [
-          { id: 'C2-B1', name: '2 Business 1', capacity: 40, studentsCount: 38, houseDistribution: { 'Nkrumah': 38 } },
-        ]
-      }
-    ]
-  },
-  {
-    id: 'YG3',
-    name: 'SHS 3',
-    programs: [
-      {
-        id: 'P3-SCI',
-        name: 'Science',
-        classrooms: [
-          { id: 'C3-S1', name: '3 Science 1', capacity: 45, studentsCount: 44, houseDistribution: { 'Guggisberg': 10, 'Aggrey': 10, 'Nkrumah': 24 } },
-        ]
-      }
-    ]
-  }
-];
-
-const MOCK_SUBJECTS_FALLBACK = [
-  { id: 'S1', code: 'CORE-MT', name: 'Core Mathematics', type: 'Core', creditHours: 4, applicablePrograms: [] },
-  { id: 'S2', code: 'CORE-EN', name: 'English Language', type: 'Core', creditHours: 4, applicablePrograms: [] },
-  { id: 'S3', code: 'CORE-SC', name: 'Integrated Science', type: 'Core', creditHours: 3, applicablePrograms: [] },
-  { id: 'S4', code: 'ELEC-PHY', name: 'Elective Physics', type: 'Elective', creditHours: 4, applicablePrograms: ['Science'] },
-  { id: 'S5', code: 'ELEC-ACC', name: 'Cost Accounting', type: 'Elective', creditHours: 4, applicablePrograms: ['Business'] },
-  { id: 'S6', code: 'ELEC-LIT', name: 'Lit-In-English', type: 'Elective', creditHours: 3, applicablePrograms: ['General Arts'] },
-];
-
 export function AcademicArchitect() {
   const [activeTab, setActiveTab] = useState('Blueprint');
   const [expandedYears, setExpandedYears] = useState([]);
@@ -163,7 +104,7 @@ export function AcademicArchitect() {
   const effectiveDisplayYears = yearGroupsHaveClassrooms ? displayYears : (() => {
     const levelNames = { FORM_1: 'Form 1', FORM_2: 'Form 2', FORM_3: 'Form 3' };
     const grouped = {};
-    (classes.length > 0 ? classes : MOCK_YEARS_FALLBACK.flatMap(y => y.programs.flatMap(p => p.classrooms))).forEach(c => {
+    (classes.length > 0 ? classes : []).forEach(c => {
       const groupName = levelNames[c.level] || c.level || 'General';
       if (!grouped[groupName]) grouped[groupName] = [];
       grouped[groupName].push(c);
@@ -204,15 +145,65 @@ export function AcademicArchitect() {
     type: s.type || 'Core',
     creditHours: s.creditHours || 3,
     applicablePrograms: [],
-  })) : MOCK_SUBJECTS_FALLBACK;
+  })) : [];
 
-  const displayClasses = classes.length > 0 ? classes : MOCK_YEARS_FALLBACK.flatMap(y => y.programs.flatMap(p => p.classrooms));
+  const displayClasses = classes.length > 0 ? classes : [];
 
   React.useEffect(() => {
     if (effectiveDisplayYears.length > 0 && expandedYears.length === 0) {
       setExpandedYears(effectiveDisplayYears.map(y => y.id));
     }
   }, [effectiveDisplayYears, expandedYears.length]);
+
+  const programForClass = (cls) => {
+    const name = (cls.name || '').toLowerCase();
+    if (name.includes('science')) return 'Science';
+    if (name.includes('arts') && !name.includes('visual')) return 'General Arts';
+    if (name.includes('bus')) return 'Business';
+    if (name.includes('home')) return 'Home Economics';
+    if (name.includes('visual')) return 'Visual Arts';
+    return 'General';
+  };
+
+  const insightsStats = useMemo(() => {
+    const totalClassUnits = classes.length;
+    let totalOccupancy = 0;
+    const anomalies = [];
+    const programLoad = {};
+
+    classes.forEach(c => {
+      const occ = c.capacity > 0 ? (c._count?.students ?? 0) / c.capacity : 0;
+      totalOccupancy += occ;
+
+      if ((c._count?.students ?? 0) > c.capacity) {
+        anomalies.push({
+          name: c.name,
+          current: c._count?.students ?? 0,
+          capacity: c.capacity,
+        });
+      }
+
+      const prog = programForClass(c);
+      programLoad[prog] = (programLoad[prog] || 0) + (c._count?.students ?? 0);
+    });
+
+    const avgOccupancy = totalClassUnits > 0 ? Math.round((totalOccupancy / totalClassUnits) * 100) : 0;
+
+    const topProgram = Object.entries(programLoad).sort((a, b) => b[1] - a[1])[0];
+    const topProgramName = topProgram ? topProgram[0] : 'N/A';
+    const topProgramCount = topProgram ? topProgram[1] : 0;
+    const totalStudents = Object.values(programLoad).reduce((a, b) => a + b, 0);
+    const topProgramPercent = totalStudents > 0 ? Math.round((topProgramCount / totalStudents) * 100) : 0;
+
+    return {
+      totalClassUnits,
+      avgOccupancy,
+      anomalies: anomalies.slice(0, 5),
+      topProgramName,
+      topProgramPercent,
+      totalStudents,
+    };
+  }, [classes]);
 
   const toggleYear = (id) => {
     setExpandedYears(prev => prev.includes(id) ? prev.filter(y => y !== id) : [...prev, id]);
@@ -325,7 +316,7 @@ export function AcademicArchitect() {
                   onCreateClassroom={handleCreateClassroom}
                   studentAvatarsByClass={studentAvatarsByClass}
                 />
-              <InsightsPanel onStructuralExport={handleStructuralExport} />
+              <InsightsPanel onStructuralExport={handleStructuralExport} insightsStats={insightsStats} />
             </div>
           ) : activeTab === 'Curriculum' ? (
             <CurriculumMatrixView
