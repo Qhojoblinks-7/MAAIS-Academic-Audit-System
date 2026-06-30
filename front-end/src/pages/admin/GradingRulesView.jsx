@@ -461,9 +461,12 @@ const handleAuditTrailClick = () => {
                     </h3>
                     <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Mapping Percentage Thresholds to Terminal Grades</p>
                   </div>
-                  <button className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:text-slate-900 transition-colors">
-                    <HelpCircle size={18} />
-                  </button>
+                   <button 
+                     onClick={() => toast.info('WAEC calibration maps score ranges to terminal grades (A1-F9). Adjust boundaries carefully — they directly affect transcript quality and ranking.')}
+                     className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:text-slate-900 transition-colors"
+                   >
+                     <HelpCircle size={18} />
+                   </button>
                 </div>
                 <div className="overflow-visible">
                    <Table containerClassName="overflow-visible">
