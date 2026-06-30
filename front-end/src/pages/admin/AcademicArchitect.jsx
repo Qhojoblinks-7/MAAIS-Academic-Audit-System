@@ -108,7 +108,74 @@ export function AcademicArchitect() {
         }))
       }))
     };
-  }) : MOCK_YEARS_FALLBACK;
+  }) : (() => {
+    const levelNames = { FORM_1: 'Form 1', FORM_2: 'Form 2', FORM_3: 'Form 3' };
+    const grouped = {};
+    (classes.length > 0 ? classes : []).forEach(c => {
+      const groupName = levelNames[c.level] || c.level || 'General';
+      if (!grouped[groupName]) grouped[groupName] = [];
+      grouped[groupName].push(c);
+    });
+    
+    return Object.entries(grouped).map(([levelName, clsList], idx) => {
+      const programsMap = {};
+      clsList.forEach(c => {
+        const progName = c.name?.split(' ').slice(1).join(' ') || c.name || 'General';
+        if (!programsMap[progName]) programsMap[progName] = [];
+        programsMap[progName].push(c);
+      });
+      return {
+        id: `SHS-${idx}`,
+        name: levelName,
+        programs: Object.entries(programsMap).map(([name, cls]) => ({
+          id: cls[0].id,
+          name,
+          classrooms: cls.map(c => ({
+            id: c.id,
+            name: c.name,
+            capacity: c.capacity || 45,
+            studentsCount: 0,
+            houseDistribution: {}
+          }))
+        }))
+      };
+    });
+  })();
+
+  const yearGroupsHaveClassrooms = displayYears.some(y => y.programs.length > 0 && y.programs.some(p => p.classrooms.length > 0));
+  const effectiveDisplayYears = yearGroupsHaveClassrooms ? displayYears : (() => {
+    const levelNames = { FORM_1: 'Form 1', FORM_2: 'Form 2', FORM_3: 'Form 3' };
+    const grouped = {};
+    (classes.length > 0 ? classes : MOCK_YEARS_FALLBACK.flatMap(y => y.programs.flatMap(p => p.classrooms))).forEach(c => {
+      const groupName = levelNames[c.level] || c.level || 'General';
+      if (!grouped[groupName]) grouped[groupName] = [];
+      grouped[groupName].push(c);
+    });
+    
+    return Object.entries(grouped).map(([levelName, clsList], idx) => {
+      const programsMap = {};
+      clsList.forEach(c => {
+        const progName = c.name?.split(' ').slice(1).join(' ') || c.name || 'General';
+        if (!programsMap[progName]) programsMap[progName] = [];
+        programsMap[progName].push(c);
+      });
+      return {
+        id: `SHS-${idx}`,
+        name: levelName,
+        programs: Object.entries(programsMap).map(([name, cls]) => ({
+          id: cls[0].id,
+          name,
+          classrooms: cls.map(c => ({
+            id: c.id,
+            name: c.name,
+            capacity: c.capacity || 45,
+            studentsCount: 0,
+            houseDistribution: {}
+          }))
+        }))
+      };
+    });
+  })();
 
   const activeYearId = (years.find(y => y.isActive) || years[0])?.id;
 
@@ -124,10 +191,10 @@ export function AcademicArchitect() {
   const displayClasses = classes.length > 0 ? classes : MOCK_YEARS_FALLBACK.flatMap(y => y.programs.flatMap(p => p.classrooms));
 
   React.useEffect(() => {
-    if (years.length > 0 && expandedYears.length === 0) {
-      setExpandedYears(years.map(y => y.id));
+    if (effectiveDisplayYears.length > 0 && expandedYears.length === 0) {
+      setExpandedYears(effectiveDisplayYears.map(y => y.id));
     }
-  }, [years, expandedYears.length]);
+  }, [effectiveDisplayYears, expandedYears.length]);
 
   const toggleYear = (id) => {
     setExpandedYears(prev => prev.includes(id) ? prev.filter(y => y !== id) : [...prev, id]);
@@ -150,18 +217,20 @@ export function AcademicArchitect() {
 
   const handleCreateClassroom = useCallback(async ({ name, capacity, studentsCount, houseDistribution, programId }) => {
     const program = selectedProgramForClassroom?.name || '';
-    const yearName = displayYears.find(y => y.programs.some(p => p.id === programId))?.name || '';
+    const yearGroup = effectiveDisplayYears.find(y => y.programs.some(p => p.id === programId))?.name || '';
+    const levelMap = { 'Form 1': 'FORM_1', 'Form 2': 'FORM_2', 'Form 3': 'FORM_3', 'SHS 1': 'FORM_1', 'SHS 2': 'FORM_2', 'SHS 3': 'FORM_3' };
+    const levelEnum = levelMap[yearGroup] || 'FORM_1';
     await createClassMutation.mutateAsync({
       name,
       capacity,
-      level: yearName,
+      level: levelEnum,
       program
     });
-  }, [createClassMutation, displayYears, selectedProgramForClassroom?.name]);
+  }, [createClassMutation, effectiveDisplayYears, selectedProgramForClassroom?.name]);
 
   const handleStructuralExport = useCallback(() => {
     toast.info('Generating Structural Export...');
-    const exportData = displayYears.map(year => ({
+    const exportData = effectiveDisplayYears.map(year => ({
       id: year.id,
       name: year.name,
       programs: year.programs.map(program => ({
@@ -228,15 +297,15 @@ export function AcademicArchitect() {
         <div className="max-w-7xl mx-auto space-y-8">
           {activeTab === 'Blueprint' ? (
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
-               <BlueprintTreeView 
-                 displayYears={displayYears}
-                 expandedYears={expandedYears}
-                 expandedPrograms={expandedPrograms}
-                 toggleYear={toggleYear}
-                 toggleProgram={toggleProgram}
-                 onCreateYear={handleCreateYear}
-                 onCreateClassroom={handleCreateClassroom}
-               />
+                <BlueprintTreeView 
+                  displayYears={effectiveDisplayYears}
+                  expandedYears={expandedYears}
+                  expandedPrograms={expandedPrograms}
+                  toggleYear={toggleYear}
+                  toggleProgram={toggleProgram}
+                  onCreateYear={handleCreateYear}
+                  onCreateClassroom={handleCreateClassroom}
+                />
               <InsightsPanel onStructuralExport={handleStructuralExport} />
             </div>
           ) : activeTab === 'Curriculum' ? (
