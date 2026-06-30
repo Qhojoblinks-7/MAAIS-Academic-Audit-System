@@ -228,13 +228,15 @@ export function AcademicArchitect() {
         <div className="max-w-7xl mx-auto space-y-8">
           {activeTab === 'Blueprint' ? (
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
-              <BlueprintTreeView 
-                displayYears={displayYears}
-                expandedYears={expandedYears}
-                expandedPrograms={expandedPrograms}
-                toggleYear={toggleYear}
-                toggleProgram={toggleProgram}
-              />
+               <BlueprintTreeView 
+                 displayYears={displayYears}
+                 expandedYears={expandedYears}
+                 expandedPrograms={expandedPrograms}
+                 toggleYear={toggleYear}
+                 toggleProgram={toggleProgram}
+                 onCreateYear={handleCreateYear}
+                 onCreateClassroom={handleCreateClassroom}
+               />
               <InsightsPanel onStructuralExport={handleStructuralExport} />
             </div>
           ) : activeTab === 'Curriculum' ? (
