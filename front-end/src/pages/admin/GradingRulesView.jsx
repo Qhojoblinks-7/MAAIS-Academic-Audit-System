@@ -41,18 +41,13 @@ const DEFAULT_BOUNDARIES = [
   { id: 'b-9', min: 0, max: 39, grade: 'F9', remark: 'Fail: Poor performance; remedial sessions highly recommended.', suggestionPool: DEFAULT_REMARK_POOL.Fail },
 ];
 
-const TERM_DISPLAY = {
-  TERM_1: 'Term 1',
-  TERM_2: 'Term 2',
-  TERM_3: 'Term 3',
-};
-
 export const GradingRulesView = () => {
   const { isTermFinalized, setIsTermFinalized } = useUI();
+  const TERM_DISPLAY = { TERM_1: 'Term 1', TERM_2: 'Term 2', TERM_3: 'Term 3' };
   const [caWeight, setCaWeight] = useState(30);
   const [examWeight, setExamWeight] = useState(70);
   const [boundaries, setBoundaries] = useState(DEFAULT_BOUNDARIES);
-const [normalizationEnabled, setNormalizationEnabled] = useState(true);
+  const [normalizationEnabled, setNormalizationEnabled] = useState(true);
     const [departmentalOverrideEnabled, setDepartmentalOverrideEnabled] = useState(false);
     const [departmentOverrides, setDepartmentOverrides] = useState({});
     
@@ -144,6 +139,7 @@ const handleAuditTrailClick = () => {
         const submissionDeadline = `${deadlineDate}T${deadlineTime}:00`;
 
         const payload = {
+          termId: activeTerm?.id,
           caWeight,
           examWeight,
           normalizationEnabled,
