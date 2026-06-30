@@ -103,7 +103,7 @@ export function AcademicArchitect() {
           id: c.id,
           name: c.name,
           capacity: c.capacity || 45,
-          studentsCount: 0,
+          studentsCount: c._count?.students ?? 0,
           houseDistribution: {}
         }))
       }))
@@ -134,7 +134,7 @@ export function AcademicArchitect() {
             id: c.id,
             name: c.name,
             capacity: c.capacity || 45,
-            studentsCount: 0,
+            studentsCount: c._count?.students ?? 0,
             houseDistribution: {}
           }))
         }))
@@ -169,7 +169,7 @@ export function AcademicArchitect() {
             id: c.id,
             name: c.name,
             capacity: c.capacity || 45,
-            studentsCount: 0,
+            studentsCount: c._count?.students ?? 0,
             houseDistribution: {}
           }))
         }))
