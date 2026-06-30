@@ -16,6 +16,13 @@ export function CurriculumMatrixView({ displaySubjects: initialSubjects, display
   const [activeFilters, setActiveFilters] = useState({ yearGroup: 'ALL' });
   const [showAddSubject, setShowAddSubject] = useState(false);
   const [deploying, setDeploying] = useState(false);
+  const [newSubject, setNewSubject] = useState({
+    name: '',
+    code: '',
+    type: 'Elective',
+    creditHours: 3,
+    applicablePrograms: [],
+  });
 
   const subjects = useMemo(() => (initialSubjects || []).map(s => ({
     ...s,
@@ -286,14 +293,6 @@ export function CurriculumMatrixView({ displaySubjects: initialSubjects, display
 
     return { totalSubjects, totalCredits, totalAssignments: assignedCount, integrityRating, conflicts, coreCount, electiveCount };
   }, [filteredSubjects, subjectStates, classes]);
-
-  const [newSubject, setNewSubject] = useState({
-    name: '',
-    code: '',
-    type: 'Elective',
-    creditHours: 3,
-    applicablePrograms: [],
-  });
 
   return (
     <div className="space-y-8">
