@@ -138,5 +138,11 @@ export {
     useUpdateClassCapacity,
     useRebalanceHouses,
     useDissolveClass,
-    useDeployCurriculumMapping,
-  } from './api/admin';
+     useDeployCurriculumMapping,
+     useCurriculumMatrix,
+     useUpsertCurriculumMapping,
+     useRemoveCurriculumMapping,
+     useBulkUpsertCurriculum,
+     useDeployCurriculum,
+     useCurriculumDeploymentStatus,
+   } from './api/admin';

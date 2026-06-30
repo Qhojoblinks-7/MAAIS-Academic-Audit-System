@@ -186,8 +186,14 @@ export const adminApi = {
 
 resetStaffCredentials: (staffId) => api.post(`/admin/staff/${staffId}/reset-credentials`, {}),
 
-  // ── Curriculum Mapping ───────────────────────────────────────────────────────
-  deployCurriculumMapping: (mappings) => api.post('/academic/curriculum/deploy', { mappings }),
+   // ── Curriculum Mapping ───────────────────────────────────────────────────────
+    getCurriculumMatrix: (academicYearId) => api.get(`/academic/curriculum/matrix`, { params: { academicYearId } }),
+    upsertCurriculumMapping: (body) => api.post(`/academic/curriculum/matrix`, body),
+    removeCurriculumMapping: (academicYearId, subjectId, classSectionId) =>
+      api.delete(`/academic/curriculum/matrix/${subjectId}/${classSectionId}?academicYearId=${academicYearId}`),
+    bulkUpsertCurriculum: (body) => api.post(`/academic/curriculum/matrix/bulk`, body),
+    deployCurriculum: (academicYearId) => api.post(`/academic/curriculum/deploy`, { academicYearId }),
+    getDeploymentStatus: (academicYearId) => api.get(`/academic/curriculum/deployment/status?academicYearId=${academicYearId}`),
 
   // ── Strategy Pulse ───────────────────────────────────────────────────────────
   uploadStrategyPulse: (deptId) => api.post('/admin/strategy-pulse', { departmentId: deptId }),

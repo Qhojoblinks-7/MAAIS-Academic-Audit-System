@@ -814,3 +814,62 @@ export function useDeployCurriculumMapping() {
     },
   });
 }
+
+export function useCurriculumMatrix(academicYearId) {
+  return useQuery({
+    queryKey: ['admin', 'curriculum', 'matrix', academicYearId],
+    queryFn: () => adminApi.getCurriculumMatrix(academicYearId),
+    enabled: !!academicYearId,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useUpsertCurriculumMapping() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body) => adminApi.upsertCurriculumMapping(body),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['admin', 'curriculum', 'matrix', vars.academicYearId] });
+    },
+  });
+}
+
+export function useRemoveCurriculumMapping() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ academicYearId, subjectId, classSectionId }) =>
+      adminApi.removeCurriculumMapping(academicYearId, subjectId, classSectionId),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['admin', 'curriculum', 'matrix', vars.academicYearId] });
+    },
+  });
+}
+
+export function useBulkUpsertCurriculum() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body) => adminApi.bulkUpsertCurriculum(body),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['admin', 'curriculum', 'matrix', vars.academicYearId] });
+    },
+  });
+}
+
+export function useDeployCurriculum() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (academicYearId) => adminApi.deployCurriculum(academicYearId),
+    onSuccess: (_, academicYearId) => {
+      qc.invalidateQueries({ queryKey: ['admin', 'curriculum', 'matrix', academicYearId] });
+    },
+  });
+}
+
+export function useCurriculumDeploymentStatus(academicYearId) {
+  return useQuery({
+    queryKey: ['admin', 'curriculum', 'deployment', academicYearId],
+    queryFn: () => adminApi.getDeploymentStatus(academicYearId),
+    enabled: !!academicYearId,
+    staleTime: 1000 * 60 * 5,
+  });
+}
