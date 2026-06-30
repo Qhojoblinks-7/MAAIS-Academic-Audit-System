@@ -358,22 +358,22 @@ export function BlueprintTreeView({
                                     </div>
                                     
                                     {classroom.studentAvatars?.length > 0 && (
-                                      <div className="flex -space-x-1.5 mr-2">
-                                        {classroom.studentAvatars.slice(0, 5).map((student, i) => (
+                                      <div className="flex -space-x-1.5 mr-2 items-center">
+                                        {classroom.studentAvatars.slice(0, 3).map((student, i) => (
                                           <div
                                             key={student.id || i}
                                             title={`${student.firstName} ${student.lastName}`}
                                             className={cn(
                                               "w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-black text-white shadow-sm ring-2 ring-white",
-                                              i === 0 ? "bg-blue-500" : i === 1 ? "bg-amber-500" : i === 2 ? "bg-emerald-500" : i === 3 ? "bg-rose-500" : "bg-indigo-500"
+                                              i === 0 ? "bg-blue-500" : i === 1 ? "bg-amber-500" : i === 2 ? "bg-emerald-500" : "bg-rose-500"
                                             )}
                                           >
                                             {student.initial}
                                           </div>
                                         ))}
-                                        {classroom.studentAvatars.length > 5 && (
+                                        {classroom.studentAvatars.length > 3 && (
                                           <div className="w-6 h-6 rounded-full flex items-center justify-center text-[7px] font-black text-white bg-slate-400 shadow-sm ring-2 ring-white">
-                                            +{classroom.studentAvatars.length - 5}
+                                            +{classroom.studentAvatars.length - 3}
                                           </div>
                                         )}
                                       </div>
