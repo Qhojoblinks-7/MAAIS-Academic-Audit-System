@@ -11,7 +11,7 @@ const HODContext = createContext(undefined);
 
 export function HODProvider({ children }) {
   const { user } = useRole();
-  const isHod = user?.role === 'HOD';
+  const isHod = user?.role === 'HOD' || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' || user?.role === 'HEADMASTER';
   const { isOnline, setIsOnline, isDraftMode, setIsDraftMode } = useUI();
 
   const state = useHODState();
