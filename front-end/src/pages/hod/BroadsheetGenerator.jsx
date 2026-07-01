@@ -341,9 +341,7 @@ export function BroadsheetGenerator() {
       {/* Main Core Ledger List */}
       {filteredBroadsheetData.length === 0 ? (
         <div className="text-center py-20 bg-white border border-slate-200 rounded-2xl max-w-md mx-auto p-6 shadow-sm">
-          <BookOpen className="text-slate-300 mx-auto mb-3" size={24} />
-          <h3 className="text-sm font-bold text-slate-900">No matching records found</h3>
-          <p className="text-xs text-slate-400 mt-1">Try modifying your text criteria or clear the dashboard search input.</p>
+          <EmptyState context="results" />
         </div>
       ) : (
         <div className="space-y-6">

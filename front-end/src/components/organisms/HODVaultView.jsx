@@ -4,6 +4,7 @@ import { Users, TrendingUp, ShieldCheck, Award, ShieldAlert } from 'lucide-react
 import { HODArchiveKPICard } from '../molecules/HODArchiveKPICard';
 import { HODArchiveFilterMatrix } from '../molecules/HODArchiveFilterMatrix';
 import { HODArchiveStudentRow } from '../molecules/HODArchiveStudentRow';
+import { EmptyState } from '../molecules/EmptyState';
 
 export function HODVaultView({ 
   students = [], 
@@ -137,10 +138,8 @@ export function HODVaultView({
             {/* Pure Grid Rows Container */}
             <div className="divide-y divide-slate-100">
               {filteredStudents.length === 0 ? (
-                <div className="px-8 py-16 text-center">
-                  <p className="text-sm font-medium text-slate-400">
-                    No students match current filter parameters
-                  </p>
+                <div className="px-8 py-16">
+                  <EmptyState context="students" variant="compact" />
                 </div>
               ) : (
                 filteredStudents.map(student => (

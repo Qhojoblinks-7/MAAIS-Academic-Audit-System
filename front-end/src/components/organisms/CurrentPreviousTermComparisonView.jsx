@@ -93,10 +93,7 @@ function SubjectComparisonCard({ subject, currentTerm, previousTerm, onFetchComp
       <div className="p-3 space-y-0.5">
         {comparisonData.length === 0 ? (
           <div className="text-center py-4">
-            <Award size={24} className="text-gray-200 mx-auto mb-1.5" />
-            <p className="text-[10px] text-gray-400">
-              No data available for {currentTerm} vs {previousTerm}
-            </p>
+            <EmptyState context="results" variant="compact" />
           </div>
         ) : (
           comparisonData.map((row, i) => (

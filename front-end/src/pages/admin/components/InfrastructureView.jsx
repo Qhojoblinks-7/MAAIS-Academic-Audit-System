@@ -1,12 +1,13 @@
 import React from 'react';
 import { ShieldAlert, RefreshCw, Cpu, Activity, HardDrive } from 'lucide-react';
 import { cn } from '../../../lib/utils';
-import mockApiData from '../../../data/mockApiData.json';
 
 const iconMap = { Cpu, Activity, HardDrive, RefreshCw };
 
 export function InfrastructureView() {
-  const { computeNodes, backupSnapshots, serviceHealth } = mockApiData.engineRoom || {};
+  const computeNodes = [];
+  const backupSnapshots = [];
+  const serviceHealth = [];
   
   const computeNodesWithIcons = (computeNodes || []).map(node => ({
     ...node,

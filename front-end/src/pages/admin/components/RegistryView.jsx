@@ -74,7 +74,7 @@ export function RegistryView() {
                 <div className="sm:w-1/3">
                   <span className={cn(
                     "px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider inline-block font-mono",
-                    user.role === 'ADMIN' ? 'bg-purple-50 text-purple-700' :
+                    user.role === 'SUPER_ADMIN' || user.role === 'HEADMASTER' ? 'bg-purple-50 text-purple-700' :
                     user.role === 'HOD' ? 'bg-blue-50 text-blue-700' :
                     user.role === 'TEACHER' ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-50 text-gray-400'
                   )}>

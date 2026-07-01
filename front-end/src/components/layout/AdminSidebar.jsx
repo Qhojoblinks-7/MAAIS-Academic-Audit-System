@@ -21,29 +21,27 @@ import { useUI } from '../../context/UIContext';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 
-
-
 export function AdminSidebar() {
-   const location = useLocation();
-   const { user } = useRole();
-   const { setSettingsModalOpen, setSupportModalOpen } = useUI();
-   const [showLogoutModal, setShowLogoutModal] = React.useState(false);
-   const [activeSubMenu, setActiveSubMenu] = React.useState(null);
-   const sidebarRef = React.useRef(null);
+  const location = useLocation();
+  const { user } = useRole();
+  const { setSettingsModalOpen, setSupportModalOpen } = useUI();
+  const [showLogoutModal, setShowLogoutModal] = React.useState(false);
+  const [activeSubMenu, setActiveSubMenu] = React.useState(null);
+  const sidebarRef = React.useRef(null);
 
-   React.useEffect(() => {
-     function handleClickOutside(event) {
-       if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
-         setActiveSubMenu(null);
-       }
-     }
-     document.addEventListener('mousedown', handleClickOutside);
-     return () => document.removeEventListener('mousedown', handleClickOutside);
-   }, []);
+  React.useEffect(() => {
+    function handleClickOutside(event) {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+        setActiveSubMenu(null);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-   React.useEffect(() => {
-     setActiveSubMenu(null);
-   }, [location.pathname]);
+  React.useEffect(() => {
+    setActiveSubMenu(null);
+  }, [location.pathname]);
 
   const adminMenu = [
     { 
@@ -99,8 +97,8 @@ export function AdminSidebar() {
 
   return (
     <>
-      <aside ref={sidebarRef} className="w-20 h-screen bg-slate-50 border-r border-slate-200/60 flex flex-col items-center py-8 gap-8 z-[60] select-none shrink-0 print:hidden">
-        <Link to="/" className="w-12 h-12 bg-brand-teal rounded-2xl flex items-center justify-center text-white font-semibold text-xl shadow-lg shadow-brand-teal/20 transition-transform active:scale-95">
+      <aside ref={sidebarRef} className="w-20 h-screen bg-background border-r border-border flex flex-col items-center py-8 gap-8 z-[60] select-none shrink-0 print:hidden font-sans">
+        <Link to="/" className="w-12 h-12 bg-brand-primary rounded-2xl flex items-center justify-center text-surface font-semibold text-xl shadow-lg shadow-brand-primary/20 transition-transform active:scale-95">
           A
         </Link>
         
@@ -117,13 +115,13 @@ export function AdminSidebar() {
                     className={cn(
                       "p-3 rounded-2xl transition-all duration-200 relative w-12 h-12 flex items-center justify-center",
                       isActive 
-                        ? "bg-white text-brand-teal shadow-md shadow-slate-200/40 ring-1 ring-slate-100/80" 
-                        : "text-slate-400 hover:bg-white hover:text-slate-900"
+                        ? "bg-surface text-brand-primary shadow-md ring-1 ring-border" 
+                        : "text-text-secondary hover:bg-surface hover:text-text-primary"
                     )}
                     title={item.label}
                   >
                     <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-                    {isActive && <div className="absolute left-0 w-1 h-5 bg-brand-teal rounded-r-full" />}
+                    {isActive && <div className="absolute left-0 w-1 h-5 bg-brand-secondary rounded-r-full" />}
                   </button>
                 ) : (
                   <Link
@@ -132,13 +130,13 @@ export function AdminSidebar() {
                     className={cn(
                       "rounded-2xl transition-all duration-200 relative w-12 h-12 flex items-center justify-center shrink-0",
                       isActive
-                        ? "bg-white text-brand-teal shadow-md shadow-slate-200/40 ring-1 ring-slate-100/80"
-                        : "text-slate-400 hover:bg-white hover:text-slate-900"
+                        ? "bg-surface text-brand-primary shadow-md ring-1 ring-border"
+                        : "text-text-secondary hover:bg-surface hover:text-text-primary"
                     )}
                     title={item.label}
                   >
                     <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-                    {isActive && <div className="absolute left-0 w-1 h-5 bg-brand-teal rounded-r-full" />}
+                    {isActive && <div className="absolute left-0 w-1 h-5 bg-brand-secondary rounded-r-full" />}
                   </Link>
                 )}
 
@@ -150,10 +148,12 @@ export function AdminSidebar() {
                       animate={{ opacity: 1, x: 0, scale: 1 }}
                       exit={{ opacity: 0, x: -8, scale: 0.95 }}
                       transition={{ duration: 0.15, ease: "easeOut" }}
-                      className="fixed left-24 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 py-3 px-2 z-[9999] ring-1 ring-slate-900/5"
+                      className="fixed left-24 w-48 bg-surface rounded-2xl shadow-xl border border-border py-3 px-2 z-[9999] ring-1 ring-text-primary/5"
                     >
                       <div className="mb-2 px-2.5">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{item.label}</p>
+                        <p className="text-xs font-bold text-text-secondary uppercase tracking-widest opacity-80">
+                          {item.label}
+                        </p>
                       </div>
                       <div className="space-y-0.5">
                         {item.subItems.map((sub, idx) => {
@@ -166,14 +166,14 @@ export function AdminSidebar() {
                               className={cn(
                                 "flex items-center justify-between p-2 rounded-xl transition-all group/item",
                                 isSubActive
-                                  ? "bg-slate-900 text-white shadow-sm"
-                                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                                  ? "bg-brand-primary text-surface shadow-sm"
+                                  : "text-text-secondary hover:bg-muted hover:text-text-primary"
                               )}
                             >
-                              <span className="text-[11px] font-medium tracking-wide truncate">{sub.label}</span>
+                              <span className="text-sm font-medium tracking-wide truncate">{sub.label}</span>
                               <ChevronRight size={12} className={cn(
                                 "transition-transform shrink-0",
-                                isSubActive ? "text-slate-400" : "text-slate-300 group-hover/item:translate-x-0.5"
+                                isSubActive ? "text-surface/80" : "text-text-secondary/60 group-hover/item:translate-x-0.5"
                               )} />
                             </Link>
                           );
@@ -190,7 +190,7 @@ export function AdminSidebar() {
         <div className="flex flex-col gap-4 mt-auto px-3 w-full items-center">
           <button 
             onClick={() => setSupportModalOpen(true)}
-            className="p-3 rounded-2xl text-slate-400 hover:bg-white hover:text-slate-600 transition-all duration-200 w-12 h-12 flex items-center justify-center"
+            className="p-3 rounded-2xl text-text-secondary hover:bg-surface hover:text-text-primary transition-all duration-200 w-12 h-12 flex items-center justify-center"
             title="ICT System Help"
           >
             <LifeBuoy size={22} />
@@ -198,7 +198,7 @@ export function AdminSidebar() {
           
           <button 
             onClick={() => setSettingsModalOpen(true)}
-            className="p-3 rounded-2xl text-slate-400 hover:bg-white hover:text-slate-600 transition-all duration-200 w-12 h-12 flex items-center justify-center"
+            className="p-3 rounded-2xl text-text-secondary hover:bg-surface hover:text-text-primary transition-all duration-200 w-12 h-12 flex items-center justify-center"
             title="System Configuration"
           >
             <Settings size={22} />
@@ -206,7 +206,7 @@ export function AdminSidebar() {
 
           <button 
             onClick={() => setShowLogoutModal(true)}
-            className="p-3 rounded-2xl text-slate-300 hover:bg-rose-50 hover:text-rose-600 transition-all duration-200 w-12 h-12 flex items-center justify-center" 
+            className="p-3 rounded-2xl text-text-secondary hover:bg-danger/10 hover:text-danger transition-all duration-200 w-12 h-12 flex items-center justify-center" 
             title="Logout"
           >
             <LogOut size={22} />
@@ -217,13 +217,13 @@ export function AdminSidebar() {
       {/* Logout Confirmation Modal */}
       <AnimatePresence>
         {showLogoutModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 font-sans">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowLogoutModal(false)}
-              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              className="absolute inset-0 bg-brand-dark/40 backdrop-blur-sm"
             />
             <motion.div 
               initial={{ scale: 0.95, opacity: 0, y: 10 }}
@@ -231,15 +231,15 @@ export function AdminSidebar() {
               exit={{ scale: 0.95, opacity: 0, y: 10 }}
               className="relative w-full max-w-md"
             >
-              <Card className="rounded-3xl shadow-2xl overflow-hidden border border-slate-100 bg-white">
+              <Card className="rounded-3xl shadow-2xl overflow-hidden border border-border bg-surface">
                 <div className="p-8">
                   <div className="flex justify-between items-start mb-6">
-                    <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600">
+                    <div className="w-12 h-12 bg-danger/10 rounded-2xl flex items-center justify-center text-danger">
                       <AlertTriangle size={24} />
                     </div>
                     <Button
                       variant="ghost"
-                      className="p-2 h-auto"
+                      className="p-2 h-auto text-text-secondary hover:text-text-primary"
                       onClick={() => setShowLogoutModal(false)}
                       aria-label="Close"
                     >
@@ -247,30 +247,30 @@ export function AdminSidebar() {
                     </Button>
                   </div>
 
-                  <h3 className="text-xl font-semibold text-slate-900 tracking-tight mb-2">Terminate Session?</h3>
-                  <p className="text-sm text-slate-500 leading-relaxed mb-6">
+                  <h3 className="text-xl font-semibold text-text-primary tracking-tight mb-2">Terminate Session?</h3>
+                  <p className="text-sm text-text-secondary leading-relaxed mb-6">
                     Are you sure you want to log out? Your access tokens will be cleared from this browser session.
                   </p>
 
                   <div className="flex gap-3">
                     <Button
                       variant="outline"
-                      className="flex-1 py-3 border-slate-200/40"
+                      className="flex-1 py-3 border-border text-text-primary hover:bg-muted"
                       onClick={() => setShowLogoutModal(false)}
                     >
                       Cancel
                     </Button>
                     <Button
                       variant="destructive"
-                      className="flex-1 py-3"
+                      className="flex-1 py-3 bg-danger text-surface hover:bg-danger/90"
                       onClick={handleLogout}
                     >
                       Log Out
                     </Button>
                   </div>
                 </div>
-                <div className="bg-slate-50 py-3.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Technical Protocol Secure</p>
+                <div className="bg-muted py-3.5 text-center border-t border-border">
+                  <p className="text-xs font-bold text-text-secondary uppercase tracking-widest opacity-80">Technical Protocol Secure</p>
                 </div>
               </Card>
             </motion.div>

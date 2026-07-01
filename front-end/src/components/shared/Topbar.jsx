@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Search, Lock, User as UserIcon, X, ShieldCheck, Menu, Users, GraduationCap } from "lucide-react";
+import { Search, Lock, User as UserIcon, X, ShieldCheck, Menu, Users, GraduationCap, UserCheck, UserCog } from "lucide-react";
 import { useRole } from "../../context/RoleContext";
 import { useLocation, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useUI } from "../../context/UIContext";
+import { useBreadcrumb } from "../../context/BreadcrumbContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "../../lib/utils";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "../ui/breadcrumb";
@@ -10,11 +11,14 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { studentService } from "../../services/studentService";
+import { adminService } from "../../services/adminService";
 import { gradingService } from "../../services/gradingService";
 import { NotificationBell } from "./NotificationBell";
+import { EmptyState } from "../molecules/EmptyState";
 
-function BreadcrumbNav() {
+function BreadcrumbNav({ compact = false }) {
   const { user } = useRole();
+  const { breadcrumbs: contextCrumbs } = useBreadcrumb();
   const location = useLocation();
 
   const labelMap = {
@@ -47,7 +51,6 @@ function BreadcrumbNav() {
     "system": "System Admin",
     "settings": user?.role === "STUDENT" ? "My Identity" : "Settings",
     "support": user?.role === "STUDENT" ? "ICT Support" : "Support",
-    "new": "New Support Ticket",
     "ticket": "Support Ticket",
     "journey-audit": "Journey Audit",
     "overview": "Overview",
@@ -55,7 +58,19 @@ function BreadcrumbNav() {
     "history": "History",
     "gradingScale": "Grading Scale",
     "academicJourney": "Academic Journey",
-    "broadsheetComparison": "Broadsheet Comparison"
+    "broadsheetComparison": "Broadsheet Comparison",
+    "notifications": "Notifications",
+    "teacher-dashboard": "Teacher Dashboard",
+    "teacher-profile": "Teacher Profile",
+    "student-dashboard": "Student Dashboard",
+    "certification": "Certification",
+    "missing": "Missing",
+    "logged": "Logged",
+    "all": "All",
+    "inspect": "Inspect",
+    "admin": "Admin",
+    "home": "Dashboard",
+    "teacher": "Teacher",
   };
 
   const crumbs = [{ label: "Home", path: "/" }];
@@ -82,7 +97,21 @@ function BreadcrumbNav() {
 
   displaySegments.forEach((seg, index) => {
     const path = "/" + displaySegments.slice(0, index + 1).map(s => s.original).join("/");
-    const label = labelMap[seg.display] || labelMap[seg.original] || seg.display.replace(/-/g, " ");
+    let label = labelMap[seg.display] || labelMap[seg.original];
+
+    if (!label && seg.display === "new" && index > 0) {
+      const parentPath = displaySegments[index - 1]?.original;
+      if (parentPath === "support") {
+        label = "New Support Ticket";
+      } else if (parentPath === "approvals") {
+        label = "New Approval Request";
+      }
+    }
+
+    if (!label) {
+      label = seg.display.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    }
+
     crumbs.push({ label, path });
   });
 
@@ -97,11 +126,17 @@ function BreadcrumbNav() {
     });
   }
 
+  const displayCrumbs = compact && crumbs.length > 2 ? [crumbs[0], crumbs[crumbs.length - 1]] : crumbs;
+
+  const finalCrumbs = contextCrumbs && contextCrumbs.length > 0
+    ? [{ label: "Home", path: "/" }, ...contextCrumbs]
+    : displayCrumbs;
+
   return (
     <Breadcrumb>
       <BreadcrumbList>
-        {crumbs.map((crumb, idx) => {
-          const isLast = idx === crumbs.length - 1;
+        {finalCrumbs.map((crumb, idx) => {
+          const isLast = idx === finalCrumbs.length - 1;
           const crumbPath = crumb.path ?? crumb.href;
           const crumbLabel = crumb.label || '';
           return (
@@ -186,12 +221,25 @@ export function Topbar() {
       return;
     }
     try {
-      const results = await studentService.searchStudents(searchQuery);
-      setSearchResults(results || []);
+      const role = user?.role;
+      const calls = [];
+      
+      if (role === "TEACHER") {
+        calls.push(studentService.searchStudents(searchQuery).catch(() => []));
+        calls.push(adminService.searchParents(searchQuery).catch(() => []));
+      } else if (["HOD", "HEADMASTER", "SUPER_ADMIN"].includes(role)) {
+        calls.push(studentService.searchStudents(searchQuery).catch(() => []));
+        calls.push(adminService.searchTeachers(searchQuery).catch(() => []));
+        calls.push(adminService.searchParents(searchQuery).catch(() => []));
+      }
+      
+      const results = await Promise.all(calls);
+      const merged = results.flat().slice(0, 20);
+      setSearchResults(merged);
     } catch (e) {
       setSearchResults([]);
     }
-  }, []);
+  }, [user?.role]);
 
   useEffect(() => {
     if (query.trim()) {
@@ -206,8 +254,15 @@ export function Topbar() {
 
   const handleResultClick = (result) => {
     setQuery(""); setIsSearching(false); updateURLSearchParam("");
-    if (result.id) { navigate(`/student-profile?id=${result.id}`); }
-    else { navigate("/grading"); }
+    if (result.type === "teacher") {
+      navigate(`/teacher-profile?id=${result.id}`);
+    } else if (result.type === "parent") {
+      navigate("/identity/parents");
+    } else if (result.id) {
+      navigate(`/student-profile?id=${result.id}`);
+    } else {
+      navigate("/grading");
+    }
   };
 
   const handleRoleChange = (nextRole) => {
@@ -224,8 +279,11 @@ export function Topbar() {
         <nav className="hidden md:block">
           <BreadcrumbNav />
         </nav>
+        <nav className="md:hidden">
+          <BreadcrumbNav compact />
+        </nav>
 
-        <div className="md:hidden flex items-center gap-2">
+        <div className="flex items-center gap-2 lg:hidden">
           <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)} className="w-9 h-9">
             <Menu size={18} />
           </Button>
@@ -287,25 +345,35 @@ export function Topbar() {
                 >
                   <div className="p-1.5 max-h-[280px] overflow-y-auto">
                     {searchResults.length > 0 ? (
-                      searchResults.map((result) => (
-                        <button key={result.id} type="button" onClick={() => handleResultClick(result)} className="w-full flex items-center gap-2.5 p-2 hover:bg-muted rounded-lg transition-all group text-left">
-                          <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 border bg-brand-secondary/10 text-brand-secondary border-brand-secondary/20">
-                            <Users size={13} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-text-primary truncate group-hover:text-brand-primary">{result.name}</p>
-                            <p className="text-[10px] font-bold text-text-secondary uppercase truncate mt-0.5">
-                              {result.classForm} • Index: {result.indexNumber}
-                            </p>
-                          </div>
-                        </button>
-                      ))
+                      searchResults.map((result) => {
+                        const isStudent = result.type === 'student';
+                        const isTeacher = result.type === 'teacher';
+                        const Icon = isStudent ? GraduationCap : isTeacher ? UserCheck : Users;
+                        const badgeColor = isStudent ? 'brand' : isTeacher ? 'purple' : 'emerald';
+                        return (
+                          <button key={`${result.type}-${result.id}`} type="button" onClick={() => handleResultClick(result)} className="w-full flex items-center gap-2.5 p-2 hover:bg-muted rounded-lg transition-all group text-left">
+                            <div className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 border ${
+                              badgeColor === 'brand' ? 'bg-brand-secondary/10 text-brand-secondary border-brand-secondary/20' :
+                              badgeColor === 'purple' ? 'bg-purple-50 text-purple-600 border-purple-200' :
+                              'bg-emerald-50 text-emerald-600 border-emerald-200'
+                            }`}>
+                              <Icon size={13} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold text-text-primary truncate group-hover:text-brand-primary">{result.name}</p>
+                              <p className="text-[10px] font-bold text-text-secondary uppercase truncate mt-0.5">
+                                {result.classForm} • {isTeacher ? 'Teacher' : isStudent ? `Index: ${result.indexNumber}` : result.indexNumber}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      })
                     ) : (
                       <div className="py-6 px-4 text-center">
                         <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center text-text-secondary mx-auto mb-2 border border-border">
                           <Search size={14} />
                         </div>
-                        <p className="text-xs font-bold text-text-primary">No matches found</p>
+                        <EmptyState context="students" variant="compact" />
                       </div>
                     )}
                   </div>

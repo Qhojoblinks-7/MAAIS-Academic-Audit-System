@@ -49,6 +49,7 @@ export {
   useArchiveStats,
   usePromoteStudent,
   useSearchVault,
+  useClassBenchmarks,
 } from './api/archive';
 
 export {

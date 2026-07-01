@@ -76,7 +76,7 @@ export function HODArchiveDetailView({ student, onBack }) {
   };
 
   const {
-    data: behaviorData = [],
+    data: behaviorData = { logs: [], traits: null },
     isLoading: behaviorLoading,
     error: behaviorError,
   } = useStudentBehavior(studentId);
@@ -91,7 +91,7 @@ export function HODArchiveDetailView({ student, onBack }) {
   const hasError = behaviorError || interventionError;
 
   const observations = useMemo(
-    () => (behaviorData || []).map(mapBehaviorToObservation).filter(Boolean),
+    () => (Array.isArray(behaviorData?.logs) ? behaviorData.logs : []).map(mapBehaviorToObservation).filter(Boolean),
     [behaviorData],
   );
 

@@ -1,9 +1,10 @@
 import React from 'react';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { EmptyState } from '../../../../components/molecules';
 
 export function BroadsheetComparisonPanel({ studentData }) {
   if (!studentData || !studentData.academicHistory || studentData.academicHistory.length === 0) {
-    return <p className="text-center text-text-secondary py-4">No academic history available for comparison.</p>;
+    return <EmptyState context="results" />;
   }
 
   const currentYearForm = studentData.yearForm || '—';
@@ -81,7 +82,7 @@ export function BroadsheetComparisonPanel({ studentData }) {
   }, [currentTerm, sortedHistory, currentYearForm, currentSemester]);
 
   if (!currentTerm) {
-    return <p className="text-center text-text-secondary py-4">Current term data not found in ledger maps.</p>;
+    return <EmptyState context="results" variant="compact" />;
   }
 
   if (!comparisonData) {
@@ -165,11 +166,11 @@ export function BroadsheetComparisonPanel({ studentData }) {
                  );
                })}
                {allSubjectNames.length === 0 && (
-                 <TableRow>
-                   <TableCell colSpan="5" className="px-4 py-6 text-center text-sm text-text-secondary">
-                     No matching subjects found between sequential target profiles.
-                   </TableCell>
-                 </TableRow>
+                  <TableRow>
+                    <TableCell colSpan="5" className="px-4 py-6 text-center text-sm text-text-secondary">
+                      <EmptyState context="results" variant="compact" />
+                    </TableCell>
+                  </TableRow>
                )}
              </TableBody>
            </Table>

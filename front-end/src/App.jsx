@@ -50,6 +50,9 @@ import {
   NewApprovalRequestView,
   SupportTicketDetailView,
 } from "./pages/admin";
+import { Error401View } from "./pages/errors/Error401View";
+import { Error403View } from "./pages/errors/Error403View";
+import { Error500View } from "./pages/errors/Error500View";
 import {
   HODDashboard,
   HODAudit,
@@ -76,6 +79,7 @@ import {
   StudentPortal,
   StudentProfile,
 } from "./pages/student";
+import { TeacherProfile } from "./pages/shared/TeacherProfile";
 import {
   TeacherTimetableView,
   TeacherDashboard,
@@ -96,10 +100,12 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import { UIProvider, useUI } from "./context/UIContext";
 import { useRole } from "./context/RoleContext";
 import { HODProvider } from "./context/HODContext";
+import { BreadcrumbProvider } from "./context/BreadcrumbContext";
 import { RequireRole } from "./components/auth/RequireRole";
 import { X, Lock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NotificationsPage } from "./pages/NotificationsPage";
+import { ConnectivityBanner } from "./pages/shared/ConnectivityBanner";
 import { useSystemFreeze } from "./lib/hooks";
 import { Button } from "./components/ui/button";
 import { cn } from "./lib/utils";
@@ -291,7 +297,7 @@ function Modal({ isOpen, onClose, title, children }) {
 // Router Switcher for Layout Consistency
 const RoleBasedArchiveView = () => {
   const { user } = useRole();
-  if (user?.role === "ADMIN") return <ArchiveView />;
+  if (user?.role === "SUPER_ADMIN" || user?.role === "HEADMASTER") return <ArchiveView />;
   if (user?.role === "HOD") return <HODArchiveView />;
   if (user?.role === "TEACHER") return <TeacherArchiveView />;
   return <ArchiveView />;
@@ -342,8 +348,8 @@ function AppContent() {
 
   console.log('[App] Render - pathname:', location.pathname, 'isLoginPage:', isLoginPage);
 
-  // ULTIMATE FIX: If it is the login page, return it immediately in a clean container
-  // bypassing the sidebars, grid systems, margins, topbars, and right layouts completely.
+  const isErrorPage = location.pathname === "/401" || location.pathname === "/403" || location.pathname === "/500";
+
   if (isLoginPage) {
     console.log('[App] Rendering login page container');
     return (
@@ -351,6 +357,18 @@ function AppContent() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </div>
+    );
+  }
+
+  if (isErrorPage) {
+    return (
+      <div className="w-full min-h-screen bg-background font-sans antialiased">
+        <Routes>
+          <Route path="/401" element={<Error401View />} />
+          <Route path="/403" element={<Error403View />} />
+          <Route path="/500" element={<Error500View />} />
         </Routes>
       </div>
     );
@@ -416,8 +434,9 @@ function AppContent() {
       </div>
 
       <div className="flex-1 flex flex-col min-w-0">
+        <ConnectivityBanner />
         {/* Topbar Context */}
-        {location.pathname !== "/journey-audit" && <Topbar />}
+        <Topbar />
 
         <main className="flex-1 flex overflow-hidden relative">
           <Routes>
@@ -460,7 +479,7 @@ function AppContent() {
                 <RequireRole allowedRoles={["TEACHER", "STUDENT", "ADMIN"]}>
                   {user?.role === "STUDENT" ? (
                     <StudentTimetable />
-                  ) : user?.role === "ADMIN" ? (
+                  ) : user?.role === "SUPER_ADMIN" || user?.role === "HEADMASTER" ? (
                     <SchedulingView />
                   ) : user?.role === "TEACHER" ? (
                     <TeacherTimetableView />
@@ -476,7 +495,7 @@ function AppContent() {
               path="/grading"
               element={
                 <RequireRole allowedRoles={["TEACHER", "ADMIN"]}>
-                  {user?.role === "ADMIN" ? (
+                  {user?.role === "SUPER_ADMIN" || user?.role === "HEADMASTER" ? (
                     <GradingRulesView />
                   ) : (
                     <StandaloneGradingWrapper />
@@ -489,6 +508,14 @@ function AppContent() {
               element={
                 <RequireRole allowedRoles={["TEACHER", "HOD", "HEADMASTER", "SUPER_ADMIN"]}>
                   <StudentProfile />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/teacher-profile"
+              element={
+                <RequireRole allowedRoles={["TEACHER", "HOD", "HEADMASTER", "SUPER_ADMIN"]}>
+                  <TeacherProfile />
                 </RequireRole>
               }
             />
@@ -776,7 +803,7 @@ function AppContent() {
                     <StudentSettings />
                   ) : user?.role === "HOD" ? (
                     <HODSettings />
-                  ) : user?.role === "ADMIN" ? (
+                  ) : user?.role === "SUPER_ADMIN" || user?.role === "HEADMASTER" ? (
                     <AdminSettings />
                   ) : (
                     <TeacherSettings />
@@ -794,7 +821,7 @@ function AppContent() {
                     <StudentSupport />
                   ) : user?.role === "HOD" ? (
                     <HODSupportPage />
-                  ) : user?.role === "ADMIN" ? (
+                  ) : user?.role === "SUPER_ADMIN" || user?.role === "HEADMASTER" ? (
                     <AdminSupport />
                   ) : (
                     <TeacherSupport />
@@ -812,7 +839,7 @@ function AppContent() {
                     <StudentSupport />
                   ) : user?.role === "HOD" ? (
                     <HODSupportPage />
-                  ) : user?.role === "ADMIN" ? (
+                  ) : user?.role === "SUPER_ADMIN" || user?.role === "HEADMASTER" ? (
                     <AdminSupport />
                   ) : (
                     <TeacherSupport />
@@ -882,7 +909,7 @@ function AppContent() {
           <StudentSettings />
         ) : user?.role === "HOD" ? (
           <HODSettings />
-        ) : user?.role === "ADMIN" ? (
+        ) : user?.role === "SUPER_ADMIN" || user?.role === "HEADMASTER" ? (
           <AdminSettings />
         ) : (
           <TeacherSettings />
@@ -898,7 +925,7 @@ function AppContent() {
           <StudentSupport />
         ) : user?.role === "HOD" ? (
           <HODSupportPage />
-        ) : user?.role === "ADMIN" ? (
+        ) : user?.role === "SUPER_ADMIN" || user?.role === "HEADMASTER" ? (
           <AdminSupport />
         ) : (
           <TeacherSupport />
@@ -914,7 +941,9 @@ export default function App() {
       <UIProvider>
         <TooltipProvider>
           <HODProvider>
-            <AppContent />
+            <BreadcrumbProvider>
+              <AppContent />
+            </BreadcrumbProvider>
           </HODProvider>
         </TooltipProvider>
         <Toaster />

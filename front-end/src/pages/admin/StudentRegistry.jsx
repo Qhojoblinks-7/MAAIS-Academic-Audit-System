@@ -12,6 +12,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { toast, Toaster } from '../../components/ui/toast.tsx';
+import { EmptyState } from '../../components/molecules';
 import { useAllStudents, useCreateStudent, useBatchImportStudents, usePromoteStudent, useBuildTranscript, useGenerateReportCard, useDeactivateUser, useUpdateStudentProfile } from '../../lib/hooks';
 import { 
   ResponsiveContainer, PieChart as RePieChart, Pie, Cell,
@@ -117,30 +118,30 @@ const StudentDossier = ({
 <div className="space-y-2">
                 {student.subjects && student.subjects.length > 0 
                   ? student.subjects.map((sub, i) => {
-                      const subjectName = sub.subject?.name || sub.subject || 'Unknown';
-                      const score = sub.score ?? sub.grade ?? 0;
-                      const grade = sub.grade ?? (score >= 80 ? 'A' : score >= 70 ? 'B' : score >= 60 ? 'C' : 'D');
-                      return (
-                        <div key={i} className="flex justify-between items-center p-3 hover:bg-slate-50 rounded-2xl transition-all border border-transparent hover:border-slate-100">
-                          <div className="flex items-center gap-3">
-                             <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
-                               <FileText size={14} />
-                            </div>
-                             <span className="text-[12px] font-bold text-slate-700">{subjectName}</span>
-                          </div>
-                          <div className="flex items-center gap-4">
-                             <span className="text-[11px] font-black italic font-display text-slate-400">{score}%</span>
-                             <span className={cn(
-                               "px-2.5 py-1 rounded-lg text-[10px] font-black italic font-display",
-                               grade.startsWith('A') ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-600"
-                             )}>
-                               {grade}
-                             </span>
-                          </div>
-                        </div>
-                      );
+                       const subjectName = sub.subject?.name || sub.subject || 'Unknown';
+                       const totalScore = sub.totalScore ?? sub.classScore ?? sub.examScore ?? 0;
+                       const letterGrade = sub.grade || (totalScore >= 80 ? 'A' : totalScore >= 70 ? 'B' : totalScore >= 60 ? 'C' : 'D');
+                       return (
+                         <div key={i} className="flex justify-between items-center p-3 hover:bg-slate-50 rounded-2xl transition-all border border-transparent hover:border-slate-100">
+                           <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
+                                <FileText size={14} />
+                             </div>
+                              <span className="text-[12px] font-bold text-slate-700">{subjectName}</span>
+                           </div>
+                           <div className="flex items-center gap-4">
+                              <span className="text-[11px] font-black italic font-display text-slate-400">{totalScore}%</span>
+                              <span className={cn(
+                                "px-2.5 py-1 rounded-lg text-[10px] font-black italic font-display",
+                                letterGrade.startsWith('A') || letterGrade.startsWith('1') ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-600"
+                              )}>
+                                {letterGrade}
+                              </span>
+                           </div>
+                         </div>
+                       );
                     })
-                  : <p className="text-[13px] font-bold text-slate-400 italic">No subject records available.</p>
+                  :                   <EmptyState context="students" variant="compact" />
                 }
               </div>
             </div>
@@ -828,11 +829,6 @@ export const StudentRegistry = () => {
       <header className="px-8 py-6 bg-white border-b border-slate-200/60 shrink-0">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.25em] text-slate-400 mb-2">
-              <span>Registry</span>
-              <ChevronRight size={10} />
-              <span className="text-slate-900">Student Dynamic Ledger</span>
-            </div>
             <h1 className="text-2xl font-black text-slate-900 italic font-display tracking-tight leading-none">
               Institutional Population Intelligence
             </h1>

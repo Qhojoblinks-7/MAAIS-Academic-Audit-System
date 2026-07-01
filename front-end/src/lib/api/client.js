@@ -86,6 +86,7 @@ async function getRefreshTokenLock() {
  */
 async function request(endpoint, options = {}) {
   let accessToken = getAuthToken();
+  const method = options.method || 'GET';
 
   const headers = {
     'Content-Type': 'application/json',
@@ -105,24 +106,22 @@ async function request(endpoint, options = {}) {
     : '';
 
   const url = new URL(`${API_BASE_URL}${endpoint}${queryString}`, window.location.origin).toString();
-  
+
   let response = await fetch(url, {
-    method: options.method || 'GET',
+    method,
     headers,
     body: options.body != null ? JSON.stringify(options.body) : undefined,
     credentials: 'omit',
   });
 
-  // ── Token Refresh Orchestration Barrier ──────────────────────────────────
   if (response.status === 401) {
     const refreshed = await getRefreshTokenLock();
-    
+
     if (refreshed) {
-      // Re-apply fresh signature authorization details 
       headers['Authorization'] = `Bearer ${refreshed.accessToken}`;
 
       response = await fetch(url, {
-        method: options.method || 'GET',
+        method,
         headers,
         body: options.body != null ? JSON.stringify(options.body) : undefined,
         credentials: 'omit',
@@ -139,6 +138,9 @@ async function request(endpoint, options = {}) {
         sessionStorage.removeItem('userId');
       }
       window.dispatchEvent(new Event('auth:logout'));
+      if (window.location.pathname !== '/401' && window.location.pathname !== '/login') {
+        window.location.href = '/401';
+      }
     }
   }
 

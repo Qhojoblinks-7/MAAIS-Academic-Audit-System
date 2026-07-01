@@ -1,5 +1,6 @@
 import React from 'react';
 import { Download, AlertTriangle } from 'lucide-react';
+import { EmptyState } from "../../../components/molecules";
 
 export function InsightsPanel({ onStructuralExport, insightsStats }) {
   return (
@@ -14,7 +15,7 @@ export function InsightsPanel({ onStructuralExport, insightsStats }) {
               <span className="text-emerald-400 text-sm font-black italic font-display">+{insightsStats?.topProgramPercent || 0}%</span>
             </div>
             <p className="text-[10px] text-white/60 font-medium leading-relaxed italic uppercase tracking-wider">
-              {insightsStats?.topProgramName ? `${insightsStats.totalStudents.toLocaleString()} students across ${insightsStats.totalClassUnits} classes` : 'No data available'}
+              {insightsStats?.topProgramName ? `${insightsStats.totalStudents.toLocaleString()} students across ${insightsStats.totalClassUnits} classes` : <EmptyState context="results" variant="compact" />}
             </p>
             <div className="mt-6 flex gap-2">
               <div className="h-1.5 flex-1 bg-white/10 rounded-full overflow-hidden">
@@ -52,7 +53,7 @@ export function InsightsPanel({ onStructuralExport, insightsStats }) {
             <div key={i} className="p-4 bg-white/60 rounded-2xl border border-amber-200/50">
               <div className="flex justify-between items-center mb-1">
                 <span className="text-[12px] font-black text-slate-900 italic font-display tracking-tight leading-none">{anomaly.name}</span>
-                <span className="text-[10px] font-black text-rose-600 italic font-display font-mono">⚠️ Overflow</span>
+                <span className="text-[10px] font-black text-rose-600 italic font-display font-mono">Overflow</span>
               </div>
               <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{anomaly.current} / {anomaly.capacity} Standard Capacity</p>
             </div>

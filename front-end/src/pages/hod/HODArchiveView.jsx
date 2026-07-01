@@ -8,6 +8,7 @@ import { HODArchiveDetailView } from './HODArchiveDetailView';
 import { useArchivedDepartmentData } from '@/lib/hooks/api/hod';
 import { useComplianceCohortPerformance, useComplianceTimeline, usePromotionMetrics, useTriggerPromotion, useLockedTerms } from '@/lib/hooks/api/hod';
 import { useSearchVault } from '@/lib/hooks/api/archive';
+import { useBreadcrumb } from '../../context/BreadcrumbContext';
 
 function normalizeStudent(record, lockedTermIds = []) {
   if (!record) return null;
@@ -31,6 +32,7 @@ function normalizeStudent(record, lockedTermIds = []) {
 }
 
 export function HODArchiveView() {
+  const { setBreadcrumb } = useBreadcrumb();
   const [activeSubTab, setActiveSubTab] = useState('VAULT');
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
@@ -128,6 +130,15 @@ export function HODArchiveView() {
       }
     }
   }, [selectedStudentId, vaultSearchResult]);
+
+  useEffect(() => {
+    const tabLabel = activeSubTab === 'VAULT' ? 'Vault' : activeSubTab === 'PROMOTION' ? 'Promotion' : 'Compliance';
+    const crumbs = [{ label: 'Department Vault', path: '/hod/archive' }, { label: tabLabel, path: null }];
+    if (selectedStudent) {
+      crumbs.push({ label: selectedStudent.name, path: null });
+    }
+    setBreadcrumb(crumbs);
+  }, [activeSubTab, selectedStudent, setBreadcrumb]);
 
   const students = useMemo(() => {
     const lockedIds = (lockedTerms || []).map(t => t.id);

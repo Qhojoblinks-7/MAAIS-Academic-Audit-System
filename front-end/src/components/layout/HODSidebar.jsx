@@ -26,7 +26,6 @@ import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
 import { useUI } from '../../context/UIContext';
 import { useHOD } from '../../context/HODContext';
-import { Tooltip, TooltipTrigger, TooltipContent } from '../ui/tooltip';
 
 export function HODSidebar() {
   const location = useLocation();
@@ -36,6 +35,7 @@ export function HODSidebar() {
   const [showLogoutModal, setShowLogoutModal] = React.useState(false);
   const [activeSubMenu, setActiveSubMenu] = React.useState(null);
   const sidebarRef = useRef(null);
+
   const pendingRevisionsCount = Array.isArray(revisions) 
     ? revisions.filter(r => r.status === 'PENDING').length 
     : 0;
@@ -76,18 +76,13 @@ export function HODSidebar() {
       id: 'hod-analytics',
       path: '/hod/analytics',
     },
-    ...(pendingRevisionsCount > 0 ? [{
+    {
       icon: AlertCircle,
       label: 'Revision Approvals',
       id: 'hod-revisions',
       path: '/revisions',
-      badge: pendingRevisionsCount
-    }] : [{
-      icon: AlertCircle,
-      label: 'Revision Approvals',
-      id: 'hod-revisions',
-      path: '/revisions',
-    }]),
+      badge: pendingRevisionsCount > 0 ? pendingRevisionsCount : undefined,
+    },
     {
       icon: FileText,
       label: 'Audit Log',
@@ -124,26 +119,21 @@ export function HODSidebar() {
       id: 'hod-broadsheet',
       path: '/hod/broadsheet'
     },
-    ...(totalAlerts > 0 ? [{
+    {
       icon: Award,
       label: 'Certification Desk',
       id: 'hod-certification',
       path: '/certification',
-      badge: totalAlerts,
+      badge: totalAlerts > 0 ? totalAlerts : undefined,
       badgeColor: 'bg-emerald-600'
-    }] : [{
-      icon: Award,
-      label: 'Certification Desk',
-      id: 'hod-certification',
-      path: '/certification',
-    }]),
+    },
     {
       icon: Database,
       label: 'Department Archives',
       id: 'hod-archive',
       path: '/archive'
     },
-  ];
+  ].filter(Boolean);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -170,7 +160,7 @@ export function HODSidebar() {
                   <button
                     onClick={() => setActiveSubMenu(isSubMenuOpen ? null : item.id)}
                     className={cn(
-                      "p-3 rounded-2xl transition-all duration-200 relative w-12 h-12 flex items-center justify-center",
+                      "p-3 rounded-2xl transition-all duration-200 relative w-12 h-12 flex items-center justify-center cursor-pointer",
                       isActive || isSubMenuOpen
                         ? "bg-surface text-brand-primary shadow-md ring-1 ring-border"
                         : "text-text-secondary hover:bg-surface hover:text-text-primary"
@@ -178,7 +168,7 @@ export function HODSidebar() {
                     title={item.label}
                   >
                     <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-                    {isActive && <div className="absolute left-0 w-1 h-5 bg-brand-primary rounded-r-full" />}
+                    {isActive && <div className="absolute left-0 w-1 h-5 bg-brand-secondary rounded-r-full" />}
                   </button>
                 ) : (
                   <Link
@@ -203,7 +193,7 @@ export function HODSidebar() {
                         </div>
                       )}
                     </div>
-                    {isActive && <div className="absolute left-0 w-1 h-5 bg-brand-primary rounded-r-full" />}
+                    {isActive && <div className="absolute left-0 w-1 h-5 bg-brand-secondary rounded-r-full" />}
                   </Link>
                 )}
 
@@ -254,21 +244,21 @@ export function HODSidebar() {
         <div className="flex flex-col gap-4 mt-auto px-3 w-full items-center">
           <button
             onClick={() => setSupportModalOpen(true)}
-            className="p-3 rounded-2xl text-text-secondary hover:bg-surface hover:text-text-primary transition-all duration-200 w-12 h-12 flex items-center justify-center"
+            className="p-3 rounded-2xl text-text-secondary hover:bg-surface hover:text-text-primary transition-all duration-200 w-12 h-12 flex items-center justify-center cursor-pointer"
             title="ICT Managerial Desk"
           >
             <LifeBuoy size={22} />
           </button>
           <button
             onClick={() => setSettingsModalOpen(true)}
-            className="p-3 rounded-2xl text-text-secondary hover:bg-surface hover:text-text-primary transition-all duration-200 w-12 h-12 flex items-center justify-center"
+            className="p-3 rounded-2xl text-text-secondary hover:bg-surface hover:text-text-primary transition-all duration-200 w-12 h-12 flex items-center justify-center cursor-pointer"
             title="Authority Settings"
           >
             <Settings size={22} />
           </button>
           <button
             onClick={() => setShowLogoutModal(true)}
-            className="p-3 rounded-2xl text-text-secondary hover:bg-danger/10 hover:text-danger transition-all duration-200 w-12 h-12 flex items-center justify-center"
+            className="p-3 rounded-2xl text-text-secondary hover:bg-danger/10 hover:text-danger transition-all duration-200 w-12 h-12 flex items-center justify-center cursor-pointer"
             title="Logout"
           >
             <LogOut size={22} />
@@ -299,7 +289,7 @@ export function HODSidebar() {
                   </div>
                   <button
                     onClick={() => setShowLogoutModal(false)}
-                    className="p-2 hover:bg-muted rounded-xl transition-all text-text-secondary hover:text-text-primary"
+                    className="p-2 hover:bg-muted rounded-xl transition-all text-text-secondary hover:text-text-primary cursor-pointer"
                   >
                     <X size={20} />
                   </button>
@@ -334,13 +324,13 @@ export function HODSidebar() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowLogoutModal(false)}
-                    className="flex-1 py-3 bg-muted text-text-primary font-medium rounded-xl text-sm hover:bg-border transition-all"
+                    className="flex-1 py-3 bg-muted text-text-primary font-medium rounded-xl text-sm hover:bg-border transition-all cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleLogout}
-                    className="flex-1 py-3 bg-danger text-surface font-medium rounded-xl text-sm hover:bg-danger/80 transition-all"
+                    className="flex-1 py-3 bg-danger text-surface font-medium rounded-xl text-sm hover:bg-danger/80 transition-all cursor-pointer"
                   >
                     Log Out
                   </button>

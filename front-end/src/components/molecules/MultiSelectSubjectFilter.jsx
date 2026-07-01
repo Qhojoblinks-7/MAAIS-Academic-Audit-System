@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Check } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { EmptyState } from '../shared/EmptyState';
 
 const DEFAULT_SUBJECTS = [
   'Mathematics',
@@ -69,7 +70,9 @@ export function MultiSelectSubjectFilter({
 
       <div className="max-h-48 overflow-y-auto space-y-1 border border-gray-100 rounded-xl p-1">
         {filteredSubjects.length === 0 && (
-          <p className="text-[10px] text-gray-400 text-center py-3">No subjects found</p>
+          <div className="text-center py-3">
+            <EmptyState context="subjects" variant="compact" />
+          </div>
         )}
         {filteredSubjects.map((subject) => {
           const isSelected = selected.includes(subject);

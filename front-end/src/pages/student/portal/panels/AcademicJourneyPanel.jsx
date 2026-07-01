@@ -1,10 +1,11 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { EmptyState } from '../../../../components/molecules';
 
 export function AcademicJourneyPanel({ studentData }) {
   // Guard early before hooks execute if no history context is available
   if (!studentData || !studentData.academicHistory) {
-    return <p className="text-center text-text-secondary py-4">No academic history available.</p>;
+    return <EmptyState context="results" />;
   }
 
   // 1. Extract all unique subjects cleanly
@@ -112,7 +113,7 @@ export function AcademicJourneyPanel({ studentData }) {
             </ResponsiveContainer>
           </div>
         ) : (
-          <p className="text-xs text-text-secondary italic">No active subject sequence selected or discovered.</p>
+          <EmptyState context="results" variant="compact" />
         )}
       </div>
 

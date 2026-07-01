@@ -1,6 +1,7 @@
 ﻿import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { EmptyState } from '../../components/molecules';
 import { 
   Users, GraduationCap, TrendingUp, AlertCircle, Clock, Plus, Radio,
   FileCheck, LifeBuoy, StickyNote, Zap, Lock, ArrowUpRight, MoreVertical,
@@ -78,6 +79,7 @@ export function AdminHome() {
   const staffQuery = useAllStaff();
   const systemFreezeQuery = useSystemFreeze();
   const toggleSystemFreezeMutation = useToggleSystemFreeze();
+
   const departmentsQuery = useAllDepartments();
   const subjectsQuery = useAllSubjects();
   const activeYearQuery = useAcademicYear();
@@ -740,7 +742,7 @@ export function AdminHome() {
                   );
                 })}
                 {tickets.filter(t => !removedTicketIds.has(t.id)).length === 0 && (
-                  <p className="text-center text-[10px] py-4 font-bold text-slate-400 uppercase tracking-wider">No tickets in queue</p>
+                  <EmptyState context="tickets" variant="compact" />
                 )}
               </div>
             </div>
@@ -962,11 +964,11 @@ export function AdminHome() {
                    <Button variant="outline" className="flex-1 py-2.5" onClick={() => { setActiveAction(null); setFreezeReason(''); }}>
                      {isFreezeActive ? 'Dismiss' : 'Abort'}
                    </Button>
-                    <Button 
-                      disabled={toggleSystemFreezeMutation.isPending}
-                      onClick={() => { 
-                        setFreezeError(null);
-                        toggleSystemFreezeMutation.mutate(
+                     <Button 
+                       disabled={toggleSystemFreezeMutation.isPending}
+                        onClick={() => { 
+                          setFreezeError(null);
+                          toggleSystemFreezeMutation.mutate(
                           { enabled: !isFreezeActive, reason: freezeReason },
                           {
                             onSuccess: () => {
@@ -982,7 +984,6 @@ export function AdminHome() {
                             },
                             onError: (err) => {
                               setFreezeError(err?.message || 'Failed to toggle system freeze');
-                              console.error('[AdminHome] Freeze toggle failed:', err);
                             }
                           }
                         );

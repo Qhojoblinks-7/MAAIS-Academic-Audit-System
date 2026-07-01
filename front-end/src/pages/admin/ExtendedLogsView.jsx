@@ -1,13 +1,13 @@
 ﻿import React, { useState, useMemo } from 'react';
-import { 
-  Activity, 
-  Search, 
-  Filter, 
-  Download, 
-  Shield, 
-  AlertTriangle, 
-  Info, 
-  ChevronDown, 
+import {
+  Activity,
+  Search,
+  Filter,
+  Download,
+  Shield,
+  AlertTriangle,
+  Info,
+  ChevronDown,
   ChevronUp,
   Calendar,
   User,
@@ -18,6 +18,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { EmptyState } from '../../components/molecules';
 import { format } from 'date-fns';
 import { cn } from '../../lib/utils';
 import { toast, Toaster } from '../../components/ui/toast.tsx';
@@ -419,10 +420,7 @@ export const ExtendedLogsView = () => {
               <div className="w-20 h-20 sm:w-24 sm:h-24 bg-slate-100 rounded-[2rem] sm:rounded-[2.5rem] flex items-center justify-center mx-auto mb-6 sm:mb-8">
                 <Info size={36} className="text-slate-300" />
               </div>
-              <h3 className="text-lg sm:text-xl font-black text-slate-900 italic font-display">No logs found in the selected range</h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2 max-w-md mx-auto leading-relaxed">
-                Adjust your search parameters or temporal filters to view system activity
-              </p>
+              <EmptyState context="tickets" />
             </div>
           )}
         </div>

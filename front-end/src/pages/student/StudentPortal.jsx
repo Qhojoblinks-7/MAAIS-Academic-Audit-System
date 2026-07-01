@@ -1,7 +1,9 @@
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
+import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { EmptyState } from '../../components/molecules';
 import { studentApi } from '../../services/api/studentApi';
 import { useStudentPortalData } from '../../hooks/api/useStudentApi';
 
@@ -295,8 +297,7 @@ export function StudentPortal() {
       <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-8 flex items-center justify-center min-h-[400px]">
         <div className="w-full max-w-md bg-surface border border-slate-100 rounded-2xl p-5 sm:p-6 shadow-sm text-center mx-auto">
           <AlertTriangle className="mx-auto text-warning mb-2" size={24} />
-          <p className="text-sm font-bold text-text-primary">{portalError || 'No profile context matches found.'}</p>
-          <p className="text-[11px] text-text-secondary mt-1">Please reach out to administration if this condition persists.</p>
+          <EmptyState context="students" />
         </div>
       </div>
     );

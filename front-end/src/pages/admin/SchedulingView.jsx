@@ -19,13 +19,6 @@ export const SchedulingView = () => {
           
           {/* Typography Stack */}
           <div>
-            <div className="flex items-center gap-1.5 text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">
-              <span>Academic Engine</span>
-              <ChevronRight size={8} className="text-slate-300" />
-              <span className="text-slate-800">Scheduling & Registry</span>
-            </div>
-            
-            {/* Fluid heading scaling: text-xl on small tablet -> text-2xl on small laptop -> text-3xl on wide screens */}
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-black italic font-display text-slate-900 tracking-tight leading-none">
               The Heartbeat Control
             </h1>

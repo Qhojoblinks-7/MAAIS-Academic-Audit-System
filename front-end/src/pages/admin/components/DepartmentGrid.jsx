@@ -23,21 +23,13 @@ import {
 } from 'recharts';
 import { cn } from '../../../lib/utils';
 import { buildDistribution } from '../hooks/useDepartments';
-import mockApiData from '../../../data/mockApiData.json';
 
 export function DepartmentGrid({ departments, viewType, setViewType, setSelectedDeptId, onSpawnClick }) {
   return (
     <>
-      {/* 1. Breadcrumbs Header */}
+      {/* 1. Page Title */}
       <header className="px-4 sm:px-8 py-4 bg-white border-b border-slate-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
         <div>
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-3 text-[9px] font-black uppercase tracking-[0.25em] text-slate-400 mb-1">
-            <span className="hover:text-slate-900 cursor-pointer">Registry</span>
-            <ChevronRight size={10} />
-            <span className="hover:text-slate-900 cursor-pointer">Identity Manager</span>
-            <ChevronRight size={10} />
-            <span className="text-slate-900">Departmental Hierarchy</span>
-          </div>
           <h1 className="text-xl font-black text-slate-900 italic font-display tracking-tight leading-none">
             The Digital Filing Cabinet
           </h1>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, AlertCircle } from 'lucide-react';
+import { EmptyState } from '../../components/molecules';
 import {
   ResponsiveContainer,
   BarChart,
@@ -112,8 +113,8 @@ export function ComplianceTab() {
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground font-medium">
-                  No cohort data available
+                <div className="w-full h-full flex items-center justify-center">
+                  <EmptyState context="students" variant="compact" />
                 </div>
               )}
             </div>

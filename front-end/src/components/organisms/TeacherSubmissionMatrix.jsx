@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { RefreshCw, Users, AlertTriangle, ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { SubmissionProgressSparkline, StatusBadge, ActionButtonGroup } from '../molecules';
+import { EmptyState } from '../molecules/EmptyState';
 import { useHOD } from '../../context/HODContext';
 
 function TeacherRow({ teacher }) {
@@ -149,16 +150,7 @@ export function TeacherSubmissionMatrix({
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center text-center py-12">
-            <div>
-              <Users size={28} className="text-gray-200 mx-auto mb-1.5" />
-              <p className="text-[11px] text-gray-400">No submission trends available</p>
-              <button
-                onClick={handleRefreshTrends}
-                className="mt-3 text-[11px] font-bold text-brand-primary hover:underline"
-              >
-                Retry
-              </button>
-            </div>
+            <EmptyState context="grades" variant="compact" />
           </div>
         )}
       </div>

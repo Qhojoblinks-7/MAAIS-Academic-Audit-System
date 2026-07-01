@@ -271,11 +271,6 @@ const handleAuditTrailClick = () => {
       <div className="max-w-7xl mx-auto space-y-10 pb-20">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">
-              <span>Academic Engine</span>
-              <ChevronRight size={10} />
-              <span className="text-slate-900">Grading & Assessment Rules</span>
-            </div>
             <h1 className="text-3xl font-black italic font-display text-slate-900 tracking-tight leading-none">
               The Grading Protocol
             </h1>

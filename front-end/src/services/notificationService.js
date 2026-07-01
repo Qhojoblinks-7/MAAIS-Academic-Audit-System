@@ -2,7 +2,6 @@ import { getAuthToken } from './auth';
 import { dataSync } from './dataSyncLayer';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_API === 'true';
 const NOTIFICATION_SOUND_URL = '/sounds/notification.mp3';
 
 function getHeaders() {
@@ -14,9 +13,6 @@ function getHeaders() {
 }
 
 async function request(method, path, body) {
-  if (USE_MOCK) {
-    return { success: true, id: Date.now() };
-  }
   try {
     const res = await fetch(`${BASE_URL}${path}`, {
       method,

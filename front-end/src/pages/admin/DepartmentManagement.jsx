@@ -8,6 +8,7 @@ import DepartmentManagementView from "./components/DepartmentManagementView";
 import { AlertModal } from "./components/AlertModal";
 import { authorizeTemplate } from "../../services/departmentService";
 import { auditTrail } from "../../services/auditTrailService";
+import { useBreadcrumb } from "../../context/BreadcrumbContext";
 import {
   useAllDepartments,
   useCreateDepartment,
@@ -59,6 +60,19 @@ export function DepartmentManagement() {
   }, [selectedDeptName, departments]);
 
   const [activeTab, setActiveTab] = React.useState("staff");
+  const { setBreadcrumb } = useBreadcrumb();
+
+  React.useEffect(() => {
+    if (selectedDept) {
+      const tabLabel = activeTab === 'staff' ? selectedDept.name : activeTab === 'classes' ? 'Classes' : activeTab === 'academic' ? 'Academic Profile' : activeTab === 'grading' ? 'Grade Entry' : activeTab;
+      setBreadcrumb([
+        { label: 'Departments', path: '/identity/departments' },
+        { label: tabLabel, path: null },
+      ]);
+    } else {
+      setBreadcrumb([{ label: 'Departments', path: '/identity/departments' }]);
+    }
+  }, [selectedDept, activeTab, setBreadcrumb]);
   const [viewType, setViewType] = React.useState("grid");
   const [assigningHOD, setAssigningHOD] = React.useState(null);
   const [showSpawnModal, setShowSpawnModal] = React.useState(false);

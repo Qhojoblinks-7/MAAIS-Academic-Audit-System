@@ -298,11 +298,6 @@ export const ParentRegistry = () => {
       <header className="px-8 py-6 bg-white border-b border-slate-200/60 shrink-0">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.25em] text-slate-400 mb-2">
-              <span>Registry</span>
-              <ChevronRight size={10} />
-              <span className="text-slate-900">Guardian Dynamic Hub</span>
-            </div>
             <h1 className="text-2xl font-black text-slate-900 italic font-display tracking-tight leading-none">
               Institutional Household Management
             </h1>

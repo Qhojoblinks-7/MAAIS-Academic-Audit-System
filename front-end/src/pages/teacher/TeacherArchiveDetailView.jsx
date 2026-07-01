@@ -733,7 +733,7 @@ const handleExportTranscript = async () => {
                     </div>
                   ))
                 ) : (
-                  <p className="text-xs text-slate-400 text-center italic py-8">No qualitative academic observations logged for this record cycle.</p>
+                  <EmptyState context="results" variant="compact" />
                 )}
               </div>
             </div>

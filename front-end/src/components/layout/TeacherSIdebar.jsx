@@ -172,7 +172,7 @@ React.useEffect(() => {
                         </div>
                       )}
                     </div>
-                    {isActive && <div className="absolute left-0 w-1 h-5 bg-brand-primary rounded-r-full" />}
+                    {isActive && <div className="absolute left-0 w-1 h-5 bg-brand-secondary rounded-r-full" />}
                   </Link>
                 )}
 

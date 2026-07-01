@@ -10,5 +10,6 @@ export { departmentService } from './departmentService';
 
 // Real services (with mock fallback)
 export { hodService } from './hodService';
+export { adminService } from './adminService';
 export { teacherService } from './teacherService';
 export { studentService } from './studentService';

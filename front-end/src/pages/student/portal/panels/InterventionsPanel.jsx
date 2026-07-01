@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertTriangle, MessageSquare, CheckCircle, Bell } from 'lucide-react';
 import { cn } from '../ui/cn';
+import { EmptyState } from '../../../../components/molecules';
 
 export function InterventionsPanel({ notifications = [], studentData, activeInterventions: propInterventions }) {
   const backendInterventions = React.useMemo(() => {
@@ -132,9 +133,9 @@ export function InterventionsPanel({ notifications = [], studentData, activeInte
             })}
           </div>
         ) : (
-          <div className="text-center py-8 bg-background rounded-xl border border-dashed border-border/60">
-            <p className="text-text-secondary text-xs font-medium">No system interventions or active alerts logged.</p>
-          </div>
+            <div className="py-8 bg-background rounded-xl border border-dashed border-border/60">
+              <EmptyState context="grades" variant="compact" />
+            </div>
         )}
       </div>
     </div>

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Scale, QrCode, CheckCircle2, Clock, ArrowRight, X, Star, Send } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
+import { EmptyState } from '../../components/molecules';
 import { studentApi } from '../../services/api/studentApi';
 import { useStudentStore } from '../../stores/useStudentStore';
 import { useStudentBehavior, useStudentTickets } from '../../hooks/api/useStudentApi';
@@ -201,7 +202,7 @@ export function StudentSupport() {
                   </div>
                 ))
               ) : (
-                <p className="text-text-secondary text-xs p-4">No tickets found.</p>
+                <EmptyState context="tickets" variant="compact" />
               )}
             </div>
           </section>

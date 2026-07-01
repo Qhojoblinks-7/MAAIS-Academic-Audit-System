@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { EmptyState } from '../../components/molecules';
 import {
   AlertTriangle,
   Hourglass,
@@ -22,6 +23,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useHOD } from '../../context/HODContext';
+import { useBreadcrumb } from '../../context/BreadcrumbContext';
 import { statusStyles, severityStyles } from '../shared/RevisionsFeed';
 import { hodService } from '../../services/hodService';
 import { auditTrail } from '../../services/auditTrailService';
@@ -45,6 +47,7 @@ const HODRevisionsFeed = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { revisions = [], refreshRevisions, isLoading } = useHOD();
+  const { setBreadcrumb } = useBreadcrumb();
 
   useEffect(() => {
     auditTrail.setUseHodApi(true);
@@ -73,6 +76,15 @@ const HODRevisionsFeed = () => {
       setSelected(revisions[0]);
     }
   }, [searchParams, revisions]);
+
+  useEffect(() => {
+    const tabLabel = activeTab === 'pending' ? 'Pending' : activeTab === 'resolved' ? 'Resolved' : 'All';
+    const crumbs = [{ label: 'Correction Requests', path: '/revisions' }, { label: tabLabel, path: null }];
+    if (selected) {
+      crumbs.push({ label: selected.student || 'Revision', path: null });
+    }
+    setBreadcrumb(crumbs);
+  }, [activeTab, selected, setBreadcrumb]);
 
   const filteredData = revisions.filter(item => {
     const isResolved = (r) => (r.status || '').toUpperCase() === 'RESOLVED' || (r.status || '').toUpperCase() === 'REJECTED';
@@ -352,7 +364,7 @@ const sendDiscussionMessage = async () => {
                        </div>
                      </div>
                    )) : (
-                     <p className="text-sm text-slate-500 italic">No history available</p>
+                      <EmptyState context="tickets" variant="compact" />
                    )}
                   </div>
                </div>

@@ -22,7 +22,8 @@ import {
   Users,
   GraduationCap,
   Sparkles,
-  RefreshCw
+  RefreshCw,
+  Lock
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -35,8 +36,9 @@ import {
   AreaChart,
   Area
 } from 'recharts';
+import { toast } from '../../../components/ui/toast';
 
-export function PromotionTab({}) {
+export function PromotionTab({ onExecutePromotion, isPromoting, onLockAllTerms, unlockedCount }) {
   return (
     <div className="max-w-5xl mx-auto space-y-10">
       <div className="bg-white rounded-[3rem] border border-slate-200 p-12 shadow-sm relative overflow-hidden">
@@ -50,6 +52,25 @@ export function PromotionTab({}) {
             <span className="block mt-2 text-rose-500 font-black">Warning: This action is irreversible for the current academic session.</span>
           </p>
         </div>
+
+        {unlockedCount > 0 && (
+          <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Lock size={18} className="text-amber-600" />
+              <span className="text-[11px] font-black text-amber-900 uppercase tracking-widest">
+                {unlockedCount} term(s) still unlocked — lock them before promoting
+              </span>
+            </div>
+            {onLockAllTerms && (
+              <button
+                onClick={onLockAllTerms}
+                className="px-4 py-2 bg-amber-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-amber-700 transition-all"
+              >
+                Lock All Terms
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
@@ -71,9 +92,13 @@ export function PromotionTab({}) {
         </div>
 
         <div className="mt-12 flex justify-center">
-          <button className="px-12 py-5 bg-emerald-900 text-white rounded-[2rem] text-[12px] font-black uppercase tracking-[0.2em] hover:bg-black hover:scale-105 active:scale-95 transition-all shadow-2xl flex items-center gap-3">
+          <button 
+            onClick={onExecutePromotion}
+            disabled={isPromoting}
+            className="px-12 py-5 bg-emerald-900 text-white rounded-[2rem] text-[12px] font-black uppercase tracking-[0.2em] hover:bg-black hover:scale-105 active:scale-95 transition-all shadow-2xl flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             <Zap size={20} className="text-amber-400" />
-            Execute Global Promotion
+            {isPromoting ? 'Executing...' : 'Execute Global Promotion'}
           </button>
         </div>
       </div>
@@ -89,7 +114,10 @@ export function PromotionTab({}) {
           </p>
         </div>
         <div className="flex gap-4">
-          <button className="px-6 py-4 bg-white border border-emerald-200 text-emerald-900 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-100 transition-all">
+          <button 
+            onClick={() => toast.info('Clear Logs feature coming soon')}
+            className="px-6 py-4 bg-white border border-emerald-200 text-emerald-900 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-100 transition-all"
+          >
             <Trash2 size={14} /> Clear Logs Only
           </button>
         </div>
@@ -98,7 +126,7 @@ export function PromotionTab({}) {
   );
 }
 
-export function MaintenanceTab({}) {
+export function MaintenanceTab({ onExecuteMaintenance, onDeepClean }) {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="bg-white rounded-[2.5rem] border border-slate-200 p-10 shadow-sm">
@@ -115,7 +143,12 @@ export function MaintenanceTab({}) {
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ensures data integrity for all archived terms</p>
               </div>
             </div>
-            <button className="px-4 py-2 bg-slate-900 text-white rounded-lg text-[9px] font-black uppercase tracking-widest">Execute</button>
+            <button 
+              onClick={onExecuteMaintenance}
+              className="px-4 py-2 bg-slate-900 text-white rounded-lg text-[9px] font-black uppercase tracking-widest"
+            >
+              Execute
+            </button>
           </div>
 
           <div className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border border-slate-100">
@@ -128,7 +161,12 @@ export function MaintenanceTab({}) {
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Deletes data for students not linked to any form</p>
               </div>
             </div>
-            <button className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all">Deep Clean</button>
+            <button 
+              onClick={onDeepClean}
+              className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all"
+            >
+              Deep Clean
+            </button>
           </div>
         </div>
       </div>

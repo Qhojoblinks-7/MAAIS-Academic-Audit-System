@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, ChevronRight, ChevronDown, Send, Flag, AlertTriangle, User, Clock, MessageSquare } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { StatusBadge, JustificationQualityIndicator, ActionButtonGroup, HODCommentInput } from '../molecules';
+import { EmptyState } from '../molecules/EmptyState';
 import { useHOD } from '../../context/HODContext';
 
 function TimelineEntry({ log, onComment, isExpanded, onToggle }) {
@@ -156,7 +157,7 @@ export function AuditLogTimeline({
 
       <div className="space-y-2">
         {logs.length === 0 ? (
-          <div className="text-center py-8 text-xs text-gray-400">No audit logs match the selected filter.</div>
+          <EmptyState context="tickets" variant="compact" />
         ) : (
           logs.map((log, i) => (
             <TimelineEntry

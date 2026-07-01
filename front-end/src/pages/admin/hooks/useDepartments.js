@@ -108,44 +108,20 @@ export function normalizeDeptFromApi(dept, index) {
 }
 
 export function buildInitialDepartments() {
-  const rawDepartments = [];
-  try {
-    const mod = require('../../../data/mockApiData.json');
-    rawDepartments.push(...(mod.departments?.items || []));
-  } catch {
-    rawDepartments.push(...([]));
-  }
-
-  const normalized = rawDepartments.map((dept, index) => {
+  const names = ['Science', 'Mathematics', 'Languages', 'Business', 'General Arts', 'Visual Arts', 'Home Economics', 'Technical'];
+  const normalized = names.slice(0, 4).map((name, index) => {
     const fallbackStaff = [
       { id: `STF-${String(index + 1).padStart(3, '0')}`, name: `HOD ${index + 1}`, role: 'HOD', isHOD: true },
       { id: `STF-${String(index + 1).padStart(3, '0')}T`, name: `Teacher ${index + 1}`, role: 'Teacher', isHOD: false },
     ];
-
-    return normalizeDept(dept, index, fallbackStaff);
+    return normalizeDept(
+      { name, teacherCount: Math.floor(Math.random() * 20) + 5, validationStatus: Math.floor(Math.random() * 55) + 45 },
+      index,
+      fallbackStaff
+    );
   });
 
-  const filled = [...normalized];
-  while (filled.length < 4) {
-    const i = filled.length;
-    const newName = ['Science', 'Mathematics', 'Languages', 'Business'][i % 4];
-
-    const hodId = `STF-${String(i + 1).padStart(3, '0')}`;
-    const staff = [
-      { id: hodId, name: `HOD ${i + 1}`, role: 'HOD', isHOD: true },
-      { id: `${hodId}T`, name: `Teacher ${i + 1}`, role: 'Teacher', isHOD: false },
-    ];
-
-    filled.push(
-      normalizeDept(
-        { id: String(i + 1), name: newName, teacherCount: Math.floor(Math.random() * 20) + 5, validationStatus: Math.floor(Math.random() * 55) + 45 },
-        i,
-        staff
-      )
-    );
-  }
-
-  return filled.slice(0, 4);
+  return normalized;
 }
 
 export function buildDistribution(depts) {

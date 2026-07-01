@@ -3,6 +3,7 @@ import { Calendar, Clock, MapPin } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useStudentStore } from '../../stores/useStudentStore';
 import { useStudentTimetable, useStudentPortalData } from '../../hooks/api/useStudentApi';
+import { EmptyState } from '../../components/molecules';
 import { useRole } from '../../context/RoleContext';
 
 const DAY_MAP = {
@@ -196,7 +197,7 @@ export function StudentTimetable() {
           )) : (
             <div className="bg-surface rounded-2xl sm:rounded-[2rem] border border-border shadow-sm overflow-hidden">
               <div className="p-6 sm:p-8 text-center text-text-secondary text-sm">
-                {loading ? 'Loading timetable...' : 'No timetable entries found for your class.'}
+                {loading ? 'Loading timetable...' : <EmptyState context="results" />}
               </div>
             </div>
           )}

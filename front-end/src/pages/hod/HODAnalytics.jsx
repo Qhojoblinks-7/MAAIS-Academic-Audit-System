@@ -11,6 +11,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { EmptyState } from "../../components/molecules";
 import { CardLayout as Card } from "../../components/templates/CardLayout";
 import { useHOD } from "../../context/HODContext";
 import {
@@ -126,7 +127,9 @@ function ScoreDistributionChart({ alerts }) {
       </div>
 
       {buckets.length === 0 ? (
-        <p className="text-xs text-slate-400 text-center py-8">No scored alerts available yet</p>
+        <div className="flex items-center justify-center h-[140px]">
+          <EmptyState context="grades" variant="compact" />
+        </div>
       ) : (
         <div className="flex items-end gap-2 h-[140px]">
           {buckets.map((bucket, idx) => (
@@ -568,7 +571,7 @@ export function HODAnalytics() {
             </CardHeader>
             <CardContent className="space-y-3.5 text-xs text-slate-600 font-medium">
               {filteredAlerts.length === 0 ? (
-                <p className="text-slate-400 text-xs">No alerts in selected date range</p>
+                <EmptyState context="grades" variant="compact" />
               ) : (
                 filteredAlerts
                   .slice(0, 5)

@@ -5,7 +5,6 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 const RoleContext = createContext(undefined);
 
-// Pure mapper utility to extract profile layouts without duplicating code shells
 const parseUserProfile = (data, jwtPayload) => {
   const payload = jwtPayload || {};
   const userId = data?.id || payload.sub || payload.id;
@@ -36,7 +35,6 @@ export function RoleProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // ── Synchronized Session Mounting ─────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
 
@@ -96,7 +94,6 @@ export function RoleProvider({ children }) {
                         catch { return {}; }
                       })();
 
-                      // FIX: Guard statement protects against out-of-order state updates
                       setUser(parseUserProfile(data, payload));
                       setIsAuthenticated(true);
                       setLoading(false);
@@ -109,7 +106,6 @@ export function RoleProvider({ children }) {
               }
             }
 
-            // Fall through to cleanup if token refresh logic fails
             if (!cancelled) {
               clearAuthToken();
               localStorage.removeItem('refreshToken');
@@ -154,16 +150,7 @@ export function RoleProvider({ children }) {
     };
   }, []);
 
-  console.log('[RoleContext] Mount - loading state:', loading, 'user:', user, 'isAuthenticated:', isAuthenticated);
-
-  // ── Authentication Actions ────────────────────────────────────────────────
-  const setRole = useCallback((role) => {
-    // Determined purely by authoritative backend validation
-  }, []);
-
   const logout = useCallback(() => {
-    console.group('[RoleContext] logout()');
-    console.log('[RoleContext] Clearing auth tokens and user state');
     clearAuthToken();
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('userId');
@@ -173,49 +160,36 @@ export function RoleProvider({ children }) {
     }
     setUser(null);
     setIsAuthenticated(false);
-    console.groupEnd();
+    window.location.href = '/401';
   }, []);
 
   const login = useCallback((credentials) => {
-    console.log('[RoleContext] login() called with credentials:', {
-      hasToken: !!credentials?.token,
-      hasUser: !!credentials?.user,
-      userRole: credentials?.user?.role,
-      tokenLength: credentials?.token?.length
-    });
     if (!credentials?.token) {
-      console.warn('[RoleContext] login() rejected - missing token');
       return false;
     }
     try {
       const payload = JSON.parse(atob(credentials.token.split('.')[1]));
       const profile = parseUserProfile(credentials.user, payload);
-      console.log('[RoleContext] login() parsed profile:', profile);
       setUser(profile);
       setIsAuthenticated(true);
-      console.log('[RoleContext] login() completed successfully');
       return true;
     } catch (e) {
-      console.error('[RoleContext] Token validation failed:', e);
+      console.error('Token validation failed:', e);
       return false;
     }
   }, []);
 
-  // FIX: Memoize context object value to prevent full-tree re-render cascades
   const contextValue = useMemo(() => ({
     user,
-    setRole,
+    setRole: () => {},
     logout,
     login,
     isAuthenticated
   }), [user, logout, login, isAuthenticated]);
 
   if (loading) {
-    console.log('[RoleContext] Still loading, returning null');
-    return null; // Holds app frame painting until fallback session validation settles
+    return null;
   }
-
-  console.log('[RoleContext] Providing context - user:', user, 'isAuthenticated:', isAuthenticated);
 
   return (
     <RoleContext.Provider value={contextValue}>

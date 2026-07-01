@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { EmptyState } from '../../components/molecules';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -338,9 +339,7 @@ export function HODInterventions() {
           <div className="flex-1 overflow-y-auto p-2 space-y-1 bg-slate-50/50">
             {filteredAlerts.length === 0 ? (
               <div className="py-12 text-center">
-                <p className="text-xs text-slate-400 font-medium italic">
-                  No exceptions logged.
-                </p>
+                <EmptyState context="grades" variant="compact" />
               </div>
             ) : (
               filteredAlerts.map((alt) => {

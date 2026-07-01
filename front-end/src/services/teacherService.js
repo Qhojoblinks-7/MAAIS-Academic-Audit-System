@@ -269,17 +269,24 @@ function createRealService() {
     getStudentPortalData: (studentId) =>
       request('GET', `/portal/students/${studentId}/portal-data`).then(r => r?.data ?? r),
 
-    getObservationLogs: () =>
-      request('GET', '/teacher/observations').then((r) => {
-        const data = r?.data ?? r ?? [];
-        return Array.isArray(data) ? data : [];
-      }),
-
     getStudentBehavior: (studentId) =>
       request('GET', `/students/${studentId}/behavior`).then(r => r?.data ?? r),
 
     createBehavior: (studentId, data) =>
       request('POST', `/students/${studentId}/behavior`, data).then(r => r?.data ?? r),
+
+    searchTeachers: (query) =>
+      request('GET', `/users/teachers${query ? `?search=${encodeURIComponent(query)}` : ''}`)
+        .then((res) => {
+          const data = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+          return data.map((t) => ({
+            id: t.id,
+            name: `${t.firstName || ''} ${t.lastName || ''}`.trim() || t.staffId || t.id,
+            classForm: t.department?.name || 'Staff',
+            indexNumber: t.staffId || '—',
+            type: 'teacher',
+          }));
+        }),
   };
 }
 

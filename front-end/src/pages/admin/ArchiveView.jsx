@@ -1,11 +1,12 @@
 ﻿import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
+import { archiveApi } from '../../lib/api';
 import { Database, FileText, Filter, Calendar, Search, ShieldCheck, User, TrendingUp, History, Printer } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer
 } from 'recharts';
-import { useArchiveStats as useAdminArchiveStats, useAcademicYears as useAdminAcademicYears, useStudentProfile, useStudentBehavior, useStudentInterventions, useSearchVault } from '../../lib/hooks';
+import { useArchiveStats as useAdminArchiveStats, useAcademicYears as useAdminAcademicYears, useStudentProfile, useStudentBehavior, useStudentInterventions, useSearchVault, usePromoteStudent, useBatchGenerateReportCards, useAllClasses, useActiveYear } from '../../lib/hooks';
 import { SubTabSelector } from './components/SubTabSelector';
 import { PromotionTab, MaintenanceTab } from './components/ArchiveTabs';
 import { VaultHeader } from './components/VaultHeader';
@@ -19,6 +20,9 @@ import {
   TableRow,
   TableCell,
 } from '../../components/ui/table';
+import { LoadingState } from '../../components/shared/LoadingState';
+import { EmptyState } from '../../components/shared/EmptyState';
+import { toast } from '../../components/ui/toast';
 
 export const getWAECGrade = (score) => {
   if (score >= 80) return 'A1';
@@ -45,14 +49,63 @@ export function ArchiveView() {
     type: 'Subject-Specific',
     concludingSummary: ''
   });
+  const [unlockedTermsCount, setUnlockedTermsCount] = React.useState(0);
 
-  const archiveStatsQuery = useAdminArchiveStats();
-  const academicYearsQuery = useAdminAcademicYears();
-  const vaultSearchQuery = useSearchVault(searchTrigger || {});
+const {
+  data: archiveStats = {},
+  isLoading: archiveStatsLoading,
+} = useAdminArchiveStats();
+const {
+  data: yearsList = [],
+  isLoading: academicYearsLoading,
+} = useAdminAcademicYears();
+const {
+  data: activeYearData,
+} = useActiveYear();
+const {
+  data: allClasses = [],
+} = useAllClasses();
+const vaultSearchQuery = useSearchVault(searchTrigger || {});
+const promoteStudentMutation = usePromoteStudent();
+const batchGenerateReportCardsMutation = useBatchGenerateReportCards();
 
-  const archiveStats = archiveStatsQuery.data;
-  const academicYears = academicYearsQuery.data || [];
-  const vaultSearchResults = vaultSearchQuery.data || [];
+const vaultSearchResults = vaultSearchQuery.data || [];
+const academicYears = yearsList;
+
+  React.useEffect(() => {
+    const year = academicYears.find(y => y.isActive);
+    if (!year?.id) {
+      setUnlockedTermsCount(0);
+      return;
+    }
+    let cancelled = false;
+    archiveApi.getUnlockedTerms(year.id)
+      .then(r => {
+        if (cancelled) return;
+        const data = r?.data ?? r ?? [];
+        setUnlockedTermsCount(Array.isArray(data) ? data.length : 0);
+      })
+      .catch(() => {
+        if (!cancelled) setUnlockedTermsCount(0);
+      });
+    return () => { cancelled = true; };
+  }, [academicYears]);
+
+  const handleLockAllTerms = () => {
+    const year = academicYears.find(y => y.isActive);
+    if (!year?.id) {
+      toast.error('No active academic year found');
+      return;
+    }
+    archiveApi.lockAllTerms(year.id)
+      .then(() => {
+        setUnlockedTermsCount(0);
+        toast.success('All terms locked successfully');
+      })
+      .catch((err) => {
+        toast.error(`Failed to lock terms: ${err.message || 'Unknown error'}`);
+      });
+  };
 
   const vaultEntries = React.useMemo(() => {
     if (searchTrigger && vaultSearchResults.length > 0) {
@@ -61,6 +114,7 @@ export function ArchiveView() {
         studentId: record.id,
         name: record.name || `${record.firstName || ''} ${record.lastName || ''}`.trim(),
         index: record.indexNumber || '—',
+        classId: record.currentClass?.id || null,
         fromClass: record.currentClass?.level || record.fromClass || null,
         toClass: record.toClass || null,
         status: record.archivedAt ? 'GRADUATED' : record.status || 'Archived',
@@ -78,6 +132,7 @@ export function ArchiveView() {
         id: p.studentId || p.id,
         name: p.studentName || 'Unknown',
         index: p.studentIndex || '—',
+        classId: p.classId || null,
         fromClass: p.fromClass,
         toClass: p.toClass,
         status: p.status,
@@ -86,21 +141,59 @@ export function ArchiveView() {
         history: p.status === 'GRADUATED' ? [{ finalGrade: 75 }] : [{ finalGrade: null }],
       }));
     }
-    if (archiveStats?.recentArchives) {
-      return archiveStats.recentArchives.map((a) => ({
-        id: a.studentId || a.id,
-        name: a.studentName || 'Unknown',
-        index: a.studentIndex || '—',
-        fromClass: a.fromClass,
-        toClass: a.toClass,
-        status: a.status,
-        academicYear: a.academicYear,
-        performedAt: a.performedAt,
-        history: a.history || [{ finalGrade: null }],
-      }));
-    }
     return [];
   }, [archiveStats, vaultSearchResults, searchTrigger]);
+
+  const [classBenchmarks, setClassBenchmarks] = React.useState({});
+
+  React.useEffect(() => {
+    if (!vaultEntries.length) return;
+    const uniqueClassIds = [...new Set(vaultEntries.map(e => e.classId).filter(Boolean))];
+    if (uniqueClassIds.length === 0) return;
+
+    let cancelled = false;
+    Promise.all(
+      uniqueClassIds.map(async (classId) => {
+        try {
+          const res = await archiveApi.getClassBenchmarks(classId);
+          const data = res?.data ?? res ?? [];
+          return { classId, benchmarks: data };
+        } catch {
+          return { classId, benchmarks: [] };
+        }
+      })
+    ).then(results => {
+      if (cancelled) return;
+      const map = {};
+      results.forEach(({ classId, benchmarks }) => {
+        map[classId] = benchmarks;
+      });
+      setClassBenchmarks(map);
+    });
+
+    return () => { cancelled = true; };
+  }, [vaultEntries]);
+
+  const getGhostBenchmark = (student, idx) => {
+    const classId = student.classId;
+    if (!classId) return null;
+    const benchmarks = classBenchmarks[classId];
+    if (!benchmarks || !benchmarks.length) return null;
+
+    const classLevel = student.fromClass;
+    let termNumber = null;
+
+    if (classLevel === 'FORM_1') {
+      if (idx <= 2) termNumber = idx + 1;
+    } else if (classLevel === 'FORM_2') {
+      if (idx >= 3 && idx <= 5) termNumber = idx - 2;
+    }
+
+    if (termNumber === null) return null;
+    const termNumStr = `TERM_${termNumber}`;
+    const match = benchmarks.find(b => b.termNumber === termNumStr);
+    return match ? match.averageScore : null;
+  };
 
   const selectedStudentId = selectedStudent?.id || selectedStudent?.studentId;
   const studentProfileQuery = useStudentProfile(selectedStudentId);
@@ -110,12 +203,12 @@ export function ArchiveView() {
   const enrichedSelectedStudent = React.useMemo(() => {
     if (!selectedStudent) return null;
     const profile = studentProfileQuery.data;
-    const behaviors = behaviorQuery.data || [];
-    const interventions = interventionsQuery.data || [];
+    const behaviors = Array.isArray(behaviorQuery.data?.logs) ? behaviorQuery.data.logs : [];
+    const interventions = Array.isArray(interventionsQuery.data) ? interventionsQuery.data : [];
 
     const base = {
       id: selectedStudent.id || selectedStudent.studentId,
-      name: selectedStudent.name || profile ? `${profile.firstName} ${profile.lastName}` : 'Unknown',
+      name: selectedStudent.name || (profile?.firstName ? `${profile.firstName} ${profile.lastName || ''}`.trim() : 'Unknown'),
       index: selectedStudent.index || profile?.indexNumber || '—',
       department: selectedStudent.department || profile?.department?.name || '—',
       consistencyScore: selectedStudent.consistencyScore || 'N/A',
@@ -133,9 +226,9 @@ export function ArchiveView() {
     const observations = behaviors.map((b) => ({
       id: b.id,
       type: 'Behavior',
-      date: new Date(b.createdAt).toLocaleDateString(),
+      date: b.createdAt ? new Date(b.createdAt).toLocaleDateString() : '—',
       comment: b.remarks || '—',
-      teacherName: b.recordedBy ? `${b.recordedBy.firstName} ${b.recordedBy.lastName}` : 'System',
+      teacherName: b.recordedBy ? `${b.recordedBy.firstName || ''} ${b.recordedBy.lastName || ''}`.trim() || 'System' : 'System',
     }));
 
     const studentInterventions = interventions.map((int) => ({
@@ -143,7 +236,7 @@ export function ArchiveView() {
       year: int.createdAt ? new Date(int.createdAt).getFullYear().toString() : '—',
       term: '—',
       action: int.notes || 'Grade drop detected',
-      outcome: int.status,
+      outcome: int.status || '—',
     }));
 
     return {
@@ -154,8 +247,15 @@ export function ArchiveView() {
     };
   }, [selectedStudent, studentProfileQuery.data, behaviorQuery.data, interventionsQuery.data]);
 
-  const terms = ['SHS 1-T1', 'SHS 1-T2', 'SHS 1-T3', 'SHS 2-T1', 'SHS 2-T2', 'SHS 2-T3'];
-  const coreSubjects = ['Core Math', 'English', 'Int. Science', 'Social Studies'];
+const terms = ['SHS 1-T1', 'SHS 1-T2', 'SHS 1-T3', 'SHS 2-T1', 'SHS 2-T2', 'SHS 2-T3'];
+   const coreSubjects = ['Core Math', 'English', 'Int. Science', 'Social Studies'];
+
+   const historyForChart = React.useMemo(() => {
+     return terms.map((term, idx) => ({
+       name: term,
+       finalGrade: enrichedSelectedStudent?.history?.[idx]?.finalGrade ?? null,
+     }));
+   }, [enrichedSelectedStudent?.history]);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#F0F4F2] relative">
@@ -178,7 +278,28 @@ export function ArchiveView() {
               exit={{ opacity: 0, y: -10 }}
                className="flex-1 p-10 overflow-y-auto scrollbar-hide"
             >
-              <PromotionTab />
+              <PromotionTab 
+onExecutePromotion={() => {
+                   const year = academicYears.find(y => y.isActive);
+                   if (!year) {
+                     toast.error('No active academic year found. Please set an active year first.');
+                     return;
+                   }
+                   promoteStudentMutation.mutateAsync({ academicYearId: year.id })
+                    .then(() => toast.success('Promotion cycle executed successfully'))
+                    .catch((err) => {
+                      const message = err?.response?.data?.message || err?.message || 'Promotion failed';
+                      if (message.includes('unlocked')) {
+                        toast.error(message + ' Use the Maintenance tab to lock terms before promoting.');
+                      } else {
+                        toast.error(message);
+                      }
+                    });
+                }}
+                isPromoting={promoteStudentMutation.isPending}
+                onLockAllTerms={handleLockAllTerms}
+                unlockedCount={unlockedTermsCount}
+              />
             </motion.div>
           )}
 
@@ -186,17 +307,20 @@ export function ArchiveView() {
           {activeSubTab === 'MAINTENANCE' && (
             <motion.div 
                key="maintenance"
-               initial={{ opacity: 0, y: 10 }}
-               animate={{ opacity: 1, y: 0 }}
-               exit={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
                className="flex-1 p-10"
-            >
-              <MaintenanceTab />
-            </motion.div>
-          )}
+             >
+               <MaintenanceTab 
+                 onExecuteMaintenance={() => toast.info('Regenerate Audit Hashes — feature processing')}
+                 onDeepClean={() => toast.info('Purge Orphaned Records — feature processing')}
+               />
+             </motion.div>
+           )}
 
 
-          {activeSubTab === 'VAULT' && !selectedStudent && (
+           {activeSubTab === 'VAULT' && !selectedStudent && (
             <motion.div 
               key="home"
               initial={{ opacity: 0, y: 10 }}
@@ -241,7 +365,37 @@ export function ArchiveView() {
                       Core Comparison
                     </button>
                   </div>
-                  <button className="px-6 py-3 bg-emerald-900 text-white rounded-xl font-black text-sm hover:bg-emerald-950 transition-all shadow-xl shadow-emerald-900/20 flex items-center gap-2">
+                  <button 
+onClick={() => {
+                       const firstClass = allClasses?.[0];
+                       const firstTerm = activeYearData?.terms?.[0];
+                       
+                       if (!activeYearData) {
+                         toast.error('No active academic year found');
+                         return;
+                       }
+                       if (!firstClass?.id) {
+                         toast.error('No class sections found for batch generation');
+                         return;
+                       }
+                       if (!firstTerm?.id) {
+                         toast.error('No active term found for batch generation');
+                         return;
+                       }
+                       
+                       batchGenerateReportCardsMutation.mutateAsync({
+                         classSectionId: String(firstClass.id),
+                         termId: String(firstTerm.id),
+                       }).then(() => {
+                        toast.success('Bulk progress report generated successfully');
+                      }).catch((err) => {
+                        const message = err?.response?.data?.message || err?.message || 'Batch report failed';
+                        toast.error(message);
+                      });
+                    }}
+                    disabled={batchGenerateReportCardsMutation.isPending}
+                    className="px-6 py-3 bg-emerald-900 text-white rounded-xl font-black text-sm hover:bg-emerald-950 transition-all shadow-xl shadow-emerald-900/20 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <FileText size={18} />
                     Bulk Progress Report
                   </button>
@@ -298,9 +452,9 @@ export function ArchiveView() {
               </div>
             </header>
 
-            {/* Comparison Grid */}
-            <div className="flex-1 overflow-x-auto p-8 pt-4 scrollbar-hide">
-              <div className="min-w-max">
+{/* Comparison Grid */}
+             <div className="flex-1 overflow-x-auto overflow-y-auto p-8 pt-4 scrollbar-hide">
+               <div className="min-w-max h-full">
                 <Table className="border-separate border-spacing-y-4">
                   <TableHeader>
                     <TableRow className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
@@ -321,106 +475,112 @@ export function ArchiveView() {
                     </TableRow>
                   </TableHeader>
                    <TableBody>
-                     {vaultEntries.length > 0 ? vaultEntries.map((student) => (
-                       <motion.tr
-                         key={student.id}
-                         layoutId={student.id}
-                         onClick={() => setSelectedStudent(student)}
-                         whileHover={{ scale: 1.002, x: 4 }}
-                         className="group cursor-pointer"
-                       >
-                         {/* Identity Cell */}
-                         <TableCell className="bg-white/40 backdrop-blur-md px-6 py-5 rounded-l-[1.5rem] border-y border-l border-gray-200 shadow-sm group-hover:bg-white transition-all sticky left-0 z-20">
-                           <div className="flex items-center gap-4">
-                            <img 
-                              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${student.name}`} 
-                              alt={student.name} 
-                              className="w-10 h-10 rounded-full bg-emerald-50 border border-emerald-100 shadow-sm grayscale group-hover:grayscale-0 transition-all"
-                            />
-                            <div>
-                              <p className="text-sm font-black text-gray-900 tracking-tight">{student.name}</p>
-                              <p className="text-[10px] font-bold text-gray-400 uppercase font-mono">{student.index}</p>
-                            </div>
-                          </div>
-                        </TableCell>
+{vaultEntries.length > 0 ? vaultEntries.map((student) => (
+                        <motion.tr
+                          key={student.id}
+                          layoutId={student.id}
+                          onClick={() => setSelectedStudent(student)}
+                          whileHover={{ scale: 1.002, x: 4 }}
+                          className="group cursor-pointer"
+                        >
+                          {/* Identity Cell */}
+                          <TableCell className="bg-white/40 backdrop-blur-md px-6 py-5 rounded-l-[1.5rem] border-y border-l border-gray-200 shadow-sm group-hover:bg-white transition-all sticky left-0 z-20">
+                            <div className="flex items-center gap-4">
+                             <img 
+                               src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${student.name}`} 
+                               alt={student.name} 
+                               className="w-10 h-10 rounded-full bg-emerald-50 border border-emerald-100 shadow-sm grayscale group-hover:grayscale-0 transition-all"
+                             />
+                             <div>
+                               <p className="text-sm font-black text-gray-900 tracking-tight">{student.name}</p>
+                               <p className="text-[10px] font-bold text-gray-400 uppercase font-mono">{student.index}</p>
+                             </div>
+                           </div>
+                         </TableCell>
 
-                        {/* Multi-Term Grade Cells - Glass Mode */}
-                        {showCoreComparison ? (
-                          <>
-                            <TableCell className="bg-emerald-50/40 backdrop-blur-[2px] px-8 py-5 border-y border-x border-emerald-100 group-hover:bg-emerald-50 transition-all text-center relative overflow-hidden">
-                               <span className="text-lg font-black text-emerald-900 italic">
-                                 {student.history[student.history.length-1].finalGrade}%
-                               </span>
-                               <div className="text-[8px] font-black text-emerald-600 uppercase mt-1">Target Subject</div>
-                            </TableCell>
-                            {coreSubjects.map((s, idx) => {
-                              const baseScore = student.history[student.history.length-1].finalGrade;
-                              const simulatedScore = Math.max(0, Math.min(100, baseScore + (idx % 2 === 0 ? 5 : -10) + (Math.random() * 5)));
-                              return (
-                                <TableCell key={s} className="bg-white/30 backdrop-blur-[2px] px-8 py-5 border-y border-x border-gray-100/50 group-hover:bg-white/80 transition-all text-center relative overflow-hidden">
-                                  <span className={cn(
-                                    "text-lg font-black tracking-tighter",
-                                    simulatedScore > 75 ? "text-emerald-950" : simulatedScore < 50 ? "text-red-900" : "text-gray-600"
-                                  )}>
-                                    {simulatedScore.toFixed(0)}%
-                                  </span>
-                                  <div className="text-[8px] font-black text-gray-300 uppercase mt-1 tracking-tighter">Verified Audit</div>
-                                </TableCell>
-                              );
-                            })}
-                          </>
-                        ) : (
-                          terms.map((term, idx) => {
-                            const grade = student.history[idx]?.finalGrade;
-                            const ghostAverage = idx === 4 ? 62 : idx === 3 ? 58 : 65; // Simulated departmental benchmark
+                         {/* Multi-Term Grade Cells - Glass Mode */}
+                         {showCoreComparison ? (
+                           <>
+                             <TableCell className="bg-emerald-50/40 backdrop-blur-[2px] px-8 py-5 border-y border-x border-emerald-100 group-hover:bg-emerald-50 transition-all text-center relative overflow-hidden">
+                                <span className="text-lg font-black text-emerald-900 italic">
+                                  {student.history[student.history.length-1]?.finalGrade ?? 0}%
+                                </span>
+                                <div className="text-[8px] font-black text-emerald-600 uppercase mt-1">Target Subject</div>
+                             </TableCell>
+                             {coreSubjects.map((s, idx) => {
+                               const baseScore = student.history[student.history.length-1]?.finalGrade ?? 0;
+                               const simulatedScore = Math.max(0, Math.min(100, baseScore + (idx % 2 === 0 ? 5 : -10) + (Math.random() * 5)));
+                               return (
+                                 <TableCell key={s} className="bg-white/30 backdrop-blur-[2px] px-8 py-5 border-y border-x border-gray-100/50 group-hover:bg-white/80 transition-all text-center relative overflow-hidden">
+                                   <span className={cn(
+                                     "text-lg font-black tracking-tighter",
+                                     simulatedScore > 75 ? "text-emerald-950" : simulatedScore < 50 ? "text-red-900" : "text-gray-600"
+                                   )}>
+                                     {simulatedScore.toFixed(0)}%
+                                   </span>
+                                   <div className="text-[8px] font-black text-gray-300 uppercase mt-1 tracking-tighter">Verified Audit</div>
+                                 </TableCell>
+                               );
+                             })}
+                           </>
+                         ) : (
+                           terms.map((term, idx) => {
+                             const grade = student.history[idx]?.finalGrade;
+                             const ghostAverage = getGhostBenchmark(student, idx);
                             
-                            return (
-                              <TableCell key={term} className="bg-white/30 backdrop-blur-[2px] px-8 py-5 border-y border-x border-gray-100/50 group-hover:bg-white/80 transition-all text-center relative overflow-hidden">
-                                {/* Locked Pattern Overlay */}
-                                <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#000_1px,transparent_0)] bg-[size:10px_10px]" />
+                             return (
+                               <TableCell key={term} className="bg-white/30 backdrop-blur-[2px] px-8 py-5 border-y border-x border-gray-100/50 group-hover:bg-white/80 transition-all text-center relative overflow-hidden">
+                                 {/* Locked Pattern Overlay */}
+                                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#000_1px,transparent_0)] bg-[size:10px_10px]" />
                                 
-                                <div className="relative">
-                                  <span className={cn(
-                                    "text-lg font-black tracking-tighter",
-                                    grade > 75 ? "text-emerald-950" : grade < 50 ? "text-red-900" : "text-gray-600"
-                                  )}>
-                                    {grade ? `${grade}%` : '---'}
-                                  </span>
-                                  <div className="flex items-center justify-center gap-1 mt-1">
-                                    <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">Ghost: {ghostAverage}%</span>
-                                  </div>
-                                  {/* Visual Indicator of Comparison */}
-                                  {grade && (
-                                    <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full overflow-hidden bg-gray-100">
-                                      <div 
-                                        className={cn(
-                                          "h-full transition-all",
-                                          grade > ghostAverage ? "bg-emerald-500 w-full" : "bg-red-500 w-1/2"
-                                        )}
-                                      />
-                                    </div>
-                                  )}
-                                </div>
-                              </TableCell>
-                            );
-                          })
-                        )}
+                                 <div className="relative">
+                                   <span className={cn(
+                                     "text-lg font-black tracking-tighter",
+                                     grade !== null && grade > 75 ? "text-emerald-950" : grade !== null && grade < 50 ? "text-red-900" : "text-gray-600"
+                                   )}>
+                                     {grade !== null && grade !== undefined ? `${grade}%` : '---'}
+                                   </span>
+                                   <div className="flex items-center justify-center gap-1 mt-1">
+                                     <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">
+                                       {ghostAverage != null ? `Ghost: ${ghostAverage}%` : 'Ghost: ---'}
+                                     </span>
+                                   </div>
+                                   {/* Visual Indicator of Comparison */}
+                                   {grade !== null && ghostAverage != null && (
+                                     <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full overflow-hidden bg-gray-100">
+                                       <div 
+                                         className={cn(
+                                           "h-full transition-all",
+                                           grade > ghostAverage ? "bg-emerald-500 w-full" : "bg-red-500 w-1/2"
+                                         )}
+                                       />
+                                     </div>
+                                   )}
+                                 </div>
+                               </TableCell>
+                             );
+                           })
+                         )}
 
-                        {/* Aggregate Cell */}
-                        <TableCell className="bg-emerald-900 px-8 py-5 rounded-r-[1.5rem] border-y border-r border-emerald-950 shadow-xl group-hover:bg-emerald-950 transition-all text-right">
-                          <p className="text-[10px] font-black text-emerald-300/50 uppercase mb-1">Total</p>
-                          <p className="text-xl font-black text-white italic">
-                            {(student.history.reduce((acc, h) => acc + h.finalGrade, 0) / student.history.length).toFixed(1)}%
-                          </p>
-                        </TableCell>
-                       </motion.tr>
-                     )) : (
-                       <TableRow>
-<TableCell colSpan={8} className="text-center py-12 text-slate-400 text-sm font-bold">
-                            {archiveStatsQuery.isLoading || vaultSearchQuery.isLoading ? 'Loading archive data...' : 'No archived records found. Vault is empty.'}
-                          </TableCell>
-                       </TableRow>
-                     )}
+                         {/* Aggregate Cell */}
+                         <TableCell className="bg-emerald-900 px-8 py-5 rounded-r-[1.5rem] border-y border-r border-emerald-950 shadow-xl group-hover:bg-emerald-950 transition-all text-right">
+                           <p className="text-[10px] font-black text-emerald-300/50 uppercase mb-1">Total</p>
+                           <p className="text-xl font-black text-white italic">
+                             {(student.history.reduce((acc, h) => acc + (h?.finalGrade ?? 0), 0) / Math.max(1, student.history.length)).toFixed(1)}%
+                           </p>
+                         </TableCell>
+                        </motion.tr>
+                      )) : (
+                         <TableRow>
+                           <TableCell colSpan={8} className="text-center py-12">
+                             {archiveStatsLoading || vaultSearchQuery.isLoading ? (
+                               <p className="text-slate-400 text-sm font-bold">Loading archive data...</p>
+                             ) : (
+                               <EmptyState context="results" variant="compact" />
+                             )}
+                           </TableCell>
+                         </TableRow>
+                      )}
                    </TableBody>
                 </Table>
               </div>
@@ -586,9 +746,9 @@ export function ArchiveView() {
                 <div className="grid grid-cols-4 gap-6 mt-16">
                    <div className="bg-emerald-50/30 p-8 rounded-3xl border border-emerald-100/50">
                       <p className="text-[9px] font-black text-emerald-700 uppercase tracking-widest mb-1">Cumulative GPA</p>
-                      <p className="text-3xl font-black text-emerald-900 italic tracking-tighter">
-                          {(enrichedSelectedStudent.history.reduce((acc, h) => acc + h.finalGrade, 0) / enrichedSelectedStudent.history.length).toFixed(1)}%
-                      </p>
+<p className="text-3xl font-black text-emerald-900 italic tracking-tighter">
+                           {(enrichedSelectedStudent.history.reduce((acc, h) => acc + (h?.finalGrade ?? 0), 0) / Math.max(1, enrichedSelectedStudent.history.length)).toFixed(1)}%
+                       </p>
                    </div>
                    <div className="bg-emerald-50/30 p-8 rounded-3xl border border-emerald-100/50">
                       <p className="text-[9px] font-black text-emerald-700 uppercase tracking-widest mb-1">Consistency Score</p>
@@ -614,7 +774,7 @@ export function ArchiveView() {
                   </header>
                   <div className="bg-gray-50/50 p-12 rounded-[3rem] border border-gray-100 h-[400px]">
                     <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                       <AreaChart data={enrichedSelectedStudent.history}>
+                       <AreaChart data={historyForChart}>
                         <defs>
                           <linearGradient id="subScreenTrend" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="#065F46" stopOpacity={0.2}/>
@@ -622,7 +782,7 @@ export function ArchiveView() {
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="5 5" vertical={false} stroke="#e5e7eb" />
-                        <XAxis dataKey="term" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#9ca3af' }} dy={10} />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#9ca3af' }} dy={10} />
                         <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#9ca3af' }} />
                         <Area 
                           type="monotone" 

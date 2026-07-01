@@ -270,11 +270,6 @@ export function AcademicArchitect() {
       <header className="px-8 py-6 bg-white border-b border-slate-200/60 shrink-0">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.25em] text-slate-400 mb-2">
-              <span>Academic Engine</span>
-              <ChevronRight size={10} />
-              <span className="text-slate-900 uppercase">Academic Architect</span>
-            </div>
             <h1 className="text-2xl font-black text-slate-900 italic font-display tracking-tight leading-none">
               Institutional Structural Governance
             </h1>

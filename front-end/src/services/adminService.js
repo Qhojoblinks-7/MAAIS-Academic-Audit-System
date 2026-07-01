@@ -12,10 +12,6 @@ function getHeaders() {
 }
 
 async function request(method, path, body) {
-  if (USE_MOCK) {
-    console.warn(`[adminService] Mock mode: ${method} ${path}`);
-    return { success: true, data: [] };
-  }
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
     headers: getHeaders(),
@@ -42,7 +38,45 @@ function createRealService() {
     getAllStudents: () => request('GET', '/users/students'),
     getStudentProfile: (id) => request('GET', `/users/students/${id}`),
     updateStudentProfile: (id, body) => request('PATCH', `/users/students/${id}`, body),
+    searchStudents: (query) =>
+      request('GET', `/users/students${query ? `?search=${encodeURIComponent(query)}` : ''}`)
+        .then((res) => {
+          const data = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+          return data.map((s) => ({
+            id: s.id,
+            name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.indexNumber || s.id,
+            classForm: s.currentClass?.name || '—',
+            indexNumber: s.indexNumber || '—',
+            type: 'student',
+          }));
+        }),
     getAllStaff: () => request('GET', '/users/staff'),
+    getStaffProfile: (id) =>
+      request('GET', `/users/staff/${id}`).then(r => r?.data ?? r),
+    searchTeachers: (query) =>
+      request('GET', `/users/teachers${query ? `?search=${encodeURIComponent(query)}` : ''}`)
+        .then((res) => {
+          const data = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+          return data.map((t) => ({
+            id: t.id,
+            name: `${t.firstName || ''} ${t.lastName || ''}`.trim() || t.staffId || t.id,
+            classForm: t.department?.name || 'Staff',
+            indexNumber: t.staffId || '—',
+            type: 'teacher',
+          }));
+        }),
+    searchParents: (query) =>
+      request('GET', `/users/parents/search${query ? `?search=${encodeURIComponent(query)}` : ''}`)
+        .then((res) => {
+          const data = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+          return data.map((p) => ({
+            id: p.id,
+            name: `${p.firstName || ''} ${p.lastName || ''}`.trim() || p.email || p.id,
+            classForm: 'Parent',
+            indexNumber: p.phone || '—',
+            type: 'parent',
+          }));
+        }),
     deactivateUser: (id) => request('PATCH', `/users/${id}/deactivate`),
 
     // ── Academic Structure ───────────────────────────────────────────────────

@@ -57,7 +57,7 @@ export const adminApi = {
    promoteStudent: (dto) => api.post('/archive/promote', dto),
    promoteLevel: (dto) => api.post('/archive/promote', dto),
    searchVault: (query) => api.get('/archive/vault/search', { params: query }),
-   getAcademicYears: () => api.get('/academic/years'),
+    getAcademicYears: () => api.get('/academic/years'),
    getArchiveStats: () => api.get('/archive/stats'),
    lockTerm: (id) => api.patch(`/archive/terms/${id}/lock`),
    getDatabaseHealth: () => api.get('/archive/health'),
@@ -189,14 +189,15 @@ export const adminApi = {
   resetStaffCredentials: (staffId) => api.post(`/admin/staff/${staffId}/reset-credentials`, {}),
 
    // ── Curriculum Mapping ───────────────────────────────────────────────────────
-     getCurriculumMatrix: (academicYearId) => api.get(`/academic/curriculum/matrix`, { params: { academicYearId } }),
-     upsertCurriculumMapping: (body) => api.post(`/academic/curriculum/matrix`, body),
-     removeCurriculumMapping: (academicYearId, subjectId, classSectionId) =>
-       api.delete(`/academic/curriculum/matrix/${subjectId}/${classSectionId}?academicYearId=${academicYearId}`),
-     bulkUpsertCurriculum: (body) => api.post(`/academic/curriculum/matrix/bulk`, body),
-     deployCurriculum: (academicYearId) => api.post(`/academic/curriculum/deploy`, { academicYearId }),
-     getDeploymentStatus: (academicYearId) => api.get(`/academic/curriculum/deployment/status?academicYearId=${academicYearId}`),
-     getClassesWithStudents: () => api.get('/academic/curriculum/classes'),
+    getCurriculumMatrix: (academicYearId) => api.get(`/academic/curriculum/matrix`, { params: { academicYearId } }),
+    upsertCurriculumMapping: (body) => api.post(`/academic/curriculum/matrix`, body),
+    removeCurriculumMapping: (academicYearId, subjectId, classSectionId) =>
+      api.delete(`/academic/curriculum/matrix/${subjectId}/${classSectionId}?academicYearId=${academicYearId}`),
+    bulkUpsertCurriculum: (body) => api.post(`/academic/curriculum/matrix/bulk`, body),
+    deployCurriculum: (academicYearId) => api.post(`/academic/curriculum/deploy`, { academicYearId }),
+    deployCurriculumMapping: (mappings) => api.post(`/academic/curriculum/deploy`, mappings),
+    getDeploymentStatus: (academicYearId) => api.get(`/academic/curriculum/deployment/status?academicYearId=${academicYearId}`),
+    getClassesWithStudents: () => api.get('/academic/curriculum/classes'),
 
   // ── Strategy Pulse ───────────────────────────────────────────────────────────
   uploadStrategyPulse: (deptId) => api.post('/admin/strategy-pulse', { departmentId: deptId }),

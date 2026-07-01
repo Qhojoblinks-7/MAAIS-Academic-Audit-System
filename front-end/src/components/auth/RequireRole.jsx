@@ -24,23 +24,22 @@ async function fetchDepartmentForUser(userId) {
   }
 }
 
-export function RequireRole({ allowedRoles = [], children, redirectTo = '/login' }) {
+export function RequireRole({ allowedRoles = [], children, redirectTo = '/401' }) {
   const { user } = useRole();
   const location = useLocation();
 
-  // Normalize roles: SUPER_ADMIN and HEADMASTER have admin privileges
-  const normalizedRole = user?.role === 'SUPER_ADMIN' || user?.role === 'HEADMASTER' ? 'ADMIN' : user?.role;
-  
-  if (!normalizedRole) {
-    return <Navigate to={redirectTo} replace state={{ from: location }} />;
+  // Not authenticated at all → 401
+  if (!user?.role) {
+    return <Navigate to="/401" replace state={{ from: location, reason: 'no_session' }} />;
   }
 
   // SUPER_ADMIN and HEADMASTER can access admin routes
   const isAdminUser = user?.role === 'SUPER_ADMIN' || user?.role === 'HEADMASTER';
-  const hasAccess = allowedRoles.includes(normalizedRole) || (isAdminUser && allowedRoles.includes('ADMIN'));
-  
+  const hasAccess = allowedRoles.includes(user?.role) || (isAdminUser && allowedRoles.some(r => ['ADMIN', 'SUPER_ADMIN', 'HEADMASTER'].includes(r)));
+
+  // Authenticated but insufficient permissions → 403
   if (!hasAccess) {
-    return <Navigate to={redirectTo} replace state={{ from: location }} />;
+    return <Navigate to="/403" replace state={{ from: location, requiredRoles: allowedRoles, currentRole: user?.role }} />;
   }
 
   if (user.role === 'HOD') {

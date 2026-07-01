@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useHOD } from '../../context/HODContext';
+import { useBreadcrumb } from '../../context/BreadcrumbContext';
 import { 
   ConfirmationDialog, LoadingSpinner, EmptyState, StatusBadge,
   ActionButtonGroup, HODCommentInput
@@ -77,6 +78,7 @@ export function HODSettingsPage() {
     mfaEnroll, mfaVerify, revokeSession,
     isLoading,
   } = useHOD();
+  const { setBreadcrumb } = useBreadcrumb();
 
   const [activeTab, setActiveTab] = useState('profile');
   const [settings, setSettings] = useState({});
@@ -117,6 +119,11 @@ export function HODSettingsPage() {
     if (typeof refreshSettings === 'function') refreshSettings();
     if (typeof refreshActiveSessions === 'function') refreshActiveSessions();
   }, []);
+
+  useEffect(() => {
+    const tabLabel = TABS.find(t => t.id === activeTab)?.label || activeTab;
+    setBreadcrumb([{ label: 'Settings', path: '/hod/settings' }, { label: tabLabel, path: null }]);
+  }, [activeTab, setBreadcrumb]);
 
   const handleSave = async () => {
     setSaving(true);

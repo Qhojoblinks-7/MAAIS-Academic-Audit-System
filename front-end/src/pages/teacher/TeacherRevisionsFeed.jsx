@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { EmptyState } from '../../components/molecules';
 import {
    AlertTriangle,
    Hourglass,
@@ -20,6 +21,7 @@ import {
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
 import { useUI } from '../../context/UIContext';
+import { useBreadcrumb } from '../../context/BreadcrumbContext';
 import { teacherService } from '../../services';
 import { notification } from '../../services/notificationService';
 import { statusStyles, severityStyles } from '../shared/RevisionsFeed';
@@ -42,6 +44,7 @@ const TeacherRevisionsFeed = () => {
   const [searchParams] = useSearchParams();
   const { user } = useRole();
   const { setRevisionCount } = useUI();
+  const { setBreadcrumb } = useBreadcrumb();
   const [revisions, setRevisions] = useState([]);
   const [activeTab, setActiveTab] = useState('pending');
   const [selected, setSelected] = useState(null);
@@ -75,7 +78,16 @@ const TeacherRevisionsFeed = () => {
     }
   }, [searchParams, revisions]);
 
-const filteredData = revisions.filter(item => {
+  useEffect(() => {
+    const tabLabel = activeTab === 'pending' ? 'Pending' : activeTab === 'resolved' ? 'Resolved' : 'All';
+    const crumbs = [{ label: 'Correction Requests', path: '/revisions' }, { label: tabLabel, path: null }];
+    if (selected) {
+      crumbs.push({ label: selected.student || 'Revision', path: null });
+    }
+    setBreadcrumb(crumbs);
+  }, [activeTab, selected, setBreadcrumb]);
+
+  const filteredData = revisions.filter(item => {
     const isResolved = (r) => (r.status || '').toUpperCase() === 'RESOLVED' || (r.status || '').toUpperCase() === 'REJECTED';
     const matchesTab = activeTab === 'all' 
       ? true 
@@ -230,10 +242,8 @@ const sendDiscussionMessage = async () => {
           {filteredData.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-slate-200 p-8 text-center">
               <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center mb-3">
-                <Inbox size={20} className="text-slate-400" />
+                <EmptyState context="tickets" variant="compact" />
               </div>
-              <p className="text-xs font-semibold text-slate-700">No revisions matched filter</p>
-              <p className="text-[11px] text-slate-400 max-w-[220px] mt-0.5">No grade revision requests found for your classes.</p>
             </div>
           ) : (
             filteredData.map((job, idx) => {

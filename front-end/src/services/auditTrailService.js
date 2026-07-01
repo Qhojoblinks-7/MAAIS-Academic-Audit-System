@@ -1,7 +1,5 @@
 import { getAuthToken } from './auth';
 
-const USE_MOCK = false;
-
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 function getHeaders() {
@@ -13,10 +11,6 @@ function getHeaders() {
 }
 
 async function request(method, path, body) {
-  if (USE_MOCK) {
-    if (method === 'GET') return [];
-    return { success: true };
-  }
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
     headers: getHeaders(),
@@ -46,8 +40,7 @@ class AuditTrailService {
   }
 
   async logChange(entityType, entityId, oldValue, newValue, justification, metadata = {}) {
-    const base = this.getBasePath();
-    return request('POST', `${base}/audit-logs`, {
+    return request('POST', '/hod/audit-logs', {
       entity: entityType,
       entityId,
       oldValue,
@@ -58,8 +51,7 @@ class AuditTrailService {
   }
 
   async logHODAction(actionType, actorId, targetId, details = {}, severity = 'INFO') {
-    const base = this.getBasePath();
-    return request('POST', `${base}/audit-logs`, {
+    return request('POST', '/hod/audit-logs', {
       entity: 'HODAction',
       entityId: targetId,
       metadata: { actionType, actorId, details, severity },
@@ -67,8 +59,7 @@ class AuditTrailService {
   }
 
   async logImpersonation(teacherId, hodId, reason, sessionStart = true) {
-    const base = this.getBasePath();
-    return request('POST', `${base}/audit-logs`, {
+    return request('POST', '/hod/audit-logs', {
       entity: 'Impersonation',
       entityId: teacherId,
       metadata: { hodId, reason, sessionStart },
@@ -76,7 +67,6 @@ class AuditTrailService {
   }
 
   async getViewAsLogs(filters = {}) {
-    if (USE_MOCK) return [];
     const base = this.getBasePath();
     const qs = new URLSearchParams();
     if (filters.entity) qs.set('entity', filters.entity);
@@ -87,7 +77,6 @@ class AuditTrailService {
   }
 
   async getHistory(entityType, entityId, options = {}) {
-    if (USE_MOCK) return [];
     const base = this.getBasePath();
     const qs = new URLSearchParams();
     qs.set('entity', entityType);
@@ -97,7 +86,6 @@ class AuditTrailService {
   }
 
   async getEntityChanges(entityType, startDate, endDate) {
-    if (USE_MOCK) return [];
     const base = this.getBasePath();
     const qs = new URLSearchParams();
     qs.set('entity', entityType);

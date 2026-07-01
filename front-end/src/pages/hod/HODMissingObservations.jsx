@@ -6,8 +6,10 @@ import {
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { cn } from '../../lib/utils';
+import { useBreadcrumb } from '../../context/BreadcrumbContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { EmptyState } from '../../components/molecules';
 import { Card } from '@/components/ui/card';
 
 const mockObservations = [
@@ -19,6 +21,7 @@ const mockObservations = [
 ];
 
 export function HODMissingObservations() {
+  const { setBreadcrumb } = useBreadcrumb();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('missing');
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,6 +45,11 @@ export function HODMissingObservations() {
       setSearchQuery(urlIndex);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    const tabLabel = activeTab === 'missing' ? 'Missing' : activeTab === 'logged' ? 'Logged' : 'All';
+    setBreadcrumb([{ label: 'Compliance Observations', path: '/missing-observations' }, { label: tabLabel, path: null }]);
+  }, [activeTab, setBreadcrumb]);
 
   // Structured inline data matching compute layer
   const filteredObservations = useMemo(() => {
@@ -153,18 +161,14 @@ export function HODMissingObservations() {
             <div className="divide-y divide-border min-h-0">
               <AnimatePresence mode="wait">
                 {filteredObservations.length === 0 ? (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="flex flex-col items-center justify-center py-16 px-4 text-center bg-card"
-                  >
-                    <div className="w-11 h-11 rounded-xl bg-muted border border-border flex items-center justify-center mb-3 text-muted-foreground">
-                      <Inbox size={18} />
-                    </div>
-                    <h3 className="text-xs font-bold text-foreground">No logs found</h3>
-                    <p className="text-[11px] text-muted-foreground mt-0.5 max-w-[260px]">Modify filter variables or check index archives for older compliance tracking lines.</p>
-                  </motion.div>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex flex-col items-center justify-center py-16 px-4 text-center bg-card"
+                    >
+                      <EmptyState context="comments" variant="compact" />
+                    </motion.div>
                 ) : (
                   filteredObservations.map((obs, idx) => {
                     const isMissing = obs.status === 'Missing';

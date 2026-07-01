@@ -1,5 +1,6 @@
 ﻿import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { EmptyState } from '../../components/molecules';
 import { 
   Search, 
   UserPlus, 
@@ -415,10 +416,7 @@ export function StaffRegistry() {
             <div className="w-20 h-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-200 mb-6 font-display italic text-4xl select-none">
               ?
             </div>
-            <h3 className="text-xl font-black text-slate-900 mb-2">No Nodes Identified</h3>
-            <p className="text-sm font-medium text-slate-400 max-w-xs mx-auto uppercase tracking-widest leading-relaxed">
-              No staff members matching your current filters were found in the registry.
-            </p>
+            <EmptyState context="teachers" />
           </div>
         )}
       </div>

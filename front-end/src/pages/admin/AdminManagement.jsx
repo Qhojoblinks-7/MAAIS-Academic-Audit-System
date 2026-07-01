@@ -5,16 +5,21 @@ import { cn } from '../../lib/utils';
 import { StaffRegistry } from './StaffRegistry';
 import { InfrastructureView } from './components/InfrastructureView';
 import { ProtocolsView } from './components/ProtocolsView';
-import mockApiData from '../../data/mockApiData.json';
 
 const iconMap = { Users, Server, Globe };
+
+const ADMIN_TABS = [
+  { id: 'registry', label: 'Staff Registry', icon: 'Users' },
+  { id: 'infrastructure', label: 'Infrastructure', icon: 'Server' },
+  { id: 'protocols', label: 'Security Protocols', icon: 'Globe' },
+];
 
 export function AdminManagement() {
   const [activeTab, setActiveTab] = React.useState('registry');
 
-  const tabs = (mockApiData.engineRoom?.adminTabs || []).map(tab => ({
+  const tabs = ADMIN_TABS.map(tab => ({
     ...tab,
-    icon: iconMap[tab.icon] || Users
+    icon: iconMap[tab.icon] || Users,
   }));
 
   return (

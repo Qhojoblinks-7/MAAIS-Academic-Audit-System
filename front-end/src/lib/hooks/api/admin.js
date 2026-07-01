@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi, api } from '../../../lib/api';
+import { getAuthToken } from '../../../services/auth';
 
 // ── Users / Staff ────────────────────────────────────────────────────────────
 export function useAllStudents() {
@@ -693,11 +694,13 @@ export function useAdminSettings() {
 }
 
 export function useSystemFreeze() {
+  const token = getAuthToken();
   return useQuery({
     queryKey: ['admin', 'system', 'freeze'],
     queryFn: () => adminApi.getSystemFreeze(),
     staleTime: 1000 * 30,
-    refetchInterval: 1000 * 30,
+    refetchInterval: token ? 1000 * 30 : false,
+    enabled: !!token,
   });
 }
 

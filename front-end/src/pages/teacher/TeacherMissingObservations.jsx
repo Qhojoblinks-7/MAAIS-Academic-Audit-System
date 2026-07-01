@@ -8,6 +8,8 @@ import {
 import { useSearchParams } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { teacherService } from '../../services';
+import { useBreadcrumb } from '../../context/BreadcrumbContext';
+import { EmptyState } from '../../components/molecules';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
@@ -142,6 +144,7 @@ function CreateObsModal({ isOpen, onClose, onSave, editingObs, disabled = false 
 }
 
 export function TeacherMissingObservations() {
+  const { setBreadcrumb } = useBreadcrumb();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('missing');
   const [searchQuery, setSearchQuery] = useState('');
@@ -166,6 +169,11 @@ export function TeacherMissingObservations() {
     if (urlStudent) setSearchQuery(urlStudent);
     else if (urlIndex) setSearchQuery(urlIndex);
   }, [searchParams]);
+
+  useEffect(() => {
+    const tabLabel = activeTab === 'missing' ? 'Missing' : activeTab === 'logged' ? 'Logged' : 'All';
+    setBreadcrumb([{ label: 'Compliance Observations', path: '/missing-observations' }, { label: tabLabel, path: null }]);
+  }, [activeTab, setBreadcrumb]);
 
   const normalizeObservation = (obs) => {
     const rawDate = obs.updatedAt || obs.createdAt || obs.submittedAt || obs.date;
@@ -429,11 +437,7 @@ export function TeacherMissingObservations() {
                       exit={{ opacity: 0 }}
                       className="flex flex-col items-center justify-center py-16 px-4 text-center bg-surface"
                     >
-                      <div className="w-11 h-11 rounded-xl bg-muted border border-border flex items-center justify-center mb-3 text-text-secondary">
-                        <Inbox size={18} />
-                      </div>
-                      <h3 className="text-xs font-bold text-text-primary">No logs found</h3>
-                      <p className="text-[11px] text-text-secondary mt-0.5 max-w-[260px]">Modify filter variables or check index archives.</p>
+                      <EmptyState context="comments" variant="compact" />
                     </motion.div>
                   ) : (
                     filteredObservations.map((obs, idx) => {

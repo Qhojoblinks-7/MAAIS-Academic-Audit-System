@@ -21,7 +21,7 @@ const getWAECGrade = (score) => {
   return 'F9';
 };
 
-export function VaultTable({ filteredStudents, showCoreComparison, selectedSubject, selectedStudent, setSelectedStudent, coreSubjects, terms }) {
+export function VaultTable({ filteredStudents, showCoreComparison, selectedSubject, selectedStudent, setSelectedStudent, coreSubjects, terms, getGhostBenchmark }) {
   return (
     <div className="w-full p-4 md:p-8 pt-4">
       
@@ -179,11 +179,11 @@ export function VaultTable({ filteredStudents, showCoreComparison, selectedSubje
                       })}
                     </>
                   ) : (
-                    terms.map((term, idx) => {
-                      const grade = student.history[idx]?.finalGrade;
-                      const ghostAverage = idx === 4 ? 62 : idx === 3 ? 58 : 65;
-                      
-                      return (
+                     terms.map((term, idx) => {
+                       const grade = student.history[idx]?.finalGrade;
+                       const ghostAverage = getGhostBenchmark ? getGhostBenchmark(student, idx) : (idx === 4 ? 62 : idx === 3 ? 58 : 65);
+                       
+                       return (
                         <TableCell key={term} className="bg-white/30 backdrop-blur-[2px] px-8 py-5 border-y border-x border-gray-100/50 group-hover:bg-white/80 transition-all text-center relative overflow-hidden">
                           <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#000_1px,transparent_0)] bg-[size:10px_10px]" />
                           
@@ -194,20 +194,22 @@ export function VaultTable({ filteredStudents, showCoreComparison, selectedSubje
                             )}>
                               {grade ? `${grade}%` : '---'}
                             </span>
-                            <div className="flex items-center justify-center gap-1 mt-0.5">
-                              <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">Ghost: {ghostAverage}%</span>
-                            </div>
-                            
-                            {grade && (
-                              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full overflow-hidden bg-gray-100">
-                                <div 
-                                  className={cn(
-                                    "h-full transition-all",
-                                    grade > ghostAverage ? "bg-emerald-500 w-full" : "bg-red-500 w-1/2"
-                                  )}
-                                />
-                              </div>
-                            )}
+                             <div className="flex items-center justify-center gap-1 mt-0.5">
+                               <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">
+                                 {ghostAverage != null ? `Ghost: ${ghostAverage}%` : 'Ghost: ---'}
+                               </span>
+                             </div>
+                             
+                             {grade && ghostAverage != null && (
+                               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full overflow-hidden bg-gray-100">
+                                 <div 
+                                   className={cn(
+                                     "h-full transition-all",
+                                     grade > ghostAverage ? "bg-emerald-500 w-full" : "bg-red-500 w-1/2"
+                                   )}
+                                 />
+                               </div>
+                             )}
                           </div>
                         </TableCell>
                       );

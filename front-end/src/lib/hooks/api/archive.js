@@ -31,9 +31,18 @@ export function useSearchVault(query = {}) {
   const hasQuery = Object.keys(query).length > 0;
   return useQuery({
     queryKey: ['archive', 'vault', 'search', query],
-    queryFn: () => hasQuery ? archiveApi.searchVault(query).then(r => r?.data ?? r) : Promise.resolve([]),
+    queryFn: () => archiveApi.searchVault(query).then(r => r?.data ?? r),
     staleTime: 1000 * 60 * 5,
     enabled: hasQuery,
+  });
+}
+
+export function useClassBenchmarks(classId) {
+  return useQuery({
+    queryKey: ['archive', 'class-benchmarks', classId],
+    queryFn: () => archiveApi.getClassBenchmarks(classId).then(r => r?.data ?? r),
+    enabled: !!classId,
+    staleTime: 1000 * 60 * 10,
   });
 }
 
@@ -41,23 +50,10 @@ export function useSearchVault(query = {}) {
 export function usePromoteStudent() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (dto) => archiveApi.promoteStudent(
-      dto.studentId,
-      dto.academicYearId,
-      dto.fromClass,
-      dto.toClass,
-      dto.status,
-      dto.notes,
-    ),
+    mutationFn: (dto) => archiveApi.promoteStudent(dto),
     onSuccess: (_, { studentId }) => {
-      // 1. Refresh the explicit student history timeline
       queryClient.invalidateQueries({ queryKey: ['archive', 'students', studentId] });
-      
-      // 2. Refresh aggregate historical numbers
       queryClient.invalidateQueries({ queryKey: ['archive', 'stats'] });
-      
-      // FIX: Invalidate global vault search results so lists updating 
-      // class cohorts or history display the brand-new states immediately.
       queryClient.invalidateQueries({ queryKey: ['archive', 'vault'] });
     },
   });

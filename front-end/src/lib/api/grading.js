@@ -13,10 +13,11 @@ export const gradingApi = {
 
   approveGrade: async (gradeEntryId, approvedById) => api.patch(`/grading/entries/${gradeEntryId}/approve`, { approvedById }),
 
-  bulkApproveGrades: async (ids, approvedById) => api.patch('/grading/entries/bulk-approve', { ids, approvedById }),
+  bulkApproveGrades: async (ids, approvedById) =>
+    api.post('/grading/entries/bulk-approve', { ids, approvedById }),
 
   getStudentTermGrades: async (studentId, termId) =>
-    api.get(`/grading/students/${studentId}/terms/${termId}/grades`),
+    api.get(`/grading/students/${studentId}/terms/${termId}`),
 
   getGradeEntry: async (id) => api.get(`/grading/entries/${id}`),
 

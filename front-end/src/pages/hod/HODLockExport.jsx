@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { EmptyState } from '../../components/molecules';
 import {
   Lock,
   Unlock,
@@ -405,9 +406,9 @@ export function HODLockExport() {
                             </span>
                           </div>
                         ))
-                      ) : (
-                        <p className="text-[11px] text-gray-400 italic py-1">No validation checks configured for this class.</p>
-                      )}
+                        ) : (
+                          <EmptyState context="grades" variant="compact" />
+                        )}
 
                       {(selectedClass.checks?.length ?? 0) > 0 && selectedClass.checks?.some((c) => !c.pass) && (
                         <div className="mt-3 p-3 bg-rose-50/60 border border-rose-100 rounded-lg text-[11px] text-rose-800 font-medium flex items-start gap-2 leading-relaxed">

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { EmptyState } from '../../components/molecules';
 import { 
   Database, 
   Search, 
@@ -18,6 +19,7 @@ import { TeacherArchiveDetailView } from './TeacherArchiveDetailView';
 import { Card } from '../../components/ui/card';
 import { teacherService } from '../../services';
 import { useRole } from '../../context/RoleContext';
+import { useBreadcrumb } from '../../context/BreadcrumbContext';
 
 // --- Utility Helpers ---
 const gradeToScore = (grade) => {
@@ -84,6 +86,7 @@ const getGraduationYear = (promotions, archivedAt) => {
 
 export function TeacherArchiveView() {
   const { user } = useRole();
+  const { setBreadcrumb } = useBreadcrumb();
   const [activeSubTab, setActiveSubTab] = useState('REGISTRY');
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -154,6 +157,15 @@ export function TeacherArchiveView() {
 
     loadArchive();
   }, [teacherId]);
+
+  useEffect(() => {
+    const tabLabel = activeSubTab === 'REGISTRY' ? 'Registry' : activeSubTab === 'INTERVENTIONS' ? 'Interventions' : 'Observation Summary';
+    const crumbs = [{ label: 'My Teaching Archive', path: '/teacher/archive' }, { label: tabLabel, path: null }];
+    if (selectedStudent) {
+      crumbs.push({ label: selectedStudent.name, path: null });
+    }
+    setBreadcrumb(crumbs);
+  }, [activeSubTab, selectedStudent, setBreadcrumb]);
 
   // Derived Values
   const filteredStudents = useMemo(() => {
@@ -488,7 +500,7 @@ export function TeacherArchiveView() {
 
                   <div className="grid grid-cols-1 gap-3">
                     {students.flatMap(s => (s.interventions || []).map(int => ({ ...int, studentName: s.name, class: s.currentClass, studentId: s.id }))).length === 0 ? (
-                      <p className="text-xs font-medium text-slate-400 text-center py-6">No historical tutorial exceptions flagged or configured.</p>
+                      <EmptyState context="results" variant="compact" />
                     ) : (
                       students.flatMap(s => (s.interventions || []).map(int => ({ ...int, studentName: s.name, class: s.currentClass, studentId: s.id }))).map((item, idx) => (
                         <div key={idx} className="p-4 bg-slate-50/60 border border-slate-200 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
