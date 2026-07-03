@@ -140,7 +140,8 @@ useEffect(() => {
     setActiveSubMenu(null);
   }, [location.pathname]);
 
-  const filteredItems = navItems.filter(item => user && item.roles.includes(user.role));
+  const isAdminUser = user?.role === 'SUPER_ADMIN' || user?.role === 'HEADMASTER';
+  const filteredItems = navItems.filter(item => user && (item.roles.includes(user.role) || (isAdminUser && item.roles.includes('ADMIN'))));
 
   const handleLogout = () => {
     localStorage.clear();

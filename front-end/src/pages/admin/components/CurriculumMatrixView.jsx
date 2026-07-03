@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { cn } from '../../../lib/utils';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '../../../components/ui/table';
 import { toast, Toaster } from '../../../components/ui/toast.tsx';
-import { Search, Map, Plus, ShieldCheck, CheckCircle2, BookMarked, Clock, Hash, XCircle } from 'lucide-react';
+import { Search, Map, ShieldCheck, BookMarked, Clock } from 'lucide-react';
 import {
   useCurriculumMatrix,
   useUpsertCurriculumMapping,
@@ -14,15 +14,7 @@ import {
 export function CurriculumMatrixView({ displaySubjects: initialSubjects, displayClasses: initialClasses, academicYearId }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState({ yearGroup: 'ALL' });
-  const [showAddSubject, setShowAddSubject] = useState(false);
   const [deploying, setDeploying] = useState(false);
-  const [newSubject, setNewSubject] = useState({
-    name: '',
-    code: '',
-    type: 'Elective',
-    creditHours: 3,
-    applicablePrograms: [],
-  });
 
   const subjects = useMemo(() => (initialSubjects || []).map(s => ({
     ...s,
@@ -209,15 +201,6 @@ export function CurriculumMatrixView({ displaySubjects: initialSubjects, display
     toast.info('Draft discarded - reverted to backend defaults');
   }, [subjects, classes, computeDefaultAssignment, matrixQuery]);
 
-  const addSubject = useCallback(() => {
-    if (!newSubject.name.trim() || !newSubject.code.trim()) {
-      toast.error('Subject name and code are required');
-      return;
-    }
-    toast.info('Subjects must be created in the Subject Registry first');
-    setShowAddSubject(false);
-  }, [newSubject]);
-
   const deployArchitecture = useCallback(async () => {
     if (!academicYearId) {
       toast.error('No academic year selected');
@@ -320,12 +303,6 @@ export function CurriculumMatrixView({ displaySubjects: initialSubjects, display
               >
                 <Map size={16} /> Auto-Sync Core
               </button>
-              <button
-                onClick={() => setShowAddSubject(true)}
-                className="flex items-center gap-2 px-5 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest"
-              >
-                <Plus size={16} /> Add Subject Unit
-              </button>
             </div>
           </div>
 
@@ -420,138 +397,7 @@ export function CurriculumMatrixView({ displaySubjects: initialSubjects, display
             </TableBody>
           </Table>
         </div>
-
-        <div className="p-8 bg-slate-50 border-t border-slate-200 shrink-0 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Active Curriculum Nodes</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Elective Protocol</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {matrixQuery.isLoading && <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Syncing...</span>}
-            <button
-              onClick={discardDraft}
-              className="px-8 py-4 bg-white text-slate-900 border border-slate-200 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all"
-            >
-              Discard Draft
-            </button>
-            <button
-              onClick={deployArchitecture}
-              disabled={deploying || matrixQuery.isLoading}
-              className="px-10 py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ShieldCheck size={16} />
-              {deploying ? 'Deploying...' : 'Deploy Architecture'}
-            </button>
-          </div>
-        </div>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { label: 'Total Subject Logic', value: liveStats.totalSubjects, icon: BookMarked, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Weighted Unit Load', value: liveStats.totalCredits, icon: Hash, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-          { label: 'Integrity Rating', value: liveStats.integrityRating, icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'Conflicting Nodes', value: liveStats.conflicts, icon: XCircle, color: 'text-rose-600', bg: 'bg-rose-50' },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white p-6 rounded-[2rem] border border-slate-200/60 shadow-sm flex items-center justify-between">
-            <div className={cn("w-12 h-12 rounded-[1.25rem] flex items-center justify-center", stat.bg, stat.color)}>
-              <stat.icon size={22} />
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
-              <p className="text-xl font-black italic font-display text-slate-900 leading-none">{stat.value}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {showAddSubject && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowAddSubject(false)} />
-          <div className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl p-8">
-            <h3 className="text-2xl font-black italic font-display text-slate-900 mb-6">Add Subject Unit</h3>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Subject Name *</label>
-                  <input
-                    value={newSubject.name}
-                    onChange={(e) => setNewSubject({ ...newSubject, name: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-bold"
-                    placeholder="e.g. Elective Physics"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Subject Code *</label>
-                  <input
-                    value={newSubject.code}
-                    onChange={(e) => setNewSubject({ ...newSubject, code: e.target.value.toUpperCase() })}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-bold"
-                    placeholder="e.g. PHY-E"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Subject Type</label>
-                <select
-                  value={newSubject.type}
-                  onChange={(e) => setNewSubject({ ...newSubject, type: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-bold"
-                >
-                  <option value="Elective">Elective</option>
-                  <option value="Core">Core</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Credit Hours</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="6"
-                  value={newSubject.creditHours}
-                  onChange={(e) => setNewSubject({ ...newSubject, creditHours: parseInt(e.target.value) || 3 })}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-bold"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Applicable Programs</label>
-                <div className="flex flex-wrap gap-2">
-                  {['Science', 'General Arts', 'Business', 'Home Economics', 'Visual Arts'].map(prog => (
-                    <button
-                      key={prog}
-                      onClick={() => {
-                        const current = newSubject.applicablePrograms || [];
-                        const updated = current.includes(prog)
-                          ? current.filter(p => p !== prog)
-                          : [...current, prog];
-                        setNewSubject({ ...newSubject, applicablePrograms: updated });
-                      }}
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider",
-                        newSubject.applicablePrograms?.includes(prog)
-                          ? "bg-slate-900 text-white"
-                          : "bg-slate-100 text-slate-400"
-                      )}
-                    >
-                      {prog}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="flex gap-4 mt-6">
-              <button onClick={() => setShowAddSubject(false)} className="flex-1 py-4 bg-slate-50 rounded-2xl text-[11px] font-black uppercase tracking-widest">Cancel</button>
-              <button onClick={addSubject} className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest">Add Subject</button>
-            </div>
-          </div>
-        </div>
-      )}
       <Toaster />
     </div>
   );

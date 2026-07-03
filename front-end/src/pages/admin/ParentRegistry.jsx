@@ -5,11 +5,11 @@ import {
   X,
   FileText,
   MoreVertical, GraduationCap,
-  UserPlus, Fingerprint,
+  UserPlus,
   Phone, MessageSquare,
   BarChart3, AlertCircle, Mail,
-   Send, ShieldCheck, UserCheck,
-    CreditCard, Bell, Plus
+  Send, UserCheck,
+  CreditCard, Plus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
@@ -65,10 +65,9 @@ const ParentProfile = ({ parent, onClose }) => {
 
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           {[
-            { id: 'Overview', label: 'Ward Overview', icon: Users },
-            { id: 'History', label: 'Communication', icon: MessageSquare },
-            { id: 'Identity', label: 'Access Control', icon: ShieldCheck },
-          ].map(tab => (
+             { id: 'Overview', label: 'Ward Overview', icon: Users },
+             { id: 'History', label: 'Communication', icon: MessageSquare },
+           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -168,38 +167,6 @@ const ParentProfile = ({ parent, onClose }) => {
             ))}
           </div>
         )}
-
-        {activeTab === 'Identity' && (
-          <div className="space-y-6">
-            <div className="bg-white p-8 rounded-4xl border border-slate-200 shadow-sm text-center">
-              <div className="w-20 h-20 bg-emerald-50 border border-emerald-100 rounded-3xl flex items-center justify-center text-emerald-600 mx-auto mb-6">
-                <Fingerprint size={40} />
-              </div>
-              <h3 className="text-xl font-black italic font-display text-slate-900 mb-1">Access Protocol</h3>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-8">Household Credential Management</p>
-              
-              <div className="space-y-3 mb-8">
-                <div className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Access Code</span>
-                  <span className="text-[14px] font-black text-slate-900 italic font-display">{parent.accessCode}</span>
-                </div>
-                <div className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mobile PIN</span>
-                  <span className="text-[14px] font-black text-slate-900 italic font-display">****</span>
-                </div>
-              </div>
-
-               <div className="flex gap-3">
-                 <Button className="flex-1 py-4">
-                   <ShieldCheck size={16} /> Reset PIN
-                 </Button>
-                 <Button variant="outline" className="flex-1 py-4">
-                   <Bell size={16} /> Notify
-                 </Button>
-               </div>
-            </div>
-          </div>
-        )}
       </div>
 
        <div className="p-8 bg-white border-t border-slate-100 flex gap-3 shrink-0">
@@ -284,7 +251,6 @@ export const ParentRegistry = () => {
         phone: newParentForm.phone,
         email: newParentForm.email,
         occupation: newParentForm.occupation,
-        password: 'Parent@123!',
       });
       setIsCreateModalOpen(false);
       setNewParentForm({ firstName: '', lastName: '', phone: '', email: '', occupation: '' });

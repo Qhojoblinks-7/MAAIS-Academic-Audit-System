@@ -13,6 +13,7 @@ import {
   Clock,
   Download,
   Layers,
+  MessageSquare,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -21,6 +22,7 @@ import { WAECExportValidator } from '@/components/organisms';
 import { ConfirmationDialog } from '@/components/molecules';
 import { auditTrail } from '@/services/auditTrailService';
 import { eventBus } from '@/services/eventBus';
+import { hodService } from '@/services/hodService';
 import {
   useDepartmentProgress,
   useLockDepartmentMatrix,
@@ -148,6 +150,41 @@ export function HODLockExport() {
   const [confirmLock, setConfirmLock] = useState(null);
   const [confirmUnlock, setConfirmUnlock] = useState(null);
   const [activeClassId, setActiveClassId] = useState(null);
+  const [revisionModal, setRevisionModal] = useState(null);
+  const [revisionText, setRevisionText] = useState('');
+  const [revisionSubmitting, setRevisionSubmitting] = useState(false);
+
+  const handleOpenRevision = (cls) => {
+    if (!cls) return;
+    setRevisionModal({
+      id: cls.id,
+      className: cls.className || cls.name,
+      subject: cls.subject,
+    });
+    setRevisionText('');
+  };
+
+  const doRequestRevision = async () => {
+    if (!revisionModal || !revisionText.trim()) return;
+    setRevisionSubmitting(true);
+    try {
+      const gradeEntryId = revisionModal.id;
+      await hodService.requestGradeRevision({
+        gradeEntryId,
+        issue: revisionText.trim(),
+        severity: 'medium',
+      });
+
+      await auditTrail.logChange?.('grade_revision', gradeEntryId, {}, { requestedByHod: true }, 'HOD requested grade revision');
+      eventBus.emit('grade-revision-requested', { classId: gradeEntryId, className: revisionModal.className });
+      setRevisionModal(null);
+      setRevisionText('');
+    } catch (e) {
+      alert(e.message || 'Failed to request grade revision');
+    } finally {
+      setRevisionSubmitting(false);
+    }
+  };
 
   // Clean pure computation for sorted list
   const sortedClasses = useMemo(() => {
@@ -386,6 +423,15 @@ export function HODLockExport() {
                         Export CSV
                       </button>
                     )}
+                    {(selectedClass.checks?.length ?? 0) > 0 && selectedClass.checks?.some((c) => !c.pass) && (
+                      <button
+                        onClick={() => handleOpenRevision(selectedClass)}
+                        className="px-3 py-1.5 bg-amber-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-amber-700 flex items-center gap-1.5 shadow-3xs transition-all active:scale-95 cursor-pointer"
+                      >
+                        <MessageSquare size={11} />
+                        Request Revision
+                      </button>
+                    )}
                   </div>
 
                   <div className="flex-1 overflow-y-auto p-5 space-y-4">
@@ -463,6 +509,54 @@ export function HODLockExport() {
         onCancel={() => setConfirmUnlock(null)}
         variant="primary"
       />
+      {revisionModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-sm" onClick={() => setRevisionModal(null)} />
+          <div className="relative w-full max-w-lg bg-surface rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-border flex justify-between items-center bg-surface shrink-0">
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider">Request Grade Revision</h3>
+              <button
+                onClick={() => setRevisionModal(null)}
+                className="p-1.5 hover:bg-gray-100 rounded-lg transition-all text-gray-400 hover:text-gray-600"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <p className="text-xs text-gray-500 font-medium">
+                Class: <span className="text-gray-900 font-bold">{revisionModal.className}</span>
+                {revisionModal.subject && <span className="text-gray-400 ml-2">— {revisionModal.subject}</span>}
+              </p>
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Issue / Instruction for Teacher</label>
+                <textarea
+                  value={revisionText}
+                  onChange={(e) => setRevisionText(e.target.value)}
+                  placeholder="Describe what needs to be revised..."
+                  className="w-full rounded-xl border border-gray-200 bg-white p-3 text-xs font-medium text-gray-800 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none"
+                  rows={4}
+                />
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2 bg-gray-50/40">
+              <button
+                onClick={() => setRevisionModal(null)}
+                className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={doRequestRevision}
+                disabled={!revisionText.trim() || revisionSubmitting}
+                className="px-4 py-2 bg-amber-600 text-white text-xs font-bold rounded-lg hover:bg-amber-700 flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
+              >
+                {revisionSubmitting ? <LoadingSpinner size="sm" /> : <MessageSquare size={12} />}
+                Submit Request
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

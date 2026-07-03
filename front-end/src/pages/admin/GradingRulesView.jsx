@@ -1,4 +1,4 @@
-ï»¿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Settings2, ShieldCheck, AlertTriangle, Save, 
   Plus, Trash2, Edit3, Lock, Unlock,
@@ -43,7 +43,7 @@ const DEFAULT_BOUNDARIES = [
 
 export const GradingRulesView = () => {
   const { isTermFinalized, setIsTermFinalized } = useUI();
-  const TERM_DISPLAY = { TERM_1: 'Term 1', TERM_2: 'Term 2', TERM_3: 'Term 3' };
+  const TERM_DISPLAY = { TERM_1: 'Term 1', TERM_2: 'Term 2', TERM_3: 'Term 3', SEMESTER_1: 'Semester 1', SEMESTER_2: 'Semester 2' };
   const [caWeight, setCaWeight] = useState(30);
   const [examWeight, setExamWeight] = useState(70);
   const [boundaries, setBoundaries] = useState(DEFAULT_BOUNDARIES);
@@ -219,7 +219,7 @@ const handleAuditTrailClick = () => {
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Target Term</p>
                        <p className="text-sm font-black text-slate-900">
-                         {termSummaryQuery.isLoading ? 'Loading...' : termSummaryQuery.data?.termLabel || 'â€”'}
+                         {termSummaryQuery.isLoading ? 'Loading...' : termSummaryQuery.data?.termLabel || '—'}
                        </p>
                     </div>
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
@@ -227,7 +227,7 @@ const handleAuditTrailClick = () => {
                        <p className="text-sm font-black text-slate-900">
                          {termSummaryQuery.isLoading
                            ? 'Loading...'
-                           : `${termSummaryQuery.data?.studentCount?.toLocaleString() ?? 'â€”'} Students & ${termSummaryQuery.data?.gradeEntryCount?.toLocaleString() ?? 'â€”'} Grade Entries`}
+                           : `${termSummaryQuery.data?.studentCount?.toLocaleString() ?? '—'} Students & ${termSummaryQuery.data?.gradeEntryCount?.toLocaleString() ?? '—'} Grade Entries`}
                        </p>
                     </div>
                  </div>
@@ -457,7 +457,7 @@ const handleAuditTrailClick = () => {
                     <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Mapping Percentage Thresholds to Terminal Grades</p>
                   </div>
                    <button 
-                     onClick={() => toast.info('WAEC calibration maps score ranges to terminal grades (A1-F9). Adjust boundaries carefully â€” they directly affect transcript quality and ranking.')}
+                     onClick={() => toast.info('WAEC calibration maps score ranges to terminal grades (A1-F9). Adjust boundaries carefully — they directly affect transcript quality and ranking.')}
                      className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:text-slate-900 transition-colors"
                    >
                      <HelpCircle size={18} />
@@ -486,7 +486,7 @@ const handleAuditTrailClick = () => {
                                  onChange={(e) => handleBoundaryChange(b.id, 'min', e.target.value === '' ? '' : parseInt(e.target.value))}
                                  className="w-16 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-[12px] font-black font-mono text-center outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
                                />
-                               <span className="text-slate-300 font-black">â€”</span>
+                               <span className="text-slate-300 font-black">—</span>
                                <input 
                                  type="number" 
                                  value={b.max}

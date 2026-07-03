@@ -103,7 +103,10 @@ Centralise Qualitative Data 21
 
 
 Q13: When preparing verified data for the official WAEC STP, what is the hardest part of that process right now?
-The system must be able to: 1) Handle internal score conversion (e.g., converting class exercises/notes to the required 20%). 2) Match WAEC's specific assessment groups (Class Exercise, Exam Group, Vertical Portfolio). 3) Generate an exportable script that can be easily downloaded and uploaded directly to the WAEC STP. 22
+The system must be able to: 
+1) Handle internal score conversion (e.g., converting class exercises/notes to the required 20%). 
+2) Match WAEC's specific assessment groups (Class Exercise, Exam Group, Vertical Portfolio). 
+3) Generate an exportable script that can be easily downloaded and uploaded directly to the WAEC STP. 22
 
 
 Facilitate External Compliance 23

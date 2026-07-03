@@ -65,16 +65,83 @@ export const calcRoman = (grade) => {
  */
 export const getSectionFieldName = (label, index) => {
   const l = (label || '').toLowerCase().trim();
-  if (/^marking[\s\-]?out?/.test(l))  return 'secA';
-  if (/^assembly/.test(l))             return 'secB';
-  if (/^finishing/.test(l))            return 'secC';
-  if (/^paper\s+1\b/.test(l))         return 'secA';
-  if (/^paper\s+2/.test(l))           return 'secB';
-  if (/^paper\s+3/.test(l))           return 'secC';
-  if (/^sec\s+a\b/.test(l))           return 'secA';
-  if (/^sec\s+b\b/.test(l))           return 'secB';
-  if (/^sec\s+c\b/.test(l))           return 'secC';
-  if (/^obj/.test(l))                  return 'secA';
-  if (/^essay|theory|pract\b/.test(l)) return 'secB';
+  if (/^marking[\s\-]?out?/.test(l))       return 'secA';
+  if (/^assembly/.test(l))                  return 'secB';
+  if (/^finishing/.test(l))                 return 'secC';
+  if (/^preparation|cutting/.test(l))       return 'secA';
+  if (/^construction|joining/.test(l))      return 'secB';
+  if (/^testing|inspection/.test(l))        return 'secC';
+  if (/^paper\s+1\b/.test(l))              return 'secA';
+  if (/^paper\s+2/.test(l))                return 'secB';
+  if (/^paper\s+3/.test(l))                return 'secC';
+  if (/^sec\s+a\b/.test(l))                return 'secA';
+  if (/^sec\s+b\b/.test(l))                return 'secB';
+  if (/^sec\s+c\b/.test(l))                return 'secC';
+  if (/^obj/.test(l))                       return 'secA';
+  if (/^essay|theory|pract\b/.test(l))      return 'secB';
+  if (/^drawing|design/.test(l))            return 'secA';
+  if (/^geometric/.test(l))                 return 'secA';
+  if (/^projection/.test(l))                return 'secB';
+  if (/^engine|mechanical/.test(l))         return 'secA';
+  if (/^electrical|wiring/.test(l))         return 'secB';
+  if (/^diag|troubleshoot/.test(l))         return 'secC';
+  if (/^circuit/.test(l))                   return 'secA';
   return ['secA', 'secB', 'secC', 'secD'][index] || `sec_${index}`;
+};
+
+/**
+ * WAEC Subject Code Mapping per subject-code-30.csv
+ * Maps subject names to official WAEC subject codes for STP uploads.
+ */
+export const WAEC_SUBJECT_CODES = {
+  'Commerce': '103',
+  'Financial Accounting': '104',
+  'Marketing': '112',
+  'Christian Religious Studies': '202',
+  'Economics': '203',
+  'Geography': '204',
+  'Government': '205',
+  'Nigerian History': '207',
+  'Islamic Studies': '208',
+  'Literature in English': '210',
+  'Civic Education': '216',
+  'Arabic': '301',
+  'English Language': '302',
+  'French': '304',
+  'Hausa': '327',
+  'Igbo': '328',
+  'Yoruba': '329',
+  'Further Mathematics': '401',
+  'General Mathematics': '402',
+  'Agricultural Science': '502',
+  'Biology': '504',
+  'Chemistry': '505',
+  'Health Education': '508',
+  'Physical Education': '511',
+  'Physics': '512',
+  'Technical Drawing': '608',
+  'Foods and Nutrition': '702',
+  'Home Management': '703',
+  'Music': '705',
+  'Visual Art': '706',
+};
+
+/**
+ * Get WAEC subject code by subject name. Returns fallback code for unknown subjects.
+ */
+export const getSubjectCode = (subjectName) => {
+  return WAEC_SUBJECT_CODES[subjectName] || '000';
+};
+
+/**
+ * Split full name into surname and other names for WAEC STP format.
+ * Returns { surname, otherNames } tuple.
+ */
+export const splitName = (fullName) => {
+  if (!fullName) return { surname: '', otherNames: '' };
+  const parts = fullName.trim().split(/\s+/);
+  return {
+    surname: parts[0] || '',
+    otherNames: parts.slice(1).join(' ') || '',
+  };
 };

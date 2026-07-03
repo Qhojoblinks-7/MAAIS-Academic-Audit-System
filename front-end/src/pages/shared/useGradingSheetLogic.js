@@ -7,8 +7,11 @@ import {
   DEFAULT_STP_RULES,
   getSectionFieldName,
   calcRoman,
+  getSubjectCode,
+  splitName,
 } from '../../constants/grading';
 import { notification } from '../../services/notificationService';
+import { toast } from '../../components/ui/toast';
 import { teacherService } from '../../services/teacherService';
 import { gradingApi } from '../../lib/api/grading';
 
@@ -120,6 +123,9 @@ export function useGradingSheetLogic({
   const [studentToUpdate, setStudentToUpdate] = useState(null);
   const [valueToUpdate, setValueToUpdate] = useState(null);
   const [originalMark, setOriginalMark] = useState(null);
+  const [showRevisionModal, setShowRevisionModal] = useState(false);
+  const [revisionText, setRevisionText] = useState('');
+  const [revisionSubmitting, setRevisionSubmitting] = useState(false);
 
   // WAEC STP §7 — behavioural observation per-student maps
   const [behavioralRatings, setBehavioralRatings] = useState({});
@@ -212,6 +218,39 @@ export function useGradingSheetLogic({
     () => !!(backendIds?.subjectId && backendIds?.classId && backendIds?.termId),
     [backendIds],
   );
+
+  const [autosaveStatus, setAutosaveStatus] = useState('idle');
+  const [lastSavedAt, setLastSavedAt] = useState(null);
+  const [stpValidating, setStpValidating] = useState(false);
+  const autosaveTimerRef = useRef(null);
+  const autosaveMountedRef = useRef(false);
+
+  useEffect(() => {
+    if (!autosaveMountedRef.current) {
+      autosaveMountedRef.current = true;
+      return;
+    }
+    if (!backendReady || !students?.length) return;
+
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+
+    setAutosaveStatus('saving');
+    autosaveTimerRef.current = setTimeout(async () => {
+      try {
+        await persistGradesToBackend(students);
+        setAutosaveStatus('saved');
+        setLastSavedAt(new Date());
+        setTimeout(() => setAutosaveStatus('idle'), 2000);
+      } catch (e) {
+        setAutosaveStatus('error');
+        toast.error('Auto-save failed: ' + (e.message || 'Unknown error'));
+      }
+    }, 1000);
+
+    return () => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    };
+  }, [students, backendReady, persistGradesToBackend]);
 
   // ── Derived ─────────────────────────────────────────────────────────────────
   const missingCount = useMemo(
@@ -308,13 +347,36 @@ export function useGradingSheetLogic({
   }, [justification, valueToUpdate, studentToUpdate, fieldToUpdate, calculateScores]);
 
   const runSTPValidation = useCallback(() => {
+    if (stpValidating) return;
+    setStpValidating(true);
     setShowSTPOverlay(true);
-    const errors = stpRules
-      .filter(rule => students.some(s => rule.check?.(s)))
-      .map(rule => rule.message);
-    if (isTermFinalized) errors.push('CRITICAL: Term Finalized. Database records are locked.');
-    setStpErrors(errors);
-  }, [stpRules, students, isTermFinalized]);
+
+    const runCheck = async () => {
+      try {
+        if (backendReady) {
+          await persistGradesToBackend(students);
+        }
+        const errors = stpRules
+          .filter(rule => students.some(s => rule.check?.(s)))
+          .map(rule => rule.message);
+        if (isTermFinalized) errors.push('CRITICAL: Term Finalized. Database records are locked.');
+        setStpErrors(errors);
+
+        if (errors.length === 0) {
+          toast.success('STP validation passed — no compliance issues found');
+        } else {
+          toast.error(`STP validation found ${errors.length} issue${errors.length !== 1 ? 's' : ''}`);
+        }
+      } catch (e) {
+        setStpErrors([]);
+        toast.error('STP validation failed: ' + (e.message || 'Unknown error'));
+      } finally {
+        setStpValidating(false);
+      }
+    };
+
+    runCheck();
+  }, [stpRules, students, isTermFinalized, backendReady, persistGradesToBackend, stpValidating]);
 
   const mapStudentToBackendEntry = (student) => ({
     studentId: student.id,
@@ -373,43 +435,17 @@ export function useGradingSheetLogic({
     setSubmissionStatus('DRAFT');
     setStudents(prev => prev.map(s => ({ ...s, _draftStatus: 'DRAFT' })));
     if (!backendReady) {
-      if (idResolutionError) console.warn('[GradingSheet] backend IDs unresolved — saving in local mode');
-      if (teacherId) {
-        notification.sendHODAlert(
-          teacherId,
-          'GRADE_DRAFT_SAVED',
-          {
-            classId: classInfo.id,
-            subject: classInfo.subject,
-            className: classInfo.className,
-            timestamp: new Date().toISOString(),
-          }
-        ).catch(err => {
-          console.error('Failed to send HOD alert for grade draft:', err);
-        });
-      }
+      toast.info('Saving locally — backend IDs still resolving');
       return;
     }
     persistGradesToBackend(students)
       .then(() => {
-        if (teacherId) {
-          notification.sendHODAlert(
-            teacherId,
-            'GRADE_DRAFT_SAVED',
-            {
-              classId: classInfo.id,
-              subject: classInfo.subject,
-              className: classInfo.className,
-              timestamp: new Date().toISOString(),
-            }
-          ).catch(err => {
-            console.error('Failed to send HOD alert for grade draft:', err);
-          });
-        }
+        toast.success('Draft saved successfully');
       })
       .catch((err) => {
         console.error('[GradingSheet] draft persistence failed:', err);
         setSubmissionStatus('ERROR');
+        toast.error('Failed to save draft');
       });
   }, [isTermFinalized, teacherId, classInfo, students, backendReady, idResolutionError, persistGradesToBackend, notification]);
 
@@ -454,8 +490,51 @@ export function useGradingSheetLogic({
       .catch((err) => {
         console.error('[GradingSheet] submission persistence failed:', err);
         setSubmissionStatus('ERROR');
+        toast.error('Failed to submit to HOD');
       });
-  }, [isTermFinalized, missingCount, teacherId, classInfo, students, backendReady, persistGradesToBackend, notification]);
+  }, [isTermFinalized, missingCount, teacherId, classInfo, students, backendReady, persistGradesToBackend, notification, toast]);
+
+  const handleRequestRevision = useCallback(() => {
+    if (isTermFinalized) return;
+    if (!selectedStudent?.gradeEntryId) {
+      toast.error('Please select a student first to request a grade revision.');
+      return;
+    }
+    setShowRevisionModal(true);
+    setRevisionText('');
+  }, [isTermFinalized, selectedStudent, toast]);
+
+  const doRequestRevision = useCallback(async () => {
+    if (!selectedStudent?.gradeEntryId || !revisionText.trim()) return;
+    setRevisionSubmitting(true);
+    try {
+      await teacherService.submitGradeRevision({
+        gradeEntryId: selectedStudent.gradeEntryId,
+        issue: revisionText.trim(),
+        severity: 'medium',
+      });
+      notification.sendHODAlert(
+        teacherId,
+        'GRADE_REVISION_REQUESTED',
+        {
+          classId: classInfo.id,
+          subject: classInfo.subject,
+          className: classInfo.className,
+          student: selectedStudent.name,
+          timestamp: new Date().toISOString(),
+        }
+      ).catch(err => {
+        console.error('Failed to send HOD alert for grade revision request:', err);
+      });
+      setShowRevisionModal(false);
+      setRevisionText('');
+      toast.success('Grade revision requested successfully');
+    } catch (e) {
+      toast.error(e.message || 'Failed to request grade revision');
+    } finally {
+      setRevisionSubmitting(false);
+    }
+  }, [selectedStudent, revisionText, teacherId, classInfo, notification, toast]);
 
   const handleSaveBehavioralRatings = useCallback(() => {
     if (isTermFinalized) return;
@@ -475,28 +554,61 @@ export function useGradingSheetLogic({
 
     teacherService.createBehavior(sid, behaviorData)
       .then(() => {
-        console.log('[WAEC STP §7] Behavioral ratings saved to backend:', sid);
+        toast.success('Behavioral ratings saved');
       })
       .catch(err => {
         console.error('[WAEC STP §7] Failed to save behavioral ratings:', err);
+        toast.error('Failed to save behavioral ratings');
       });
-  }, [isTermFinalized, selectedStudent, behavioralRatings, behavioralComment, backendReady, teacherService]);
+  }, [isTermFinalized, selectedStudent, behavioralRatings, behavioralComment, backendReady, teacherService, toast]);
 
   const handleExportWAEC = useCallback(() => {
     if (isTermFinalized || missingCount > 0 || isSubmissionLocked) return;
-    const headers = ['Index', 'Student Name', 'SBA', 'Exam', 'Final', 'Grade', 'Roman'];
-    const rows = students.map(s => [
-      s.index, s.name, s.sba, s.exam, s.final, s.grade, calcRoman(s.grade)
-    ]);
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    
+    const headers = [
+      'CandidateNumber',
+      'Surname',
+      'OtherNames',
+      'DateOfBirth',
+      'Gender',
+      'SubjectCode',
+      'ContinuousAssessment',
+      'ExamScore'
+    ];
+    
+    const subjectCode = getSubjectCode(DISPLAY_CLASS_INFO?.subject);
+    const classInfo = DISPLAY_CLASS_INFO || DEFAULT_CLASS_INFO;
+    
+    const rows = students.map(s => {
+      const nameParts = splitName(s.name || '');
+      return [
+        s.index || s.indexNumber || '',
+        nameParts.surname,
+        nameParts.otherNames,
+        s.dateOfBirth || '',
+        s.gender === 'FEMALE' ? 'F' : s.gender === 'MALE' ? 'M' : '',
+        subjectCode,
+        s.sba ?? '',
+        s.exam ?? ''
+      ];
+    });
+    
+    const csvLines = [headers, ...rows].map(r => 
+      r.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+    );
+    const csv = csvLines.join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `WAEC_${DISPLAY_CLASS_INFO?.subject}_${DISPLAY_CLASS_INFO?.className}.csv`;
+    const schoolCode = 'MAAIS';
+    const fileName = `${schoolCode}_${classInfo?.form?.replace(/\s/g, '') || 'SHS1'}_${classInfo?.academicYear?.replace(/\//g, '-') || '2025-2026'}.csv`;
+    a.download = fileName;
     a.click();
     URL.revokeObjectURL(url);
-  }, [isTermFinalized, missingCount, isSubmissionLocked, students, DISPLAY_CLASS_INFO]);
+    toast.success('WAEC STP CSV exported successfully');
+  }, [isTermFinalized, missingCount, isSubmissionLocked, students, DISPLAY_CLASS_INFO, toast]);
 
   const handleCloseJustificationPopup = useCallback(() => {
     setShowJustificationPopup(false);
@@ -572,8 +684,18 @@ export function useGradingSheetLogic({
     runSTPValidation,
     handleSaveDraft,
     handleSubmitToHOD,
+    handleRequestRevision,
+    doRequestRevision,
+    showRevisionModal,
+    setShowRevisionModal,
+    revisionText,
+    setRevisionText,
+    revisionSubmitting,
     handleSaveBehavioralRatings,
     handleExportWAEC,
+    stpValidating,
+    autosaveStatus,
+    lastSavedAt,
     // Backend connectivity
     backendIds,
     backendReady,

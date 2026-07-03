@@ -5,6 +5,19 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 const RoleContext = createContext(undefined);
 
+const BACKEND_TO_FRONTEND_ROLE = {
+  SUPER_ADMIN: 'ADMIN',
+  HEADMASTER: 'ADMIN',
+  HOD: 'HOD',
+  TEACHER: 'TEACHER',
+  STUDENT: 'STUDENT',
+  PARENT: null,
+};
+
+function normalizeRole(role) {
+  return BACKEND_TO_FRONTEND_ROLE[role] || role || null;
+}
+
 const parseUserProfile = (data, jwtPayload) => {
   const payload = jwtPayload || {};
   const userId = data?.id || payload.sub || payload.id;
@@ -22,7 +35,7 @@ const parseUserProfile = (data, jwtPayload) => {
     id: userId,
     profileId,
     name,
-    role: data?.role || payload.role,
+    role: normalizeRole(data?.role || payload.role),
     departmentId,
     departmentName: data?.department?.name || null,
     avatar,

@@ -376,7 +376,7 @@ function AppContent() {
 
   return (
     <div className="flex h-screen bg-background font-sans selection:bg-success/20 selection:text-success">
-      {isSystemFrozen && user?.role !== "STUDENT" && user?.role !== "PARENT" && (
+      {isSystemFrozen && user?.role !== "STUDENT" && (
         <>
           {user?.role === "SUPER_ADMIN" || user?.role === "HEADMASTER" ? (
             <div className="fixed top-0 left-0 right-0 z-[300] bg-rose-600 text-white px-4 py-2.5 flex items-center justify-center gap-3 shadow-lg">

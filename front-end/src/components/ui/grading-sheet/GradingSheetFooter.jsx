@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from "@/lib/utils";
-import { Lock, ShieldCheck, Save, Send } from 'lucide-react';
+import { Lock, ShieldCheck, Save, Send, MessageSquare } from 'lucide-react';
 
 /* O(1) - WAEC STP grade mapping: A1→I, B2→II, B3→III, C4→IV, C5→V, C6→VI, D7→VII, E8→VIII, F9→IX
  * WAEC Grading Scale (WASSCE) - each band maps to Roman numeral I-X
@@ -17,7 +17,8 @@ export function GradingSheetFooter({
   missingCount,
   onSaveDraft,
   onSubmitToHOD,
-  hasDraftChanges = false
+  hasDraftChanges = false,
+  onRequestRevision,
 }) {
   return (
     <footer className="mt-8 flex flex-wrap justify-between items-center gap-4 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
@@ -64,6 +65,21 @@ export function GradingSheetFooter({
         >
           <Send size={14} /> Submit to HOD
         </button>
+
+        {onRequestRevision && (
+          <button
+            onClick={onRequestRevision}
+            disabled={isSubmissionLocked}
+            className={cn(
+              "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2",
+              isSubmissionLocked
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-200"
+            )}
+          >
+            <MessageSquare size={14} /> Request Revision
+          </button>
+        )}
       </div>
     </footer>
   );

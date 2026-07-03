@@ -62,8 +62,9 @@ React.useEffect(() => {
     { icon: LineChart, label: 'Broadsheet Comparison', id: 'broadsheetComparison', hash: '#broadsheetComparison', roles: ['STUDENT'] },
   ];
 
-const filteredItems = navItems.filter(item => user && item.roles.includes(user.role));
-  const filteredStudentTabs = studentPortalTabs.filter(item => user && item.roles.includes(user.role));
+  const isAdminUser = user?.role === 'SUPER_ADMIN' || user?.role === 'HEADMASTER';
+  const filteredItems = navItems.filter(item => user && (item.roles.includes(user.role) || (isAdminUser && item.roles.includes('ADMIN'))));
+  const filteredStudentTabs = studentPortalTabs.filter(item => user && (item.roles.includes(user.role) || (isAdminUser && item.roles.includes('ADMIN'))));
 
 const handleLogout = () => {
      localStorage.clear();

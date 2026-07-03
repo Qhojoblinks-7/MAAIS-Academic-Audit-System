@@ -41,6 +41,31 @@ const SUBJECT_CONFIG = {
     maxRaw: 100, sectionCount: 2, hasPractical: false, practicalMarks: 0,
     sbaLabel: 'SBA (30%)', examLabel: 'Exam (70%)',
   },
+  'Woodwork': {
+    sections: ['Marking out (25)', 'Assembly (30)', 'Finishing (25)'],
+    maxRaw: 80, sectionCount: 3, hasPractical: true, practicalMarks: 80,
+    sbaLabel: 'SBA (30%)', examLabel: 'Exam (70%)',
+  },
+  'Metalwork': {
+    sections: ['Marking out (25)', 'Assembly (30)', 'Finishing (25)'],
+    maxRaw: 80, sectionCount: 3, hasPractical: true, practicalMarks: 80,
+    sbaLabel: 'SBA (30%)', examLabel: 'Exam (70%)',
+  },
+  'Technical Drawing': {
+    sections: ['Geometric Construction (50)', 'Projection (50)'],
+    maxRaw: 100, sectionCount: 2, hasPractical: true, practicalMarks: 100,
+    sbaLabel: 'SBA (30%)', examLabel: 'Exam (70%)',
+  },
+  'Auto Mechanics': {
+    sections: ['Engine Systems (35)', 'Diagnostics (35)', 'Practical Task (30)'],
+    maxRaw: 100, sectionCount: 3, hasPractical: true, practicalMarks: 100,
+    sbaLabel: 'SBA (30%)', examLabel: 'Exam (70%)',
+  },
+  'Electrical': {
+    sections: ['Circuit Construction (40)', 'Wiring (30)', 'Testing (30)'],
+    maxRaw: 100, sectionCount: 3, hasPractical: true, practicalMarks: 100,
+    sbaLabel: 'SBA (30%)', examLabel: 'Exam (70%)',
+  },
 };
 
 export function TeacherGradingView() {

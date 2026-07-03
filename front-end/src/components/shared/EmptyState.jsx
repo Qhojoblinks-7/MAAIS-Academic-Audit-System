@@ -64,7 +64,7 @@ export function EmptyState({
   variant = "default",
   illustration = null
 }) {
-  const resolvedIcon = context && CONTEXT_CONFIG[context]
+  const ResolvedIcon = context && CONTEXT_CONFIG[context]
     ? CONTEXT_CONFIG[context].icon
     : IconComponent || Inbox;
   const resolvedTitle = context && CONTEXT_CONFIG[context]
@@ -88,7 +88,7 @@ export function EmptyState({
       <div id="empty_compact_container" className="p-5 bg-slate-50 border border-dashed border-slate-200 rounded-2xl flex items-center justify-between text-left gap-4">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-white border border-slate-150 rounded-xl text-slate-400 shrink-0">
-            <resolvedIcon size={16} />
+            <ResolvedIcon size={16} />
           </div>
           <div>
             <h4 className="text-[11px] font-black text-slate-950 uppercase tracking-widest">{resolvedTitle}</h4>
@@ -131,7 +131,7 @@ export function EmptyState({
             <div className="absolute inset-0 bg-slate-100 rounded-[2rem] blur-xl opacity-50" />
 
             <div className="w-20 h-20 bg-slate-50 border border-slate-200 text-slate-400 rounded-[2rem] flex items-center justify-center relative z-10 shadow-sm">
-              <resolvedIcon size={32} />
+              <ResolvedIcon size={32} />
             </div>
 
             <span className="absolute -bottom-2 px-3 py-1 bg-slate-100 border border-slate-200 text-slate-500 rounded-lg text-[8px] font-black uppercase tracking-widest z-20">

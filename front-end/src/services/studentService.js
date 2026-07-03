@@ -44,6 +44,12 @@ function createRealService() {
             indexNumber: s.indexNumber || '—',
           }));
         }),
+    createMedicalRecord: (studentId, data) =>
+      request('POST', `/students/${studentId}/medical-records`, data).then(r => r?.data ?? r),
+    updateMedicalRecord: (studentId, recordId, data) =>
+      request('PATCH', `/students/${studentId}/medical-records/${recordId}`, data).then(r => r?.data ?? r),
+    deleteMedicalRecord: (studentId, recordId) =>
+      request('DELETE', `/students/${studentId}/medical-records/${recordId}`).then(r => r?.data ?? r),
   };
 }
 

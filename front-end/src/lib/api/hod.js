@@ -54,10 +54,9 @@ validateLock: (termId) =>
 
   exportWAECCSV: (termId, className) => {
     const token = getAuthToken();
-    return fetch(`${BASE}/hod/export-waec/${termId}?class=${encodeURIComponent(className)}&format=csv`, {
-      method: 'POST',
+    return fetch(`${BASE}/hod/export-waec/${termId}?class=${encodeURIComponent(className)}`, {
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       credentials: 'include',
@@ -72,7 +71,8 @@ validateLock: (termId) =>
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `WAEC_${className}_${termId}.csv`;
+      const schoolCode = 'MAAIS';
+      a.download = `${schoolCode}_SHS1_${termId}.csv`;
       a.click();
       URL.revokeObjectURL(url);
       return { success: true };

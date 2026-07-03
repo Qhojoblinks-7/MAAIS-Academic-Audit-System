@@ -57,10 +57,14 @@ export function NotificationBell() {
 
     const unsubscribe1 = eventBus.on('hod-comment-added', handleNotification);
     const unsubscribe2 = eventBus.on('grade-revision-rejected', handleNotification);
+    const unsubscribe3 = eventBus.on('grade-revision-requested', handleNotification);
+    const unsubscribe4 = eventBus.on('grade-revision-approved', handleNotification);
 
     return () => {
       unsubscribe1();
       unsubscribe2();
+      unsubscribe3();
+      unsubscribe4();
       realTimeUnsubscribe();
     };
   }, [userId, role, userProfileId]);

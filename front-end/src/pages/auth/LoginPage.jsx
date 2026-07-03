@@ -80,6 +80,11 @@ export function LoginPage() {
       console.log('[AdminLogin] login() returned:', success);
 
       if (success) {
+        if (data.user?.role === 'PARENT') {
+          setError('Parent portal access is not available. Please contact the school administration.');
+          console.warn('[Login] Parent login attempt blocked - no portal access');
+          return;
+        }
         console.log('[AdminLogin] Navigate to:', from);
         setMobileMenuOpen(false);
         navigate(from, { replace: true });

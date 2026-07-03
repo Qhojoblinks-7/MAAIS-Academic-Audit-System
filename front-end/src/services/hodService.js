@@ -207,6 +207,9 @@ function createRealService() {
        request('POST', `/hod/intervention-alerts/${alertId}/resolve`).then(r => r?.data ?? r),
     addCounselingNote: ({ alertId, text }) =>
        request('POST', `/hod/intervention-alerts/${alertId}/notes`, { text }).then(r => r?.data ?? r),
+
+    requestGradeRevision: (revisionData) =>
+       request('POST', '/teacher/grade-revisions', revisionData).then(r => r?.data ?? r),
   };
 }
 

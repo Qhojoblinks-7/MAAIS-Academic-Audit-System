@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronLeft, Download } from 'lucide-react';
+import { ChevronLeft, Download, Loader2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { CorrectionModeBanner } from '../../shared/CorrectionMode';
 
@@ -12,8 +12,9 @@ export function GradingSheetHeader({
    runSTPValidation,
    missingCount,
    isTermFinalized,
-   onExportWAEC
- }) {
+   onExportWAEC,
+   stpValidating = false
+  }) {
    const handleExportWAEC = () => {
      if (missingCount > 0 || isTermFinalized) return;
      onExportWAEC?.();
@@ -47,9 +48,16 @@ export function GradingSheetHeader({
       <div className="flex items-center gap-3">
         <button 
           onClick={runSTPValidation} 
-          className="px-4 py-2.5 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 transition-colors flex items-center gap-2 text-xs font-semibold"
+          disabled={stpValidating}
+          className={cn(
+            "px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors",
+            stpValidating
+              ? "bg-blue-100 text-blue-400 cursor-wait"
+              : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+          )}
         >
-          STP Validation
+          {stpValidating ? <Loader2 size={15} className="animate-spin" /> : null}
+          {stpValidating ? 'Validating...' : 'STP Validation'}
         </button>
 
         <button 

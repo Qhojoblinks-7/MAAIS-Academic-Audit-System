@@ -188,8 +188,10 @@ class NotificationService {
       'GRADE_DRAFT_SAVED': 'Grade Draft Saved',
       'GRADE_SUBMITTED_TO_HOD': 'Grade Submitted for Review',
       'GRADE_REVISION_REQUESTED': 'Grade Revision Requested',
+      'GRADE_REVISION_REQUESTED_BY_HOD': 'HOD Requested Grade Revision',
       'HOD_COMMENT_ADDED': 'HOD Feedback Added',
       'GRADE_REVISION_REJECTED': 'Grade Revision Rejected',
+      'GRADE_REVISION_APPROVED': 'Grade Revision Approved',
       'DIRECT_MESSAGE': 'New Direct Message'
     };
     return titles[action] || 'Notification';
@@ -200,9 +202,11 @@ class NotificationService {
       'GRADE_DRAFT_SAVED': `A grade draft has been saved for ${details.className || 'a class'}`,
       'GRADE_SUBMITTED_TO_HOD': `Grades have been submitted for review for ${details.className || 'a class'}`,
       'GRADE_REVISION_REQUESTED': `A grade revision has been requested for ${details.className || 'a class'}`,
+      'GRADE_REVISION_REQUESTED_BY_HOD': `HOD has requested a revision for ${details.className || 'a class'}`,
       'HOD_COMMENT_ADDED': `HOD feedback has been added: ${details.message || ''}`,
       'GRADE_REVISION_REJECTED': `Grade revision rejected: ${details.reason || ''}`,
-      'DIRECT_MESSAGE': details.message || 'You have a new direct message'
+      'GRADE_REVISION_APPROVED': `Grade revision approved for ${details.className || 'a class'}`,
+      'DIRECT_MESSAGE': details.message || 'You have a new notification'
     };
     return messages[action] || 'You have a new notification';
   }
@@ -212,6 +216,7 @@ class NotificationService {
       'GRADE_DRAFT_SAVED': 'Teacher Saved Grade Draft',
       'GRADE_SUBMITTED_TO_HOD': 'Teacher Submitted Grades for Review',
       'GRADE_REVISION_REQUESTED': 'Teacher Requested Grade Revision',
+      'GRADE_REVISION_REQUESTED_BY_HOD': 'HOD Requested Grade Revision',
       'DIRECT_MESSAGE': 'New Direct Message from Teacher'
     };
     return titles[action] || 'Notification';
@@ -222,6 +227,7 @@ class NotificationService {
       'GRADE_DRAFT_SAVED': `Teacher has saved a draft for ${details.className || 'a class'}`,
       'GRADE_SUBMITTED_TO_HOD': `Teacher has submitted grades for review for ${details.className || 'a class'}`,
       'GRADE_REVISION_REQUESTED': `Teacher has requested a grade revision for ${details.className || 'a class'}`,
+      'GRADE_REVISION_REQUESTED_BY_HOD': `HOD has requested a grade revision for ${details.className || 'a class'}`,
       'DIRECT_MESSAGE': details.message || 'You have received a direct message from a teacher'
     };
     return messages[action] || 'You have a new notification';
