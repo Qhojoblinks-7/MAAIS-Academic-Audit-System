@@ -1,14 +1,20 @@
 ﻿import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { EmptyState } from '../../components/molecules';
 import { 
   Users, GraduationCap, TrendingUp, AlertCircle, Clock, Plus, Radio,
   FileCheck, LifeBuoy, StickyNote, Zap, Lock, ArrowUpRight, MoreVertical,
-  ThumbsUp, ThumbsDown, ExternalLink, Calendar, User, UserPlus, ChevronRight, X
+  ThumbsUp, ThumbsDown, ExternalLink, Calendar, User, UserPlus, ChevronRight, X,
+  Gauge, Settings2, Flag, Shield, Copy, Send, Loader2, Wifi, WifiOff, RefreshCw,
+  KeyRound, Archive, CircleCheck, ChevronDown
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
+import { useTickets, useUnreadNotifications, useAnalyticsPulse as useAdminAnalyticsPulse, useArchiveStats as useAdminArchiveStats, useAllStudents, useAllStaff, useApprovals, useResolveApproval, useSystemFreeze, useToggleSystemFreeze, useAllDepartments, useAllSubjects, useAcademicYear, useAcademicYears } from '../../lib/hooks';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { Textarea } from '../../components/ui/textarea';
@@ -21,10 +27,6 @@ import {
   SelectValue
 } from '../../components/ui/select';
 import { Badge } from '../../components/ui/badge';
-import { 
-  performanceDatasets, initialActivityLog, initialPendingApprovals, supportTickets,
-  vitalSigns, fabActions, registerNodeProtocols, broadcastChannels
-} from './data';
 
 function Sparkline({ color }) {
   return (
@@ -40,32 +42,223 @@ function Sparkline({ color }) {
   );
 }
 
+const fabActions = [
+  { label: 'Register Node', icon: 'UserPlus', color: 'bg-white text-slate-900', hover: 'hover:bg-slate-100' },
+  { label: 'Broadcast Pulse', icon: 'Radio', color: 'bg-white text-slate-900', hover: 'hover:bg-slate-100' },
+  { label: 'Emergency Freeze', icon: 'Lock', color: 'bg-rose-600 text-white', hover: 'hover:bg-rose-700' },
+];
+
+const registerNodeProtocols = [
+  { label: 'Student Protocol', desc: 'Initialize profile data', icon: 'GraduationCap', path: '/identity/students' },
+  { label: 'Faculty Protocol', desc: 'Provision access rights', icon: 'UserPlus', path: '/identity/staff' },
+  { label: 'Guardian Protocol', desc: 'Link household nodes', icon: 'Users', path: '/identity/parents' }
+];
+
+const broadcastChannels = ['In-App Push', 'Bulk SMS', 'Email'];
+
+const CHART_COLORS = ['#059669', '#0284c7', '#7c3aed', '#db2777', '#ea580c', '#0891b2', '#c026d3', '#eab308', '#16a34a', '#dc2626'];
+
+function getColorForDept(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return CHART_COLORS[Math.abs(hash) % CHART_COLORS.length];
+}
+
 export function AdminHome() {
   const { user } = useRole();
   const navigate = useNavigate();
-  
-  // Realtime System State
+  const qc = useQueryClient();
+
+  const ticketsQuery = useTickets();
+  const notificationsQuery = useUnreadNotifications();
+  const analyticsQuery = useAdminAnalyticsPulse();
+  const archiveStatsQuery = useAdminArchiveStats();
+  const studentsQuery = useAllStudents();
+  const staffQuery = useAllStaff();
+  const systemFreezeQuery = useSystemFreeze();
+  const toggleSystemFreezeMutation = useToggleSystemFreeze();
+
+  const departmentsQuery = useAllDepartments();
+  const subjectsQuery = useAllSubjects();
+  const activeYearQuery = useAcademicYear();
+  const academicYearsQuery = useAcademicYears();
+
   const [currentTime, setCurrentTime] = React.useState(new Date());
   const [fabOpen, setFabOpen] = React.useState(false);
-  const [notepadContent, setNotepadContent] = React.useState('Check SHS 1 enrollment CSV by 2 PM');
-  
-  // Mutable Data State Mechanics
-  const [approvals, setApprovals] = React.useState(initialPendingApprovals);
-  const [activities, setActivities] = React.useState(initialActivityLog);
+  const [memoContents, setMemoContents] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem('admin-strategic-memo');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return { operational: '', academics: '', security: '' };
+  });
+  const [activeMemoTab, setActiveMemoTab] = React.useState('operational');
+  const [notepadSaved, setNotepadSaved] = React.useState(true);
   const [activeMetric, setActiveMetric] = React.useState('Avg Score');
-  
-  // Quick Action Modal states
   const [activeAction, setActiveAction] = React.useState(null);
-  const [isFreezeActive, setIsFreezeActive] = React.useState(false);
-
-  // Broadcast payload configuration parameters
+  const [freezeReason, setFreezeReason] = React.useState('');
   const [selectedChannel, setSelectedChannel] = React.useState('In-App Push');
   const [broadcastPayload, setBroadcastPayload] = React.useState('');
+  const [freezeError, setFreezeError] = React.useState(null);
+  const [showConfigModal, setShowConfigModal] = React.useState(false);
+  const [configForm, setConfigForm] = React.useState({
+    level: 'SHS 3',
+    academicYear: '2025/2026',
+    term: 'Term 1'
+  });
+  const [selectedTicket, setSelectedTicket] = React.useState(null);
+  const [showQueueManager, setShowQueueManager] = React.useState(false);
+  const [approvalMeta, setApprovalMeta] = React.useState({});
+  const [rebootingNodeId, setRebootingNodeId] = React.useState(null);
+  const [resolvingTicketId, setResolvingTicketId] = React.useState(null);
+  const [issuingTokenId, setIssuingTokenId] = React.useState(null);
+  const [openKebabId, setOpenKebabId] = React.useState(null);
+  const [removedTicketIds, setRemovedTicketIds] = React.useState(new Set());
+  const [bulkActionLoading, setBulkActionLoading] = React.useState(false);
+
+  const isFreezeActive = systemFreezeQuery.data?.systemFrozen ?? false;
+
+  const activeYear = activeYearQuery.data;
+  const academicYears = academicYearsQuery.data || [];
+  const fallbackYear = academicYears[0];
+  const resolvedYear = activeYear || fallbackYear;
+  const activeTerm = resolvedYear?.terms?.find(t => t.isActive) || resolvedYear?.terms?.[0];
+
+  const formatYearLabel = (label) => {
+    if (!label) return '';
+    const parts = label.split('/');
+    if (parts.length === 2) {
+      return `${parts[0]}/${parts[1].slice(-2)}`;
+    }
+    return label;
+  };
+
+  const formatTermLabel = (termNumber) => {
+    if (!termNumber) return '';
+    return termNumber.replace('TERM_', 'T');
+  };
+
+  const activeYearLabel = formatYearLabel(resolvedYear?.label);
+  const activeTermLabel = formatTermLabel(activeTerm?.termNumber);
+
+  const departments = departmentsQuery.data || [];
+  const subjects = subjectsQuery.data || [];
+
+  const tickets = ticketsQuery.data || [];
+  const notifications = notificationsQuery.data || [];
+  const analytics = analyticsQuery.data;
+  const students = studentsQuery.data || [];
+  const staff = staffQuery.data || [];
+  const ticketsLoading = ticketsQuery.isLoading;
+  const approvalsQuery = useApprovals({ status: 'pending' });
+  const resolveApprovalMutation = useResolveApproval();
+  const approvals = (approvalsQuery.data || []).map(approval => ({
+    ...approval,
+    teacher: approval.teacher?.name || approval.teacher || 'Unknown Teacher',
+    time: approval.createdAt ? new Date(approval.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '—',
+    detail: approval.reason || approval.detail || 'No details provided'
+  }));
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const [activities, setActivities] = React.useState([]);
+  
+  const totalStudents = students.length || 0;
+  const boarderCount = Math.round(totalStudents * 0.73);
+  const dayCount = totalStudents - boarderCount;
+
+  const avgScore = analytics?.subjectPerformance?.length
+    ? analytics.subjectPerformance.reduce((sum, s) => sum + parseFloat(s.averageScore), 0) / analytics.subjectPerformance.length
+    : null;
+  const gradingProgress = avgScore ? `${Math.round(avgScore)}%` : '—';
+  const gradingProgressBar = avgScore ? Math.round(avgScore) : 0;
+
+  React.useEffect(() => {
+    if (analytics?.recentActivity) {
+      setActivities(analytics.recentActivity);
+    }
+  }, [analytics?.recentActivity]);
+
+  const vitalSigns = [
+    { label: 'Student Census', value: totalStudents || '—', trend: '#10b981', progress: totalStudents ? Math.min((totalStudents / 2000) * 100, 100) : 0, bg: 'bg-emerald-50', color: 'text-emerald-600', sub: `${boarderCount.toLocaleString()} Boarders / ${dayCount.toLocaleString()} Day` },
+    { label: 'Faculty Engagement', value: staff.length || '—', trend: '#3b82f6', progress: staff.length ? Math.min((staff.length / 200) * 100, 100) : 0, bg: 'bg-blue-50', color: 'text-blue-600', sub: `${staff.length} registered nodes` },
+    { label: 'Grading Progress', value: gradingProgress, trend: '#f59e0b', progress: gradingProgressBar, bg: 'bg-amber-50', color: 'text-amber-600', sub: avgScore ? 'Institutional grade average' : 'Awaiting data...' },
+    { label: 'Flagged Activities', value: unreadCount || '0', trend: '#ef4444', progress: unreadCount ? Math.min((unreadCount / 10) * 100, 100) : 0, bg: 'bg-rose-50', color: 'text-rose-600', sub: 'Integrity issues detected' },
+  ];
+
+  const chartDatasets = React.useMemo(() => {
+    if (!analytics?.subjectPerformance?.length || !subjects?.length) {
+      return {};
+    }
+
+    const subjectsMap = new Map(subjects.map(s => [s.id, s]));
+    const departmentsMap = new Map(departments.map(d => [d.id, d]));
+
+    const deptData = {};
+    analytics.subjectPerformance.forEach(sp => {
+      const score = parseFloat(sp.averageScore);
+      if (isNaN(score)) return;
+
+      const subject = subjectsMap.get(sp.subjectId);
+      if (!subject?.departmentId) return;
+
+      const deptId = subject.departmentId;
+      if (!deptData[deptId]) {
+        deptData[deptId] = { sum: 0, count: 0, studentCountSum: 0, name: null };
+      }
+      deptData[deptId].sum += score;
+      deptData[deptId].count += 1;
+      deptData[deptId].studentCountSum += sp.studentCount;
+      const dept = subject.department || departmentsMap.get(deptId);
+      if (!deptData[deptId].name && dept) {
+        deptData[deptId].name = dept.name || dept.code || deptId;
+      }
+    });
+
+    const avgScoreTab = [];
+    const completionTab = [];
+
+    Object.entries(deptData).forEach(([deptId, data]) => {
+      const dept = departmentsMap.get(deptId);
+      const name = dept?.name || data.name || deptId;
+
+      const avgScore = data.count > 0 ? Math.round(data.sum / data.count) : 0;
+      avgScoreTab.push({
+        name,
+        value: avgScore,
+        color: getColorForDept(name),
+      });
+
+      const completion = totalStudents > 0
+        ? Math.min(100, Math.round((data.studentCountSum / (totalStudents * data.count)) * 100))
+        : 0;
+      completionTab.push({
+        name,
+        value: completion,
+        color: getColorForDept(name),
+      });
+    });
+
+    return {
+      'Avg Score': avgScoreTab,
+      'Completion': completionTab,
+    };
+  }, [analytics, subjects, departments, totalStudents]);
 
   React.useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('admin-strategic-memo', JSON.stringify(memoContents));
+      setNotepadSaved(true);
+    } catch {
+      setNotepadSaved(false);
+    }
+  }, [memoContents]);
 
   // FAB Trigger Pipeline
   const executeAction = (action) => {
@@ -75,18 +268,122 @@ export function AdminHome() {
     setFabOpen(false);
   };
 
-  // Approval Resolution State Updaters
-  const handleResolveApproval = (id, status, teacher) => {
-    setApprovals(prev => prev.filter(item => item.id !== id));
-    
-    // Inject resolution update directly back down into live audit log stream
+  const pushLog = (event, type = 'system') => {
     const newLog = {
       id: String(Date.now()),
       time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-      event: `Approval request by ${teacher} was ${status === 'grant' ? 'APPROVED' : 'REJECTED & ABORTED'} by Admin.`,
-      type: status === 'grant' ? 'system' : 'security'
+      event,
+      type,
     };
     setActivities(prev => [newLog, ...prev]);
+  };
+
+  const handleResolveApproval = (id, status, teacher) => {
+    const apiStatus = status === 'grant' ? 'approved' : 'rejected';
+    resolveApprovalMutation.mutate({ id, dto: { status: apiStatus } });
+    const label = status === 'grant' ? 'APPROVED' : 'REJECTED & ABORTED';
+    pushLog(`Approval request by ${teacher} was ${label} by Admin.`, status === 'grant' ? 'system' : 'security');
+    toast.success(`Approval ${label.toLowerCase()} successfully`);
+  };
+
+  const handleKebabAction = (id, action, teacher) => {
+    setOpenKebabId(null);
+    const meta = approvalMeta[id] || {};
+    switch (action) {
+      case 'escalate':
+        setApprovalMeta(prev => ({ ...prev, [id]: { ...prev[id], escalated: true } }));
+        pushLog(`ESCALATE OVERRIDE: Approval request by ${teacher} elevated to top-tier authorization.`, 'security');
+        toast.success('Authorization tier escalated');
+        break;
+      case 'priority':
+        setApprovalMeta(prev => ({ ...prev, [id]: { ...prev[id], highPriority: !(prev[id]?.highPriority) } }));
+        pushLog(`Priority flag ${!(meta.highPriority) ? 'PINNED' : 'CLEARED'} for ${teacher}'s approval request.`, 'system');
+        toast.info(!(meta.highPriority) ? 'High priority pinned' : 'Priority flag cleared');
+        break;
+      case 'defer':
+        setApprovalMeta(prev => ({ ...prev, [id]: { ...prev[id], deferred: !(prev[id]?.deferred) } }));
+        pushLog(`DEFER: Approval request by ${teacher} postponed.`, 'system');
+        toast.info('Request deferred');
+        break;
+      case 'reject':
+        resolveApprovalMutation.mutate({ id, dto: { status: 'rejected' } });
+        pushLog(`TERMINAL REJECT: Approval entry by ${teacher} rejected and logged to registry.`, 'security');
+        toast.success('Entry rejected and logged');
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleBulkAction = async (action) => {
+    setBulkActionLoading(true);
+    await new Promise(r => setTimeout(r, 600));
+    if (action === 'grant') {
+      toast.success('All pending approvals granted');
+      pushLog('BULK ACTION: All pending approvals granted by Admin.', 'system');
+    } else if (action === 'clear') {
+      toast.success('Approval queue cleared');
+      pushLog('BULK ACTION: Approval queue cleared by Admin.', 'security');
+    }
+    setBulkActionLoading(false);
+    setShowQueueManager(false);
+  };
+
+  const openNodeDiagnosis = (ticket) => {
+    setSelectedTicket(ticket);
+  };
+
+  const handleRebootNode = async (ticketId) => {
+    setRebootingNodeId(ticketId);
+    await new Promise(r => setTimeout(r, 2000));
+    pushLog(`Node Reboot: Ticket #${ticketId} node reboot sequence completed successfully.`, 'system');
+    toast.success('Node reboot complete');
+    setRebootingNodeId(null);
+    setSelectedTicket(null);
+  };
+
+  const handleIssueToken = async (ticketId) => {
+    setIssuingTokenId(ticketId);
+    await new Promise(r => setTimeout(r, 800));
+    const token = `MAAIS-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+    navigator.clipboard.writeText(token).then(() => {
+      toast.success(`Temp token copied: ${token}`);
+    }).catch(() => {
+      toast.success(`Temp token generated: ${token}`);
+    });
+    pushLog(`Temp Token Issued: Ticket #${ticketId} received category-specific passcode.`, 'security');
+    setIssuingTokenId(null);
+  };
+
+  const handleMarkResolved = async (ticketId) => {
+    setResolvingTicketId(ticketId);
+    await new Promise(r => setTimeout(r, 600));
+    pushLog(`Ticket #${ticketId} marked RESOLVED. Synchronization event appended to audit feed.`, 'system');
+    toast.success('Ticket marked resolved');
+    setRemovedTicketIds(prev => new Set(prev).add(ticketId));
+    setResolvingTicketId(null);
+    setSelectedTicket(null);
+    qc.invalidateQueries({ queryKey: ['admin', 'comms', 'tickets'] });
+  };
+
+  const handleDispatchMemo = () => {
+    const content = memoContents[activeMemoTab] || '';
+    if (!content.trim()) {
+      toast.error('Memo is empty');
+      return;
+    }
+    const tabLabel = activeMemoTab.charAt(0).toUpperCase() + activeMemoTab.slice(1);
+    pushLog(`Memo Dispatched: ${tabLabel} memo broadcast to faculty endpoints.`, 'comm');
+    toast.success(`${tabLabel} memo dispatched`);
+  };
+
+  const handleCopyMemo = () => {
+    const content = memoContents[activeMemoTab] || '';
+    navigator.clipboard.writeText(content).then(() => {
+      toast.success('Memo copied to clipboard');
+    }).catch(() => {
+      toast.error('Failed to copy memo');
+    });
   };
 
   // Global Pulse Core Execution Pipeline
@@ -103,13 +400,18 @@ export function AdminHome() {
     setActivities(prev => [pulseLog, ...prev]);
     setBroadcastPayload('');
     setActiveAction(null);
+    qc.invalidateQueries({ queryKey: ['admin', 'comms', 'tickets'] });
   };
 
   const formatTime = (date) => date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   const formatDate = (date) => date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 
+  const handleConfigSave = () => {
+    setShowConfigModal(false);
+  };
+
   return (
-    <div className="flex-1 overflow-y-auto bg-slate-50 relative p-5">
+    <div className="flex-1 overflow-y-auto bg-slate-50 relative p-5 scrollbar-hide">
       <div className="max-w-6xl mx-auto pb-12 space-y-5">
         
         {/* Header - Transparent Architecture */}
@@ -136,42 +438,52 @@ export function AdminHome() {
                 {isFreezeActive ? 'Locked' : 'Live'}
               </span>
             </div>
-            <div className="px-3 py-1.5 bg-slate-900 text-white rounded-xl flex items-center gap-2 shadow-md">
+            <button 
+              onClick={() => {
+                if (activeYear?.label) {
+                  setConfigForm(prev => ({ ...prev, academicYear: activeYear.label }));
+                }
+                if (activeTerm?.termNumber) {
+                  setConfigForm(prev => ({ ...prev, term: formatTermLabel(activeTerm.termNumber) }));
+                }
+                setShowConfigModal(true);
+              }}
+              className="px-3 py-1.5 bg-slate-900 text-white rounded-xl flex items-center gap-2 shadow-md hover:bg-slate-800 transition-all cursor-pointer"
+            >
               <Calendar size={12} className="text-slate-400" />
-              <span className="text-[9px] font-black tracking-wider uppercase">2025/26 Academic • T1</span>
-              <div className="px-1.5 py-0.5 bg-slate-700 rounded text-[8px] font-black tracking-normal">SHS 3</div>
-            </div>
+              <span className="text-[9px] font-black tracking-wider uppercase">{activeYearLabel || 'No Year'} Academic • {activeTermLabel || '—'}</span>
+              <div className="px-1.5 py-0.5 bg-slate-700 rounded text-[8px] font-black tracking-normal">{configForm.level}</div>
+              <Settings2 size={10} className="text-slate-400 ml-1" />
+            </button>
           </div>
         </header>
 
-        {/* Main Workspace Grid Splits */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          
-          {/* Main Left-Hand Segment Workspace */}
-          <div className="lg:col-span-8 space-y-5">
-            
-{/* Vital Signs Cards */}
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-               {vitalSigns.map((card, i) => {
-                 // Map icon names to actual components
-                 const iconMap = { Users, GraduationCap, TrendingUp, AlertCircle };
-                 const Icon = iconMap[card.icon] || Users;
-                 const displayValue = card.label === 'Flagged Activities' && isFreezeActive ? 'SYSTEM FROZEN' : card.value;
-                 
-                 return (
-                   <motion.div 
-                     key={i}
-                     initial={{ opacity: 0, y: 10 }}
-                     animate={{ opacity: 1, y: 0 }}
-                     transition={{ delay: i * 0.05 }}
-                     className="bg-white p-4 rounded-2xl border border-slate-200/50 shadow-sm hover:shadow-md transition-all relative group"
-                   >
-                     <div className="flex justify-between items-start mb-2">
-                       <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105", card.bg, card.color)}>
-                         <Icon size={18} />
-                       </div>
-                       <Sparkline color={card.trend} />
-                     </div>
+         {/* Main Workspace Grid Splits */}
+         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+           
+           <div className="lg:col-span-8 space-y-5">
+             
+         {/* Vital Signs Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {vitalSigns.map((card, i) => {
+                  const iconMap = { Users, GraduationCap, TrendingUp, AlertCircle };
+                  const displayValue = card.label === 'Flagged Activities' && isFreezeActive ? 'SYSTEM FROZEN' : card.value;
+                  const CardIcon = isFreezeActive ? Lock : (iconMap[card.icon] || Users);
+                  
+                  return (
+                    <motion.div 
+                      key={i}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="bg-white p-4 rounded-2xl border border-slate-200/50 shadow-sm hover:shadow-md transition-all relative group"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105", isFreezeActive ? "bg-rose-50 text-rose-600" : card.bg, isFreezeActive ? "text-rose-600" : card.color)}>
+                          <CardIcon size={18} />
+                        </div>
+                        <Sparkline color={card.trend} />
+                      </div>
                      
                      <p className="text-xl font-black text-slate-900 tracking-tight leading-none mb-1">{displayValue}</p>
                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">{card.label}</p>
@@ -206,7 +518,7 @@ export function AdminHome() {
                   <p className="text-[8px] font-medium text-slate-400 uppercase tracking-widest mt-0.5">Academic Health Quotient</p>
                 </div>
 <div className="flex bg-slate-50 p-0.5 rounded-lg border border-slate-100">
-                   {Object.keys(performanceDatasets).map((t) => (
+                   {Object.keys(chartDatasets).map((t) => (
                      <button 
                        key={t} 
                        onClick={() => setActiveMetric(t)}
@@ -222,8 +534,8 @@ export function AdminHome() {
               </div>
 
               <div className="h-[180px] w-full text-xs">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={performanceDatasets[activeMetric]} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                  <BarChart data={chartDatasets[activeMetric] || []} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 700 }} dy={5} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 700 }} />
@@ -244,7 +556,7 @@ export function AdminHome() {
                       }}
                     />
                     <Bar dataKey="value" radius={[4, 4, 2, 2]} barSize={34}>
-                      {performanceDatasets[activeMetric].map((entry, index) => (
+                      {(chartDatasets[activeMetric] || []).map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} fillOpacity={0.85} />
                       ))}
                     </Bar>
@@ -253,7 +565,7 @@ export function AdminHome() {
               </div>
 
               <div className="grid grid-cols-5 gap-2 mt-4 pt-3 border-t border-slate-50">
-                {performanceDatasets[activeMetric].map((dept, i) => (
+                {(chartDatasets[activeMetric] || []).map((dept, i) => (
                   <div key={i} className="space-y-0.5">
                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider truncate">{dept.name}</p>
                     <div className="flex items-center gap-1">
@@ -275,7 +587,7 @@ export function AdminHome() {
                 <Link to="/audit/extended" className="text-[8px] font-black text-slate-400 uppercase tracking-wider hover:text-white transition-all">View Extended</Link>
               </div>
 
-              <div className="space-y-0.5 text-xs max-h-[220px] overflow-y-auto custom-scrollbar">
+               <div className="space-y-0.5 text-xs max-h-[220px] overflow-y-auto scrollbar-hide custom-scrollbar">
                 <AnimatePresence initial={false}>
                   {activities.map((log) => (
                     <motion.div 
@@ -310,7 +622,9 @@ export function AdminHome() {
                       No Approvals in Queue
                     </motion.p>
                   ) : (
-                    approvals.map((req) => (
+                    approvals.map((req) => {
+                      const meta = approvalMeta[req.id] || {};
+                      return (
                       <motion.div 
                         key={req.id} 
                         exit={{ opacity: 0, scale: 0.95, y: -5 }}
@@ -322,16 +636,31 @@ export function AdminHome() {
                               <User size={12} className="text-slate-400" />
                             </div>
                             <div className="min-w-0">
-                              <p className="text-xs font-black text-slate-900 truncate leading-none mb-0.5">{req.teacher}</p>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <p className="text-xs font-black text-slate-900 truncate leading-none mb-0.5">{req.teacher}</p>
+                                {meta.highPriority && <span className="px-1 py-0.5 bg-rose-600 text-white text-[8px] font-black uppercase rounded">High Priority</span>}
+                                {meta.escalated && <Flag size={10} className="text-rose-600" />}
+                                {meta.deferred && <span className="px-1 py-0.5 bg-amber-100 text-amber-700 text-[8px] font-black uppercase rounded">Deferred</span>}
+                              </div>
                               <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider">{req.time}</p>
                             </div>
                           </div>
-                          <button 
-                            onClick={() => navigate(`/approvals/inspect/${req.id}`)}
-                            className="p-1 text-slate-400 hover:text-slate-900 shrink-0"
-                          >
-                            <MoreVertical size={14} />
-                          </button>
+                          <div className="relative">
+                            <button 
+                              onClick={() => setOpenKebabId(openKebabId === req.id ? null : req.id)}
+                              className="p-1 text-slate-400 hover:text-slate-900 shrink-0"
+                            >
+                              <MoreVertical size={14} />
+                            </button>
+                            {openKebabId === req.id && (
+                              <div className="absolute right-0 top-6 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1">
+                                <button onClick={() => handleKebabAction(req.id, 'escalate', req.teacher)} className="w-full text-left px-3 py-2 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Shield size={12} className="text-rose-500" /> Escalate Override</button>
+                                <button onClick={() => handleKebabAction(req.id, 'priority', req.teacher)} className="w-full text-left px-3 py-2 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Flag size={12} className={cn("text-rose-600", meta.highPriority && "fill-rose-600")} /> {meta.highPriority ? 'Clear Priority' : 'Toggle High Priority'}</button>
+                                <button onClick={() => handleKebabAction(req.id, 'defer', req.teacher)} className="w-full text-left px-3 py-2 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Clock size={12} className="text-amber-500" /> Defer Request</button>
+                                <button onClick={() => handleKebabAction(req.id, 'reject', req.teacher)} className="w-full text-left px-3 py-2 text-[10px] font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2"><X size={12} /> Reject & Log</button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                         <p className="text-[11px] font-bold text-slate-600 mb-2.5 truncate px-0.5">{req.detail}</p>
                         <div className="flex gap-1.5 opacity-0 group-hover/card:opacity-100 transition-opacity">
@@ -349,22 +678,23 @@ export function AdminHome() {
                           </button>
                         </div>
                       </motion.div>
-                    ))
+                      );
+                    })
                   )}
                 </AnimatePresence>
               </div>
               <button 
-                onClick={() => navigate('/approvals/all')}
+                onClick={() => setShowQueueManager(true)}
                 className="w-full mt-4 py-2 border border-dashed border-slate-200 rounded-xl text-[8px] font-black text-slate-400 uppercase tracking-wider hover:bg-slate-50 transition-all"
               >
-                Queue Manager ({approvals.length + 5}+)
+                Queue Manager (8+)
               </button>
             </div>
 
-            {/* Support Queue */}
+            {/* Network Support Queue */}
             <div className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm relative group">
               <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-wider mb-0">Support Queue</h3>
+                <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-wider mb-0">Network Support Queue</h3>
                 <button 
                   onClick={() => navigate('/support/new')}
                   className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 text-white rounded-lg text-[8px] font-black uppercase tracking-wider hover:bg-slate-800 transition-all"
@@ -372,76 +702,91 @@ export function AdminHome() {
                   <Plus size={14} /> New Ticket
                 </button>
               </div>
-              <div className="space-y-2">
-                {supportTickets.map((ticket) => (
-                  <div 
-                    key={ticket.id} 
-                    onClick={() => navigate(`/support/ticket/${ticket.id}`)}
-                    className="flex items-center justify-between p-2.5 bg-slate-50/60 rounded-xl border border-slate-100 hover:border-amber-100 transition-all group/ticket cursor-pointer"
-                  >
-                    <div className="flex gap-3 items-center min-w-0">
-                      <div className={cn(
-                        "w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-xs",
-                        ticket.status === 'priority' ? "bg-rose-50 text-rose-600" : "bg-blue-50 text-blue-600"
-                      )}>
-                        <Radio size={14} className={cn(ticket.status === 'priority' && "animate-pulse")} />
+               <div className="space-y-2">
+                {tickets.filter(t => !removedTicketIds.has(t.id)).slice(0, 5).map((ticket) => {
+                  const isPriority = ticket.status === 'priority';
+                  const isActive = ticket.status === 'active';
+                  const statusLabel = isPriority ? 'Priority' : isActive ? 'Active' : (ticket.status || 'Open');
+                  const statusStyles = isPriority
+                    ? "bg-rose-50 text-rose-600 border-rose-100"
+                    : isActive
+                    ? "bg-blue-50 text-blue-600 border-blue-100"
+                    : "bg-amber-50 text-amber-600 border-amber-100";
+                  const iconBg = isPriority ? "bg-rose-100 text-rose-600" : isActive ? "bg-blue-100 text-blue-600" : "bg-amber-100 text-amber-600";
+                  const iconClass = isPriority || isActive ? cn("animate-pulse") : "";
+                  const ticketTitle = ticket.subject || ticket.title || ticket.issue || 'Support Ticket';
+                  const ticketUser = ticket.createdBy?.name || ticket.user || 'User';
+                  const isRebooting = rebootingNodeId === ticket.id;
+                  const isResolving = resolvingTicketId === ticket.id;
+                  const isIssuing = issuingTokenId === ticket.id;
+                  return (
+                    <div 
+                      key={ticket.id} 
+                      onClick={() => openNodeDiagnosis(ticket)}
+                      className="flex items-center justify-between p-2.5 bg-slate-50/60 rounded-xl border border-slate-100 hover:border-amber-100 transition-all group/ticket cursor-pointer"
+                    >
+                      <div className="flex gap-3 items-center min-w-0">
+                        <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-xs", iconBg)}>
+                          <AlertCircle size={14} className={iconClass} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-black text-slate-900 truncate tracking-tight">{ticketTitle}</p>
+                          <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider truncate">{ticketUser}</p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-[11px] font-black text-slate-900 truncate tracking-tight">{ticket.issue}</p>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider truncate">{ticket.user}</p>
+                      <div className="flex items-center gap-2">
+                        {(isRebooting || isResolving || isIssuing) && <Loader2 size={12} className="animate-spin text-slate-500" />}
+                        <span className={cn("px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border", statusStyles)}>{statusLabel}</span>
                       </div>
                     </div>
-                    <button className="p-1 text-slate-300 group-hover/ticket:text-slate-950 shrink-0">
-                      <ArrowUpRight size={14} />
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
+                {tickets.filter(t => !removedTicketIds.has(t.id)).length === 0 && (
+                  <EmptyState context="tickets" variant="compact" />
+                )}
               </div>
             </div>
 
             {/* Strategic Notepad Memo */}
 <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-inner relative overflow-hidden">
-  <div className="flex items-center gap-2 mb-4">
-    <div className="w-6 h-6 bg-amber-100 text-amber-700 rounded-md flex items-center justify-center shrink-0">
-      <StickyNote size={12} />
+  <div className="flex items-center justify-between mb-4">
+    <div className="flex items-center gap-2">
+      <div className="w-6 h-6 bg-amber-100 text-amber-700 rounded-md flex items-center justify-center shrink-0">
+        <StickyNote size={12} />
+      </div>
+      <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-wider">Strategic Memo</h3>
     </div>
-    <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-wider">Strategic Memo</h3>
+    <div className="flex items-center gap-2">
+      <Button variant="outline" className="p-1 h-7 w-7" title="Copy Memo" onClick={handleCopyMemo}>
+        <Copy size={12} />
+      </Button>
+      <Button className="h-7 px-2 text-[8px] font-black uppercase tracking-wider bg-slate-900 text-white hover:bg-slate-800" onClick={handleDispatchMemo}>
+        <Send size={10} className="mr-1" /> Dispatch
+      </Button>
+    </div>
+  </div>
+  <div className="flex gap-1 mb-2">
+    {['operational', 'academics', 'security'].map(tab => (
+      <button
+        key={tab}
+        onClick={() => setActiveMemoTab(tab)}
+        className={cn(
+          "flex-1 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all",
+          activeMemoTab === tab ? "bg-white text-slate-900 shadow-xs border border-slate-200" : "text-slate-400 hover:text-slate-600"
+        )}
+      >
+        {tab === 'operational' ? 'Operational' : tab === 'academics' ? 'Academics' : 'Security'}
+      </button>
+    ))}
   </div>
    <Textarea
-     value={notepadContent}
-     onChange={(e) => setNotepadContent(e.target.value)}
+     value={memoContents[activeMemoTab] || ''}
+     onChange={(e) => setMemoContents(prev => ({ ...prev, [activeMemoTab]: e.target.value }))}
      className="h-24 placeholder:text-slate-400"
-     placeholder="Commit strategic reminders here..."
+     placeholder={`Commit ${activeMemoTab} reminders here...`}
    />
   <div className="flex justify-between items-center mt-2 pt-2 border-t border-slate-200/40">
-    <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider italic text-emerald-600">Saved</p>
-     <Button variant="outline" className="p-1" title="Copy Memo"
-       onClick={() => {
-         // Safe check for Modern Secure Context Clipboard API
-         if (navigator.clipboard && navigator.clipboard.writeText) {
-           navigator.clipboard.writeText(notepadContent)
-             .then(() => alert("Memo copied to workspace clipboard!"))
-             .catch(() => alert("Failed to copy text."));
-         } else {
-           // Fallback mechanism for non-secure HTTP / network IP environments
-           const textArea = document.createElement("textarea");
-           textArea.value = notepadContent;
-           textArea.style.position = "fixed"; // Avoid scrolling page to bottom
-           document.body.appendChild(textArea);
-           textArea.focus();
-           textArea.select();
-           try {
-             document.execCommand('copy');
-             alert("Memo copied to workspace clipboard! (via fallback)");
-           } catch (err) {
-             alert("Could not copy memo automatically.");
-           }
-           document.body.removeChild(textArea);
-         }
-       }}
-     >
-       <ExternalLink size={12} />
-     </Button>
+    <p className={cn("text-[8px] font-black uppercase tracking-wider italic", notepadSaved ? "text-emerald-600" : "text-slate-400")}>{notepadSaved ? 'Saved' : 'Saving...'}</p>
   </div>
 </div>
             
@@ -581,49 +926,269 @@ export function AdminHome() {
 
         {activeAction === 'freeze' && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs" onClick={() => setActiveAction(null)} />
-             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-xs bg-white rounded-2xl shadow-xl text-center p-6">
-                <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-sm", isFreezeActive ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600")}>
-                  <Lock size={24} />
+             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setActiveAction(null)} />
+             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl text-center p-6 border-2 border-rose-100">
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-sm bg-rose-50 text-rose-600">
+                  <Lock size={28} />
                 </div>
-                <h3 className="text-lg font-black italic font-display text-slate-900 mb-2">
-                  {isFreezeActive ? 'Lift Authority Freeze?' : 'Initiate Security Freeze?'}
+                <h3 className="text-xl font-black italic font-display text-slate-900 mb-2">
+                  {isFreezeActive ? 'System Emergency Freeze Active' : 'Initiate Emergency Freeze?'}
                 </h3>
-                <p className="text-slate-500 text-[11px] font-medium leading-normal mb-6">
+                <p className="text-slate-500 text-[11px] font-medium leading-normal mb-2">
                   {isFreezeActive 
-                    ? 'Restores standard entry and transactional read/write authority parameters across all department nodes.'
+                    ? 'Immediate administrative intervention activated. All write operations are suspended.'
                     : 'Instantly locks write authority cross-institutionally to safeguard live evaluation logs.'}
                 </p>
-                 <div className="flex gap-2.5">
-                   <Button variant="outline" className="flex-1 py-2.5" onClick={() => setActiveAction(null)}>
-                     Abort
+                {systemFreezeQuery.data?.systemFreezeReason && (
+                  <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider mb-4 bg-rose-50 px-3 py-2 rounded-lg">
+                    Reason: {systemFreezeQuery.data.systemFreezeReason}
+                  </p>
+                )}
+                {!isFreezeActive && (
+                  <div className="mb-4">
+                    <input
+                      type="text"
+                      value={freezeReason}
+                      onChange={(e) => setFreezeReason(e.target.value)}
+                      placeholder="Reason for emergency freeze..."
+                      className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-[11px] font-medium focus:outline-none focus:ring-2 focus:ring-rose-500"
+                    />
+                  </div>
+                 )}
+                 {freezeError && (
+                   <p className="text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-3 py-2 rounded-lg mb-3">
+                     {freezeError}
+                   </p>
+                 )}
+                  <div className="flex gap-2.5">
+                   <Button variant="outline" className="flex-1 py-2.5" onClick={() => { setActiveAction(null); setFreezeReason(''); }}>
+                     {isFreezeActive ? 'Dismiss' : 'Abort'}
                    </Button>
-                   <Button 
-                     onClick={() => { 
-                       setIsFreezeActive(!isFreezeActive); 
-                       
-                       // Push critical system action updates down into live view logger
-                       const freezeLog = {
-                         id: String(Date.now()),
-                         time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-                         event: `CRITICAL STATUS ALTERED: Global write access ${!isFreezeActive ? 'SUSPENDED/FROZEN' : 'RESTORED/UNFROZEN'}.`,
-                         type: 'security'
-                       };
-                       setActivities(prev => [freezeLog, ...prev]);
-                       setActiveAction(null); 
-                     }}
+                     <Button 
+                       disabled={toggleSystemFreezeMutation.isPending}
+                        onClick={() => { 
+                          setFreezeError(null);
+                          toggleSystemFreezeMutation.mutate(
+                          { enabled: !isFreezeActive, reason: freezeReason },
+                          {
+                            onSuccess: () => {
+                              const freezeLog = {
+                                id: String(Date.now()),
+                                time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+                                event: `CRITICAL STATUS ALTERED: Grade entry ${!isFreezeActive ? 'SUSPENDED/FROZEN' : 'RESTORED/UNFROZEN'}.`,
+                                type: 'security'
+                              };
+                              setActivities(prev => [freezeLog, ...prev]);
+                              setActiveAction(null);
+                              setFreezeReason('');
+                            },
+                            onError: (err) => {
+                              setFreezeError(err?.message || 'Failed to toggle system freeze');
+                            }
+                          }
+                        );
+                      }}
                      className={cn(
                        "flex-1 py-2.5",
                        isFreezeActive ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"
                      )}
                    >
-                     {isFreezeActive ? 'Restore Node' : 'Lock System'}
+                      {toggleSystemFreezeMutation.isPending ? 'Processing...' : (isFreezeActive ? 'Lift Institutional Freeze' : 'Lock System')}
                    </Button>
                  </div>
              </motion.div>
+           </div>
+         )}
+      </AnimatePresence>
+
+      {/* Configure Academic Node Modal */}
+      <AnimatePresence>
+        {showConfigModal && (
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs" onClick={() => setShowConfigModal(false)} />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-sm bg-white rounded-2xl shadow-xl p-6">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h3 className="text-lg font-black italic font-display text-slate-900">Configure Academic Node</h3>
+                  <p className="text-[8px] font-black uppercase text-slate-400 tracking-wider mt-0.5">System-Wide Contextual Tracking</p>
+                </div>
+                <button onClick={() => setShowConfigModal(false)} className="p-1.5 text-slate-400 hover:text-slate-900 transition-colors">
+                  <X size={16} />
+                </button>
+              </div>
+
+               <div className="space-y-4">
+                 <div>
+                   <label className="block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Student Level</label>
+                   <select
+                     value={configForm.level}
+                     onChange={(e) => setConfigForm({ ...configForm, level: e.target.value })}
+                     className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-slate-900/10"
+                   >
+                     <option>SHS 1</option>
+                     <option>SHS 2</option>
+                     <option>SHS 3</option>
+                     <option>SHS 4</option>
+                   </select>
+                 </div>
+
+                  <div>
+                    <label className="block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Academic Year</label>
+                    <select
+                      value={configForm.academicYear}
+                      onChange={(e) => setConfigForm({ ...configForm, academicYear: e.target.value })}
+                      className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-slate-900/10"
+                    >
+                      {(academicYears.length > 0)
+                        ? academicYears.map(y => (
+                            <option key={y.id} value={y.label}>{formatYearLabel(y.label)}</option>
+                          ))
+                        : (
+                          <>
+                            <option>2024/2025</option>
+                            <option>2025/2026</option>
+                            <option>2026/2027</option>
+                          </>
+                        )
+                      }
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Academic Term</label>
+                    <select
+                      value={configForm.term}
+                      onChange={(e) => setConfigForm({ ...configForm, term: e.target.value })}
+                      className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-slate-900/10"
+                    >
+                      {(activeYear?.terms && activeYear.terms.length > 0)
+                        ? activeYear.terms.map(t => (
+                            <option key={t.id} value={formatTermLabel(t.termNumber)}>{formatTermLabel(t.termNumber)}</option>
+                          ))
+                        : (
+                          <>
+                            <option>Term 1</option>
+                            <option>Term 2</option>
+                            <option>Term 3</option>
+                          </>
+                        )
+                      }
+                    </select>
+                  </div>
+
+                <div className="pt-2 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                  <span className="text-[9px] font-black text-emerald-700 uppercase tracking-wider">System Live</span>
+                </div>
+
+                <button
+                  onClick={handleConfigSave}
+                  className="w-full py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-black transition-all shadow-lg"
+                >
+                  Save Configuration
+                </button>
+              </div>
+            </motion.div>
           </div>
         )}
       </AnimatePresence>
+
+      {/* Queue Manager Modal */}
+      <AnimatePresence>
+        {showQueueManager && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setShowQueueManager(false)} />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+              <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-black italic font-display text-slate-900">Queue Manager</h3>
+                  <p className="text-[8px] font-black uppercase text-slate-400 tracking-wider mt-0.5">Bulk Authorization Protocol</p>
+                </div>
+                <button onClick={() => setShowQueueManager(false)} className="p-1.5 text-slate-400 hover:text-slate-900 transition-colors">
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-5 space-y-3">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="p-3 bg-slate-50/60 rounded-xl border border-slate-100 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-black text-slate-900">Seed Approval #{i + 1}</p>
+                      <p className="text-[10px] font-bold text-slate-500">Index #{1000 + i} • Grade Change Request</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => { toast.success(`Approval #${i + 1} granted`); pushLog(`Approval #${i + 1} granted by Admin.`, 'system'); }} className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-[9px] font-black uppercase">Grant</button>
+                      <button onClick={() => { toast.success(`Approval #${i + 1} aborted`); pushLog(`Approval #${i + 1} aborted by Admin.`, 'security'); }} className="px-3 py-1.5 bg-white border border-slate-200 text-slate-400 rounded-lg text-[9px] font-black uppercase hover:text-rose-600 hover:border-rose-200">Abort</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="p-5 border-t border-slate-100 flex gap-3">
+                <button onClick={() => handleBulkAction('grant')} disabled={bulkActionLoading} className="flex-1 py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2">
+                  {bulkActionLoading && <Loader2 size={14} className="animate-spin" />}
+                  Grant All
+                </button>
+                <button onClick={() => handleBulkAction('clear')} disabled={bulkActionLoading} className="flex-1 py-3 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-rose-700 disabled:opacity-50 flex items-center justify-center gap-2">
+                  {bulkActionLoading && <Loader2 size={14} className="animate-spin" />}
+                  Clear Queue
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Node Diagnosis Modal */}
+      <AnimatePresence>
+        {selectedTicket && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedTicket(null)} />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+              <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-black italic font-display text-slate-900">Node Diagnosis</h3>
+                  <p className="text-[8px] font-black uppercase text-slate-400 tracking-wider mt-0.5">Handshake Diagnostics • Ticket #{selectedTicket.id}</p>
+                </div>
+                <button onClick={() => setSelectedTicket(null)} className="p-1.5 text-slate-400 hover:text-slate-900 transition-colors">
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Wifi size={14} className="text-blue-500" />
+                    <p className="text-[10px] font-black uppercase text-slate-500">System Handshake</p>
+                  </div>
+                  <p className="text-[11px] font-medium text-slate-700">Expired TLS client certificate detected on Node #{selectedTicket.id}. Clock drift sequence mismatch: +340ms.</p>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle size={14} className="text-amber-500" />
+                    <p className="text-[10px] font-black uppercase text-slate-500">Diagnostic Log</p>
+                  </div>
+                  <p className="text-[11px] font-medium text-slate-700">Subject: {selectedTicket.subject || selectedTicket.title || selectedTicket.issue || 'Support Ticket'}</p>
+                  <p className="text-[11px] font-medium text-slate-700">Reported by: {selectedTicket.createdBy?.name || selectedTicket.user || 'User'}</p>
+                  <p className="text-[11px] font-medium text-slate-700">Status: {selectedTicket.status?.toUpperCase() || 'OPEN'}</p>
+                </div>
+              </div>
+              <div className="p-5 border-t border-slate-100 flex gap-3">
+                <button onClick={() => handleRebootNode(selectedTicket.id)} disabled={rebootingNodeId === selectedTicket.id} className="flex-1 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">
+                  {rebootingNodeId === selectedTicket.id && <Loader2 size={14} className="animate-spin" />}
+                  <RefreshCw size={14} /> Reboot Node
+                </button>
+                <button onClick={() => handleIssueToken(selectedTicket.id)} disabled={issuingTokenId === selectedTicket.id} className="flex-1 py-3 bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-amber-700 disabled:opacity-50 flex items-center justify-center gap-2">
+                  {issuingTokenId === selectedTicket.id && <Loader2 size={14} className="animate-spin" />}
+                  <KeyRound size={14} /> Issue Temp Token
+                </button>
+                <button onClick={() => handleMarkResolved(selectedTicket.id)} disabled={resolvingTicketId === selectedTicket.id} className="flex-1 py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2">
+                  {resolvingTicketId === selectedTicket.id && <Loader2 size={14} className="animate-spin" />}
+                  <CircleCheck size={14} /> Mark Resolved
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }

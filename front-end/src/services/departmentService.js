@@ -1,8 +1,6 @@
-import { apiClient } from './system/APIClient';
-import { getAuthToken } from './auth';
+import { adminApi } from '../lib/api/admin';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-const USE_MOCK = !BASE_URL || import.meta.env.VITE_USE_MOCK_API === 'true';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 export function exportDepartmentDossier(department) {
   const dossierData = {
@@ -39,36 +37,8 @@ export function exportDepartmentDossier(department) {
 }
 
 export async function freezeDepartment(department) {
-  if (USE_MOCK) {
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    const freezeRecord = {
-      departmentId: department.id,
-      departmentName: department.name,
-      frozenAt: new Date().toISOString(),
-      frozenBy: 'Admin',
-      status: 'frozen',
-    };
-
-    const existingFreezes = JSON.parse(localStorage.getItem('departmentFreezes') || '[]');
-    const alreadyFrozen = existingFreezes.find(f => f.departmentId === department.id);
-
-    if (alreadyFrozen) {
-      return { success: false, message: `${department.name} is already frozen.` };
-    }
-
-    existingFreezes.push(freezeRecord);
-    localStorage.setItem('departmentFreezes', JSON.stringify(existingFreezes));
-
-    return {
-      success: true,
-      message: `${department.name} cluster frozen. Assessment operations suspended.`,
-      freezeRecord,
-    };
-  }
-
   try {
-    const response = await apiClient.post(`/api/admin/departments/${department.id}/freeze`);
+    const response = await adminApi.freezeDepartment(department.id);
     return {
       success: true,
       message: `${department.name} cluster frozen. Assessment operations suspended.`,
@@ -112,15 +82,10 @@ export async function transferTeacher(departments, setDepartments, staffId, toDe
     }),
   );
 
-  if (!USE_MOCK) {
-    try {
-      await apiClient.post(`/api/admin/departments/${toDeptId}/transfer-teacher`, {
-        teacherId: staffId,
-        fromDepartmentId: fromDept.id,
-      });
-    } catch (error) {
-      return { success: false, message: 'Transfer operation failed on server.' };
-    }
+  try {
+    await adminApi.transferTeacher(toDeptId, staffId, fromDept.id);
+  } catch (error) {
+    return { success: false, message: 'Transfer operation failed on server.' };
   }
 
   return {
@@ -130,23 +95,8 @@ export async function transferTeacher(departments, setDepartments, staffId, toDe
 }
 
 export async function authorizeTemplate(deptId, template) {
-  const updateRecord = {
-    id: `TPL-${Date.now()}`,
-    deptId,
-    template,
-    authorizedAt: new Date().toISOString(),
-    status: 'authorized',
-  };
-
-  if (USE_MOCK) {
-    const existingUpdates = JSON.parse(localStorage.getItem('templateUpdates') || '[]');
-    existingUpdates.push(updateRecord);
-    localStorage.setItem('templateUpdates', JSON.stringify(existingUpdates));
-    return { success: true, message: 'Template update authorized.', updateRecord };
-  }
-
   try {
-    const response = await apiClient.post(`/api/admin/departments/${deptId}/template`, { template });
+    const response = await adminApi.authorizeTemplate(deptId, template);
     return { success: true, message: 'Template update authorized.', updateRecord: response };
   } catch (error) {
     return { success: false, message: 'Template authorization failed.' };
@@ -169,39 +119,12 @@ export async function uploadStrategyPulseFile(files, deptId = null) {
     status: 'uploaded',
   };
 
-  if (USE_MOCK) {
-    const existingPulses = JSON.parse(localStorage.getItem('strategyPulses') || '[]');
-    existingPulses.push(pulseRecord);
-    localStorage.setItem('strategyPulses', JSON.stringify(existingPulses));
-    return {
-      success: true,
-      message: `${files.length} strategy pulse file(s) uploaded successfully.`,
-      pulseRecord,
-    };
-  }
-
   try {
-    const formData = new FormData();
-    Array.from(files).forEach(f => formData.append('files', f));
-    if (deptId) formData.append('departmentId', deptId);
-
-    const token = getAuthToken();
-    const response = await fetch(`${BASE_URL}/api/admin/strategy-pulse`, {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      credentials: 'include',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Upload failed: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const response = await adminApi.uploadStrategyPulse(deptId);
     return {
       success: true,
       message: `${files.length} strategy pulse file(s) uploaded successfully.`,
-      pulseRecord: result,
+      pulseRecord: response,
     };
   } catch (error) {
     return { success: false, message: 'Strategy pulse upload failed.' };
@@ -219,20 +142,8 @@ export async function resetTeacherCredentials(staffId, staffName) {
     status: 'completed',
   };
 
-  if (USE_MOCK) {
-    const existingResets = JSON.parse(localStorage.getItem('credentialResets') || '[]');
-    existingResets.push(resetRecord);
-    localStorage.setItem('credentialResets', JSON.stringify(existingResets));
-
-    return {
-      success: true,
-      message: `Credential reset initiated for "${staffName}". Temporary access key generated.`,
-      resetRecord,
-    };
-  }
-
   try {
-    const response = await apiClient.post(`/api/admin/staff/${staffId}/reset-credentials`);
+    const response = await adminApi.resetStaffCredentials(staffId);
     return {
       success: true,
       message: `Credential reset initiated for "${staffName}". Temporary access key generated.`,
@@ -254,4 +165,4 @@ function createRealService() {
   };
 }
 
-export const departmentService = USE_MOCK ? createRealService() : createRealService();
+export const departmentService =  createRealService();

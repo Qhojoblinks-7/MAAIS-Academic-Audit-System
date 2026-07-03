@@ -53,7 +53,7 @@ The Sequence Diagram focuses on the timing and interaction between the system's 
  
 ●	The Handshake:
 1.	Teacher clicks edit on the Frontend (React).
-2.	Frontend requests current status from Backend (Laravel).
+2.	Frontend requests current status from Backend (prisma).
 3.	Backend checks Database for a "Locked" status.
 4.	If unlocked, the Teacher submits the new mark and a Reason.
 5.	Backend performs an atomic transaction: Updating the Results table while simultaneously creating an entry in the Audit_Logs.

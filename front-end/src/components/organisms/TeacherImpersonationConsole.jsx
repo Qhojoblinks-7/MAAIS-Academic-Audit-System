@@ -181,6 +181,11 @@ export function TeacherImpersonationConsole({
   className,
 }) {
   const { departmentTeachers = [], refreshDepartmentTeachers, isLoading } = useHOD();
+
+  useEffect(() => {
+    auditTrail.setUseHodApi(true);
+  }, []);
+
   const teachers = controlledTeachers ?? departmentTeachers;
   const [search, setSearch] = useState('');
 

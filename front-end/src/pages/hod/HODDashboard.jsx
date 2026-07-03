@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, Percent, AlertTriangle, Users, ShieldCheck, RefreshCw, ChevronDown, TrendingUp } from 'lucide-react';
+import { BookOpen, Percent, AlertTriangle, Users, ShieldCheck, RefreshCw, TrendingUp } from 'lucide-react';
 import { useRole } from '../../context/RoleContext';
 import { useHOD } from '../../context/HODContext';
 import { TeacherSubmissionMatrix } from '../../components/organisms/DashboardOrganisms';
@@ -14,21 +14,22 @@ export function HODDashboard() {
     departmentProgress = [],
     teacherSubmissions = [],
     interventionAlerts = [],
+    baselineDeltas = {},
     refreshDepartmentProgress,
     refreshTeacherSubmissions,
+    refreshSubmissionTrends,
     refreshInterventionAlerts,
     isLoading,
   } = useHOD();
 
-  const [timeFilter, setTimeFilter] = React.useState('Today');
-  const [showDropdown, setShowDropdown] = React.useState(false);
   const [refreshDisabled, setRefreshDisabled] = useState(false);
 
   useEffect(() => {
-     refreshDepartmentProgress();
-     refreshTeacherSubmissions();
-     refreshInterventionAlerts();
-   }, [refreshDepartmentProgress, refreshTeacherSubmissions, refreshInterventionAlerts]);
+    refreshDepartmentProgress();
+    refreshTeacherSubmissions();
+    refreshSubmissionTrends();
+    refreshInterventionAlerts();
+  }, []);
 
   const handleRefreshAll = async () => {
     setRefreshDisabled(true);
@@ -40,43 +41,50 @@ export function HODDashboard() {
     setTimeout(() => setRefreshDisabled(false), 1000);
   };
 
-  const handleTimeFilterChange = async (option) => {
-    setTimeFilter(option);
-    setShowDropdown(false);
-    setRefreshDisabled(true);
-    await Promise.all([
-      refreshDepartmentProgress(),
-      refreshTeacherSubmissions(),
-      refreshInterventionAlerts()
-    ]);
-    setTimeout(() => setRefreshDisabled(false), 1000);
-  };
-
-  const baseProgress = departmentProgress?.items || departmentProgress || [];
-  const filteredProgress = timeFilter === 'Today' 
-    ? baseProgress.slice(0, 2) 
-    : timeFilter === 'Week' 
-      ? baseProgress.slice(0, 4) 
-      : baseProgress;
-  
-  const totalClasses = filteredProgress.length;
-  const avgProgress = filteredProgress.length > 0
-    ? Math.round(filteredProgress.reduce((sum, c) => sum + (c.progress || c.submissionPct || 0), 0) / totalClasses)
+  const baseProgress = departmentProgress;
+  const totalClasses = baseProgress.length;
+  const avgProgress = baseProgress.length > 0
+    ? Math.round(baseProgress.reduce((sum, c) => sum + (c.progress || c.submissionPct || 0), 0) / totalClasses)
     : 0;
 
   const unresolvedAlerts = interventionAlerts.filter(a => !a.resolved).length;
   const atRiskStudents = unresolvedAlerts;
 
-  const analyticsMainPct = avgProgress;
-  const analyticsMidPct = Math.min(100, avgProgress + 12);
-  const analyticsInnerPct = Math.max(0, 100 - atRiskStudents * 8);
+  // ── Academic trend from intervention alerts ──────────────────────────────
+  const scores = interventionAlerts
+    .filter(a => a.currentScore != null && a.previousAverageScore != null)
+    .map(a => ({ current: a.currentScore, previous: a.previousAverageScore }));
+
+  const deptAvgScore = scores.length > 0
+    ? Math.round(scores.reduce((s, r) => s + r.current, 0) / scores.length)
+    : 0;
+  const deptPrevAvg = scores.length > 0
+    ? Math.round(scores.reduce((s, r) => s + r.previous, 0) / scores.length)
+    : 0;
+  const academicTrend = deptPrevAvg > 0 ? Math.round(((deptAvgScore - deptPrevAvg) / deptPrevAvg) * 100) : 0;
+
+  const resolvedCount = interventionAlerts.filter(a => a.resolved).length;
+  const resolutionRate = interventionAlerts.length > 0
+    ? Math.round((resolvedCount / interventionAlerts.length) * 100)
+    : 100;
+
+  // Outer ring = dept average score (0-100 scale), Middle = resolution rate, Inner = academic trend (centered at 50)
+  const analyticsMainPct = Math.min(100, Math.max(0, deptAvgScore));
+  const analyticsMidPct = resolutionRate;
+  const analyticsInnerPct = Math.min(100, Math.max(0, 50 + academicTrend));
 
   const teacherCompletion = teacherSubmissions.length > 0
     ? Math.round(teacherSubmissions.reduce((sum, s) => sum + (s.progress || 0), 0) / teacherSubmissions.length)
     : 0;
 
+  function fmtDelta(d) {
+    if (d === null || d === undefined) return '—';
+    if (d === 0) return '0%';
+    return `${d >= 0 ? '+' : ''}${d}%`;
+  }
+
   return (
-    <div className="flex-1 overflow-y-auto bg-[#F4F4F9] p-6 md:p-8 select-none">
+    <div className="flex-1 overflow-y-auto bg-[#F4F4F9] p-6 md:p-8 select-none scrollbar-hide no-scrollbar">
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
@@ -116,7 +124,7 @@ export function HODDashboard() {
                     <BookOpen size={18} className="text-white" />
                   </div>
                   <span className="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full">
-                    +2.0%
+                    {fmtDelta(baselineDeltas.departmentClassCount)}
                   </span>
                 </div>
                 <div>
@@ -134,7 +142,7 @@ export function HODDashboard() {
                     <Percent size={18} className="text-gray-600" />
                   </div>
                   <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
-                    +12.4%
+                    {fmtDelta(baselineDeltas.avgProgressPct)}
                   </span>
                 </div>
                 <div>
@@ -152,7 +160,7 @@ export function HODDashboard() {
                     <AlertTriangle size={18} className="text-red-500" />
                   </div>
                   <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
-                    -2.08%
+                    {fmtDelta(baselineDeltas.atRiskStudentCount)}
                   </span>
                 </div>
                 <div>
@@ -170,7 +178,7 @@ export function HODDashboard() {
                     <Users size={18} className="text-gray-600" />
                   </div>
                   <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
-                    +{teacherCompletion - 70}%
+                    {fmtDelta(baselineDeltas.teacherCompletionPct)}
                   </span>
                 </div>
                 <div>
@@ -199,56 +207,48 @@ export function HODDashboard() {
                     <h3 className="text-base font-bold text-gray-900">Academic Analytics</h3>
                     <p className="text-[11px] text-gray-400">Track department diagnostics</p>
                   </div>
-                  <div className="relative">
-                    <button 
-                      onClick={() => setShowDropdown(!showDropdown)}
-                      disabled={refreshDisabled}
-                      className="text-xs font-semibold text-gray-500 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-xl flex items-center gap-1 hover:bg-gray-100 disabled:opacity-50"
-                    >
-                      {timeFilter} <ChevronDown size={12} className={showDropdown ? 'rotate-180 transition-transform' : 'transition-transform'} />
-                    </button>
-                    {showDropdown && (
-                      <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[100px]">
-                        {['Today', 'Week', 'Month'].map(option => (
-                          <button
-                            key={option}
-                            onClick={() => handleTimeFilterChange(option)}
-                            className="block w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
-                          >
-                            {option}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                 </div>
 
                 <div className="relative w-60 h-60 mx-auto my-5 flex items-center justify-center">
                   <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                     <circle cx="50" cy="50" r="40" stroke="#E2E8F0" strokeWidth="6" fill="transparent" />
-                    <circle cx="50" cy="50" r="40" stroke="#2563EB" strokeWidth="6" fill="transparent"
-                      strokeDasharray="251"
-                      strokeDashoffset={251 - (251 * analyticsMainPct) / 100}
-                      strokeLinecap="round" />
+                    <g>
+                      <title>Dept average score: {analyticsMainPct}% across {scores.length} alerts</title>
+                      <circle cx="50" cy="50" r="40" stroke="#2563EB" strokeWidth="6" fill="transparent"
+                        strokeDasharray="251"
+                        strokeDashoffset={251 - (251 * analyticsMainPct) / 100}
+                        strokeLinecap="round" />
+                    </g>
 
                     <circle cx="50" cy="50" r="30" stroke="#E2E8F0" strokeWidth="6" fill="transparent" />
-                    <circle cx="50" cy="50" r="30" stroke="#38BDF8" strokeWidth="6" fill="transparent"
-                      strokeDasharray="188"
-                      strokeDashoffset={188 - (188 * analyticsMidPct) / 100}
-                      strokeLinecap="round" />
+                    <g>
+                      <title>{analyticsMidPct}% of intervention alerts resolved</title>
+                      <circle cx="50" cy="50" r="30" stroke="#6366F1" strokeWidth="6" fill="transparent"
+                        strokeDasharray="188"
+                        strokeDashoffset={188 - (188 * analyticsMidPct) / 100}
+                        strokeLinecap="round" />
+                    </g>
 
                     <circle cx="50" cy="50" r="20" stroke="#E2E8F0" strokeWidth="6" fill="transparent" />
-                    <circle cx="50" cy="50" r="20" stroke="#EF4444" strokeWidth="6" fill="transparent"
-                      strokeDasharray="125"
-                      strokeDashoffset={125 - (125 * analyticsInnerPct) / 100}
-                      strokeLinecap="round" />
+                    <g>
+                      <title>Academic trend: {academicTrend >= 0 ? '+' : ''}{academicTrend}% — {analyticsInnerPct >= 60 ? ' improving' : analyticsInnerPct >= 40 ? ' stable' : ' declining'}</title>
+                      <circle cx="50" cy="50" r="20" stroke={analyticsInnerPct >= 60 ? '#10B981' : analyticsInnerPct >= 40 ? '#F59E0B' : '#EF4444'} strokeWidth="6" fill="transparent"
+                        strokeDasharray="125"
+                        strokeDashoffset={125 - (125 * analyticsInnerPct) / 100}
+                        strokeLinecap="round" />
+                    </g>
                   </svg>
                   <div className="absolute text-center">
                     <p className="text-xl font-black text-gray-900 tracking-tight">{analyticsMainPct}%</p>
                     <p className="text-[10px] font-bold text-emerald-600 flex items-center justify-center gap-0.5 mt-0.5">
-                      <TrendingUp size={11} /> +{avgProgress > 0 ? avgProgress - 65 : 0}% from baseline
+                      <TrendingUp size={11} /> {academicTrend >= 0 ? '+' : ''}{academicTrend}% trend
                     </p>
                   </div>
+                </div>
+                <div className="flex items-center justify-center gap-4 mt-2 text-[9px] font-bold text-gray-400 uppercase">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-600"/> Avg Score</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-500"/> Resolution</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{background: analyticsInnerPct >= 60 ? '#10B981' : analyticsInnerPct >= 40 ? '#F59E0B' : '#EF4444'}}/> Trend</span>
                 </div>
               </div>
 

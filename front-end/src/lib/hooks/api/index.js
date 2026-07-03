@@ -1,5 +1,90 @@
-export { useLogin, useCurrentUser, useAcademicYear, useDepartments, useSubjects, useClasses, useTeacherAssignments, useMyAssignments, useAllStudents, useStudentProfile, useCreateMutation, useUpdateMutation } from './api/authAcademics';
-export { useStudentTermGrades, useGradeEntry, useMissingObservations, useClassPerformance, useUpsertGrade, useBulkUpsertGrades, useCorrectGrade, useLockGrade, useUnlockGrade, useApproveGrade, useBulkApproveGrades } from './api/grading';
-export { useStudentNotifications, useAnalyticsPulse, useSendNotification, useMarkNotificationRead, useEmergencyBroadcast } from './api/comms';
-export { useStudentReportCard, useStudentTranscript, useGenerateReport, useReleaseReportCard, useVerifyDocument } from './api/reports';
-export { usePromotionHistory, useAcademicYears, useArchiveStats, usePromoteStudent } from './api/archive';
+export {
+  useLogin,
+  useCurrentUser,
+  useAcademicYear,
+  useDepartments,
+  useSubjects,
+  useClasses,
+  useTeacherAssignments,
+  useMyAssignments,
+  useAllStudents,
+  useStudentProfile,
+  useCreateMutation,
+  useUpdateMutation,
+} from './api/authAcademics';
+
+export {
+  useStudentTermGrades,
+  useGradeEntry,
+  useMissingObservations,
+  useClassPerformance,
+  useUpsertGrade,
+  useBulkUpsertGrades,
+  useCorrectGrade,
+  useLockGrade,
+  useUnlockGrade,
+  useApproveGrade,
+  useBulkApproveGrades,
+} from './api/grading';
+
+export {
+  useStudentNotifications,
+  useAnalyticsPulse,
+  useSendNotification,
+  useMarkNotificationRead,
+  useEmergencyBroadcast,
+} from './api/comms';
+
+export {
+  useStudentInterventions,
+  useStudentBehavior,
+  useCreateBehavior,
+} from './api/admin';
+
+export {
+  useAuditLogs,
+  useInterventionAlerts,
+  useDepartmentProgress,
+  useTeacherSubmissions,
+  useLockedTerms,
+  useGradeRevisions,
+  useValidateLock,
+  useLockDepartmentMatrix,
+  useUnlockDepartmentMatrix,
+  useExportWAECCSV,
+  useGradeComparison,
+  useUpdateHODComment,
+  useResolveAlert,
+  useAddCounselingNote,
+  useRejectGradeRevision,
+  useApproveGradeRevision,
+  useArchivedDepartmentData,
+  usePromotionRecommendations,
+  useHODSettings,
+  useUpdateHODSettings,
+  useChangePassword,
+  useMFAEnroll,
+  useMFAVerify,
+  useActiveSessions,
+  useRevokeSession,
+  useSupportTickets,
+  useCreateSupportTicket,
+  useUpdateSupportTicket,
+  useEscalateTicket,
+  useSystemHealth,
+  useEscalatedIssues,
+  useContactChannels,
+  useUpdateContactChannels,
+  useResetTeacherPassword,
+  useDepartmentTeachers,
+  useImpersonateTeacher,
+  useStopImpersonation,
+  useActiveImpersonations,
+  useStudentAcademicHistory,
+  useCreateEscalation,
+  useComplianceCohortPerformance,
+  useComplianceTimeline,
+  usePromotionMetrics,
+  useTriggerPromotion,
+  useAllAcademicYears,
+} from './api/hod';

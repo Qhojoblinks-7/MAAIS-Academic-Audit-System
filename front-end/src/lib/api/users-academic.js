@@ -23,6 +23,8 @@ export const academicApi = {
 
   getActiveYear: async () => api.get('/academic/years/active'),
 
+  getAllYears: async () => api.get('/academic/years'),
+
   createTerm: async (dto) => api.post('/academic/terms', dto),
 
   activateTerm: async (id) => api.patch(`/academic/terms/${id}/activate`),

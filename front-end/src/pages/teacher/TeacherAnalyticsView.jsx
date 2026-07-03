@@ -12,7 +12,7 @@ import {
 import { cn } from '../../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { useRole } from '../../context/RoleContext';
-import mockTeacherService from '../../services/mockTeacherService';
+import { teacherService } from '../../services';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../../components/ui/tooltip';
 
 const OBS_TYPES_MODULE = ['Behavioral', 'Academic', 'Lab Safety', 'Collaboration', 'Punctuality'];
@@ -34,6 +34,17 @@ const FALLBACK_CLASS_PROGRESS = [
   { subject: "Core Mathematics", completions: 17, students: 38, avgScore: 65 },
   { subject: "English Language", completions: 0, students: 38, avgScore: 0 },
 ];
+const GRADE_BANDS = [
+  { label: 'A1', min: 80, max: 100, fill: '#16a34a' },
+  { label: 'B2', min: 70, max: 79, fill: '#15803d' },
+  { label: 'B3', min: 65, max: 69, fill: '#65a30d' },
+  { label: 'C4', min: 60, max: 64, fill: '#eab308' },
+  { label: 'C5', min: 55, max: 59, fill: '#f59e0b' },
+  { label: 'C6', min: 50, max: 54, fill: '#f97316' },
+  { label: 'D7', min: 45, max: 49, fill: '#ef4444' },
+  { label: 'E8', min: 40, max: 44, fill: '#dc2626' },
+  { label: 'F9', min: 0, max: 39, fill: '#991b1b' },
+];
 
 export function TeacherAnalyticsView() {
   const { user } = useRole();
@@ -52,19 +63,19 @@ export function TeacherAnalyticsView() {
 
   useEffect(() => {
     const fetchAnalytics = async () => {
-      if (!user?.id) {
+      const teacherId = user?.staffId || user?.profileId || user?.id;
+      if (!teacherId) {
         setLoading(false);
         return;
       }
       try {
-        const obsData = await mockTeacherService.getAnalytics(user.id);
-        const gradeCfg = await mockTeacherService.getGradeConfig();
-        
-        setObservations(obsData.observations || []);
-        setClassProgress(obsData.classProgress || FALLBACK_CLASS_PROGRESS);
-        setStudentScores(obsData.studentScores || FALLBACK_STUDENT_SCORES);
-        setTermTrends(obsData.termTrends || []);
-        setGradeConfig(gradeCfg || []);
+        const obsData = await teacherService.getAnalytics(teacherId);
+
+        setObservations(obsData?.observations || []);
+        setClassProgress(obsData?.classProgress || FALLBACK_CLASS_PROGRESS);
+        setStudentScores(obsData?.studentScores || FALLBACK_STUDENT_SCORES);
+        setTermTrends(obsData?.termTrends || []);
+        setGradeConfig(GRADE_BANDS);
       } catch (err) {
         setError('Failed to load analytics');
       } finally {
@@ -72,7 +83,7 @@ export function TeacherAnalyticsView() {
       }
     };
     fetchAnalytics();
-  }, [user?.id]);
+  }, [user?.staffId, user?.profileId, user?.id]);
 
   function getGradeBand(pct) {
     if (pct >= 75) return 'A1';
@@ -87,10 +98,10 @@ export function TeacherAnalyticsView() {
   }
 
   const gradeDist = useMemo(() =>
-    gradeConfig.map((g) => ({
+    (gradeConfig || GRADE_BANDS).map((g) => ({
       label: g.label,
       count: studentScores.filter(s => getGradeBand(s.score) === g.label).length,
-      fill: g.color,
+      fill: g.fill,
     })),
     [studentScores, gradeConfig]
   );
@@ -244,7 +255,7 @@ export function TeacherAnalyticsView() {
                     Term Score Trend · Class Average
                   </h3>
                   <div className="h-64 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                       <LineChart data={termTrends} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                         <XAxis dataKey="term" tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 700 }} tickLine={false} axisLine={false} />
@@ -266,9 +277,9 @@ export function TeacherAnalyticsView() {
                       <GraduationCap size={14} className="text-text-secondary" />
                       Grade Distribution
                     </h3>
-                    <div className="h-64 w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={gradeDist} margin={{ top: 10, right: 20, left: -10, bottom: 0 }} layout="vertical">
+                     <div className="h-64 w-full">
+                       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                         <BarChart data={gradeDist} margin={{ top: 10, right: 20, left: -10, bottom: 0 }} layout="vertical">
                           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
                           <XAxis type="number" tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 700 }} tickLine={false} axisLine={false} />
                           <YAxis type="category" dataKey="label" tick={{ fontSize: 11, fill: '#64748b', fontWeight: 700 }} tickLine={false} axisLine={false} width={36} />
@@ -291,9 +302,9 @@ export function TeacherAnalyticsView() {
                       <Star size={14} className="text-text-secondary" />
                       Observation Breakdown
                     </h3>
-                    <div className="h-64 w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
+                     <div className="h-64 w-full">
+                       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                         <PieChart>
                           <Pie
                             data={obsTypePieData}
                             cx="50%"
@@ -324,9 +335,9 @@ export function TeacherAnalyticsView() {
                     <BarChart3 size={14} className="text-text-secondary" />
                     Class Completion Rate
                   </h3>
-                  <div className="h-64 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={classProgress} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                   <div className="h-64 w-full">
+                     <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                       <BarChart data={classProgress} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                         <XAxis dataKey="subject" tick={{ fontSize: 10, fill: '#64748b', fontWeight: 700 }} tickLine={false} axisLine={false} />
                         <YAxis tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 700 }} tickLine={false} axisLine={false} />

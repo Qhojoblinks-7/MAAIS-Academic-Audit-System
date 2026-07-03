@@ -5,7 +5,7 @@ export const gradingApi = {
 
   bulkUpsertGrades: async (entries, submittedById) => api.post('/grading/entries/bulk', { entries, submittedById }),
 
-  correctGrade: async (dto, changedById) => api.post('/grading/correct', { ...dto, changedById }),
+  correctGrade: async (dto, changedById) => api.post('/grading/corrections', { ...dto, changedById }),
 
   lockGrade: async (gradeEntryId, lockedById) => api.patch(`/grading/entries/${gradeEntryId}/lock`, { lockedById }),
 
@@ -13,10 +13,11 @@ export const gradingApi = {
 
   approveGrade: async (gradeEntryId, approvedById) => api.patch(`/grading/entries/${gradeEntryId}/approve`, { approvedById }),
 
-  bulkApproveGrades: async (ids, approvedById) => api.patch('/grading/entries/bulk-approve', { ids, approvedById }),
+  bulkApproveGrades: async (ids, approvedById) =>
+    api.post('/grading/entries/bulk-approve', { ids, approvedById }),
 
   getStudentTermGrades: async (studentId, termId) =>
-    api.get(`/grading/students/${studentId}/terms/${termId}/grades`),
+    api.get(`/grading/students/${studentId}/terms/${termId}`),
 
   getGradeEntry: async (id) => api.get(`/grading/entries/${id}`),
 

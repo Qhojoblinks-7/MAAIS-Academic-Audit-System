@@ -8,6 +8,7 @@ import {
   Award
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { EmptyState } from '../../components/molecules';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 
@@ -153,8 +154,8 @@ export function VaultTab({
           {/* Body Content Grid Component */}
           <div className="divide-y divide-border">
             {filteredStudents.length === 0 ? (
-              <div className="px-8 py-12 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                No matching student dossiers found in the vault.
+              <div className="px-8 py-12">
+                <EmptyState context="students" variant="compact" />
               </div>
             ) : (
               filteredStudents.map(student => {

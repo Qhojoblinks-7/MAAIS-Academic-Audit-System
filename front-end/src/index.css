@@ -49,7 +49,17 @@
   --color-warning: var(--warning);
   --color-danger: var(--danger);
 
-  /* 2. Micro-Interaction Tokens (shadcn/ui Compliant) */
+  /* 2. Responsive, Fluid Typography Mappings (Screen Size Aware) */
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  
+  --text-xs: clamp(0.7rem, 0.65rem + 0.25vw, 0.75rem);       /* ~11px - 12px | Table Headers & Metadata */
+  --text-sm: clamp(0.815rem, 0.78rem + 0.3vw, 0.875rem);     /* ~13px - 14px | Table Content, Links & Inputs */
+  --text-base: clamp(0.935rem, 0.88rem + 0.4vw, 1rem);       /* ~15px - 16px | Section Headers & Field Labels */
+  --text-lg: clamp(1.06rem, 1.0rem + 0.5vw, 1.125rem);       /* ~17px - 18px | Sub-headings & Card Descriptions */
+  --text-xl: clamp(1.15rem, 1.05rem + 0.6vw, 1.25rem);       /* ~18px - 20px | Component Titles & Metric Aggregates */
+  --text-2xl: clamp(1.35rem, 1.2rem + 1vw, 1.625rem);        /* ~21px - 26px | Workspace Root Headers */
+
+  /* 3. Micro-Interaction Tokens (shadcn/ui Compliant) */
   --animate-in: enter var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, none);
   --animate-out: exit var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, none);
   
@@ -83,7 +93,6 @@
 
 /* ==========================================================================
    GLOBAL UTILITY DECLARATIONS (OUTSIDE OF @THEME)
-   In Tailwind v4, dynamic utilities must sit directly in global stylesheet scope.
    ========================================================================== */
 @utility duration-* { --tw-animation-duration: calc(--value(number) * 1ms); animation-duration: calc(--value(number) * 1ms); }
 @utility animation-duration-* { --tw-animation-duration: calc(--value(number) * 1ms); animation-duration: calc(--value(number) * 1ms); }
@@ -139,60 +148,63 @@
 @utility slide-out-to-end-* { &:where(:dir(ltr),[dir="ltr"],[dir="ltr"]*) { --tw-exit-translate-x: calc(--value(integer) * var(--spacing)); } &:where(:dir(rtl),[dir="rtl"],[dir="rtl"]*) { --tw-exit-translate-x: calc(--value(integer) * var(--spacing) * -1); } }
 
 /* ==========================================================================
-    DESIGN SYSTEM VARIABLE DEFINITIONS (:root)
-    Strictly configured using spatial HSL formats compatible with Tailwind v4 engine.
-    ========================================================================== */
+   DESIGN SYSTEM VARIABLE DEFINITIONS (:root)
+   Configured with clean spacing for modern Academic Admin Dashboards.
+   ========================================================================== */
 :root {
-  --background: hsl(210 40% 98%);
-  --foreground: hsl(222 47% 11%);
+  /* Canvas Layout Bases */
+  --background: hsl(140 12% 97%);        /* Soft, green-tinted ultra-light gray base */
+  --foreground: hsl(156 42% 10%);        /* Deep near-black pine slate for text read-tier */
   
+  --surface: hsl(0 0% 100%);             /* Clean container cards */
   --card: hsl(0 0% 100%);
-  --card-foreground: hsl(222 47% 11%);
+  --card-foreground: hsl(156 42% 10%);
   
   --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(222 47% 11%);
+  --popover-foreground: hsl(156 42% 10%);
   
-  --primary: hsl(217 91% 60%);
+  /* Primary Identity System (Forest Green & Gold/Yellow Archetypes) */
+  --brand-primary: hsl(156 42% 18%);     /* Core Forest Green (#1A3F2F) */
+  --brand-secondary: hsl(38 92% 56%);    /* Vibrant Academic Yellow/Gold (#F3A623) */
+  --brand-dark: hsl(156 45% 12%);        /* Sidebar / High-contrast layout anchor */
+
+  /* Standard shadcn semantic slots mapping directly to system layers */
+  --primary: hsl(156 42% 18%);
   --primary-foreground: hsl(0 0% 100%);
   
-  --secondary: hsl(243 70% 59%);
-  --secondary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(38 92% 56%);
+  --secondary-foreground: hsl(156 42% 10%); /* Ensure readability on yellow metrics */
   
-  --muted: hsl(210 40% 98%);
-  --muted-foreground: hsl(215 16% 47%);
+  --muted: hsl(140 10% 93%);
+  --muted-foreground: hsl(156 14% 44%);
   
-  --accent: hsl(243 70% 59%);
+  --accent: hsl(156 42% 18%);
   --accent-foreground: hsl(0 0% 100%);
   
-  --destructive: hsl(0 84% 60%);
+  /* Micro feedback mappings */
+  --success: hsl(142 72% 29%);           /* Structural operational success */
+  --warning: hsl(38 92% 50%);            /* Notice states / Fees partials */
+  --danger: hsl(0 72% 51%);              /* Missing / Inactive / Attendance failures */
+  --destructive: hsl(0 72% 51%);
   --destructive-foreground: hsl(0 0% 100%);
+
+  /* Spatial mechanics */
+  --border: hsl(140 14% 88%);
+  --input: hsl(140 14% 88%);
+  --ring: hsl(156 42% 18%);
+  --radius: 0.5rem;                      /* Tight clean radius optimized for complex tables */
   
-  --border: hsl(214 32% 91%);
-  --input: hsl(214 32% 91%);
-  --ring: hsl(217 91% 60%);
-  
-  --radius: 0.75rem;
-  
-  --success: hsl(162 78% 41%);
-  --warning: hsl(38 92% 50%);
-  --danger: hsl(0 84% 60%);
-  
-  --surface: hsl(0 0% 100%);
-  --text-primary: hsl(222 47% 11%);
-  --text-secondary: hsl(215 16% 47%);
-  
-  --brand-primary: hsl(217 91% 60%);
-  --brand-secondary: hsl(243 70% 59%);
-  --brand-dark: hsl(222 47% 11%);
+  --text-primary: hsl(156 42% 10%);
+  --text-secondary: hsl(156 14% 44%);
 }
 
 /* ==========================================================================
-    GLOBAL RESET RULES & DOCUMENT BASE
-    ========================================================================== */
+   GLOBAL RESET RULES & DOCUMENT BASE
+   ========================================================================== */
 body {
   background-color: var(--background);
   color: var(--text-primary);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
   margin: 0;
   min-height: 100vh;
 }
@@ -203,18 +215,16 @@ body {
 
 /* Hide scrollbars globally while maintaining scroll functionality */
 .no-scrollbar::-webkit-scrollbar,
-.no-scrollbar-container::-webkit-scrollbar {
+.no-scrollbar-container::-webkit-scrollbar,
+.scrollbar-hide::-webkit-scrollbar {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
 }
 
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.no-scrollbar-container {
+.no-scrollbar,
+.no-scrollbar-container,
+.scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }

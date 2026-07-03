@@ -1,12 +1,16 @@
 import React from 'react';
 import { TrendingUp, FileText } from 'lucide-react';
 import { cn } from '../../../lib/utils';
-import mockApiData from '../../../data/mockApiData.json';
 
 export function GradingTabContent({ dept, handleNodeOperation }) {
   if (!dept) return null;
-  
-  const gradingRules = mockApiData.engineRoom?.gradingRules || [];
+   
+  const defaultGradingRules = [
+    { label: 'Core Assessment Weighting', value: '70%', activeDepts: ['Science', 'Mathematics', 'Languages', 'Business', 'Agriculture'] },
+    { label: 'SBA / Classwork Weighting', value: '30%', activeDepts: ['Science', 'Mathematics', 'Languages', 'Business', 'Agriculture'] },
+  ];
+
+  const gradingRules = defaultGradingRules;
 
   const handleAuthorizeClick = (e) => {
     e.stopPropagation();

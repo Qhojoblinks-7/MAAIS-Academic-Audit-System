@@ -1,16 +1,82 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { RefreshCw, ShieldCheck } from 'lucide-react';
+import { RefreshCw, ShieldCheck, AlertCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useRole } from '@/context/RoleContext';
+import { usePromotionMetrics, useTriggerPromotion } from '@/lib/hooks/api/hod';
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function formatTime(isoMonth) {
+  if (!isoMonth) return '';
+  const [y, m] = isoMonth.split('-');
+  return `${MONTHS[parseInt(m, 10) - 1] || m} ${y}`;
+}
 
 export function PromotionTab({ 
-  isPromoting, 
-  promotionProgress = 0, 
-  promotionLogged, 
-  handleGlobalPromotion 
+  isPromoting: externalIsPromoting,
+  promotionProgress = 0,
+  promotionLogged: externalPromotionLogged,
+  handleGlobalPromotion: externalHandleGlobalPromotion 
 }) {
+  const { user } = useRole();
+  const isAuthorized = user?.role === 'SUPER_ADMIN' || user?.role === 'HEADMASTER';
+
+  const {
+    data: metrics = { seniorSize: 0, clearedCount: 0, clearanceRate: 0 },
+    isLoading: metricsLoading,
+    error: metricsError,
+  } = usePromotionMetrics();
+
+  const promotionMutation = useTriggerPromotion();
+  const [isPromoting, setIsPromoting] = React.useState(externalIsPromoting || false);
+  const [promotionLogged, setPromotionLogged] = React.useState(externalPromotionLogged || false);
+  const [promotionProgress, setPromotionProgress] = React.useState(promotionProgress);
+
+  React.useEffect(() => {
+    setIsPromoting(externalIsPromoting || false);
+    setPromotionLogged(externalPromotionLogged || false);
+  }, [externalIsPromoting, externalPromotionLogged]);
+
+  const handleGlobalPromotion = React.useCallback(async () => {
+    if (!isAuthorized) return;
+
+    setIsPromoting(true);
+    setPromotionProgress(0);
+
+    const interval = setInterval(() => {
+      setPromotionProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          return 100;
+        }
+        return prev + 10;
+      });
+    }, 200);
+
+    try {
+      const activeYearRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || '/api/v1'}/academic/years/active`, {
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!activeYearRes.ok) throw new Error('Failed to fetch active academic year');
+      const activeYear = await activeYearRes.json();
+
+      await promotionMutation.mutateAsync(activeYear.id || activeYear.data?.id);
+
+      setTimeout(() => {
+        setIsPromoting(false);
+        setPromotionLogged(true);
+      }, 400);
+    } catch (err) {
+      console.error('Promotion failed:', err);
+      setIsPromoting(false);
+      setPromotionProgress(0);
+    }
+  }, [isAuthorized, promotionMutation]);
+
   return (
     <motion.div 
       key="promotion"
@@ -47,18 +113,31 @@ export function PromotionTab({
             Active Senior Class Promotion Metrics
           </h4>
           
+          {metricsError && (
+            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-medium">
+              <AlertCircle size={14} />
+              Failed to load promotion metrics.
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             <div className="bg-card border border-border rounded-xl p-4 text-center">
               <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Current SHS 3 Senior Size</p>
-              <p className="text-lg sm:text-xl font-black text-foreground mt-1">410 Students</p>
+              <p className="text-lg sm:text-xl font-black text-foreground mt-1">
+                {metricsLoading ? '--' : `${metrics.seniorSize} Students`}
+              </p>
             </div>
             <div className="bg-card border border-border rounded-xl p-4 text-center">
               <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Clearances Approved</p>
-              <p className="text-lg sm:text-xl font-black text-success mt-1">398 Cleared</p>
+              <p className="text-lg sm:text-xl font-black text-success mt-1">
+                {metricsLoading ? '--' : `${metrics.clearedCount} Cleared`}
+              </p>
             </div>
             <div className="bg-card border border-border rounded-xl p-4 text-center">
               <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Seals Frozen</p>
-              <p className="text-lg sm:text-xl font-black text-foreground mt-1">100.0% Approved</p>
+              <p className="text-lg sm:text-xl font-black text-foreground mt-1">
+                {metricsLoading ? '--' : `${metrics.clearanceRate}% Approved`}
+              </p>
             </div>
           </div>
         </div>
@@ -84,13 +163,13 @@ export function PromotionTab({
             <div className="flex w-full">
               <Button
                 onClick={handleGlobalPromotion}
-                disabled={promotionLogged}
+                disabled={promotionLogged || !isAuthorized || metricsLoading}
                 className={cn(
                   "w-full py-4 px-6 font-black text-xs uppercase tracking-widest rounded-xl shadow-sm",
-                  promotionLogged && "opacity-50 cursor-not-allowed"
+                  (promotionLogged || !isAuthorized) && "opacity-50 cursor-not-allowed"
                 )}
               >
-                {promotionLogged ? "Promotion Cycle Executed Successfully" : "Initiate Global Promotion & Archive Cycle"}
+                {promotionLogged ? "Promotion Cycle Executed Successfully" : !isAuthorized ? "Promotion Requires Admin Role" : "Initiate Global Promotion & Archive Cycle"}
               </Button>
             </div>
           )}
@@ -110,7 +189,7 @@ export function PromotionTab({
                   Global Transition Authenticated
                 </h4>
                 <p className="text-xs font-medium text-success/90 leading-relaxed">
-                  Senior Class of 2024 has been compiled, sealed, and successfully synchronized into <strong>The Vault</strong>. All student folders have been frozen, and student gradebooks have been reset for the next division cycle.
+                  Senior Class has been compiled, sealed, and successfully synchronized into <strong>The Vault</strong>. All folders frozen, gradebooks reset for next cycle.
                 </p>
               </div>
             </motion.div>

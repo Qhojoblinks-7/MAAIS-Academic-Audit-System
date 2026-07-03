@@ -5,20 +5,20 @@ import {
   X,
   FileText,
   MoreVertical, GraduationCap,
-  UserPlus, Fingerprint,
+  UserPlus,
   Phone, MessageSquare,
   BarChart3, AlertCircle, Mail,
-  Send, ShieldCheck, UserCheck,
-  CreditCard, Eye, EyeOff, Bell
+  Send, UserCheck,
+  CreditCard, Plus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { 
   ResponsiveContainer, PieChart as RePieChart, Pie, Cell,
   Tooltip,
-  AreaChart, Area
+  AreaChart, Area,
+  XAxis
 } from 'recharts';
-import { MOCK_PARENTS, PTA_ROLES, BROADCAST_TEMPLATES, PARENT_TARGET_POPULATIONS } from './data';
 import {
   Table,
   TableHeader,
@@ -27,6 +27,7 @@ import {
   TableRow,
   TableCell,
 } from '../../components/ui/table';
+import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
@@ -37,12 +38,12 @@ import {
   SelectItem,
   SelectValue
 } from '../../components/ui/select';
+import { useAllParents, useCreateParent } from '../../lib/hooks';
 
 // --- Components ---
 
 const ParentProfile = ({ parent, onClose }) => {
   const [activeTab, setActiveTab] = useState('Overview');
-  const [maskFees, setMaskFees] = useState(true);
 
   return (
     <div className="flex flex-col h-full bg-white">
@@ -64,10 +65,9 @@ const ParentProfile = ({ parent, onClose }) => {
 
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           {[
-            { id: 'Overview', label: 'Ward Overview', icon: Users },
-            { id: 'History', label: 'Communication', icon: MessageSquare },
-            { id: 'Identity', label: 'Access Control', icon: ShieldCheck },
-          ].map(tab => (
+             { id: 'Overview', label: 'Ward Overview', icon: Users },
+             { id: 'History', label: 'Communication', icon: MessageSquare },
+           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -83,18 +83,11 @@ const ParentProfile = ({ parent, onClose }) => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-8 bg-slate-50">
+      <div className="flex-1 overflow-y-auto p-8 bg-slate-50 scrollbar-hide">
         {activeTab === 'Overview' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Linked Households</h4>
-              <button 
-                onClick={() => setMaskFees(!maskFees)}
-                className="flex items-center gap-2 text-[10px] font-black text-emerald-600 uppercase tracking-widest"
-              >
-                {maskFees ? <Eye size={12} /> : <EyeOff size={12} />}
-                {maskFees ? 'Show Financials' : 'Mask Financials'}
-              </button>
             </div>
             <div className="space-y-4">
               {parent.wards.map((ward) => (
@@ -109,14 +102,15 @@ const ParentProfile = ({ parent, onClose }) => {
                         <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{ward.id}</p>
                       </div>
                     </div>
-                    <div className={cn(
-                      "px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest",
-                      ward.feesStatus === 'Paid' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
-                      ward.feesStatus === 'Arrears' ? "bg-rose-50 text-rose-600 border border-rose-100" :
-                      "bg-amber-50 text-amber-600 border border-amber-100"
-                    )}>
-                      {ward.feesStatus}
-                    </div>
+                     <div className={cn(
+                       "px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest",
+                       ward.feesStatus === 'Free SHS' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
+                       ward.feesStatus === 'Fully Funded' ? "bg-blue-50 text-blue-600 border border-blue-100" :
+                       ward.feesStatus === "Gov't Covered" ? "bg-indigo-50 text-indigo-600 border border-indigo-100" :
+                       "bg-amber-50 text-amber-600 border border-amber-100"
+                     )}>
+                       {ward.feesStatus}
+                     </div>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
@@ -136,7 +130,7 @@ const ParentProfile = ({ parent, onClose }) => {
                       <span className="text-[10px] font-black uppercase tracking-widest">Statement Balance</span>
                     </div>
                     <p className="text-sm font-black italic font-display text-white">
-                      GHS {maskFees ? '****.**' : ward.balance.toFixed(2)}
+                      GHS 0.00
                     </p>
                   </div>
                 </div>
@@ -173,38 +167,6 @@ const ParentProfile = ({ parent, onClose }) => {
             ))}
           </div>
         )}
-
-        {activeTab === 'Identity' && (
-          <div className="space-y-6">
-            <div className="bg-white p-8 rounded-4xl border border-slate-200 shadow-sm text-center">
-              <div className="w-20 h-20 bg-emerald-50 border border-emerald-100 rounded-3xl flex items-center justify-center text-emerald-600 mx-auto mb-6">
-                <Fingerprint size={40} />
-              </div>
-              <h3 className="text-xl font-black italic font-display text-slate-900 mb-1">Access Protocol</h3>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-8">Household Credential Management</p>
-              
-              <div className="space-y-3 mb-8">
-                <div className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Access Code</span>
-                  <span className="text-[14px] font-black text-slate-900 italic font-display">{parent.accessCode}</span>
-                </div>
-                <div className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mobile PIN</span>
-                  <span className="text-[14px] font-black text-slate-900 italic font-display">****</span>
-                </div>
-              </div>
-
-               <div className="flex gap-3">
-                 <Button className="flex-1 py-4">
-                   <ShieldCheck size={16} /> Reset PIN
-                 </Button>
-                 <Button variant="outline" className="flex-1 py-4">
-                   <Bell size={16} /> Notify
-                 </Button>
-               </div>
-            </div>
-          </div>
-        )}
       </div>
 
        <div className="p-8 bg-white border-t border-slate-100 flex gap-3 shrink-0">
@@ -223,11 +185,20 @@ const ParentProfile = ({ parent, onClose }) => {
 };
 
 export const ParentRegistry = () => {
-  const [parents] = useState(MOCK_PARENTS);
+  const { data: parents = [], isLoading, error } = useAllParents();
+  const createParentMutation = useCreateParent();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedParentId, setSelectedParentId] = useState(null);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [isPTAHubOpen, setIsPTAHubOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newParentForm, setNewParentForm] = useState({
+    firstName: '',
+    lastName: '',
+    phone: '',
+    email: '',
+    occupation: '',
+  });
 
   const selectedParent = useMemo(() => 
     parents.find(p => p.id === selectedParentId),
@@ -243,8 +214,8 @@ export const ParentRegistry = () => {
   }, [parents, searchQuery]);
 
   // Analytics Data
-  const appAdoptionRate = (parents.filter(p => p.appAdopted).length / parents.length) * 100;
-  const invalidNumbers = 4; // Mock
+  const appAdoptionRate = parents.length ? (parents.filter(p => p.appAdopted).length / parents.length) * 100 : 0;
+  const invalidNumbers = parents.filter(p => !p.phone || p.phone.length < 10).length;
   const smsCredits = 12500;
 
   const engagementData = [
@@ -252,16 +223,47 @@ export const ParentRegistry = () => {
     { name: 'Pending', value: parents.filter(p => !p.appAdopted).length },
   ];
 
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-slate-50">
+        <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">Loading parent registry...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-slate-50">
+        <p className="text-[11px] font-black uppercase tracking-widest text-rose-500">Failed to load parent registry</p>
+      </div>
+    );
+  }
+
+  const handleCreateParent = async () => {
+    if (!newParentForm.firstName || !newParentForm.lastName || !newParentForm.phone) {
+      alert('First name, last name, and phone are required.');
+      return;
+    }
+    try {
+      await createParentMutation.mutateAsync({
+        firstName: newParentForm.firstName,
+        lastName: newParentForm.lastName,
+        phone: newParentForm.phone,
+        email: newParentForm.email,
+        occupation: newParentForm.occupation,
+      });
+      setIsCreateModalOpen(false);
+      setNewParentForm({ firstName: '', lastName: '', phone: '', email: '', occupation: '' });
+    } catch (err) {
+      alert('Failed to create parent: ' + (err.message || err));
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden relative">
       <header className="px-8 py-6 bg-white border-b border-slate-200/60 shrink-0">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.25em] text-slate-400 mb-2">
-              <span>Registry</span>
-              <ChevronRight size={10} />
-              <span className="text-slate-900">Guardian Dynamic Hub</span>
-            </div>
             <h1 className="text-2xl font-black text-slate-900 italic font-display tracking-tight leading-none">
               Institutional Household Management
             </h1>
@@ -279,7 +281,7 @@ export const ParentRegistry = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-6">
           <div className="bg-slate-50 p-5 rounded-[2rem] border border-slate-100 flex items-center justify-between">
             <div className="h-16 w-16 shrink-0">
-              <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <RePieChart>
                   <Pie data={engagementData} cx="50%" cy="50%" innerRadius={20} outerRadius={30} paddingAngle={5} dataKey="value">
                     <Cell fill="#10b981" /><Cell fill="#94a3b8" />
@@ -329,13 +331,13 @@ export const ParentRegistry = () => {
              <Button variant="outline" className="px-5 py-3">
                 <Download size={16} /> Global Report
              </Button>
-             <Button className="p-3">
-                <Plus size={20} />
-             </Button>
+              <Button className="p-3" onClick={() => setIsCreateModalOpen(true)}>
+                 <Plus size={20} />
+              </Button>
           </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-8 relative">
+       <div className="flex-1 overflow-y-auto p-8 relative scrollbar-hide">
         <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
           <Table>
             <TableHeader>
@@ -384,16 +386,17 @@ export const ParentRegistry = () => {
                   </TableCell>
                   <TableCell className="px-6 py-5 text-center">
                     <div className="flex flex-col items-center gap-1.5">
-                       {parent.wards.map(w => (
-                         <Badge key={w.id} variant="default" className={cn(
-                           "text-[9px] font-black uppercase tracking-widest",
-                           w.feesStatus === 'Paid' ? "bg-emerald-50 text-emerald-600" :
-                           w.feesStatus === 'Arrears' ? "bg-rose-50 text-rose-600" :
-                           "bg-amber-50 text-amber-600"
-                         )}>
-                           {w.feesStatus}
-                         </Badge>
-                       ))}
+                        {parent.wards.map(w => (
+                          <Badge key={w.id} variant="default" className={cn(
+                            "text-[9px] font-black uppercase tracking-widest",
+                            w.feesStatus === 'Free SHS' ? "bg-emerald-50 text-emerald-600" :
+                            w.feesStatus === 'Fully Funded' ? "bg-blue-50 text-blue-600" :
+                            w.feesStatus === "Gov't Covered" ? "bg-indigo-50 text-indigo-600" :
+                            "bg-amber-50 text-amber-600"
+                          )}>
+                            {w.feesStatus}
+                          </Badge>
+                        ))}
                     </div>
                   </TableCell>
                   <TableCell className="px-8 py-5 text-right">
@@ -449,12 +452,12 @@ export const ParentRegistry = () => {
                          <SelectTrigger>
                            <SelectValue placeholder="Select Population" />
                          </SelectTrigger>
-                         <SelectContent>
-                           <SelectItem value="All Guardians">All Guardians</SelectItem>
-                           <SelectItem value="SHS 3 Boarder Parents">SHS 3 Boarder Parents</SelectItem>
-                           <SelectItem value="Fee Arrears Only">Fee Arrears Only</SelectItem>
-                           <SelectItem value="Day Parent Protocol">Day Parent Protocol</SelectItem>
-                         </SelectContent>
+                          <SelectContent>
+                            <SelectItem value="All Guardians">All Guardians</SelectItem>
+                            <SelectItem value="SHS 3 Boarder Parents">SHS 3 Boarder Parents</SelectItem>
+                            <SelectItem value="Gov't Funded Wards">Gov't Funded Wards</SelectItem>
+                            <SelectItem value="Day Parent Protocol">Day Parent Protocol</SelectItem>
+                          </SelectContent>
                        </Select>
                      </div>
                     <div className="space-y-4">
@@ -463,12 +466,13 @@ export const ParentRegistry = () => {
                          <SelectTrigger>
                            <SelectValue placeholder="Select Template" />
                          </SelectTrigger>
-                         <SelectContent>
-                           <SelectItem value="Custom Message">Custom Message</SelectItem>
-                           <SelectItem value="PTA Meeting Invitation">PTA Meeting Invitation</SelectItem>
-                           <SelectItem value="Terminal Report Dispatch">Terminal Report Dispatch</SelectItem>
-                           <SelectItem value="Re-opening Schedule">Re-opening Schedule</SelectItem>
-                         </SelectContent>
+                          <SelectContent>
+                            <SelectItem value="Custom Message">Custom Message</SelectItem>
+                            <SelectItem value="PTA Meeting Invitation">PTA Meeting Invitation</SelectItem>
+                            <SelectItem value="Terminal Report Dispatch">Terminal Report Dispatch</SelectItem>
+                            <SelectItem value="Re-opening Schedule">Re-opening Schedule</SelectItem>
+                            <SelectItem value="WASSCE Registration Portal Closing">WASSCE Registration Portal Closing</SelectItem>
+                          </SelectContent>
                        </Select>
                      </div>
                   </div>
@@ -515,7 +519,7 @@ export const ParentRegistry = () => {
                   <h3 className="text-3xl font-black italic font-display">PTA Executive Hub</h3>
                   <p className="text-[10px] font-black uppercase text-white/50 tracking-widest mt-2">Association Governance & Engagement Analytics</p>
                 </div>
-                <div className="flex-1 overflow-y-auto p-10">
+                 <div className="flex-1 overflow-y-auto p-10 scrollbar-hide">
                   <div className="grid grid-cols-2 gap-8 mb-10">
                     <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100">
                       <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-6">Association Leadership</h4>
@@ -541,7 +545,7 @@ export const ParentRegistry = () => {
                     <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100">
                       <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-6">Attendance Trends</h4>
                       <div className="h-48 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                           <AreaChart data={[
                             { day: 'Meeting 1', count: 45 },
                             { day: 'Meeting 2', count: 52 },
@@ -574,6 +578,54 @@ export const ParentRegistry = () => {
                    <button onClick={() => setIsPTAHubOpen(false)} className="px-10 py-5 bg-slate-900 text-white rounded-[2rem] text-[11px] font-black uppercase tracking-widest">Close Command Center</button>
                 </div>
              </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Create Parent Modal */}
+      <AnimatePresence>
+        {isCreateModalOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setIsCreateModalOpen(false)} />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-xl bg-white rounded-[3rem] shadow-2xl overflow-hidden">
+              <div className="p-8 bg-slate-900 text-white flex justify-between items-center">
+                <div>
+                  <h3 className="text-2xl font-black italic font-display">Register Guardian</h3>
+                  <p className="text-[10px] font-black uppercase text-white/50 tracking-widest mt-1">Enrol new parent into institutional registry</p>
+                </div>
+                <X className="cursor-pointer hover:text-rose-500 transition-all" onClick={() => setIsCreateModalOpen(false)} />
+              </div>
+              <div className="p-8 space-y-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">First Name</label>
+                    <Input value={newParentForm.firstName} onChange={(e) => setNewParentForm({ ...newParentForm, firstName: e.target.value })} className="w-full" placeholder="Kwame" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Last Name</label>
+                    <Input value={newParentForm.lastName} onChange={(e) => setNewParentForm({ ...newParentForm, lastName: e.target.value })} className="w-full" placeholder="Mensah" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Phone</label>
+                  <Input value={newParentForm.phone} onChange={(e) => setNewParentForm({ ...newParentForm, phone: e.target.value })} className="w-full" placeholder="+233 24 000 0000" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Email</label>
+                  <Input value={newParentForm.email} onChange={(e) => setNewParentForm({ ...newParentForm, email: e.target.value })} className="w-full" placeholder="parent@example.com" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Occupation</label>
+                  <Input value={newParentForm.occupation} onChange={(e) => setNewParentForm({ ...newParentForm, occupation: e.target.value })} className="w-full" placeholder="Trader" />
+                </div>
+                <div className="flex gap-4 pt-4">
+                  <button onClick={() => setIsCreateModalOpen(false)} className="flex-1 py-4 bg-slate-50 rounded-[2rem] text-[11px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all">Cancel</button>
+                  <button onClick={handleCreateParent} disabled={createParentMutation.isPending} className="flex-1 py-4 bg-slate-900 text-white rounded-[2rem] text-[11px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3">
+                    <UserPlus size={16} /> {createParentMutation.isPending ? 'Registering...' : 'Register Guardian'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
           </div>
         )}
       </AnimatePresence>

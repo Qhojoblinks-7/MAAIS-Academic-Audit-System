@@ -1,6 +1,6 @@
 ﻿import React, { useState } from 'react';
 import { 
-  Calendar as CalendarIcon, Grid3X3, ChevronRight 
+  Calendar as CalendarIcon, Grid3X3, ChevronRight, Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
@@ -19,13 +19,6 @@ export const SchedulingView = () => {
           
           {/* Typography Stack */}
           <div>
-            <div className="flex items-center gap-1.5 text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">
-              <span>Academic Engine</span>
-              <ChevronRight size={8} className="text-slate-300" />
-              <span className="text-slate-800">Scheduling & Registry</span>
-            </div>
-            
-            {/* Fluid heading scaling: text-xl on small tablet -> text-2xl on small laptop -> text-3xl on wide screens */}
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-black italic font-display text-slate-900 tracking-tight leading-none">
               The Heartbeat Control
             </h1>
@@ -38,8 +31,8 @@ export const SchedulingView = () => {
           {/* Core Tab Navigation Switcher - Optimized padding limits tracking bloating */}
           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/60 shadow-inner select-none w-full md:w-auto self-stretch md:self-auto justify-center">
             {[
-              { id: 'Timetable', label: 'Master Timetable', icon: Grid3X3 },
-              { id: 'Calendar', label: 'Event Planner', icon: CalendarIcon },
+{ id: 'Timetable', label: 'Master Timetable', icon: Clock },
+{ id: 'Calendar', label: 'Event Planner', icon: CalendarIcon },
             ].map(tab => {
               const Icon = tab.icon;
               return (

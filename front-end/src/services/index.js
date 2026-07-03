@@ -6,12 +6,10 @@ export { cacheLayer } from './cacheLayer';
 export { eventBus } from './eventBus';
 export { departmentService } from './departmentService';
 
-// Mock services (for development/testing)
-export { mockHodService } from './mockHodService';
-export { mockTeacherService } from './mockTeacherService';
-export { mockStudentService } from './mockStudentService';
 
 // Real services (with mock fallback)
 export { hodService } from './hodService';
+export { adminService } from './adminService';
 export { teacherService } from './teacherService';
 export { studentService } from './studentService';
+export { waeExportService } from './waeService';

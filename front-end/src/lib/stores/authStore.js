@@ -11,31 +11,33 @@ const BACKEND_TO_FRONTEND_ROLE = {
 };
 
 function normalizeRole(role) {
-  return BACKEND_TO_FRONTEND_ROLE[role] || null;
+  return BACKEND_TO_FRONTEND_ROLE[role] || role || null;
 }
 
-const useAuthStore = create((set, get) => ({
-  user: (() => {
-    const stored = localStorage.getItem('user');
-    try {
-      const parsed = stored ? JSON.parse(stored) : null;
-      if (parsed?.role) {
-        const normalized = { ...parsed, role: normalizeRole(parsed.role) || parsed.role };
-        localStorage.setItem('user', JSON.stringify(normalized));
-        return normalized;
-      }
-      return parsed;
-    } catch {
-      return null;
+// Helper to safely parse initial data without triggering structural localstorage side effects
+const getInitialUser = () => {
+  if (typeof window === 'undefined') return null; // Safe guard for SSR environments
+  const stored = localStorage.getItem('user');
+  try {
+    const parsed = stored ? JSON.parse(stored) : null;
+    if (parsed?.role) {
+      return { ...parsed, role: normalizeRole(parsed.role) };
     }
-  })(),
-  accessToken: localStorage.getItem('accessToken'),
-  refreshToken: localStorage.getItem('refreshToken'),
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+const useAuthStore = create((set) => ({
+  user: getInitialUser(),
+  accessToken: typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null,
+  refreshToken: typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null,
   isLoading: false,
 
   setUser: (user) => {
     if (user?.role) {
-      const normalized = { ...user, role: normalizeRole(user.role) || user.role };
+      const normalized = { ...user, role: normalizeRole(user.role) };
       localStorage.setItem('user', JSON.stringify(normalized));
       set({ user: normalized });
     } else {
@@ -45,6 +47,7 @@ const useAuthStore = create((set, get) => ({
   },
 
   setTokens: (accessToken, refreshToken) => {
+    localStorage.setItem('auth_token', accessToken);
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
     set({ accessToken, refreshToken });
@@ -53,17 +56,29 @@ const useAuthStore = create((set, get) => ({
   setLoading: (loading) => set({ isLoading: loading }),
 
   logout: () => {
+    localStorage.removeItem('auth_token');
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    localStorage.removeItem('userId');
     localStorage.removeItem('user');
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem('auth_token');
+      sessionStorage.removeItem('accessToken');
+      sessionStorage.removeItem('refreshToken');
+      sessionStorage.removeItem('userId');
+      sessionStorage.removeItem('user');
+    }
     set({ user: null, accessToken: null, refreshToken: null });
   },
 }));
 
+// ── Curried & Flat Selectors ─────────────────────────────────────────────────
 const selectIsAuthenticated = (state) => !!state.accessToken && !!state.user;
 const selectUserRole = (state) => state.user?.role;
-const selectHasRole = (state, role) => state.user?.role === role;
-const selectHasAnyRole = (state, roles) => roles.includes(state.user?.role);
+
+// FIX: Dynamic parameters must return an inner selector callback function 
+const selectHasRole = (role) => (state) => state.user?.role === role;
+const selectHasAnyRole = (roles) => (state) => roles.includes(state.user?.role);
 
 export {
   useAuthStore,

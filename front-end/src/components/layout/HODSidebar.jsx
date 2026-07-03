@@ -25,30 +25,43 @@ import {
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
 import { useUI } from '../../context/UIContext';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../ui/tooltip';
+import { useHOD } from '../../context/HODContext';
 
 export function HODSidebar() {
-   const location = useLocation();
-   const { user } = useRole();
-   const { setSettingsModalOpen, setSupportModalOpen } = useUI();
-   const [showLogoutModal, setShowLogoutModal] = React.useState(false);
-   const [unsavedMarks] = React.useState(12);
-   const [activeSubMenu, setActiveSubMenu] = React.useState(null);
-   const sidebarRef = useRef(null);
+  const location = useLocation();
+  const { user } = useRole();
+  const { setSettingsModalOpen, setSupportModalOpen } = useUI();
+  const { totalAlerts, revisions, activeSessions } = useHOD();
+  const [showLogoutModal, setShowLogoutModal] = React.useState(false);
+  const [activeSubMenu, setActiveSubMenu] = React.useState(null);
+  const sidebarRef = useRef(null);
 
-   useEffect(() => {
-      function handleClickOutside(event) {
-        if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
-          setActiveSubMenu(null);
-        }
+  const pendingRevisionsCount = Array.isArray(revisions) 
+    ? revisions.filter(r => r.status === 'PENDING').length 
+    : 0;
+  
+  const unsavedMarks = React.useMemo(() => {
+    try {
+      const drafts = JSON.parse(localStorage.getItem('hodDraftRecords') || '{}');
+      return Object.keys(drafts || {}).length;
+    } catch {
+      return 0;
+    }
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+        setActiveSubMenu(null);
       }
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-   useEffect(() => {
-      setActiveSubMenu(null);
-    }, [location.pathname]);
+  useEffect(() => {
+    setActiveSubMenu(null);
+  }, [location.pathname]);
 
   const hodMenu = [
     {
@@ -65,17 +78,17 @@ export function HODSidebar() {
     },
     {
       icon: AlertCircle,
-       label: 'Revision Approvals',
-       id: 'hod-revisions',
-       path: '/revisions',
-       badge: 3
-     },
-     {
-       icon: FileText,
-       label: 'Audit Log',
-       id: 'hod-audit',
-       path: '/hod/audit'
-     },
+      label: 'Revision Approvals',
+      id: 'hod-revisions',
+      path: '/revisions',
+      badge: pendingRevisionsCount > 0 ? pendingRevisionsCount : undefined,
+    },
+    {
+      icon: FileText,
+      label: 'Audit Log',
+      id: 'hod-audit',
+      path: '/hod/audit'
+    },
     {
       icon: Users,
       label: 'Teachers',
@@ -107,38 +120,33 @@ export function HODSidebar() {
       path: '/hod/broadsheet'
     },
     {
-       icon: Award,
-       label: 'Certification Desk',
-       id: 'hod-certification',
-       path: '/certification',
-       badge: 2,
-       badgeColor: 'bg-emerald-600'
-     },
+      icon: Award,
+      label: 'Certification Desk',
+      id: 'hod-certification',
+      path: '/certification',
+      badge: totalAlerts > 0 ? totalAlerts : undefined,
+      badgeColor: 'bg-emerald-600'
+    },
     {
       icon: Database,
       label: 'Department Archives',
       id: 'hod-archive',
       path: '/archive'
     },
-  ];
+  ].filter(Boolean);
 
   const handleLogout = () => {
-     localStorage.clear();
-     sessionStorage.clear();
-     window.location.href = '/';
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = '/';
   };
 
   return (
-    <TooltipProvider delayDuration={200}>
+    <>
       <aside ref={sidebarRef} className="w-20 h-screen bg-background border-r border-border flex flex-col items-center py-8 gap-8 z-[60] select-none shrink-0 print:hidden">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Link to="/" className="w-12 h-12 bg-brand-primary rounded-2xl flex items-center justify-center text-surface font-semibold text-xl shadow-lg shadow-brand-primary/20 transition-transform active:scale-95">
-              H
-            </Link>
-          </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={12}>Home</TooltipContent>
-        </Tooltip>
+        <Link to="/" className="w-12 h-12 bg-brand-primary rounded-2xl flex items-center justify-center text-surface font-semibold text-xl shadow-lg shadow-brand-primary/20 transition-transform active:scale-95" title="Home">
+          H
+        </Link>
 
         <nav className="flex-1 flex flex-col gap-4 w-full px-3 overflow-y-auto no-scrollbar">
           {hodMenu.map((item) => {
@@ -149,52 +157,44 @@ export function HODSidebar() {
             return (
               <div key={item.id} className="relative flex justify-center w-full">
                 {hasSubMenu ? (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => setActiveSubMenu(isSubMenuOpen ? null : item.id)}
-                        className={cn(
-                          "p-3 rounded-2xl transition-all duration-200 relative w-12 h-12 flex items-center justify-center",
-                          isActive || isSubMenuOpen
-                            ? "bg-surface text-brand-primary shadow-md ring-1 ring-border"
-                            : "text-text-secondary hover:bg-surface hover:text-text-primary"
-                        )}
-                      >
-                        <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-                        {isActive && <div className="absolute left-0 w-1 h-5 bg-brand-primary rounded-r-full" />}
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" sideOffset={12}>{item.label}</TooltipContent>
-                  </Tooltip>
+                  <button
+                    onClick={() => setActiveSubMenu(isSubMenuOpen ? null : item.id)}
+                    className={cn(
+                      "p-3 rounded-2xl transition-all duration-200 relative w-12 h-12 flex items-center justify-center cursor-pointer",
+                      isActive || isSubMenuOpen
+                        ? "bg-surface text-brand-primary shadow-md ring-1 ring-border"
+                        : "text-text-secondary hover:bg-surface hover:text-text-primary"
+                    )}
+                    title={item.label}
+                  >
+                    <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                    {isActive && <div className="absolute left-0 w-1 h-5 bg-brand-secondary rounded-r-full" />}
+                  </button>
                 ) : (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Link
-                        to={item.path || '#'}
-                        className={cn(
-                          "rounded-2xl transition-all duration-200 relative w-12 h-12 flex items-center justify-center shrink-0",
-                          isActive
-                            ? "bg-surface text-brand-primary shadow-md ring-1 ring-border"
-                            : "text-text-secondary hover:bg-surface hover:text-text-primary"
-                        )}
-                      >
-                        <div className="relative flex items-center justify-center w-6 h-6">
-                          <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                  <Link
+                    to={item.path || '#'}
+                    className={cn(
+                      "rounded-2xl transition-all duration-200 relative w-12 h-12 flex items-center justify-center shrink-0",
+                      isActive
+                        ? "bg-surface text-brand-primary shadow-md ring-1 ring-border"
+                        : "text-text-secondary hover:bg-surface hover:text-text-primary"
+                    )}
+                    title={item.label}
+                  >
+                    <div className="relative flex items-center justify-center w-6 h-6">
+                      <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
 
-                          {item.badge && (
-                            <div className={cn(
-                              "absolute -top-2 -right-2 px-1.5 min-w-[1.25rem] h-5 text-surface text-[8px] font-bold rounded-full flex items-center justify-center border-2 border-background shadow-sm pointer-events-none",
-                              item.badgeColor || "bg-danger"
-                            )}>
-                              {item.badge}
-                            </div>
-                          )}
+                      {item.badge > 0 && (
+                        <div className={cn(
+                          "absolute -top-2 -right-2 px-1.5 min-w-[1.25rem] h-5 text-surface text-[8px] font-bold rounded-full flex items-center justify-center border-2 border-background shadow-sm pointer-events-none",
+                          item.badgeColor || "bg-danger"
+                        )}>
+                          {item.badge}
                         </div>
-                        {isActive && <div className="absolute left-0 w-1 h-5 bg-brand-primary rounded-r-full" />}
-                      </Link>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" sideOffset={12}>{item.label}</TooltipContent>
-                  </Tooltip>
+                      )}
+                    </div>
+                    {isActive && <div className="absolute left-0 w-1 h-5 bg-brand-secondary rounded-r-full" />}
+                  </Link>
                 )}
 
                 <AnimatePresence>
@@ -242,41 +242,27 @@ export function HODSidebar() {
         </nav>
 
         <div className="flex flex-col gap-4 mt-auto px-3 w-full items-center">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => setSupportModalOpen(true)}
-                className="p-3 rounded-2xl text-text-secondary hover:bg-surface hover:text-text-primary transition-all duration-200 w-12 h-12 flex items-center justify-center"
-              >
-                <LifeBuoy size={22} />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={12}>ICT Managerial Desk</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => setSettingsModalOpen(true)}
-                className="p-3 rounded-2xl text-text-secondary hover:bg-surface hover:text-text-primary transition-all duration-200 w-12 h-12 flex items-center justify-center"
-              >
-                <Settings size={22} />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={12}>Authority Settings</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => setShowLogoutModal(true)}
-                className="p-3 rounded-2xl text-text-secondary hover:bg-danger/10 hover:text-danger transition-all duration-200 w-12 h-12 flex items-center justify-center"
-              >
-                <LogOut size={22} />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={12}>Logout</TooltipContent>
-          </Tooltip>
+          <button
+            onClick={() => setSupportModalOpen(true)}
+            className="p-3 rounded-2xl text-text-secondary hover:bg-surface hover:text-text-primary transition-all duration-200 w-12 h-12 flex items-center justify-center cursor-pointer"
+            title="ICT Managerial Desk"
+          >
+            <LifeBuoy size={22} />
+          </button>
+          <button
+            onClick={() => setSettingsModalOpen(true)}
+            className="p-3 rounded-2xl text-text-secondary hover:bg-surface hover:text-text-primary transition-all duration-200 w-12 h-12 flex items-center justify-center cursor-pointer"
+            title="Authority Settings"
+          >
+            <Settings size={22} />
+          </button>
+          <button
+            onClick={() => setShowLogoutModal(true)}
+            className="p-3 rounded-2xl text-text-secondary hover:bg-danger/10 hover:text-danger transition-all duration-200 w-12 h-12 flex items-center justify-center cursor-pointer"
+            title="Logout"
+          >
+            <LogOut size={22} />
+          </button>
         </div>
       </aside>
 
@@ -303,7 +289,7 @@ export function HODSidebar() {
                   </div>
                   <button
                     onClick={() => setShowLogoutModal(false)}
-                    className="p-2 hover:bg-muted rounded-xl transition-all text-text-secondary hover:text-text-primary"
+                    className="p-2 hover:bg-muted rounded-xl transition-all text-text-secondary hover:text-text-primary cursor-pointer"
                   >
                     <X size={20} />
                   </button>
@@ -328,16 +314,23 @@ export function HODSidebar() {
                   </div>
                 )}
 
+                {Array.isArray(activeSessions) && activeSessions.length > 0 && (
+                  <div className="bg-surface border border-border rounded-2xl p-4 mb-6">
+                    <p className="text-xs font-semibold text-text-primary mb-2">Active Sessions</p>
+                    <p className="text-xs text-text-secondary">{activeSessions.length} other session(s) active</p>
+                  </div>
+                )}
+
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowLogoutModal(false)}
-                    className="flex-1 py-3 bg-muted text-text-primary font-medium rounded-xl text-sm hover:bg-border transition-all"
+                    className="flex-1 py-3 bg-muted text-text-primary font-medium rounded-xl text-sm hover:bg-border transition-all cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleLogout}
-                    className="flex-1 py-3 bg-danger text-surface font-medium rounded-xl text-sm hover:bg-danger/80 transition-all"
+                    className="flex-1 py-3 bg-danger text-surface font-medium rounded-xl text-sm hover:bg-danger/80 transition-all cursor-pointer"
                   >
                     Log Out
                   </button>
@@ -350,7 +343,7 @@ export function HODSidebar() {
           </div>
         )}
       </AnimatePresence>
-    </TooltipProvider>
+    </>
   );
 }
 

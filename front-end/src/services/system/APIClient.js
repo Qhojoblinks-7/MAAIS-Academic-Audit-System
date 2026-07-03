@@ -11,7 +11,7 @@
 
 import { getAuthToken } from '../auth';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 function getHeaders() {
   const token = getAuthToken();

@@ -59,10 +59,9 @@ export function NewApprovalRequestView() {
     <div className="min-h-screen bg-slate-50/50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
         
-        {/* Breadcrumb / Top Bar */}
+        {/* Page Header */}
         <div className="mb-8 flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-center">
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600">Approvals Engine</span>
             <h1 className="mt-1 text-3xl font-black text-slate-900 tracking-tight">Create New Request</h1>
           </div>
           <Link 

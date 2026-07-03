@@ -1,11 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { QrCode, CheckCircle2, Clock, ArrowRight, Star, Edit, Lock, AlertCircle } from 'lucide-react';
+import { QrCode, CheckCircle2, Clock, ArrowRight, Star, Edit, Lock, AlertCircle, Users } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { teacherService } from '../../services';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
-import mockTeacherService from '../../services/mockTeacherService';
+import { Input } from '../../components/ui/input';
+import { Textarea } from '../../components/ui/textarea';
 
 export function TeacherSupport() {
   const navigate = useNavigate();
@@ -18,16 +20,44 @@ export function TeacherSupport() {
   const [supportObservations, setSupportObservations] = React.useState([]);
   const [gradeIssues, setGradeIssues] = React.useState([]);
   const [statusStyles, setStatusStyles] = React.useState({});
+  const [behaviorLogs, setBehaviorLogs] = React.useState([]);
 
   React.useEffect(() => {
     const fetchData = async () => {
       try {
-        const obs = await mockTeacherService.getSupportObservations();
-        const issues = await mockTeacherService.getGradeIssues();
-        const styles = await mockTeacherService.getGradeIssueStatusMeta();
+        const obs = await teacherService.getSupportObservations();
+        const issues = await teacherService.getGradeIssues();
+        const styles = await teacherService.getGradeIssueStatusMeta();
         setSupportObservations(obs || []);
         setGradeIssues(issues || []);
         setStatusStyles(styles || {});
+
+        const uniqueStudentIds = [];
+        const seen = new Set();
+        for (const issue of issues || []) {
+          const sid = issue.studentId || issue.student?.id || issue.recordId;
+          if (sid && !seen.has(sid)) {
+            seen.add(sid);
+            uniqueStudentIds.push(sid);
+          }
+        }
+
+        if (uniqueStudentIds.length > 0) {
+          const behaviorPromises = uniqueStudentIds.slice(0, 10).map(id =>
+            teacherService.getStudentBehavior(id).catch(err => {
+              console.error(`[TeacherSupport] Failed to fetch behavior for ${id}:`, err);
+              return null;
+            })
+          );
+          const behaviorResults = await Promise.all(behaviorPromises);
+          const logs = [];
+          for (const result of behaviorResults) {
+            if (result?.logs && Array.isArray(result.logs)) {
+              logs.push(...result.logs);
+            }
+          }
+          setBehaviorLogs(logs);
+        }
       } catch (err) {
         console.error('Failed to load support data');
       }
@@ -44,30 +74,27 @@ export function TeacherSupport() {
     setErrorMessage('');
     
     try {
+      const categoryMap = {
+        'Grade Entry': 'Academic',
+        'Observation': 'Academic',
+        'Technical': 'Technical',
+        'General': 'General',
+      };
+
       const ticketData = {
         title: title.trim(),
-        message: message.trim(),
-        category: category.toLowerCase().replace(' ', '_')
+        description: message.trim(),
+        category: categoryMap[category] || 'General',
+        priority: 'MEDIUM',
       };
       
-      const response = await fetch('/api/support/ticket', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(ticketData),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to submit ticket');
-      }
+      await teacherService.submitSupportTicket(ticketData);
       
       setSuccessMessage('Ticket submitted successfully!');
       setTitle('');
       setMessage('');
       setCategory('General');
       
-      // Clear success message after 3 seconds
       setTimeout(() => {
         setSuccessMessage('');
       }, 3000);
@@ -152,6 +179,48 @@ return (
                 </span>
               </Card>
             ))}
+          </div>
+        </section>
+
+        <section className="bg-card rounded-[2rem] border border-border p-8 shadow-sm mb-8">
+          <div className="p-6 border-b border-border bg-muted/30 flex items-center gap-3 mb-6">
+            <Users className="text-foreground" size={20} />
+            <h2 className="text-[11px] font-black text-foreground uppercase tracking-widest">Behavior Observations</h2>
+          </div>
+          <div className="space-y-3">
+            {behaviorLogs.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No behavior observations recorded yet.</p>
+            ) : (
+              behaviorLogs.slice(0, 5).map((log, i) => (
+                <motion.div
+                  key={log.id || i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="p-4 bg-muted border-l-4 border-brand-primary rounded-2xl border-t border-r border-b"
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-[10px] font-black text-brand-primary bg-brand-primary/10 px-2.5 py-1 rounded uppercase tracking-widest">
+                      {log.remarks ? 'Recorded' : 'No Remarks'}
+                    </span>
+                    <span className="text-[9px] font-black text-muted-foreground italic">
+                      {log.createdAt ? new Date(log.createdAt).toLocaleDateString() : 'N/A'}
+                    </span>
+                  </div>
+                  {log.remarks && (
+                    <p className="text-xs font-medium text-foreground italic leading-relaxed">
+                      "{log.remarks}"
+                    </p>
+                  )}
+                  <div className="flex gap-4 mt-2 text-[9px] font-black text-muted-foreground uppercase tracking-wider">
+                    {log.punctuality && <span>Punctuality: {log.punctuality}/5</span>}
+                    {log.attendance && <span>Attendance: {log.attendance}/5</span>}
+                    {log.attitude && <span>Attitude: {log.attitude}/5</span>}
+                    {log.conduct && <span>Conduct: {log.conduct}/5</span>}
+                  </div>
+                </motion.div>
+              ))
+            )}
           </div>
         </section>
 

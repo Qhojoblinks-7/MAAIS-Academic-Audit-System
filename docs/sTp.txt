@@ -1,0 +1,73 @@
+**In Ghana, WAEC treats high school subjects as a mix of compulsory “core” subjects and program‑specific “electives.” Every candidate must register for the four core subjects, then add electives depending on whether they are in Science, Business, Arts, or Technical. The full subject list includes Ghanaian languages (Akan/Fante, Ewe, Ga, Nzema, Dagbani, Gonja, Dagaare), ICT, and trade/technical options.**  
+
+---
+
+## 📑 WAEC Ghana High School Subjects (Core + Electives)
+
+### **Core Subjects**
+- English Language (302)  
+- Mathematics (Core) (402)  
+- Integrated Science (502)  
+- Social Studies (204)  
+
+---
+
+### **Science Electives**
+- Physics (512)  
+- Chemistry (505)  
+- Biology (504)  
+- Elective Mathematics (401)  
+- Agricultural Science (502)  
+- Geography (204)  
+- ICT (319)  
+- Technical Drawing (608)  
+
+---
+
+### **Business Electives**
+- Commerce (103)  
+- Financial Accounting (104)  
+- Business Management (113)  
+- Economics (203) *(only Business students may now register for Economics)*  
+- Office Practice (114)  
+- Marketing (112)  
+
+---
+
+### **Arts Electives**
+- Literature in English (210)  
+- Government (205)  
+- History (207)  
+- Christian Religious Studies (202) / Islamic Religious Studies (208)  
+- French (304) / Arabic (301)  
+- Ghanaian Languages: Akan/Fante (321), Ewe (322), Ga (323), Nzema (324), Dagbani (325), Gonja (326), Dagaare (330)  
+- Music (705)  
+- Visual Art (706)  
+
+---
+
+### **Technical/Trade Electives**
+- Building Construction  
+- Applied Electricity  
+- Woodwork  
+- Metalwork  
+- Auto Mechanics  
+- Electronics  
+- ICT (319)  
+- Career Technology (040)  
+- Creative Arts & Design (041)  
+
+---
+
+## 🔍 Key Rules
+- **Minimum 7 subjects, maximum 9** per candidate.  
+- **All candidates must take the 4 core subjects.**  
+- Electives depend strictly on program (Science, Business, Arts, Technical).  
+- **Economics (203)** is now restricted to Business students only (per WAEC 2026 update).  [masterwaec.com](https://masterwaec.com/newly-released-waec-subject-combinations/)  [The Nation Newspaper](https://thenationonlineng.net/full-list-newly-released-subject-combinations-for-waec-2026-examination/)  
+- Ghanaian languages are compulsory for Arts students, with code **321–330** depending on the language.  
+
+---
+
+✅ With this full list, your NestJS app can enforce Ghana’s WAEC STP rules: every candidate must have the four core subjects, electives must match their program, and subject codes must align with WAEC’s official schema.  
+
+Would you like me to now prepare a **multi‑candidate Ghana CSV example** showing one Science student, one Business student, and one Arts student — each with their core + electives — so you can see how the codes map in practice?

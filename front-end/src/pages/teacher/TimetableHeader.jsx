@@ -1,9 +1,7 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { Calendar, Clock, MapPin, ArrowRight, Timer, LayoutGrid, List, ShieldAlert } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useNavigate } from 'react-router-dom';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../../components/ui/tooltip';
 
 export function TimetableHeader({ currentPeriod, nextPeriod, formatTime, view, setView }) {
   const navigate = useNavigate();
@@ -36,18 +34,14 @@ export function TimetableHeader({ currentPeriod, nextPeriod, formatTime, view, s
           </div>
         </div>
         {isActive && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button 
-                onClick={() => navigate('/grading')}
-                className="px-4 py-2 bg-success hover:bg-success/80 text-surface rounded-xl font-black text-[10px] uppercase tracking-wider transition-all shadow-lg shadow-brand-dark/10 flex items-center gap-2 shrink-0"
-              >
-                Open Sheet
-                <ArrowRight size={14} />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" sideOffset={8}>Open grading sheet for this period</TooltipContent>
-          </Tooltip>
+          <button
+            onClick={() => navigate('/grading')}
+            className="px-4 py-2 bg-success hover:bg-success/80 text-surface rounded-xl font-black text-[10px] uppercase tracking-wider transition-all shadow-lg shadow-brand-dark/10 flex items-center gap-2 shrink-0"
+            title="Open grading sheet for this period"
+          >
+            Open Sheet
+            <ArrowRight size={14} />
+          </button>
         )}
       </div>
     );
@@ -89,63 +83,53 @@ export function TimetableHeader({ currentPeriod, nextPeriod, formatTime, view, s
   };
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <header className="px-8 pt-8 pb-6 bg-surface border-b border-border shadow-sm z-10 select-none">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-brand-dark rounded-xl flex items-center justify-center text-surface shadow-md shadow-brand-dark/10">
-              <Calendar size={22} />
-            </div>
-            <div>
-              <h1 className="text-2xl font-black text-text-primary tracking-tight">Academic Schedule</h1>
-              <div className="flex items-center gap-2 mt-0.5">
-                <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-                <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest">System Sync Active</p>
-              </div>
-            </div>
+    <header className="px-8 pt-8 pb-6 bg-surface border-b border-border shadow-sm z-10 select-none">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-brand-dark rounded-xl flex items-center justify-center text-surface shadow-md shadow-brand-dark/10">
+            <Calendar size={22} />
           </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex bg-muted p-1 rounded-xl border border-border">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button 
-                    onClick={() => setView('daily')}
-                    className={cn(
-                      "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition-all cursor-pointer",
-                      view === 'daily' ? "bg-surface text-brand-primary shadow-sm" : "text-text-secondary hover:text-text-primary"
-                    )}
-                  >
-                    <List size={14} />
-                    Daily Agenda
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={8}>Switch to daily view</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button 
-                    onClick={() => setView('weekly')}
-                    className={cn(
-                      "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition-all cursor-pointer",
-                      view === 'weekly' ? "bg-surface text-brand-primary shadow-sm" : "text-text-secondary hover:text-text-primary"
-                    )}
-                  >
-                    <LayoutGrid size={14} />
-                    Weekly Grid
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={8}>Switch to weekly view</TooltipContent>
-              </Tooltip>
+          <div>
+            <h1 className="text-2xl font-black text-text-primary tracking-tight">Academic Schedule</h1>
+            <div className="flex items-center gap-2 mt-0.5">
+              <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
+              <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest">System Sync Active</p>
             </div>
           </div>
         </div>
+
+        <div className="flex items-center gap-4">
+          <div className="flex bg-muted p-1 rounded-xl border border-border">
+            <button
+              onClick={() => setView('daily')}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition-all cursor-pointer",
+                view === 'daily' ? "bg-surface text-brand-primary shadow-sm" : "text-text-secondary hover:text-text-primary"
+              )}
+              title="Switch to daily view"
+            >
+              <List size={14} />
+              Daily Agenda
+            </button>
+            <button
+              onClick={() => setView('weekly')}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition-all cursor-pointer",
+                view === 'weekly' ? "bg-surface text-brand-primary shadow-sm" : "text-text-secondary hover:text-text-primary"
+              )}
+              title="Switch to weekly view"
+            >
+              <LayoutGrid size={14} />
+              Weekly Grid
+            </button>
+          </div>
+        </div>
+      </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
           {renderLivePeriodCard()}
           {renderNextPeriodCard()}
         </div>
       </header>
-    </TooltipProvider>
   );
 }

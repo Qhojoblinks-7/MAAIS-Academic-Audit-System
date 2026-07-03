@@ -1,0 +1,152 @@
+# API Endpoints by User Role
+
+## ADMIN (System Administrator)
+Full access to all endpoints.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | /api/v1/auth/login | Login with email and password |
+| POST | /api/v1/auth/refresh | Refresh access token using refresh token |
+| POST | /api/v1/auth/logout | Logout and invalidate refresh token |
+| GET | /api/v1/auth/me | Get current authenticated user with profile |
+| POST | /api/v1/users/staff | Create a staff account |
+| GET | /api/v1/users/staff | List all staff members |
+| POST | /api/v1/users/students | Enrol a new student |
+| GET | /api/v1/users/students | List all active students |
+| POST | /api/v1/users/parents | Enrol a new parent |
+| GET | /api/v1/users/students/{id} | Get full student profile |
+| DELETE | /api/v1/users/{id}/deactivate | Deactivate a user account |
+| POST | /api/v1/academic/years | Create a new academic year |
+| PATCH | /api/v1/academic/years/{id}/activate | Set active academic year |
+| GET | /api/v1/academic/years/active | Get current active academic year |
+| POST | /api/v1/academic/terms | Create a term |
+| PATCH | /api/v1/academic/terms/{id}/activate | Set active term |
+| POST | /api/v1/academic/departments | Create a department |
+| GET | /api/v1/academic/departments | Get all departments |
+| POST | /api/v1/academic/subjects | Create a subject |
+| GET | /api/v1/academic/subjects | Get all active subjects |
+| POST | /api/v1/academic/classes | Create a class section |
+| GET | /api/v1/academic/classes | Get all class sections |
+| PATCH | /api/v1/academic/classes/{id}/teacher | Assign class teacher |
+| POST | /api/v1/academic/assignments | Assign teacher to subject/class |
+| GET | /api/v1/academic/assignments/teacher/{teacherId} | Get teacher assignments |
+| GET | /api/v1/academic/my-assignments | Get current teacher assignments |
+| POST | /api/v1/grading/entries | Submit or update a grade entry |
+| POST | /api/v1/grading/entries/bulk | Bulk grade entry for a class/subject |
+| PATCH | /api/v1/grading/entries/{id}/lock | Lock a grade entry |
+| PATCH | /api/v1/grading/entries/{id}/approve | Approve a grade entry |
+| POST | /api/v1/grading/entries/bulk-approve | Bulk approve grade entries |
+| POST | /api/v1/grading/corrections | Submit a grade correction with audit trail |
+| GET | /api/v1/grading/audit-tray | Get missing observations tray |
+| GET | /api/v1/grading/class-summary/{classId} | Get class performance summary |
+| GET | /api/v1/grading/students/{studentId}/terms/{termId} | Get all grades for a student in a term |
+| GET | /api/v1/grading/smart-remarks/{grade} | Get smart remark suggestions for a grade |
+| POST | /api/v1/reports/report-cards/generate | Generate report card for a single student |
+| POST | /api/v1/reports/report-cards/batch | Batch generate report cards for entire class |
+| POST | /api/v1/reports/transcripts/generate | Build 3-year transcript |
+| GET | /api/v1/reports/verify/{hash} | Verify document by QR hash (public) |
+| POST | /api/v1/archive/promote | Run annual promotion cycle |
+| GET | /api/v1/archive/vault/search | Search The Vault for historical records |
+| PATCH | /api/v1/archive/terms/{id}/lock | Lock a term |
+| GET | /api/v1/archive/health | Database health check |
+| POST | /api/v1/comms/notify | Send notification to students |
+| POST | /api/v1/comms/emergency | Broadcast emergency SMS to all parents |
+| GET | /api/v1/comms/notifications/{studentId} | Get student's notification inbox |
+| PATCH | /api/v1/comms/notifications/{id}/read | Mark notification as read |
+| GET | /api/v1/comms/analytics/pulse | Get academic pulse dashboard data |
+| GET | /api/v1/portal/students/{id}/portal-data | Get portal data |
+| POST | /api/v1/students/{id}/behavior | Add behavior record |
+| GET | /api/v1/students/{id}/behavior | Get behavior records |
+| GET | /api/v1/students/{id}/interventions | Get interventions |
+| POST | /api/v1/timetable | Create a timetable entry |
+| GET | /api/v1/timetable | Get all timetable entries with optional filters |
+| GET | /api/v1/timetable/my-schedule | Get current teacher weekly schedule |
+| GET | /api/v1/timetable/teacher/{teacherId} | Get timetable for a specific teacher |
+| GET | /api/v1/timetable/class/{classId} | Get timetable for a specific class |
+| GET | /api/v1/timetable/weekly/{teacherId} | Get weekly schedule grouped by day |
+| GET | /api/v1/timetable/clashes/{teacherId} | Detect scheduling clashes for a teacher |
+| GET | /api/v1/timetable/{id} | Get a timetable entry by ID |
+| PUT | /api/v1/timetable/{id} | Update a timetable entry |
+| DELETE | /api/v1/timetable/{id} | Delete a timetable entry |
+
+---
+
+## TEACHER
+Teaching & grading responsibilities.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | /api/v1/auth/login | Login with email and password |
+| POST | /api/v1/auth/refresh | Refresh access token using refresh token |
+| POST | /api/v1/auth/logout | Logout and invalidate refresh token |
+| GET | /api/v1/auth/me | Get current authenticated user with profile |
+| GET | /api/v1/users/students | List students in their assigned classes (row-level) |
+| GET | /api/v1/users/students/{id} | Get student profile (if teacher is assigned to student's class) |
+| GET | /api/v1/academic/classes | View classes (read-only) |
+| GET | /api/v1/academic/my-assignments | Get own assignments |
+| GET | /api/v1/academic/assignments/teacher/{teacherId} | Get teacher assignments |
+| GET | /api/v1/academic/subjects | Get all active subjects |
+| GET | /api/v1/academic/departments | View departments |
+| GET | /api/v1/academic/years/active | Get active academic year |
+| GET | /api/v1/academic/terms | View terms |
+| POST | /api/v1/grading/entries | Submit or update a grade entry |
+| POST | /api/v1/grading/entries/bulk | Bulk grade entry for a class/subject |
+| GET | /api/v1/grading/audit-tray | View missing observations in assigned subjects |
+| GET | /api/v1/grading/class-summary/{classId} | View class performance (if assigned) |
+| GET | /api/v1/grading/students/{studentId}/terms/{termId} | Get student grades |
+| GET | /api/v1/grading/smart-remarks/{grade} | Get smart remark suggestions |
+| GET | /api/v1/timetable/my-schedule | View own schedule |
+| GET | /api/v1/timetable/weekly/{teacherId} | Get weekly schedule grouped by day |
+| GET | /api/v1/timetable/teacher/{teacherId} | Get own timetable |
+| GET | /api/v1/timetable/clashes/{teacherId} | Check schedule clashes |
+| GET | /api/v1/timetable/class/{classId} | View class timetable |
+| GET | /api/v1/students/{id}/behavior | Log/view student behavior observations |
+| GET | /api/v1/students/{id}/interventions | View student interventions |
+| GET | /api/v1/comms/notifications/{studentId} | View student notifications |
+| GET | /api/v1/comms/analytics/pulse | View pulse dashboard (own classes) |
+| POST | /api/v1/reports/report-cards/generate | Generate report cards |
+
+---
+
+## HOD (Head of Department)
+Department oversight & teacher management.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | /api/v1/auth/login | Login with email and password |
+| POST | /api/v1/auth/refresh | Refresh access token using refresh token |
+| POST | /api/v1/auth/logout | Logout and invalidate refresh token |
+| GET | /api/v1/auth/me | Get current authenticated user with profile |
+| GET | /api/v1/users/staff | List staff in department |
+| GET | /api/v1/users/students | List students |
+| GET | /api/v1/academic/departments | View departments |
+| GET | /api/v1/academic/subjects | View subjects |
+| GET | /api/v1/academic/assignments/teacher/{teacherId} | Get teacher assignments |
+| GET | /api/v1/grading/audit-tray | View department grading issues |
+| GET | /api/v1/grading/class-summary/{classId} | View class performance |
+| GET | /api/v1/grading/students/{studentId}/terms/{termId} | Get student grades |
+| PATCH | /api/v1/grading/entries/{id}/approve | Approve grades (department) |
+| POST | /api/v1/grading/entries/bulk-approve | Bulk approve grades |
+| POST | /api/v1/reports/report-cards/generate | Generate report cards |
+| POST | /api/v1/reports/report-cards/batch | Batch generate reports |
+| GET | /api/v1/timetable/teacher/{teacherId} | View teacher schedules |
+| GET | /api/v1/timetable/clashes/{teacherId} | Check schedule clashes |
+| GET | /api/v1/comms/analytics/pulse | View department pulse |
+
+---
+
+## STUDENT
+Personal academic access.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | /api/v1/auth/login | Login with email and password |
+| POST | /api/v1/auth/refresh | Refresh access token using refresh token |
+| POST | /api/v1/auth/logout | Logout and invalidate refresh token |
+| GET | /api/v1/auth/me | Get current authenticated user with profile |
+| GET | /api/v1/portal/students/{id}/portal-data | View personal portal data |
+| GET | /api/v1/grading/students/{studentId}/terms/{termId} | View own grades |
+| GET | /api/v1/students/{id}/behavior | View behavior records |
+| GET | /api/v1/students/{id}/interventions | View interventions |
+| GET | /api/v1/timetable/class/{classId} | View class timetable |
+| GET | /api/v1/comms/notifications/{studentId} | View notifications |

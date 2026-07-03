@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Download, RefreshCw, Award, Users, BookOpen, GraduationCap, ChevronRight, BarChart3 } from 'lucide-react';
-import { cn } from '../../lib/utils';
-import { LoadingSpinner } from '../../components/molecules/LoadingSpinner';
-import { calculateGPA, calculateCGPA, gpaToLetterGrade, calculateClassRanking } from '../../lib/gpaUtils';
-import { useHOD } from '../../context/HODContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Download, RefreshCw, Award, Users, BookOpen, 
+  GraduationCap, ChevronRight, BarChart3, Loader2, 
+  LayoutGrid, Layers, Search, SlidersHorizontal 
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useArchivedDepartmentData } from '@/lib/hooks/api/hod';
 import {
   Table,
   TableHeader,
@@ -11,128 +14,115 @@ import {
   TableHead,
   TableRow,
   TableCell,
-} from '../../components/ui/table';
+} from '@/components/ui/table';
+import { calculateGPA, calculateCGPA, calculateClassRanking, gpaToLetterGrade } from '@/lib/gpaUtils';
 
-const SUBJECT_GRADES = {
-  'General Agriculture': ['B3', 'B2', 'A1', 'C4'],
-  'Animal Husbandry': ['B2', 'B3', 'A1', 'C6'],
-  'Crop Science': ['C6', 'B3', 'C5', 'B2'],
-  'Agricultural Economics': ['C5', 'C6', 'B3', 'B2'],
-  'Mathematics': ['B2', 'A1', 'B3', 'C4'],
-  'English': ['B3', 'B2', 'A1', 'C5'],
-  'Science': ['C4', 'C5', 'B3', 'B2'],
-};
-
-function generateMockSubjectGrades(mainGrade) {
-  const grades = SUBJECT_GRADES['General Agriculture'] || ['B3', 'B2', 'A1', 'C4'];
-  return [
-    { grade: mainGrade || 'B3', credits: 1, subject: 'Main Subject' },
-    { grade: grades[Math.floor(Math.random() * grades.length)], credits: 1, subject: 'English' },
-    { grade: grades[Math.floor(Math.random() * grades.length)], credits: 1, subject: 'Mathematics' },
-    { grade: grades[Math.floor(Math.random() * grades.length)], credits: 1, subject: 'Science' },
-  ];
-}
-
-function generateMockTermHistory() {
-  const terms = [];
-  const baseGPA = 2.5 + Math.random() * 1.0;
-  
-  for (let i = 1; i <= 4; i++) {
-    const variation = (Math.random() - 0.5) * 0.5;
-    terms.push({
-      term: `202${i === 1 ? '3' : '4'}/25 Term ${i}`,
-      termGPA: parseFloat((baseGPA + variation).toFixed(2)),
-      termCredits: 6
-    });
-  }
-  return terms;
+function groupStudentsByClass(students) {
+  const map = new Map();
+  (students || []).forEach((s) => {
+    const key = s.className || 'Unassigned';
+    if (!map.has(key)) {
+      map.set(key, { className: key, students: [], year: s.year || '', subject: 'General Discipline', academicYear: s.year || '', term: 'Term' });
+    }
+    map.get(key).students.push(s);
+  });
+  return Array.from(map.values());
 }
 
 export function BroadsheetGenerator() {
-  const { archivedClasses, refreshArchivedClasses } = useHOD();
-  const [broadsheetData, setBroadsheetData] = useState([]);
+  const {
+    data: archivedStudents = [],
+    isLoading,
+    error,
+    refetch,
+  } = useArchivedDepartmentData();
+
   const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState(null);
+  const [compileError, setCompileError] = useState(null);
+  const [broadsheetData, setBroadsheetData] = useState([]);
+  const [activeTab, setActiveTab] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const generateBroadSheet = useCallback(async () => {
     setIsGenerating(true);
-    setError(null);
-    
+    setCompileError(null);
     try {
-      const freshData = await refreshArchivedClasses();
-      const rawClasses = freshData || [];
-      
-      const processedData = rawClasses.map(classItem => {
-        const studentsArray = Array.isArray(classItem.students) ? classItem.students : [];
-        
-        const studentsWithGPAs = studentsArray.map(student => {
-          const studentIndex = student.indexNumber || student.index || '';
-          const subjects = generateMockSubjectGrades(student.grade);
-          const gpa = calculateGPA(subjects);
-          const termHistory = generateMockTermHistory();
+      const fresh = await refetch();
+      const raw = fresh?.data || archivedStudents || [];
+      const classes = groupStudentsByClass(raw);
+      const processed = classes.map((classItem) => {
+        const studentsWithGPAs = classItem.students.map((student) => {
+          const subjects = student.subjects || [];
+          const subjectGrades = subjects.map((subj) => ({
+            grade: subj.grade || '',
+            credits: subj.credits || 1,
+          }));
+          const gpa = calculateGPA(subjectGrades);
+          const termHistory = (student.termHistory || []).map((th) => ({
+            termGPA: th.termGPA || 0,
+            termCredits: th.termCredits || 1,
+          }));
           const cgpa = calculateCGPA(termHistory);
-          
+          const mainGrade = subjects[0]?.grade || '';
           return {
             ...student,
-            index: studentIndex,
+            index: student.indexNumber || student.index || '',
+            grade: mainGrade,
             gpa,
             cgpa,
             letterGrade: gpaToLetterGrade(gpa),
             cgpaLetterGrade: gpaToLetterGrade(cgpa),
             subjects,
+            termHistory,
           };
         });
-        
         const rankingInfo = calculateClassRanking(studentsWithGPAs) || [];
-        const rankingMap = new Map(
-          rankingInfo.map(item => [item.index || item.indexNumber, item])
-        );
-        
-        let totalStudentsCount = studentsWithGPAs.length;
-        let sumGpa = 0;
-        let sumCgpa = 0;
-
-        const studentsWithRankings = studentsWithGPAs.map((student, idx) => {
-          const matchedRank = rankingMap.get(student.index);
-          sumGpa += student.gpa;
-          sumCgpa += student.cgpa;
-
+        const rankingMap = new Map(rankingInfo.map((item) => [item.index || item.id, item]));
+        const studentsWithRankings = studentsWithGPAs.map((student) => {
+          const matched = rankingMap.get(student.index || student.id);
           return {
             ...student,
-            rank: matchedRank?.rank || idx + 1,
-            percentile: matchedRank?.percentile || 0,
+            rank: matched?.rank || 0,
+            percentile: matched?.percentile || 0,
           };
         });
-        
-        const classAverageGPA = totalStudentsCount > 0 ? sumGpa / totalStudentsCount : 0;
-        const classAverageCGPA = totalStudentsCount > 0 ? sumCgpa / totalStudentsCount : 0;
-        
+        const sumGpa = studentsWithRankings.reduce((acc, s) => acc + s.gpa, 0);
+        const sumCgpa = studentsWithRankings.reduce((acc, s) => acc + s.cgpa, 0);
+        const count = studentsWithRankings.length || 1;
+        const classAverageGPA = parseFloat((sumGpa / count).toFixed(2));
+        const classAverageCGPA = parseFloat((sumCgpa / count).toFixed(2));
         return {
           ...classItem,
           students: studentsWithRankings,
-          classAverageGPA: parseFloat(classAverageGPA.toFixed(2)),
-          classAverageCGPA: parseFloat(classAverageCGPA.toFixed(2)),
-          classLetterGrade: gpaToLetterGrade(classAverageGPA)
+          classAverageGPA,
+          classAverageCGPA,
+          classLetterGrade: gpaToLetterGrade(classAverageGPA),
         };
       });
-      
-      setBroadsheetData(processedData);
+      setBroadsheetData(processed);
+      if (processed.length > 0 && activeTab === 'all') {
+        setActiveTab('all');
+      }
     } catch (err) {
-      setError('Failed to generate operational broadsheet: ' + err.message);
+      setCompileError('Failed to generate operational broadsheet: ' + err.message);
       console.error('Broadsheet generation error:', err);
     } finally {
       setIsGenerating(false);
     }
-  }, [refreshArchivedClasses]);
+  }, [refetch, archivedStudents, activeTab]);
+
+  useEffect(() => {
+    if (!isLoading && archivedStudents.length > 0) {
+      generateBroadSheet();
+    }
+  }, [isLoading, archivedStudents.length > 0, generateBroadSheet]);
 
   const systemMetrics = useMemo(() => {
     if (!broadsheetData.length) return { totalStudents: 0, globalAvgGpa: '0.00', topClass: 'N/A' };
-    
     let totalStudents = 0;
     let sumGpa = 0;
     let highestClassGpa = 0;
     let topClassName = 'N/A';
-
     for (const c of broadsheetData) {
       totalStudents += c.students?.length || 0;
       sumGpa += c.classAverageGPA;
@@ -141,24 +131,38 @@ export function BroadsheetGenerator() {
         topClassName = c.className;
       }
     }
-
     return {
       totalStudents,
       globalAvgGpa: (sumGpa / broadsheetData.length).toFixed(2),
-      topClass: topClassName
+      topClass: topClassName,
     };
   }, [broadsheetData]);
 
+  // Filters cohorts based on view layout and search queries
+  const filteredBroadsheetData = useMemo(() => {
+    let baseData = broadsheetData;
+    if (activeTab !== 'all') {
+      baseData = broadsheetData.filter(c => c.className === activeTab);
+    }
+    if (!searchQuery.trim()) return baseData;
+
+    return baseData.map(classItem => {
+      const filteredStudents = classItem.students.filter(student => 
+        student.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.index?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      return { ...classItem, students: filteredStudents };
+    }).filter(classItem => classItem.students.length > 0);
+  }, [broadsheetData, activeTab, searchQuery]);
+
   const generateCSV = () => {
     if (!broadsheetData || broadsheetData.length === 0) return null;
-    
     const headers = [
-      'Class Name', 'Subject', 'Academic Year', 'Term', 
-      'Student Index', 'Student Name', 'Grade', 'GPA', 'Letter Grade', 'CGPA', 'Rank'
+      'Class Name', 'Subject', 'Academic Year', 'Term',
+      'Student Index', 'Student Name', 'Grade', 'GPA', 'Letter Grade', 'CGPA', 'Rank',
     ];
-    
-    const rows = broadsheetData.flatMap(classItem => 
-      (classItem.students || []).map(student => [
+    const rows = broadsheetData.flatMap((classItem) =>
+      (classItem.students || []).map((student) => [
         classItem.className || 'N/A',
         classItem.subject || 'N/A',
         classItem.academicYear || 'N/A',
@@ -169,342 +173,339 @@ export function BroadsheetGenerator() {
         student.gpa?.toFixed(2) || '0.00',
         student.letterGrade || 'F9',
         student.cgpa?.toFixed(2) || '0.00',
-        student.rank || 'N/A'
-      ])
+        student.rank || 'N/A',
+      ]),
     );
-    
-    return [
-      headers.join(','),
-      ...rows.map(row => 
-        row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
-      )
-    ].join('\r\n');
+    return [headers.join(','), ...rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))].join('\r\n');
   };
 
   const downloadCSV = () => {
     const csv = generateCSV();
     if (!csv) return;
-    
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `academic_broadsheet_${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `academic_broadsheet_${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
-  useEffect(() => {
-    generateBroadSheet();
-  }, [generateBroadSheet]);
+  const getRankBadgeStyles = (rank) => {
+    if (rank === 1) return 'bg-amber-500/10 text-amber-600 border border-amber-500/20 shadow-sm font-bold';
+    if (rank === 2) return 'bg-slate-400/10 text-slate-600 border border-slate-400/20 font-bold';
+    if (rank === 3) return 'bg-orange-400/10 text-orange-600 border border-orange-400/20 font-bold';
+    return 'bg-slate-50 text-slate-500 border border-slate-200/60 font-medium';
+  };
 
-  if (isGenerating) {
+  const getGradePillStyles = (grade) => {
+    if (grade === 'A1') return 'bg-emerald-50 text-emerald-700 border-emerald-200/80';
+    if (['B2', 'B3'].includes(grade)) return 'bg-blue-50 text-blue-700 border-blue-200/80';
+    if (['C4', 'C5', 'C6'].includes(grade)) return 'bg-amber-50 text-amber-700 border-amber-200/80';
+    if (grade === 'D7') return 'bg-rose-50 text-rose-700 border-rose-200/80';
+    return 'bg-slate-50 text-slate-500 border-slate-200';
+  };
+
+  if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 space-y-4">
-        <LoadingSpinner />
-        <p className="text-sm font-medium text-slate-500 animate-pulse">Processing institutional grade parameters...</p>
+      <div className="flex flex-col items-center justify-center py-32 space-y-4">
+        <div className="relative flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full border-2 border-indigo-100 border-t-indigo-600 animate-spin" />
+          <Loader2 className="animate-pulse text-indigo-400 absolute" size={18} />
+        </div>
+        <p className="text-xs font-semibold tracking-wide text-slate-400 uppercase">Synchronizing Ledgers...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-rose-50/50 border border-rose-200 text-rose-700 p-5 mb-6 rounded-2xl flex items-start gap-3">
-        <div className="p-2 bg-rose-100 text-rose-700 rounded-xl shrink-0">⚠️</div>
+      <div className="bg-rose-50 border border-rose-100 p-6 rounded-2xl flex items-start gap-4 max-w-2xl mx-auto shadow-sm">
+        <div className="p-3 bg-rose-500 text-white rounded-xl shadow-inner shrink-0">⚠️</div>
         <div>
-          <h4 className="font-semibold text-sm tracking-tight">Compilation Context Error</h4>
-          <p className="text-xs text-rose-600/90 mt-0.5 leading-relaxed">{error}</p>
+          <h4 className="font-bold text-slate-900 tracking-tight">Data Pipeline Error</h4>
+          <p className="text-xs text-rose-600 font-medium mt-1 leading-relaxed">{error?.message || 'Failed to capture institutional streams.'}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 max-w-[1600px] mx-auto animate-fade-in">
-      {/* Dynamic Command Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+    <div className="space-y-6 max-w-[1600px] mx-auto pb-12">
+      {/* Dynamic Master Control Hub */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/70 shadow-sm">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-teal-600 uppercase tracking-widest mb-1">
-            <span>Academic Registry Workspace</span>
-            <ChevronRight size={12} className="text-slate-300" />
-            <span className="text-slate-400 font-medium">HOD Audit Toolkit</span>
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-indigo-600 uppercase tracking-widest mb-1.5">
+            <span>Academic Workspace</span>
+            <ChevronRight size={10} className="text-slate-300" />
+            <span className="text-slate-400">Auditor Toolkit</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Broadsheet Analyzer</h1>
+          <h1 className="text-xl font-extrabold tracking-tight text-slate-900">Departmental Broadsheet</h1>
         </div>
-        
-        <div className="flex items-center gap-2.5 self-stretch md:self-auto justify-end">
+
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-2.5 text-slate-400" size={14} />
+            <input 
+              type="text"
+              placeholder="Search index or student..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
+            />
+          </div>
+
           <button
             onClick={generateBroadSheet}
             disabled={isGenerating}
-            className="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl hover:bg-slate-50 active:scale-98 transition-all flex items-center gap-2 shadow-sm disabled:opacity-60"
+            className="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl hover:bg-slate-50 active:scale-95 transition-all flex items-center gap-2 shadow-sm disabled:opacity-60 shrink-0"
           >
-            <RefreshCw size={14} className={cn(isGenerating && "animate-spin")} />
-            <span className="hidden sm:inline">Re-compile Metrics</span>
-            <span className="sm:hidden">Sync</span>
+            <RefreshCw size={13} className={cn(isGenerating && 'animate-spin')} />
+            <span>Re-compile</span>
           </button>
-          
+
           <button
             onClick={downloadCSV}
             disabled={!broadsheetData.length || isGenerating}
-            className="px-4 py-2 bg-slate-900 text-white text-xs font-semibold rounded-xl hover:bg-slate-800 active:scale-98 transition-all flex items-center gap-2 shadow-sm disabled:opacity-40 disabled:pointer-events-none"
+            className="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-xl hover:bg-indigo-700 active:scale-95 transition-all flex items-center gap-2 shadow-sm shadow-indigo-500/10 disabled:opacity-40 disabled:pointer-events-none shrink-0"
           >
-            <Download size={14} />
-            <span>Export Ledger</span>
+            <Download size={13} />
+            <span>Export CSV</span>
           </button>
         </div>
       </div>
 
-      {/* Institutional Insights Blocks */}
+      {/* Institutional Insights Grid */}
       {broadsheetData.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-5 bg-white border border-slate-200/80 shadow-sm rounded-2xl flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-600 shrink-0 border border-slate-100">
-              <Users size={18} />
+          {[
+            { label: 'Cohorts Evaluated', value: `${broadsheetData.length} Classes`, icon: Layers, style: 'bg-slate-50 text-slate-600 border-slate-100' },
+            { label: 'Audited Headcount', value: `${systemMetrics.totalStudents} Active`, icon: Users, style: 'bg-indigo-50/50 text-indigo-600 border-indigo-100/50' },
+            { label: 'Global Average GPA', value: `${systemMetrics.globalAvgGpa} / 4.0`, icon: BarChart3, style: 'bg-emerald-50/50 text-emerald-600 border-emerald-100/50' },
+            { label: 'Top Performing', value: systemMetrics.topClass, icon: Award, style: 'bg-amber-50/50 text-amber-600 border-amber-100/50' }
+          ].map((metric, i) => (
+            <div key={i} className="p-4 bg-white border border-slate-200/60 shadow-sm rounded-2xl flex items-center gap-4 hover:border-slate-300 transition-all">
+              <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center border shrink-0", metric.style)}>
+                <metric.icon size={16} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{metric.label}</p>
+                <h3 className="text-base font-bold text-slate-900 mt-0.5 truncate">{metric.value}</h3>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Monitored Cohorts</p>
-              <h3 className="text-lg font-bold text-slate-900 mt-0.5">{broadsheetData.length} Classes</h3>
-            </div>
-          </div>
+          ))}
+        </div>
+      )}
 
-          <div className="p-5 bg-white border border-slate-200/80 shadow-sm rounded-2xl flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50/60 flex items-center justify-center text-indigo-600 shrink-0 border border-indigo-100/40">
-              <GraduationCap size={18} />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Audited Headcount</p>
-              <h3 className="text-lg font-bold text-slate-900 mt-0.5">{systemMetrics.totalStudents} Active Students</h3>
-            </div>
-          </div>
+      {/* Cohort Navigational Strip */}
+      {broadsheetData.length > 1 && (
+        <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none border-b border-slate-200/60">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={cn(
+              "px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 border",
+              activeTab === 'all' 
+                ? "bg-slate-900 text-white border-slate-900 shadow-sm" 
+                : "bg-white text-slate-500 hover:text-slate-900 border-transparent"
+            )}
+          >
+            <LayoutGrid size={13} />
+            <span>All Units</span>
+          </button>
+          {broadsheetData.map((c) => (
+            <button
+              key={c.className}
+              onClick={() => setActiveTab(c.className)}
+              className={cn(
+                "px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap border",
+                activeTab === c.className 
+                  ? "bg-white text-indigo-600 border-slate-200 shadow-sm font-extrabold" 
+                  : "bg-transparent text-slate-500 hover:text-slate-900 border-transparent"
+              )}
+            >
+              {c.className}
+            </button>
+          ))}
+        </div>
+      )}
 
-          <div className="p-5 bg-white border border-slate-200/80 shadow-sm rounded-2xl flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50/60 flex items-center justify-center text-emerald-600 shrink-0 border border-emerald-100/40">
-              <BarChart3 size={18} />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Global Average GPA</p>
-              <h3 className="text-lg font-bold text-slate-900 mt-0.5">{systemMetrics.globalAvgGpa} <span className="text-xs text-slate-400 font-medium">/ 4.00</span></h3>
-            </div>
-          </div>
-
-          <div className="p-5 bg-white border border-slate-200/80 shadow-sm rounded-2xl flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-amber-50/60 flex items-center justify-center text-amber-600 shrink-0 border border-amber-100/40">
-              <Award size={18} />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Top Achieving Class</p>
-              <h3 className="text-lg font-bold text-slate-900 mt-0.5 truncate max-w-[160px]">{systemMetrics.topClass}</h3>
-            </div>
-          </div>
+      {compileError && (
+        <div className="bg-rose-50 border border-rose-100 p-4 rounded-xl flex items-start gap-3">
+          <div className="text-rose-500 shrink-0">⚠️</div>
+          <p className="text-xs text-rose-600 font-semibold">{compileError}</p>
         </div>
       )}
 
       {/* Main Core Ledger List */}
-      {broadsheetData.length === 0 && !isGenerating ? (
-        <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50 max-w-xl mx-auto px-4">
-          <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 mx-auto mb-4">
-            <BookOpen size={22} />
-          </div>
-          <h3 className="text-base font-bold text-slate-900 tracking-tight">No active datasets mapped</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">
-            There are currently no archived secondary system records ready to pipeline structural broadsheet conversions.
-          </p>
+      {filteredBroadsheetData.length === 0 ? (
+        <div className="text-center py-20 bg-white border border-slate-200 rounded-2xl max-w-md mx-auto p-6 shadow-sm">
+          <EmptyState context="results" />
         </div>
       ) : (
-        <div className="space-y-8">
-          {broadsheetData.map((classItem, classIdx) => (
-            <div key={classItem.id || classItem.className || classIdx} className="border border-slate-200/70 rounded-2xl overflow-hidden shadow-sm bg-white transition-all hover:shadow-md hover:border-slate-300/60">
-              {/* Header Canvas Block */}
-              <div className="bg-slate-50 border-b border-slate-100 px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2.5">
-                    <h2 className="text-base font-bold text-slate-900 tracking-tight">
-                      {classItem.className || 'Unassigned Cohort'}
-                    </h2>
-                    <span className="text-[10px] font-bold bg-white text-slate-700 border border-slate-200/80 px-2.5 py-0.5 rounded-full shadow-sm">
-                      {classItem.subject || 'General Discipline'}
-                    </span>
-                  </div>
-                  
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1.5 font-medium">
-                    <span>Academic Cycle: <strong className="text-slate-700 font-semibold">{classItem.academicYear || 'N/A'}</strong></span>
-                    <span className="text-slate-300">•</span>
-                    <span>Term: <strong className="text-slate-700 font-semibold">{classItem.term || 'N/A'}</strong></span>
-                  </div>
-                </div>
-
-                {/* Aggregate Scores Summary Panel */}
-                <div className="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-slate-200/60 shadow-sm self-start sm:self-auto">
-                  <div className="px-3 py-1 text-center border-r border-slate-100">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Class GPA</p>
-                    <p className="text-sm font-extrabold text-slate-800 mt-0.5">
-                      {classItem.classAverageGPA.toFixed(2)}{' '}
-                      <span className="text-[10px] font-bold text-teal-600 bg-teal-50 border border-teal-100/60 px-1 rounded-sm ml-1">
-                        {classItem.classLetterGrade}
+        <div className="space-y-6">
+          <AnimatePresence mode="popLayout">
+            {filteredBroadsheetData.map((classItem, classIdx) => (
+              <motion.div
+                key={classItem.className || classIdx}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.2 }}
+                className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm bg-white"
+              >
+                {/* Cohort Canvas Block Header */}
+                <div className="bg-slate-50/70 border-b border-slate-100 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-sm font-extrabold text-slate-900 tracking-tight">
+                        {classItem.className || 'Unassigned Cohort'}
+                      </h2>
+                      <span className="text-[9px] font-bold bg-white text-slate-500 border border-slate-200 px-2 py-0.5 rounded-md shadow-xs">
+                        {classItem.subject || 'General Discipline'}
                       </span>
-                    </p>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-xs text-slate-400 mt-1 font-medium">
+                      <span>Cycle: <strong className="text-slate-600 font-semibold">{classItem.academicYear || 'N/A'}</strong></span>
+                      <span className="w-1 h-1 rounded-full bg-slate-300" />
+                      <span>Term: <strong className="text-slate-600 font-semibold">{classItem.term || 'N/A'}</strong></span>
+                    </div>
                   </div>
-                  <div className="px-3 py-1 text-center">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Class CGPA</p>
-                    <p className="text-sm font-extrabold text-slate-800 mt-0.5">{classItem.classAverageCGPA.toFixed(2)}</p>
+
+                  {/* Aggregate Summary Panel */}
+                  <div className="flex items-center bg-white p-1.5 rounded-xl border border-slate-200/60 shadow-xs self-start sm:self-auto divide-x divide-slate-100">
+                    <div className="px-3 py-0.5 text-center">
+                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Class GPA</p>
+                      <p className="text-xs font-extrabold text-slate-800 mt-0.5 flex items-center gap-1 justify-center">
+                        {classItem.classAverageGPA.toFixed(2)}
+                        <span className="text-[8px] font-extrabold text-indigo-600 bg-indigo-50 border border-indigo-100 px-1 rounded-sm">
+                          {classItem.classLetterGrade}
+                        </span>
+                      </p>
+                    </div>
+                    <div className="px-3 py-0.5 text-center">
+                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Class CGPA</p>
+                      <p className="text-xs font-extrabold text-slate-800 mt-0.5">{classItem.classAverageCGPA.toFixed(2)}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* MOBILE RESPONSIVE CARD GRID */}
-              <div className="block md:hidden divide-y divide-slate-100">
-                {(classItem.students || []).map((student, studentIdx) => {
-                  const isTopPercentile = (student.percentile || 0) >= 90;
-                  return (
-                    <div key={student.id || student.index || studentIdx} className="p-4 space-y-3 bg-white hover:bg-slate-50/30 transition-colors">
+                {/* Mobile Grid Layout */}
+                <div className="block md:hidden divide-y divide-slate-100">
+                  {classItem.students.map((student, studentIdx) => (
+                    <div key={student.id || student.index || studentIdx} className="p-4 space-y-2.5 bg-white">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className={cn(
-                            "inline-flex items-center justify-center min-w-[32px] h-5 px-1.5 rounded-md text-[10px] font-bold shrink-0",
-                            student.rank === 1 ? "bg-amber-50 text-amber-700 border border-amber-100/60" :
-                            student.rank === 2 ? "bg-slate-100 text-slate-700" :
-                            student.rank === 3 ? "bg-orange-50 text-orange-700 border border-orange-100/40" :
-                            "text-slate-500 bg-slate-50 font-medium"
-                          )}>
+                          <span className={cn('inline-flex items-center justify-center w-8 h-5 rounded-md text-[10px] font-bold shrink-0', getRankBadgeStyles(student.rank))}>
                             #{student.rank}
                           </span>
-                          <span className="text-xs font-bold text-slate-900 truncate">{student.name || 'Anonymous Student'}</span>
-                          {isTopPercentile && (
-                            <span className="text-[8px] font-extrabold bg-indigo-50 border border-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded shrink-0 uppercase tracking-wide">Top 10%</span>
+                          <span className="text-xs font-bold text-slate-900 truncate">{student.name || 'Anonymous'}</span>
+                          {student.percentile >= 90 && (
+                            <span className="text-[8px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-sm uppercase tracking-wider shrink-0">Top 10%</span>
                           )}
                         </div>
-                        <span className="bg-slate-100 text-slate-700 font-mono text-[11px] font-bold px-2 py-0.5 rounded shrink-0">{student.grade || 'N/A'}</span>
+                        <span className="bg-slate-100 text-slate-700 font-mono text-[10px] font-bold px-2 py-0.5 rounded">
+                          {student.grade || 'N/A'}
+                        </span>
                       </div>
-                      
-                      <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-50 text-xs">
+
+                      <div className="grid grid-cols-3 gap-2 text-xs border-t border-slate-50 pt-2 text-slate-500">
                         <div>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Index Number</p>
-                          <p className="font-mono font-semibold text-slate-600 mt-0.5 truncate">{student.index || 'N/A'}</p>
+                          <span className="block text-[8px] font-bold text-slate-400 uppercase">Index</span>
+                          <span className="font-mono font-medium text-slate-700 truncate block">{student.index || 'N/A'}</span>
                         </div>
                         <div>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Term GPA</p>
-                          <div className="flex items-center gap-1 mt-0.5">
-                            <span className="font-bold text-slate-900">{student.gpa?.toFixed(2) || '0.00'}</span>
-                            <span className="text-[9px] font-bold font-mono px-1 rounded bg-slate-100 text-slate-600">{student.letterGrade}</span>
-                          </div>
+                          <span className="block text-[8px] font-bold text-slate-400 uppercase">GPA</span>
+                          <span className="font-bold text-slate-900">{student.gpa?.toFixed(2)} ({student.letterGrade})</span>
                         </div>
                         <div>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Cum. CGPA</p>
-                          <div className="flex items-center gap-1 mt-0.5">
-                            <span className="font-semibold text-slate-700">{student.cgpa?.toFixed(2) || '0.00'}</span>
-                            <span className="text-[8px] font-bold font-mono px-1 rounded bg-slate-50 text-slate-500">{student.cgpaLetterGrade}</span>
-                          </div>
+                          <span className="block text-[8px] font-bold text-slate-400 uppercase">CGPA</span>
+                          <span className="font-semibold text-slate-700">{student.cgpa?.toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
 
-{/* DESKTOP DATA TABLE */}
-               <div className="hidden md:block overflow-x-auto">
-                 <Table className="min-w-full divide-y divide-slate-100">
-                   <TableHeader className="bg-slate-50/50">
-                     <TableRow>
-                       <TableHead className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider w-20 whitespace-nowrap">Rank</TableHead>
-                       <TableHead className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Index Number</TableHead>
-                       <TableHead className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Full Name</TableHead>
-                       <TableHead className="px-6 py-3 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider w-24 whitespace-nowrap">Main Grade</TableHead>
-                       <TableHead className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider w-28 whitespace-nowrap">Term GPA</TableHead>
-                       <TableHead className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider w-28 whitespace-nowrap">Cum. CGPA</TableHead>
-                     </TableRow>
-                   </TableHeader>
-                   <TableBody className="bg-white divide-y divide-slate-100">
-                     {(classItem.students || []).map((student, studentIdx) => {
-                       const isTopPercentile = (student.percentile || 0) >= 90;
-                       
-                       return (
-                         <TableRow key={student.id || student.index || studentIdx} className="hover:bg-slate-50/40 group transition-colors">
-                           <TableCell className="px-6 py-4 whitespace-nowrap text-xs font-bold text-slate-900">
-                             <span className={cn(
-                               "inline-flex items-center justify-center px-2 py-0.5 rounded-md text-[11px]",
-                               student.rank === 1 ? "bg-amber-50 text-amber-700 border border-amber-100/60" :
-                               student.rank === 2 ? "bg-slate-100 text-slate-700" :
-                               student.rank === 3 ? "bg-orange-50 text-orange-700 border border-orange-100/40" :
-                               "text-slate-500 font-medium"
-                             )}>
-                               #{student.rank}
-                             </span>
-                           </TableCell>
-                           <TableCell className="px-6 py-4 whitespace-nowrap text-xs font-semibold text-slate-600 font-mono tracking-tight">
-                             {student.index || 'N/A'}
-                           </TableCell>
-                           <TableCell className="px-6 py-4 whitespace-nowrap text-xs font-bold text-slate-900">
-                             <div className="flex items-center gap-2">
-                               <span>{student.name || 'Anonymous Student'}</span>
-                               {isTopPercentile && (
-                                 <span className="text-[8px] font-extrabold bg-indigo-50 border border-indigo-100 text-indigo-700 px-1.5 py-0.2 rounded-sm uppercase tracking-wide">
-                                   Top 10%
-                                 </span>
-                               )}
-                             </div>
-                           </TableCell>
-                           <TableCell className="px-6 py-4 whitespace-nowrap text-xs text-center font-bold text-slate-500">
-                             <span className="bg-slate-100/80 px-2 py-0.5 rounded-sm font-mono text-slate-700 border border-slate-200/40">
-                               {student.grade || 'N/A'}
-                             </span>
-                           </TableCell>
-                           <TableCell className="px-6 py-4 whitespace-nowrap text-xs">
-                             <div className="flex items-center gap-2">
-                               <span className="font-bold text-slate-900 text-sm tracking-tight">{student.gpa?.toFixed(2) || '0.00'}</span>
-                               <span className={cn(
-                                 'px-2 py-0.5 rounded-md text-[10px] font-bold border font-mono tracking-wide',
-                                 student.letterGrade === 'A1' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                                 student.letterGrade === 'B2' || student.letterGrade === 'B3' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                                 student.letterGrade === 'C4' || student.letterGrade === 'C5' || student.letterGrade === 'C6' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                                 student.letterGrade === 'D7' ? 'bg-rose-50 text-rose-700 border-rose-100' :
-                                 'bg-slate-50 text-slate-500 border-slate-200/60'
-                               )}>
-                                 {student.letterGrade}
-                               </span>
-                             </div>
-                           </TableCell>
-                           <TableCell className="px-6 py-4 whitespace-nowrap text-xs">
-                             <div className="flex items-center gap-2">
-                               <span className="font-semibold text-slate-700 text-sm tracking-tight">{student.gpa?.toFixed(2) || '0.00'}</span>
-                               <span className={cn(
-                                 'px-1.5 py-0.2 rounded text-[9px] font-bold border font-mono uppercase tracking-tight',
-                                 student.cgpaLetterGrade === 'A1' ? 'bg-emerald-50/60 text-emerald-600 border-emerald-100/40' :
-                                 student.cgpaLetterGrade === 'B2' || student.cgpaLetterGrade === 'B3' ? 'bg-blue-50/60 text-blue-600 border-blue-100/40' :
-                                 student.cgpaLetterGrade === 'C4' || student.cgpaLetterGrade === 'C5' || student.cgpaLetterGrade === 'C6' ? 'bg-amber-50/60 text-amber-600 border-amber-100/40' :
-                                 'bg-slate-50 text-slate-400 border-slate-100'
-                               )}>
-                                 {student.cgpaLetterGrade}
-                               </span>
-                             </div>
-                           </TableCell>
-                         </TableRow>
-                       );
-                     })}
-                   </TableBody>
-                 </Table>
-               </div>
-             </div>
-         ))}
-       </div>
+                {/* Desktop High-Fidelity Data Table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader className="bg-slate-50/40 border-b border-slate-100">
+                      <TableRow>
+                        <TableHead className="px-6 py-3 text-[9px] font-bold text-slate-400 uppercase tracking-wider w-20">Rank</TableHead>
+                        <TableHead className="px-6 py-3 text-[9px] font-bold text-slate-400 uppercase tracking-wider w-36">Index Number</TableHead>
+                        <TableHead className="px-6 py-3 text-[9px] font-bold text-slate-400 uppercase tracking-wider">Full Name</TableHead>
+                        <TableHead className="px-6 py-3 text-[9px] font-bold text-slate-400 uppercase tracking-wider text-center w-28">Main Grade</TableHead>
+                        <TableHead className="px-6 py-3 text-[9px] font-bold text-slate-400 uppercase tracking-wider w-32">Term GPA</TableHead>
+                        <TableHead className="px-6 py-3 text-[9px] font-bold text-slate-400 uppercase tracking-wider w-32">Cum. CGPA</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody className="divide-y divide-slate-100">
+                      {classItem.students.map((student, studentIdx) => (
+                        <TableRow key={student.id || student.index || studentIdx} className="hover:bg-slate-50/30 group transition-colors">
+                          <TableCell className="px-6 py-3.5 whitespace-nowrap">
+                            <span className={cn('inline-flex items-center justify-center px-2 py-0.5 rounded-md text-[10px] tracking-wide', getRankBadgeStyles(student.rank))}>
+                              #{student.rank}
+                            </span>
+                          </TableCell>
+                          <TableCell className="px-6 py-3.5 whitespace-nowrap text-xs font-semibold text-slate-500 font-mono tracking-tight">
+                            {student.index || 'N/A'}
+                          </TableCell>
+                          <TableCell className="px-6 py-3.5 whitespace-nowrap text-xs font-bold text-slate-900">
+                            <div className="flex items-center gap-2">
+                              <span>{student.name || 'Anonymous Student'}</span>
+                              {student.percentile >= 90 && (
+                                <span className="text-[7px] font-extrabold bg-gradient-to-r from-amber-500 to-orange-500 text-white px-1.5 py-0.5 rounded-sm uppercase tracking-wider shadow-xs">
+                                  Top 10%
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-6 py-3.5 whitespace-nowrap text-xs text-center">
+                            <span className="bg-slate-50 px-2 py-0.5 rounded font-mono font-bold text-slate-600 border border-slate-200/50">
+                              {student.grade || 'N/A'}
+                            </span>
+                          </TableCell>
+                          <TableCell className="px-6 py-3.5 whitespace-nowrap text-xs">
+                            <div className="flex items-center gap-2">
+                              <span className="font-extrabold text-slate-900 tracking-tight">{student.gpa?.toFixed(2)}</span>
+                              <span className={cn('px-1.5 py-0.5 rounded text-[9px] font-bold border font-mono tracking-wide', getGradePillStyles(student.letterGrade))}>
+                                {student.letterGrade}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-6 py-3.5 whitespace-nowrap text-xs">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-700 tracking-tight">{student.cgpa?.toFixed(2)}</span>
+                              <span className={cn('px-1.5 py-0.5 rounded text-[8px] font-bold border font-mono tracking-tight uppercase', getGradePillStyles(student.cgpaLetterGrade))}>
+                                {student.cgpaLetterGrade}
+                              </span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
       )}
     </div>
   );
 }
 
-// FORCE OVERRIDE CONTAINER FOR EXACT VERTICAL SCROLLING INDEPENDENT OF HIGHER APP WRAPPERS
 export default function BroadsheetGeneratorPage() {
   return (
-    <div 
-      className="w-full bg-slate-50/40 p-4 sm:p-6 md:p-8"
+    <div
+      className="w-full bg-slate-50/60 p-4 sm:p-6 lg:p-8"
       style={{
-        height: '100%',
         minHeight: '100vh',
         overflowY: 'auto',
         WebkitOverflowScrolling: 'touch',
-        position: 'relative'
       }}
     >
       <BroadsheetGenerator />

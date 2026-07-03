@@ -5,10 +5,10 @@ export const MOCK_PARENTS = [
     phone: '+233 24 455 0101',
     email: 'e.osei@gmail.com',
     wards: [
-      { id: 'STU001', name: 'Kofi Mensah', averageScore: 82.4, attendance: 95, feesStatus: 'Paid', balance: 0 }
+      { id: 'STU001', name: 'Kofi Mensah', averageScore: 82.4, attendance: 95, feesStatus: 'Free SHS', balance: 0 }
     ],
     lastContacted: '2 days ago',
-    lastMessage: 'SMS: Terminal Report available in app.',
+    lastMessage: 'SMS: WASSCE Registration Portal Closing.',
     appAdopted: true,
     accessCode: 'A-7782',
     pin: '1234',
@@ -16,7 +16,7 @@ export const MOCK_PARENTS = [
     ptaRole: 'Chairperson',
     ptaAttendance: 100,
     communicationLogs: [
-      { id: 'L001', type: 'SMS', content: 'Terminal Report available in app.', timestamp: '2024-03-20 14:00', status: 'Delivered' },
+      { id: 'L001', type: 'SMS', content: 'WASSCE Registration Portal Closing.', timestamp: '2024-03-20 14:00', status: 'Delivered' },
       { id: 'L002', type: 'Email', content: 'PTA Meeting Invitation', timestamp: '2024-03-15 09:00', status: 'Sent' }
     ]
   },
@@ -26,18 +26,18 @@ export const MOCK_PARENTS = [
     phone: '+233 27 555 0102',
     email: 'g.boateng@outlook.com',
     wards: [
-      { id: 'STU002', name: 'Abena Osei', averageScore: 38.5, attendance: 70, feesStatus: 'Arrears', balance: 1250.50 },
-      { id: 'STU005', name: 'Yaw Ofori', averageScore: 52.1, attendance: 88, feesStatus: 'Partial', balance: 400 }
+      { id: 'STU002', name: 'Abena Osei', averageScore: 38.5, attendance: 70, feesStatus: 'Free SHS', balance: 0 },
+      { id: 'STU005', name: 'Yaw Ofori', averageScore: 52.1, attendance: 88, feesStatus: 'Free SHS', balance: 0 }
     ],
     lastContacted: '5 days ago',
-    lastMessage: 'SMS: Reminder - Fee Arrears payment due.',
+    lastMessage: 'SMS: Free SHS Policy - No outstanding fees.',
     appAdopted: false,
     accessCode: 'A-1102',
     pin: '8892',
     isPTAExecutive: false,
     ptaAttendance: 40,
     communicationLogs: [
-      { id: 'L003', type: 'SMS', content: 'Reminder - Fee Arrears payment due.', timestamp: '2024-03-18 10:30', status: 'Delivered' }
+      { id: 'L003', type: 'SMS', content: 'Free SHS Policy - No outstanding fees.', timestamp: '2024-03-18 10:30', status: 'Delivered' }
     ]
   },
   {
@@ -46,7 +46,7 @@ export const MOCK_PARENTS = [
     phone: '+233 20 111 0001',
     email: 'j.mensah@gh.me.com',
     wards: [
-      { id: 'STU003', name: 'Kwame Boateng', averageScore: 74.2, attendance: 98, feesStatus: 'Scholarship', balance: 0 }
+      { id: 'STU003', name: 'Kwame Boateng', averageScore: 74.2, attendance: 98, feesStatus: 'Gov\'t Covered', balance: 0 }
     ],
     lastContacted: '1 day ago',
     lastMessage: 'Email: Newsletter - March Edition.',
@@ -63,5 +63,5 @@ export const MOCK_PARENTS = [
 ];
 
 export const PTA_ROLES = ['Chairperson', 'Secretary', 'Treasurer', 'Member'];
-export const BROADCAST_TEMPLATES = ['Custom Message', 'PTA Meeting Invitation', 'Terminal Report Dispatch', 'Re-opening Schedule'];
-export const PARENT_TARGET_POPULATIONS = ['All Guardians', 'SHS 3 Boarder Parents', 'Fee Arrears Only', 'Day Parent Protocol'];
+export const BROADCAST_TEMPLATES = ['Custom Message', 'PTA Meeting Invitation', 'Terminal Report Dispatch', 'Re-opening Schedule', 'WASSCE Registration Portal Closing'];
+export const PARENT_TARGET_POPULATIONS = ['All Guardians', 'SHS 3 Boarder Parents', 'Day Parent Protocol', 'Gov\'t Funded Wards'];

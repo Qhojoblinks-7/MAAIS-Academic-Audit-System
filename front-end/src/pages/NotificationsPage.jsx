@@ -4,6 +4,7 @@ import { cn } from '../lib/utils';
 import { notification } from '../services/notificationService';
 import { eventBus } from '../services/eventBus';
 import { useNavigate } from 'react-router-dom';
+import { EmptyState } from '../components/molecules';
 
 export function NotificationsPage() {
   const [notifications, setNotifications] = useState([]);
@@ -21,7 +22,7 @@ export function NotificationsPage() {
           return;
         }
         
-        const unread = await notification.getUnread(userId);
+        const unread = await notification.getUnread();
         setNotifications(unread || []);
       } catch (err) {
         console.error('Failed to fetch notifications:', err);
@@ -38,10 +39,14 @@ export function NotificationsPage() {
 
     const unsubscribe1 = eventBus.on('hod-comment-added', handleNotification);
     const unsubscribe2 = eventBus.on('grade-revision-rejected', handleNotification);
+    const unsubscribe3 = eventBus.on('grade-revision-requested', handleNotification);
+    const unsubscribe4 = eventBus.on('grade-revision-approved', handleNotification);
 
     return () => {
       unsubscribe1();
       unsubscribe2();
+      unsubscribe3();
+      unsubscribe4();
     };
   }, [navigate]);
 
@@ -152,9 +157,7 @@ export function NotificationsPage() {
             {/* Notifications List */}
             <div className="space-y-4">
               {notifications.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-sm font-medium text-gray-500">No notifications yet</p>
-                </div>
+                <EmptyState context="notifications" variant="compact" />
               ) : (
                 <>
                   {notifications.map(notif => (

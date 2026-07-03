@@ -6,6 +6,43 @@ export const TerminalPrintTemplate = React.forwardRef(function TerminalPrintTemp
   const terminalResults = data.terminalResults || [];
   const sessionInfo = data.sessionInfo || {};
 
+  const getFirstAvailable = (values) => {
+    for (const value of values) {
+      if (value === undefined || value === null) continue;
+      const text = String(value).trim();
+      if (text && text !== '—') return value;
+    }
+    return '—';
+  };
+
+  const formatPrintDate = (value) => {
+    if (!value || value === '—') return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const programName = getFirstAvailable([
+    data.program,
+    data.programName,
+    data.learningArea,
+    data.department?.name,
+    data.student?.program,
+    data.student?.programName,
+    data.student?.department?.name,
+    data.student?.currentClass?.name,
+    data.currentClass?.name,
+  ]);
+
+  const examDate = formatPrintDate(getFirstAvailable([
+    sessionInfo.examDate,
+    data.examDate,
+    data.terminalExamDate,
+    data.generatedAt,
+    data.reportDate,
+    data.date,
+  ]));
+
   return (
     <div
       ref={ref}
@@ -80,7 +117,7 @@ export const TerminalPrintTemplate = React.forwardRef(function TerminalPrintTemp
           </div>
           <div className="flex items-center justify-between border-b border-slate-200/80 pb-1">
             <span className="text-[9px] font-bold uppercase text-slate-400 tracking-wider">Academic Programme</span>
-            <span className="text-xs font-black text-slate-950 uppercase tracking-tight truncate max-w-[180px] print:max-w-none">{data.program || "—"}</span>
+            <span className="text-xs font-black text-slate-950 uppercase tracking-tight truncate max-w-[180px] print:max-w-none">{programName}</span>
           </div>
         </div>
 
@@ -88,13 +125,13 @@ export const TerminalPrintTemplate = React.forwardRef(function TerminalPrintTemp
           <div className="flex items-center justify-between border-b border-slate-200/80 pb-1">
             <span className="text-[9px] font-bold uppercase text-slate-400 tracking-wider">Examination Session</span>
             <span className="text-xs font-bold text-slate-950 tracking-tight">
-              {sessionInfo.year || "—"} &bull; {sessionInfo.term || "—"} Terminal
+              {sessionInfo.year || "—"} {sessionInfo.term ? `• ${sessionInfo.term}` : ''}
             </span>
           </div>
           <div className="flex items-center justify-between border-b border-slate-200/80 pb-1">
             <span className="text-[9px] font-bold uppercase text-slate-400 tracking-wider">Examination Date</span>
             <span className="text-xs font-bold text-slate-950 tracking-tight">
-              {sessionInfo.examDate || "—"}
+              {examDate}
             </span>
           </div>
           <div className="flex items-center justify-between border-b border-slate-200/80 pb-1">

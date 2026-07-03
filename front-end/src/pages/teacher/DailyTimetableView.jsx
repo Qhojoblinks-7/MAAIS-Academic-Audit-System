@@ -4,7 +4,6 @@ import { ChevronRight, MapPin, ShieldAlert, BookOpen, FilePlus, FileText, Link a
 import { cn } from '../../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { DailyClassCard } from '../../components/shared/DailyClassCard';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../../components/ui/tooltip';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
@@ -12,27 +11,23 @@ export function DailyTimetableView({ timetable, selectedDay, setSelectedDay, set
   const navigate = useNavigate();
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <div className="h-full flex flex-col p-8 overflow-y-auto">
-        <div className="max-w-3xl mx-auto w-full">
-          <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
-            {DAYS.map(day => (
-              <Tooltip key={day}>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => setSelectedDay(day)}
-                    className={cn(
-                      "px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap",
-                      selectedDay === day ? "bg-success text-surface shadow-lg" : "bg-surface text-text-secondary hover:bg-muted"
-                    )}
-                  >
-                    {day}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top" sideOffset={8}>View {day} schedule</TooltipContent>
-              </Tooltip>
-            ))}
-          </div>
+    <div className="h-full flex flex-col p-8 overflow-y-auto">
+      <div className="max-w-3xl mx-auto w-full">
+        <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
+          {DAYS.map(day => (
+            <button
+              key={day}
+              onClick={() => setSelectedDay(day)}
+              className={cn(
+                "px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap",
+                selectedDay === day ? "bg-success text-surface shadow-lg" : "bg-surface text-text-secondary hover:bg-muted"
+              )}
+              title={`View ${day} schedule`}
+            >
+              {day}
+            </button>
+          ))}
+        </div>
 
           <div className="space-y-4">
             {timetable.filter(e => e.day === selectedDay).sort((a, b) => a.startTime.localeCompare(b.startTime)).map(entry => (
@@ -59,6 +54,5 @@ export function DailyTimetableView({ timetable, selectedDay, setSelectedDay, set
           </div>
         </div>
       </div>
-    </TooltipProvider>
-  );
+    );
 }

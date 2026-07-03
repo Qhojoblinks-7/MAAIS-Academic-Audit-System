@@ -4,13 +4,11 @@ import { Search, Filter, BookOpen, Percent, GraduationCap, Clock, ChevronRight, 
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
 import { GradingSheet } from '../shared/GradingSheet';
-import mockTeacherService from '../../services/mockTeacherService';
-import { notification } from '../../services/notificationService';
-import { eventBus } from '../../services/eventBus';
+import { teacherService } from '../../services';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
-import { Input } from '../../components/ui/input';
 import { NotificationBell } from '../../components/shared/NotificationBell';
+import { useTeacherSubjectConfig, useActiveYear } from '../../lib/hooks';
 
 const SUBJECT_CONFIG = {
   'General Agriculture': {
@@ -43,6 +41,31 @@ const SUBJECT_CONFIG = {
     maxRaw: 100, sectionCount: 2, hasPractical: false, practicalMarks: 0,
     sbaLabel: 'SBA (30%)', examLabel: 'Exam (70%)',
   },
+  'Woodwork': {
+    sections: ['Marking out (25)', 'Assembly (30)', 'Finishing (25)'],
+    maxRaw: 80, sectionCount: 3, hasPractical: true, practicalMarks: 80,
+    sbaLabel: 'SBA (30%)', examLabel: 'Exam (70%)',
+  },
+  'Metalwork': {
+    sections: ['Marking out (25)', 'Assembly (30)', 'Finishing (25)'],
+    maxRaw: 80, sectionCount: 3, hasPractical: true, practicalMarks: 80,
+    sbaLabel: 'SBA (30%)', examLabel: 'Exam (70%)',
+  },
+  'Technical Drawing': {
+    sections: ['Geometric Construction (50)', 'Projection (50)'],
+    maxRaw: 100, sectionCount: 2, hasPractical: true, practicalMarks: 100,
+    sbaLabel: 'SBA (30%)', examLabel: 'Exam (70%)',
+  },
+  'Auto Mechanics': {
+    sections: ['Engine Systems (35)', 'Diagnostics (35)', 'Practical Task (30)'],
+    maxRaw: 100, sectionCount: 3, hasPractical: true, practicalMarks: 100,
+    sbaLabel: 'SBA (30%)', examLabel: 'Exam (70%)',
+  },
+  'Electrical': {
+    sections: ['Circuit Construction (40)', 'Wiring (30)', 'Testing (30)'],
+    maxRaw: 100, sectionCount: 3, hasPractical: true, practicalMarks: 100,
+    sbaLabel: 'SBA (30%)', examLabel: 'Exam (70%)',
+  },
 };
 
 export function TeacherGradingView() {
@@ -58,6 +81,10 @@ export function TeacherGradingView() {
   const [statusMeta, setStatusMeta] = useState({});
   const [filterOptions, setFilterOptions] = useState([]);
 
+  const activeYearQuery = useActiveYear();
+  const activeTerm = activeYearQuery.data?.terms?.find(t => t.isActive);
+  const isTermFinalized = activeTerm?.isLocked ?? false;
+
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -66,16 +93,13 @@ export function TeacherGradingView() {
         return;
       }
       try {
-        const classes = await mockTeacherService.getClasses(user.id);
-        const meta = await mockTeacherService.getGradingStatusMeta();
-        const filters = await mockTeacherService.getGradingFilterOptions();
-        const students = await mockTeacherService.getGradingStudents();
-        const subjectConfig = await mockTeacherService.getSubjectConfig();
+        const classes = await teacherService.getClasses(user.id || user.profileId);
+        const meta = await teacherService.getGradingStatusMeta();
+        const filters = await teacherService.getGradingFilterOptions();
         
         setGradingClasses(classes || []);
         setStatusMeta(meta || {});
         setFilterOptions(filters || []);
-        setGradingStudents(students || []);
       } catch (err) {
         setError('Failed to load grading data');
       } finally {
@@ -84,7 +108,7 @@ export function TeacherGradingView() {
     };
 
     fetchClasses();
-  }, [user?.id]);
+  }, [user?.id, user?.profileId]);
 
   /* ── Filtered class list ── */
   const totalStudents = gradingClasses.reduce((sum, c) => sum + (c.studentCount || 0), 0);
@@ -112,7 +136,7 @@ export function TeacherGradingView() {
   /* ── Class selection: no route change, just state ── */
   const handleSelectClass = useCallback(async (cls) => {
     setSelectedClass(cls);
-    const students = await mockTeacherService.getGradingStudents(cls.subject, cls.className);
+    const students = await teacherService.getGradingStudents(cls.subject, cls.className);
     setGradingStudents(students || []);
   }, []);
 
@@ -358,7 +382,7 @@ export function TeacherGradingView() {
                   { check: (s) => s.exam > 70, message: 'Exam exceeds 70% limit' },
                   { check: (s) => s.auditStatus === 'MISSING', message: 'Missing behavioral observations' },
                 ]}
-                isTermFinalized={false}
+                isTermFinalized={isTermFinalized}
               />
             </div>
           </motion.div>

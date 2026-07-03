@@ -1,6 +1,8 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+import { getAuthToken } from '../../services/auth';
 
-const HttpMethod = {
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+
+export const HttpMethod = {
   GET: 'GET',
   POST: 'POST',
   PUT: 'PUT',
@@ -14,17 +16,77 @@ const HttpMethod = {
  * @property {'GET'|'POST'|'PUT'|'PATCH'|'DELETE'} [method]
  * @property {*} [body]
  * @property {Object<string, string>} [headers]
+ * @property {Object<string, any>} [params]
  */
 
+// Global state variables for handling concurrent token refreshes
+let activeRefreshPromise = null;
+
 /**
+ * Centrally handles the token refresh sequence, locking out overlapping queries.
+ * @returns {Promise<{accessToken: string, refreshToken: string} | null>}
+ */
+async function getRefreshTokenLock() {
+  // If an exchange is already running, return the active instance promise
+  if (activeRefreshPromise) {
+    return activeRefreshPromise;
+  }
+
+  activeRefreshPromise = (async () => {
+    try {
+      const refreshToken = localStorage.getItem('refreshToken');
+      const userId = localStorage.getItem('userId');
+      
+      if (!refreshToken) return null;
+
+      const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, refreshToken }),
+      });
+
+      if (!res.ok) return null;
+      const data = await res.json();
+      
+      const payload = {
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken || refreshToken,
+      };
+
+      // Atomic commit to storage layers
+      localStorage.setItem('auth_token', payload.accessToken);
+      localStorage.setItem('accessToken', payload.accessToken);
+      localStorage.setItem('refreshToken', payload.refreshToken);
+      localStorage.setItem('userId', userId);
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('auth_token', payload.accessToken);
+        sessionStorage.setItem('accessToken', payload.accessToken);
+        sessionStorage.setItem('refreshToken', payload.refreshToken);
+        sessionStorage.setItem('userId', userId);
+      }
+
+      return payload;
+    } catch {
+      return null;
+    } finally {
+      // Release lock block immediately following resolution
+      activeRefreshPromise = null;
+    }
+  })();
+
+  return activeRefreshPromise;
+}
+
+/**
+ * Core Request Wrapper Layer
  * @template T
  * @param {string} endpoint
  * @param {RequestOptions<T>} [options]
  * @returns {Promise<T>}
  */
 async function request(endpoint, options = {}) {
-  const accessToken = localStorage.getItem('accessToken');
-  let refreshToken = localStorage.getItem('refreshToken');
+  let accessToken = getAuthToken();
+  const method = options.method || 'GET';
 
   const headers = {
     'Content-Type': 'application/json',
@@ -35,34 +97,54 @@ async function request(endpoint, options = {}) {
     headers['Authorization'] = `Bearer ${accessToken}`;
   }
 
-  const url = `${API_BASE_URL}${endpoint}`;
+  const queryString = options.params
+    ? `?${new URLSearchParams(
+        Object.entries(options.params)
+          .filter(([, v]) => v !== undefined && v !== null && v !== '')
+          .map(([k, v]) => [k, String(v)]),
+      ).toString()}`
+    : '';
+
+  const url = new URL(`${API_BASE_URL}${endpoint}${queryString}`, window.location.origin).toString();
+
   let response = await fetch(url, {
-    method: options.method || 'GET',
+    method,
     headers,
     body: options.body != null ? JSON.stringify(options.body) : undefined,
     credentials: 'omit',
   });
 
-  if (response.status === 401 && refreshToken) {
-    const refreshed = await attemptRefresh(refreshToken);
+  if (response.status === 401) {
+    const refreshed = await getRefreshTokenLock();
+
     if (refreshed) {
       headers['Authorization'] = `Bearer ${refreshed.accessToken}`;
-      localStorage.setItem('accessToken', refreshed.accessToken);
-      localStorage.setItem('refreshToken', refreshed.refreshToken);
 
       response = await fetch(url, {
-        method: options.method || 'GET',
+        method,
         headers,
         body: options.body != null ? JSON.stringify(options.body) : undefined,
         credentials: 'omit',
       });
     } else {
+      localStorage.removeItem('auth_token');
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
+      localStorage.removeItem('userId');
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem('auth_token');
+        sessionStorage.removeItem('accessToken');
+        sessionStorage.removeItem('refreshToken');
+        sessionStorage.removeItem('userId');
+      }
       window.dispatchEvent(new Event('auth:logout'));
+      if (window.location.pathname !== '/401' && window.location.pathname !== '/login') {
+        window.location.href = '/401';
+      }
     }
   }
 
+  // ── Unified Response Serialization ───────────────────────────────────────
   const contentType = response.headers.get('content-type');
   if (!contentType || !contentType.includes('application/json')) {
     if (!response.ok) {
@@ -85,29 +167,6 @@ async function request(endpoint, options = {}) {
   }
 
   return data;
-}
-
-/**
- * @param {string} refreshToken
- * @returns {Promise<{accessToken: string, refreshToken: string} | null>}
- */
-async function attemptRefresh(refreshToken) {
-  try {
-    const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
-    });
-
-    if (!res.ok) return null;
-    const data = await res.json();
-    return {
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken || refreshToken,
-    };
-  } catch {
-    return null;
-  }
 }
 
 export const api = {

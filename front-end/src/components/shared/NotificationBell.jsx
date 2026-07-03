@@ -8,6 +8,8 @@ import { useRole } from '../../context/RoleContext';
 export function NotificationBell() {
   const { user } = useRole();
   const userId = user?.id || user?.staffId;
+  const userProfileId = user?.profileId;
+  const role = user?.role;
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -17,7 +19,12 @@ export function NotificationBell() {
 
     const fetchNotifications = async () => {
       try {
-        const unread = await notification.getUnread(userId);
+        let unread;
+        if (role === 'STUDENT' && userProfileId) {
+          unread = await notification.getUnreadForStudent(userProfileId);
+        } else {
+          unread = await notification.getUnread();
+        }
         setNotifications(unread || []);
         setUnreadCount(unread ? unread.length : 0);
       } catch (err) {
@@ -25,7 +32,6 @@ export function NotificationBell() {
       }
     };
 
-    // Fetch initial notifications
     fetchNotifications();
 
     // Subscribe to real-time notifications
@@ -51,13 +57,17 @@ export function NotificationBell() {
 
     const unsubscribe1 = eventBus.on('hod-comment-added', handleNotification);
     const unsubscribe2 = eventBus.on('grade-revision-rejected', handleNotification);
+    const unsubscribe3 = eventBus.on('grade-revision-requested', handleNotification);
+    const unsubscribe4 = eventBus.on('grade-revision-approved', handleNotification);
 
     return () => {
       unsubscribe1();
       unsubscribe2();
+      unsubscribe3();
+      unsubscribe4();
       realTimeUnsubscribe();
     };
-  }, [userId]);
+  }, [userId, role, userProfileId]);
 
   const markAsRead = async (notificationId) => {
     try {
@@ -107,7 +117,7 @@ export function NotificationBell() {
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">{notif.title}</p>
                       <p className="text-xs text-gray-500 truncate">{notif.message}</p>
-                      <time className="text-xs text-gray-400">{new Date(notif.timestamp).toLocaleTimeString()}</time>
+                      <time className="text-xs text-gray-400">{new Date(notif.timestamp || notif.createdAt).toLocaleTimeString()}</time>
                       <button
                         onClick={() => markAsRead(notif.id)}
                         className="ml-2 text-xs text-blue-500 hover:underline"

@@ -1,8 +1,10 @@
-﻿import React from 'react';
-import { motion } from 'framer-motion';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar, Clock, MapPin } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { getAuthToken } from '../../services/auth';
+import { useStudentStore } from '../../stores/useStudentStore';
+import { useStudentTimetable, useStudentPortalData } from '../../hooks/api/useStudentApi';
+import { EmptyState } from '../../components/molecules';
+import { useRole } from '../../context/RoleContext';
 
 const DAY_MAP = {
   MONDAY: 'Monday',
@@ -21,45 +23,78 @@ const DAY_TYPE_STYLES = {
   ASSEMBLY: 'bg-warning/10 border-warning/20 text-warning',
 };
 
+class StudentTimetableErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('StudentTimetable Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 md:p-8 lg:p-12 pb-24 no-scrollbar">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-surface rounded-2xl border border-border p-6 text-center">
+              <h2 className="text-lg font-bold text-text-primary mb-2">Unable to load timetable</h2>
+              <p className="text-sm text-text-secondary">
+                {this.state.error?.message || 'Please try again later.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export function StudentTimetable() {
-  const [schedule, setSchedule] = React.useState({});
-  const [loading, setLoading] = React.useState(true);
+    const { user } = useRole();
+    const { data: portalData, loading: portalLoading, error: portalError } = useStudentPortalData(user?.profileId || user?.id || null);
+    const { timetable, loading, error, refetch } = useStudentTimetable(portalData?.student?.currentClassId);
+    const setTimetableError = useStudentStore((s) => s.setTimetableError);
+    const storeTimetable = useStudentStore((s) => s.timetable);
 
-  React.useEffect(() => {
-    const fetchSchedule = async () => {
-      try {
-        const token = getAuthToken();
-        const response = await fetch('/api/v1/timetable/student-schedule', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setSchedule(data);
-        }
-      } catch (e) {
-        console.error('Failed to fetch timetable:', e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSchedule();
-  }, []);
+  useEffect(() => {
+    if (error) {
+      setTimetableError(error);
+    }
+  }, [error, setTimetableError]);
 
-  const DAY_SCHEDULES = Object.entries(schedule).map(([dayKey, items]) => ({
-    day: DAY_MAP[dayKey] || dayKey,
-    items: (items || []).map((entry) => ({
-      time: entry.startTime || '',
-      subject: entry.subject?.name || 'Unknown',
-      room: entry.room || '-',
-      type: entry.subject?.type === 'ELECTIVE' ? 'LAB' : 'CLASS',
-    })),
-  }));
+  const source = Array.isArray(timetable) && timetable.length > 0
+    ? timetable
+    : (Array.isArray(storeTimetable) ? storeTimetable : []);
+  
+  const derivedSchedules = source.length > 0 
+    ? Object.entries(
+        source.reduce((acc, entry) => {
+          if (!entry) return acc;
+          const dayKey = entry.dayOfWeek || entry.day;
+          const day = DAY_MAP[dayKey] || dayKey || 'Unknown';
+          if (!acc[day]) acc[day] = [];
+          acc[day].push(entry);
+          return acc;
+        }, {}),
+      ).map(([day, items]) => ({
+        day,
+        items: (items || []).map((entry) => ({
+          time: `${entry.startTime || entry.start_time || ''} - ${entry.endTime || entry.end_time || ''}`,
+          subject: entry.subject?.name || entry.subjectName || 'Unknown',
+          room: entry.room || '-',
+          type: entry.type || 'CLASS',
+        })),
+      }))
+    : [];
 
-  if (loading) {
+  if (loading && source.length === 0) {
     return (
       <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 md:p-8 lg:p-12 pb-24 no-scrollbar">
         <div className="max-w-4xl mx-auto">
@@ -72,8 +107,7 @@ export function StudentTimetable() {
   return (
     <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 md:p-8 lg:p-12 pb-24 no-scrollbar">
       <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 no-scrollbar">
-        
-        {/* Module Title Area */}
+
         <header className="flex items-center gap-3 sm:gap-4">
           <div className="w-11 h-11 sm:w-12 sm:h-12 bg-brand-dark rounded-xl sm:rounded-2xl flex items-center justify-center text-surface shrink-0 shadow-lg shadow-brand-dark/10">
             <Calendar size={24} className="sm:hidden" />
@@ -84,22 +118,17 @@ export function StudentTimetable() {
               My Timetable
             </h1>
             <p className="text-[9px] sm:text-[10px] font-black text-text-secondary uppercase tracking-widest mt-0.5 truncate">
-              Weekly class &amp; lab schedule
+              Weekly class & lab schedule
             </p>
           </div>
         </header>
 
-        {/* Schedule List */}
         <div className="space-y-4 sm:space-y-6">
-          {DAY_SCHEDULES.length > 0 ? DAY_SCHEDULES.map(({ day, items }, dIdx) => (
-            <motion.div
+          {derivedSchedules.length > 0 ? derivedSchedules.map(({ day, items }) => (
+            <div
               key={day}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: dIdx * 0.04 }}
               className="bg-surface rounded-2xl sm:rounded-[2rem] border border-border shadow-sm overflow-hidden"
             >
-              {/* Day Section Header */}
               <div className="bg-background/50 px-4 sm:px-6 py-3.5 border-b border-border flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                   <Clock size={14} className="text-text-secondary shrink-0" />
@@ -112,15 +141,14 @@ export function StudentTimetable() {
                 </span>
               </div>
 
-              {/* Day Card Timings Rows */}
               <div className="divide-y divide-border/40">
                 {items.map((item, idx) => {
                   const isBreak = item.type === 'BREAK';
-                  
+
                   if (isBreak) {
                     return (
-                      <div 
-                        key={idx} 
+                      <div
+                        key={idx}
                         className="flex flex-col xs:flex-row xs:items-center gap-1.5 xs:gap-4 px-4 sm:px-6 py-3 text-[10px] font-black text-text-secondary uppercase tracking-wider bg-background/40 min-w-0"
                       >
                         <span className="font-mono text-text-secondary shrink-0">{item.time}</span>
@@ -131,19 +159,17 @@ export function StudentTimetable() {
                   }
 
                   return (
-                    <div 
-                      key={idx} 
+                    <div
+                      key={idx}
                       className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 sm:px-6 py-4 hover:bg-background/40 transition-all min-w-0"
                     >
-                      {/* Period Clock Component Block */}
                       <div className="text-[10px] font-black text-text-secondary uppercase tracking-wider font-mono shrink-0 sm:min-w-[75px]">
                         {item.time}
                       </div>
-                      
-                      {/* Data Meta Wrapper Capsule */}
+
                       <div className={cn(
-                        "flex-1 px-4 py-3 rounded-xl border flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 min-w-0", 
-                        DAY_TYPE_STYLES[item.type] || DAY_TYPE_STYLES.CLASS
+                        'flex-1 px-4 py-3 rounded-xl border flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 min-w-0',
+                        DAY_TYPE_STYLES[item.type] || DAY_TYPE_STYLES.CLASS,
                       )}>
                         <div className="min-w-0">
                           <p className="text-[13px] font-black tracking-tight text-inherit truncate leading-snug">
@@ -156,7 +182,7 @@ export function StudentTimetable() {
                             </span>
                           </div>
                         </div>
-                        
+
                         <div className="shrink-0 self-start xs:self-center">
                           <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 bg-surface border border-current/10 rounded-md">
                             {item.type}
@@ -167,12 +193,24 @@ export function StudentTimetable() {
                   );
                 })}
               </div>
-            </motion.div>
+            </div>
           )) : (
-            <p className="text-center text-text-secondary py-8">No timetable data available</p>
+            <div className="bg-surface rounded-2xl sm:rounded-[2rem] border border-border shadow-sm overflow-hidden">
+              <div className="p-6 sm:p-8 text-center text-text-secondary text-sm">
+                {loading ? 'Loading timetable...' : <EmptyState context="results" />}
+              </div>
+            </div>
           )}
         </div>
       </div>
     </div>
   );
 }
+
+const StudentTimetableWithErrorBoundary = (props) => (
+  <StudentTimetableErrorBoundary>
+    <StudentTimetable {...props} />
+  </StudentTimetableErrorBoundary>
+);
+
+export default StudentTimetableWithErrorBoundary;

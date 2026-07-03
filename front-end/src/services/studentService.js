@@ -1,8 +1,6 @@
 import { getAuthToken } from './auth';
-import mockStudentService from './mockStudentService';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-const USE_MOCK = !BASE_URL || import.meta.env.VITE_USE_MOCK_API === 'true';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 function getHeaders() {
   const token = getAuthToken();
@@ -33,9 +31,26 @@ async function request(method, path, body) {
 function createRealService() {
   return {
     getPortalData: (studentId) =>
-      request('GET', `/api/v1/portal/students/${studentId}/portal-data`)
+      request('GET', `/portal/students/${studentId}/portal-data`)
         .then(r => r?.data ?? r),
+    searchStudents: (query) =>
+      request('GET', `/users/students${query ? `?search=${encodeURIComponent(query)}` : ''}`)
+        .then((res) => {
+          const data = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+          return data.map((s) => ({
+            id: s.id,
+            name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.indexNumber || s.id,
+            classForm: s.currentClass?.name || '—',
+            indexNumber: s.indexNumber || '—',
+          }));
+        }),
+    createMedicalRecord: (studentId, data) =>
+      request('POST', `/students/${studentId}/medical-records`, data).then(r => r?.data ?? r),
+    updateMedicalRecord: (studentId, recordId, data) =>
+      request('PATCH', `/students/${studentId}/medical-records/${recordId}`, data).then(r => r?.data ?? r),
+    deleteMedicalRecord: (studentId, recordId) =>
+      request('DELETE', `/students/${studentId}/medical-records/${recordId}`).then(r => r?.data ?? r),
   };
 }
 
-export const studentService = USE_MOCK ? mockStudentService : createRealService();
+export const studentService = createRealService();

@@ -1,0 +1,53 @@
+================================================================================
+                    INSTITUTIONAL FREEZE MECHANISM OVERVIEW
+================================================================================
+
+This system implements a comprehensive two-tier lockdown protocol designed to
+secure gradebook integrity, audit compliance, and system safety.
+
+There are two primary types of freezes implemented in this application:
+
+--------------------------------------------------------------------------------
+1. GLOBAL TERM FINALIZATION SEAL (Operational Grade Freeze)
+--------------------------------------------------------------------------------
+* Context Property: 'isTermFinalized' (boolean)
+* Managed by: Administrator via "Grading Rules & Seals" View 
+  (File: /src/views/admin/GradingRulesView.jsx)
+* Purpose: Sealing student assessments, exams, and SBA marks for the current
+  academic term prior to report card compile cycles.
+
+System-Wide Impacts:
+* Teacher Grading Sheets (/src/views/teacher/GradingSheet.jsx):
+  - Ingestion and modification checks are blocked.
+  - All numerical inputs (Section A, B, C raw grades, exams, and SBA scores) 
+    automatically switch to "readOnly={isTermFinalized}".
+  - Interactive UI buttons (such as submission or saving controls) are 
+    disabled or visually faded ('opacity-60').
+  - Safeguard constraints block programmatic writes, returning critical 
+    denial messages ("CRITICAL: Term Finalized. Edits forbidden.").
+* Archive Ledger Integration (/src/views/hod/HODArchiveView.jsx):
+  - Finalization triggers the synthesis of HOD/Teacher folders.
+  - Generates sealed student dockets locked in "The Vault", preserving
+    historical reports with a tamper-evident status label of "Seals Frozen"
+    or "SECURE".
+
+--------------------------------------------------------------------------------
+2. SYSTEM EMERGENCY FREEZE (Lockdown Pulse Protocol)
+--------------------------------------------------------------------------------
+* State Variable: 'isFreezeActive' (boolean)
+* Managed by: Administrator via Floating Quick Actions Panel
+  (File: /src/views/admin/AdminHome.jsx)
+* Purpose: Immediate administrative intervention during system threats, bulk 
+  onboarding errors, or structural emergencies.
+
+System-Wide Impacts:
+* Visual Overlay & Feedback:
+  - Turns the global Action trigger red and sets it into an 'animate-pulse' state.
+  - Swaps standard dashboard control buttons to Lock indicators.
+  - Displays a modal warning allowing the admin to "Lift Institutional Freeze" 
+    (which toggles isFreezeActive off) or execute standard operations once the
+    system is restored.
+
+================================================================================
+Generated on: 2026-06-27
+================================================================================

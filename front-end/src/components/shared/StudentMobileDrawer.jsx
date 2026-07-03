@@ -7,6 +7,8 @@ import {
 import { useUI } from '../../context/UIContext';
 import { useRole } from '../../context/RoleContext';
 import { cn } from '../../lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { User as UserIcon } from "lucide-react";
 
 export function StudentMobileDrawer() {
   const { mobileMenuOpen, setMobileMenuOpen } = useUI();
@@ -32,6 +34,8 @@ export function StudentMobileDrawer() {
     sessionStorage.clear();
     window.location.href = '/';
   };
+
+  const avatarSrc = user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.name || 'default')}`;
 
   return (
     <AnimatePresence>
@@ -151,11 +155,12 @@ export function StudentMobileDrawer() {
             <div className="p-6 bg-slate-50 border-t border-slate-100 mt-auto shrink-0">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden shrink-0">
-                  <img
-                    src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.name || 'default')}`}
-                    alt="User Profile"
-                    className="w-full h-full object-cover"
-                  />
+                  <Avatar className="w-10 h-10">
+                    <AvatarImage src={avatarSrc} alt="User Profile" />
+                    <AvatarFallback className="bg-brand-secondary/10 text-brand-secondary">
+                      <UserIcon size={20} />
+                    </AvatarFallback>
+                  </Avatar>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-bold text-slate-900 tracking-tight truncate">{user?.name || 'System User'}</p>

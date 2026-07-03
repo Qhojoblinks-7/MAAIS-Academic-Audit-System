@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { EmptyState } from '../../components/molecules';
 import { 
   Database, 
   Search, 
@@ -9,162 +10,234 @@ import {
   Users, 
   Award, 
   BookOpen, 
-  Lock
+  Lock,
+  RefreshCw,
+  Filter
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { TeacherArchiveDetailView } from './TeacherArchiveDetailView';
-import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
-import { Input } from '../../components/ui/input';
+import { teacherService } from '../../services';
+import { useRole } from '../../context/RoleContext';
+import { useBreadcrumb } from '../../context/BreadcrumbContext';
 
-import mockApiData from '../../data/mockApiData.json';
-
+// --- Utility Helpers ---
 const gradeToScore = (grade) => {
-  if (grade === 'A1') return 90;
-  if (grade === 'B2') return 75;
-  if (grade === 'B3') return 65;
-  if (grade === 'C4') return 60;
-  if (grade === 'C5') return 55;
-  if (grade === 'C6') return 50;
-  if (grade === 'D7') return 45;
-  if (grade === 'E8') return 40;
-  return 35;
+  const grades = { A1: 90, B2: 75, B3: 65, C4: 60, C5: 55, C6: 50, D7: 45, E8: 40 };
+  return grades[grade] || 35;
 };
 
-const getStudentAcademicHistory = (studentName, archiveItem) => {
-  const hist = mockApiData.studentAcademicHistory?.items?.find(h => 
-    h.studentId?.toLowerCase().includes(studentName.split(' ')[0].toLowerCase().slice(0,4)) ||
-    mockApiData.studentAcademicHistory?.items?.find(h => h.studentId?.toLowerCase() === studentName.toLowerCase())
-  );
-  if (!hist) {
-    return [{
-      term: archiveItem?.term || 'Archived Term',
-      finalGrade: archiveItem ? gradeToScore(archiveItem.students?.find(s => s.name === studentName)?.grade) : 78,
-      behaviorRating: 4
-    }];
+const buildHistoryFromGrades = (grades) => {
+  if (!Array.isArray(grades) || !grades.length) return [];
+  const termMap = {};
+  
+  for (const g of grades) {
+    const termLabel = g.term?.academicYear?.label
+      ? `${g.term.academicYear.label} ${g.term.termNumber?.replace('TERM_', 'Term ') || ''}`
+      : (g.term?.id || 'Recorded Term');
+      
+    if (!termMap[termLabel]) {
+      termMap[termLabel] = { term: termLabel, grades: [] };
+    }
+    termMap[termLabel].grades.push(g.totalScore || 0);
   }
-  return hist.termHistory.map(t => ({
+  
+  return Object.values(termMap).map(t => ({
     term: t.term,
-    finalGrade: Math.round(t.gpa * 15),
-    behaviorRating: Math.floor(t.gpa)
+    finalGrade: Math.round(t.grades.reduce((a, b) => a + b, 0) / t.grades.length),
+    behaviorRating: 4
   }));
 };
 
-const getStudentObservations = (studentName) => {
-  return (mockApiData.teacher.observations?.items || [])
+const getStudentObservations = (studentName, observations) => {
+  return (observations || [])
     .filter(o => o.student?.toLowerCase() === studentName?.toLowerCase())
     .map((o, idx) => ({
       id: o.id || idx,
       type: o.type,
       date: o.date,
       comment: o.comment,
-      teacherName: o.teacherName || 'Unknown'
+      teacherName: o.teacher || 'Unknown'
     }));
 };
 
-const getStudentInterventions = (studentName) => {
-  const alertItems = mockApiData.interventionAlerts?.items || [];
-  
-  return alertItems
-    .filter(a => a.studentName?.toLowerCase() === studentName?.toLowerCase())
-    .map((a, idx) => ({
-      id: a.id || idx,
-      term: a.term || 'Archived Term',
-      reason: a.reason,
-      action: 'Academic intervention program initiated',
-      outcome: a.resolved ? 'Successfully resolved' : 'Under review'
-    }));
-};
-
-const getStudentHODComment = (studentName) => {
-  const log = mockApiData.auditLogs?.items?.find(l => l.target?.includes(studentName) && l.hodComment);
-  return log?.hodComment || null;
-};
-
-const getStudentConsistencyScore = (studentName) => {
-  const hist = mockApiData.studentAcademicHistory?.items?.find(h => 
-    h.studentId?.toLowerCase().includes(studentName.split(' ')[0].toLowerCase().slice(0,4))
-  );
-  if (!hist || !hist.termHistory?.length) return 95;
-  const scores = hist.termHistory.map(t => t.gpa);
+const getStudentConsistencyScore = (history) => {
+  if (!history || !history.length) return 95;
+  const scores = history.map(h => h.finalGrade);
   return Math.round((Math.max(...scores) - Math.min(...scores)) / Math.max(...scores) * 100) || 100;
 };
 
-const getStudentWASSCE = (studentName, archiveItem) => {
-  const studentGrade = archiveItem?.students?.find(s => s.name === studentName)?.grade;
-  
-  if (studentGrade) {
-    return `${studentGrade} - Verified`;
-  }
-  return 'Pending';
+const getStudentWASSCE = (grades) => {
+  if (!Array.isArray(grades) || !grades.length) return 'Pending';
+  const latest = grades[grades.length - 1];
+  return latest.grade ? `${latest.grade} - Verified` : 'Pending';
 };
 
-const initialTeacherStudents = (mockApiData.archive?.items || []).flatMap(archiveItem => 
-  (archiveItem.students || []).map(s => ({
-    id: s.id,
-    name: s.name,
-    index: s.indexNumber,
-    currentClass: archiveItem.className,
-    status: archiveItem.status === 'LOCKED' ? 'Arhive Sealed' : 'Archive Inbound',
-    finalWassce: getStudentWASSCE(s.name, archiveItem),
-    graduationYear: archiveItem.year?.split('/')[1] || archiveItem.year?.replace('2023/2024', '2024').replace('2024/2025', '2025').replace('2025/2026', '2026') || '2026',
-    history: getStudentAcademicHistory(s.name, archiveItem),
-    interventions: getStudentInterventions(s.name),
-    observations: getStudentObservations(s.name),
-    hodComment: getStudentHODComment(s.name),
-    consistencyScore: getStudentConsistencyScore(s.name)
-  }))
-);
+const getGraduationYear = (promotions, archivedAt) => {
+  if (Array.isArray(promotions) && promotions.length > 0) {
+    const last = promotions[promotions.length - 1];
+    const label = last.academicYear?.label || '';
+    const parts = label.split('/');
+    if (parts.length === 2 && parts[1]) return parts[1].trim();
+  }
+  if (archivedAt) return new Date(archivedAt).getFullYear().toString();
+  return new Date().getFullYear().toString();
+};
 
 export function TeacherArchiveView() {
+  const { user } = useRole();
+  const { setBreadcrumb } = useBreadcrumb();
   const [activeSubTab, setActiveSubTab] = useState('REGISTRY');
-  const [students] = useState(initialTeacherStudents);
+  const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
 
   // Search & Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('ALL');
   const [selectedCohortYear, setSelectedCohortYear] = useState('ALL');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Filter computation
-  const filteredStudents = students.filter(s => {
-    const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || s.index.includes(searchTerm);
-    const matchesClass = selectedClass === 'ALL' || s.currentClass === selectedClass;
-    const matchesYear = selectedCohortYear === 'ALL' || s.graduationYear === selectedCohortYear;
-    return matchesSearch && matchesClass && matchesYear;
-  });
+  const teacherId = user?.profileId || user?.id;
 
-  // Global counts for analytics cards
+  useEffect(() => {
+    async function loadArchive() {
+      if (!teacherId) return;
+      try {
+        setLoading(true);
+        setError(null);
+
+        const [vaultResults, observations] = await Promise.all([
+          teacherService.getTeacherArchive(),
+          teacherService.getObservationLogs(),
+        ]);
+
+        const studentData = Array.isArray(vaultResults) ? vaultResults : [];
+        const obsArray = Array.isArray(observations) ? observations : [];
+
+        const classMap = {};
+        for (const student of studentData) {
+          const className = student.currentClass?.name || 'Unknown Class';
+          if (!classMap[className]) {
+            classMap[className] = {
+              className,
+              id: `arch-${className}`,
+              status: 'Archive Sealed',
+              year: getGraduationYear(student.promotions, student.archivedAt),
+              students: []
+            };
+          }
+          const history = buildHistoryFromGrades(student.grades);
+          const fullName = [student.firstName, student.middleName, student.lastName].filter(Boolean).join(' ');
+
+          classMap[className].students.push({
+            id: student.id,
+            name: fullName,
+            index: student.indexNumber,
+            currentClass: className,
+            status: 'Archive Sealed',
+            finalWassce: getStudentWASSCE(student.grades),
+            graduationYear: getGraduationYear(student.promotions, student.archivedAt),
+            history,
+            interventions: [],
+            observations: getStudentObservations(fullName, obsArray),
+            hodComment: null,
+            consistencyScore: getStudentConsistencyScore(history)
+          });
+        }
+
+        setStudents(Object.values(classMap).flatMap(c => c.students));
+      } catch (err) {
+        console.error('[TeacherArchiveView] Failed to load archive:', err);
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadArchive();
+  }, [teacherId]);
+
+  useEffect(() => {
+    const tabLabel = activeSubTab === 'REGISTRY' ? 'Registry' : activeSubTab === 'INTERVENTIONS' ? 'Interventions' : 'Observation Summary';
+    const crumbs = [{ label: 'My Teaching Archive', path: '/teacher/archive' }, { label: tabLabel, path: null }];
+    if (selectedStudent) {
+      crumbs.push({ label: selectedStudent.name, path: null });
+    }
+    setBreadcrumb(crumbs);
+  }, [activeSubTab, selectedStudent, setBreadcrumb]);
+
+  // Derived Values
+  const filteredStudents = useMemo(() => {
+    return students.filter(s => {
+      const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || s.index.includes(searchTerm);
+      const matchesClass = selectedClass === 'ALL' || s.currentClass === selectedClass;
+      const matchesYear = selectedCohortYear === 'ALL' || s.graduationYear === selectedCohortYear;
+      return matchesSearch && matchesClass && matchesYear;
+    });
+  }, [students, searchTerm, selectedClass, selectedCohortYear]);
+
+  const uniqueClasses = useMemo(() => [...new Set(students.map(s => s.currentClass))].sort(), [students]);
+  const uniqueYears = useMemo(() => [...new Set(students.map(s => s.graduationYear))].sort(), [students]);
+
   const totalAlumni = students.length;
-  const sealedCount = students.filter(s => s.status === 'Arhive Sealed').length;
+  const sealedCount = students.filter(s => s.status === 'Archive Sealed').length;
   
   const totalGrades = students.flatMap(s => (s.history || []).map(h => h.finalGrade));
   const cumulativeAverage = totalGrades.length > 0 ? (totalGrades.reduce((a, b) => a + b, 0) / totalGrades.length).toFixed(1) : 'N/A';
 
-  /**
-   * ROBUST RESPONSIVE GRID CONFIGURATION
-   * Standardizes visual column weights across row-containers and headers.
-   * Mobile viewports: 3 tracking segments (Identity, Grade/Status, Action Layout)
-   * Desktop viewports: 6 clean data compartments
-   */
-  const rowGridStructure = "grid grid-cols-[1.5fr_1fr_0.5fr] md:grid-cols-[2fr_1.2fr_1fr_1.3fr_1.2fr_0.4fr] gap-4 items-center";
+  // Fixed Structural Weights for Uniform Row Alignments
+  const rowGridStructure = "grid grid-cols-[1.5fr_1fr_0.8fr] md:grid-cols-[2fr_1.2fr_1fr_1fr_1.2fr_0.4fr] gap-4 items-center";
 
-return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-muted relative">
+  if (error) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-slate-50 p-6">
+        <div className="text-center max-w-sm bg-white border p-6 rounded-2xl shadow-sm space-y-4">
+          <div className="w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto">
+            <RefreshCw size={20} />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Archive Unreachable</h3>
+            <p className="text-xs text-muted-foreground mt-1">Failed to securely download decrypted historical ledgers.</p>
+          </div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition-colors"
+          >
+            Retry Validation Connection
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 flex flex-col overflow-hidden bg-slate-50/50 relative text-slate-900 font-sans">
       
-      {/* Header & Sub-Tab Bar */}
-      <div className="bg-card border-b border-border px-8 py-4 flex flex-col sm:flex-row justify-between items-center z-20 gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-9 h-9 bg-foreground text-background rounded-xl flex items-center justify-center shadow-md">
+      {/* Absolute Overlay Spinner */}
+      {loading && (
+        <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-xs z-50 flex items-center justify-center">
+          <div className="text-center space-y-3 bg-white p-6 rounded-2xl border shadow-sm">
+            <div className="w-6 h-6 border-2 border-slate-900 border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-[10px] font-bold tracking-widest text-slate-800 uppercase">Syncing Archive Vault...</p>
+          </div>
+        </div>
+      )}
+      
+      {/* Navbar Container */}
+      <header className="bg-white border-b border-slate-200 px-6 py-4 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 z-20 shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-xs shrink-0">
             <Database size={18} />
           </div>
           <div>
-            <h1 className="text-sm font-black text-foreground uppercase tracking-widest font-sans">Instructor Archives</h1>
-            <p className="text-[10px] font-bold text-muted-foreground uppercase leading-none mt-0.5">Academic Cohorts & Alumni Ledger / Applied Sciences Division</p>
+            <h1 className="text-xs font-black uppercase tracking-wider text-slate-900">Instructor Archives</h1>
+            <p className="text-[10px] font-semibold text-slate-400 uppercase mt-0.5">Applied Sciences / Alumni Ledger Matrix</p>
           </div>
         </div>
 
-        <div className="flex bg-muted p-0.5 rounded-xl border border-border overflow-x-auto max-w-full">
+        {/* Global Functional View Segment Switcher */}
+        <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/60 overflow-x-auto scrollbar-none">
           {[
             { id: 'REGISTRY', label: 'Archived Dossiers', icon: Database },
             { id: 'INTERVENTIONS', label: 'Historical Interventions', icon: Award },
@@ -177,8 +250,10 @@ return (
                 setSelectedStudent(null);
               }}
               className={cn(
-                "flex items-center gap-2 px-5 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all outline-none whitespace-nowrap",
-                activeSubTab === tab.id ? "bg-card text-foreground shadow-sm font-bold" : "text-muted-foreground hover:text-foreground"
+                "flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all whitespace-nowrap",
+                activeSubTab === tab.id 
+                  ? "bg-white text-slate-900 shadow-xs border border-slate-200/40" 
+                  : "text-slate-500 hover:text-slate-900"
               )}
             >
               <tab.icon size={13} />
@@ -186,23 +261,17 @@ return (
             </button>
           ))}
         </div>
+      </header>
 
-      </div>
-
-      {/* Global Watermark */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.01] select-none z-0">
-        <h1 className="text-[14vw] font-black rotate-[-20deg] text-foreground uppercase">PAST ARCHIVE</h1>
-      </div>
-
+      {/* Main Dynamic Workspace Frame */}
       <div className="flex-1 overflow-hidden flex flex-col relative z-10 w-full">
         <AnimatePresence mode="wait">
-          
           {selectedStudent ? (
             <motion.div 
               key="detail_view"
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
               className="flex-1 h-full w-full overflow-hidden"
             >
               <TeacherArchiveDetailView 
@@ -211,209 +280,196 @@ return (
               />
             </motion.div>
           ) : (
-            
-            <div className="flex-1 overflow-y-auto no-scrollbar">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
               
               {activeSubTab === 'REGISTRY' && (
                 <motion.div 
                   key="registry"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="p-4 sm:p-8 space-y-6 sm:space-y-8 max-w-7xl mx-auto"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="space-y-6"
                 >
-                  
-                   {/* Analytic Indicator Cards */}
-                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                     {[
-                       { title: 'Total Rostered Students', val: totalAlumni, note: 'Current & Graduated cohorts', icon: Users },
-                       { title: 'Cumulative GPA Average', val: `${cumulativeAverage}%`, note: 'Overall average over past terms', icon: TrendingUp },
-                       { title: 'Cryptographic Seals', val: sealedCount, note: 'Tamper-proof department seals', icon: ShieldCheck },
-                       { title: 'Database Security', val: 'Active', note: 'Secure Level 4 Vault Integrity', icon: Lock }
-                     ].map((card, idx) => (
-                       <Card key={idx} className="p-6 rounded-2xl shadow-sm flex flex-col gap-3 ring-0">
-                         <div className="flex items-center gap-3">
-                           <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center text-foreground border border-border shrink-0">
-                             <card.icon size={20} />
-                           </div>
-                           <div>
-                             <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none">{card.title}</p>
-                             <div className="flex items-baseline gap-1">
-                               <span className="text-2xl font-black text-foreground leading-none">{card.val}</span>
-                               <span className="text-[11px] font-bold text-muted-foreground">{card.note}</span>
-                             </div>
-                           </div>
-                         </div>
-                       </Card>
-                     ))}
-                   </div>
+                  {/* Analytic Display Segment */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[
+                      { title: 'Total Rostered Students', val: totalAlumni, note: 'Active & Graduated', icon: Users, color: "text-blue-600" },
+                      { title: 'Cumulative Avg Score', val: `${cumulativeAverage}%`, note: 'Historical aggregate', icon: TrendingUp, color: "text-indigo-600" },
+                      { title: 'Cryptographic Seals', val: sealedCount, note: 'Tamper-proof storage', icon: ShieldCheck, color: "text-emerald-600" },
+                      { title: 'Database Security', val: 'Active', note: 'Secure Level 4 Crypt', icon: Lock, color: "text-slate-600" }
+                    ].map((card, idx) => (
+                      <Card key={idx} className="p-4 rounded-xl border border-slate-200 shadow-xs flex items-center gap-4 bg-white">
+                        <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center border border-slate-100 shrink-0">
+                          <card.icon size={18} className={card.color} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none">{card.title}</p>
+                          <div className="flex items-baseline gap-1.5 mt-1.5">
+                            <span className="text-xl font-black text-slate-900 tracking-tight">{card.val}</span>
+                            <span className="text-[10px] font-medium text-slate-400 truncate">{card.note}</span>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
 
-{/* Filter Row */}
-                   <div className="bg-card border border-border rounded-[2rem] p-6 shadow-sm space-y-4">
-                     <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                       <div className="flex items-center gap-2 self-start md:self-auto">
-                         <span className="w-2.5 h-2.5 bg-foreground rounded-full animate-pulse" />
-                         <h3 className="text-xs font-black text-foreground uppercase tracking-widest">ARCHIVE STORAGE FILTER MATRIX</h3>
-                       </div>
-                       <span className="text-[10px] font-bold text-muted-foreground uppercase self-start md:self-auto">Frozen Record Search Directory</span>
-                     </div>
-
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                       {/* Search Index Input */}
-                       <div className="relative flex items-center h-12 bg-muted border border-border rounded-xl px-4">
-                         <Search className="text-muted-foreground mr-2 shrink-0" size={16} />
-                         <input 
-                           type="text" 
-                           placeholder="Search index, name or matric..." 
-                           value={searchTerm}
-                           onChange={(e) => setSearchTerm(e.target.value)}
-                           className="bg-transparent border-none text-xs text-foreground placeholder:text-muted-foreground focus:outline-none w-full"
-                         />
-                       </div>
-
-                       {/* Filter Class */}
-                       <div className="relative flex items-center h-12 bg-muted border border-border rounded-xl px-4">
-                         <span className="text-[10px] font-bold text-muted-foreground mr-2 shrink-0">GROUP:</span>
-                         <select 
-                           value={selectedClass}
-                           onChange={(e) => setSelectedClass(e.target.value)}
-                           className="bg-transparent border-none text-xs text-foreground font-extrabold focus:outline-none cursor-pointer w-full"
-                         >
-                           <option value="ALL">All Cohort Divisions</option>
-                           <option value="SHS 1 Agric B">SHS 1 Agric B (Current Form 1)</option>
-                           <option value="SHS 2 Science B">SHS 2 Science B (Current Form 2)</option>
-                           <option value="SHS 3 Science A">SHS 3 Science A (Current Form 3)</option>
-                           <option value="Class of 2024 (Science)">Class of 2024 (Science Alumni)</option>
-                           <option value="Class of 2023 (Science)">Class of 2023 (Science Alumni)</option>
-                           <option value="Class of 2023 (Agric Science)">Class of 2023 (Agric Alumni)</option>
-                         </select>
-                       </div>
-
-                       {/* Filter Year */}
-                       <div className="relative flex items-center h-12 bg-muted border border-border rounded-xl px-4">
-                         <span className="text-[10px] font-bold text-muted-foreground mr-2 shrink-0">YEAR:</span>
-                         <select 
-                           value={selectedCohortYear}
-                           onChange={(e) => setSelectedCohortYear(e.target.value)}
-                           className="bg-transparent border-none text-xs text-foreground font-extrabold focus:outline-none cursor-pointer w-full"
-                         >
-                           <option value="ALL">All Graduation/Cohort Years</option>
-                           <option value="2028">Form 1 (Class of 2028)</option>
-                           <option value="2027">Form 2 (Class of 2027)</option>
-                           <option value="2026">Form 3 (Class of 2026)</option>
-                           <option value="2024">Class of 2024</option>
-                           <option value="2023">Class of 2023</option>
-                         </select>
-                       </div>
-                     </div>
-                   </div>
-
-                  {/* Student Registry Frame */}
-                  <div className="bg-white border border-slate-200/60 rounded-[2.5rem] overflow-hidden shadow-sm">
-                    <header className="px-6 sm:px-8 py-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
-                      <div>
-                        <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest leading-none">Cohort Dossiers Vault</h4>
-                        <p className="text-[10px] text-slate-450 font-bold uppercase mt-1">Official transcripts and qualitative diaries stored in historical vault (Read-Only)</p>
+                  {/* Operational Filtering Matrix Panel */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                      <div className="flex items-center gap-2">
+                        <Filter size={14} className="text-slate-400" />
+                        <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Filter Matrix Engine</h3>
                       </div>
-                      <span className="text-[10px] font-bold text-slate-500 bg-white border border-slate-100 rounded-lg px-2 py-1 text-center self-start sm:self-center whitespace-nowrap">
-                        Viewing <span className="text-slate-900 font-black">{filteredStudents.length}</span> active and verified student profiles
-                      </span>
+                      <span className="text-[10px] font-semibold text-slate-400 uppercase">Frozen Records Directory</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {/* Search Index Input */}
+                      <div className="relative flex items-center h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 focus-within:ring-2 focus-within:ring-slate-900/10 transition-all">
+                        <Search className="text-slate-400 mr-2 shrink-0" size={14} />
+                        <input 
+                          type="text" 
+                          placeholder="Search identifier, moniker or index..." 
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="bg-transparent border-none text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none w-full font-medium"
+                        />
+                      </div>
+
+                      {/* Filter Class Option Map */}
+                      <div className="flex items-center h-10 bg-slate-50 border border-slate-200 rounded-xl px-3">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase mr-2 shrink-0">Stream:</span>
+                        <select 
+                          value={selectedClass}
+                          onChange={(e) => setSelectedClass(e.target.value)}
+                          className="bg-transparent border-none text-xs text-slate-900 font-bold focus:outline-none cursor-pointer w-full"
+                        >
+                          <option value="ALL">All Cohort Divisions</option>
+                          {uniqueClasses.map(cls => (
+                            <option key={cls} value={cls}>{cls}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Filter Grad Term Year Select */}
+                      <div className="flex items-center h-10 bg-slate-50 border border-slate-200 rounded-xl px-3">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase mr-2 shrink-0">Cohort:</span>
+                        <select 
+                          value={selectedCohortYear}
+                          onChange={(e) => setSelectedCohortYear(e.target.value)}
+                          className="bg-transparent border-none text-xs text-slate-900 font-bold focus:outline-none cursor-pointer w-full"
+                        >
+                          <option value="ALL">All Graduation Years</option>
+                          {uniqueYears.map(year => (
+                            <option key={year} value={year}>Class of {year}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Core Table Spreadsheet Layout Container */}
+                  <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+                    <header className="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
+                      <div>
+                        <h4 className="text-xs font-black text-slate-900 uppercase tracking-wide">Cohort Dossiers Vault</h4>
+                        <p className="text-[10px] text-slate-400 font-medium mt-0.5">Read-Only qualitative diaries and finalized transcripts.</p>
+                      </div>
+                      <div className="text-[10px] font-bold text-slate-600 bg-white border border-slate-200 rounded-lg px-2.5 py-1 shadow-2xs">
+                        Records matching: <span className="text-slate-900 font-black">{filteredStudents.length}</span>
+                      </div>
                     </header>
 
-                    {/* Scroll Containment Outer Viewport */}
                     <div className="w-full overflow-x-auto">
-                      <div className="min-w-[650px] sm:min-w-full divide-y divide-slate-100">
+                      <div className="min-w-[750px] divide-y divide-slate-100">
                         
-                        {/* Pure Grid Table Header */}
-                        <div className={cn(
-                          "px-6 sm:px-8 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/20 border-b border-slate-100",
-                          rowGridStructure
-                        )}>
-                          <div>Student Identity</div>
-                          <div className="hidden md:block">Current Stream / Batch</div>
-                          <div className="text-center md:text-left">Cumulative Grade</div>
-                          <div className="text-center hidden md:block">WASSCE Code</div>
-                          <div className="text-center md:text-left">Archive Integrity Seal</div>
+                        {/* Table Structured Grid Column Headers */}
+                        <div className={cn("px-6 py-3 text-[9px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/70 border-b border-slate-100", rowGridStructure)}>
+                          <div>Student Profile</div>
+                          <div>Stream Group</div>
+                          <div>Cumulative Avg</div>
+                          <div className="text-center">WASSCE Status</div>
+                          <div>Security Seal</div>
                           <div className="text-right">Action</div>
                         </div>
 
-                        {/* Pure Grid Rows Container */}
-                        <div className="divide-y divide-slate-100">
+                        {/* Interactive Data Row Grid Loop */}
+                        <div className="divide-y divide-slate-100 bg-white">
                           {filteredStudents.length === 0 ? (
-                            <div className="px-8 py-16 text-center">
-                              <p className="text-sm font-medium text-slate-400">
-                                No students match current filter parameters
-                              </p>
+                            <div className="px-6 py-12 text-center text-slate-400 text-xs font-medium">
+                              No records correspond to the input filter query metrics.
                             </div>
                           ) : (
                             filteredStudents.map(student => {
                               const scores = student.history.map(h => h.finalGrade);
-                              const avgGrade = scores.length > 0 ? (scores.reduce((a,b)=>a+b, 0) / scores.length).toFixed(1) + '%' : 'No Past Terms';
+                              const avgGrade = scores.length > 0 
+                                ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) + '%' 
+                                : 'N/A';
 
                               return (
                                 <div 
                                   key={student.id}
-                                  onClick={() => setSelectedStudent(student)}
                                   className={cn(
-                                    "px-6 sm:px-8 py-4 hover:bg-slate-50 group transition-all duration-150 cursor-pointer",
+                                    "px-6 py-3.5 hover:bg-slate-50/80 group transition-colors duration-150 items-center",
                                     rowGridStructure
                                   )}
                                 >
-                                  {/* 1. Identity Component block */}
+                                  {/* Identity Cell block */}
                                   <div className="flex items-center gap-3 min-w-0">
                                     <img 
-                                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${student.name}`} 
-                                      alt="avatar" 
-                                      className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 p-0.5 shrink-0 hidden sm:block"
+                                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(student.name)}`} 
+                                      alt="Student Avatar" 
+                                      className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 p-0.5 shrink-0"
                                     />
-                                    <div className="truncate">
-                                      <p className="text-xs font-black text-slate-900 tracking-tight truncate">{student.name}</p>
-                                      <p className="text-[8px] font-bold text-slate-400 uppercase font-mono mt-0.5">{student.index}</p>
+                                    <div className="min-w-0 truncate">
+                                      <p className="text-xs font-bold text-slate-900 truncate leading-tight">{student.name}</p>
+                                      <p className="text-[9px] font-mono font-medium text-slate-400 uppercase mt-0.5 tracking-tight">{student.index}</p>
                                     </div>
                                   </div>
 
-                                  {/* 2. Stream Element Box (Hidden on Mobile viewports) */}
-                                  <div className="hidden md:block text-xs text-slate-600 font-extrabold truncate">
+                                  {/* Class Vector Stream Tag Box */}
+                                  <div className="text-xs text-slate-600 font-semibold truncate">
                                     {student.currentClass}
                                   </div>
 
-                                  {/* 3. Grade Metric Tag */}
-                                  <div className="text-center md:text-left">
-                                    <span className="px-2.5 py-1 rounded-lg text-xs font-extrabold italic font-mono bg-slate-100 text-slate-800 border border-slate-200/60">
+                                  {/* Metric Badge */}
+                                  <div>
+                                    <span className="px-2 py-0.5 rounded-md text-[11px] font-mono font-bold bg-slate-100 border border-slate-200 text-slate-700">
                                       {avgGrade}
                                     </span>
                                   </div>
 
-                                  {/* 4. WASSCE Code Column (Hidden on Mobile viewports) */}
-                                  <div className="hidden md:block text-center">
+                                  {/* External Exam Tracking Component */}
+                                  <div className="text-center">
                                     <span className={cn(
-                                      "px-3 py-1 font-mono text-xs font-black rounded-lg text-white whitespace-nowrap",
-                                      student.finalWassce === 'Pending' && "bg-slate-400",
-                                      student.finalWassce === 'Building' && "bg-slate-300",
-                                      student.finalWassce !== 'Pending' && student.finalWassce !== 'Building' && "bg-slate-900"
+                                      "px-2 py-0.5 font-mono text-[10px] font-bold rounded-md text-white whitespace-nowrap",
+                                      student.finalWassce === 'Pending' ? "bg-slate-400" : "bg-slate-900"
                                     )}>
                                       WAEC: {student.finalWassce.split(' ')[0]}
                                     </span>
                                   </div>
 
-                                  {/* 5. Authorization Status Tag element */}
-                                  <div className="text-center md:text-left">
+                                  {/* Status Validation Sealed Verification Element */}
+                                  <div>
                                     <span className={cn(
-                                      "px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest rounded-full border inline-flex items-center gap-1 whitespace-nowrap",
-                                      student.status === 'Arhive Sealed' && "bg-emerald-50 text-emerald-800 border-emerald-100",
-                                      student.status === 'Archive Inbound' && "bg-blue-50 text-blue-800 border-blue-100",
-                                      student.status === 'Empty Archive' && "bg-amber-50 text-amber-800 border-amber-100"
+                                      "px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-full border inline-flex items-center gap-1.5 whitespace-nowrap",
+                                      student.status === 'Archive Sealed' && "bg-emerald-50 text-emerald-700 border-emerald-200/50",
+                                      student.status === 'Archive Inbound' && "bg-blue-50 text-blue-700 border-blue-200/50",
+                                      student.status === 'Empty Archive' && "bg-amber-50 text-amber-700 border-amber-200/50"
                                     )}>
                                       <ShieldCheck size={11} className="shrink-0" />
-                                      <span className="hidden sm:inline">{student.status}</span>
-                                      <span className="sm:hidden">{student.status === 'Arhive Sealed' ? 'Sealed' : 'Inbound'}</span>
+                                      {student.status}
                                     </span>
                                   </div>
 
-                                  {/* 6. Navigation Control Arrow Button */}
+                                  {/* Action Control Drawer Hook Trigger */}
                                   <div className="text-right">
-                                    <button className="p-2 hover:bg-slate-200 group-hover:bg-slate-900 rounded-xl text-slate-400 group-hover:text-white transition-all flex items-center justify-center ml-auto">
-                                      <ChevronRight size={16} />
+                                    <button 
+                                      onClick={() => setSelectedStudent(student)}
+                                      className="p-1.5 bg-slate-50 group-hover:bg-slate-900 border border-slate-200 group-hover:border-slate-900 rounded-lg text-slate-400 group-hover:text-white transition-all inline-flex items-center justify-center cursor-pointer"
+                                      aria-label={`Open dossier for ${student.name}`}
+                                    >
+                                      <ChevronRight size={14} />
                                     </button>
                                   </div>
                                 </div>
@@ -425,98 +481,100 @@ return (
                       </div>
                     </div>
                   </div>
-
                 </motion.div>
               )}
 
-              {/* Interventions Section Frame View */}
+              {/* Interventions Segment Log Section */}
               {activeSubTab === 'INTERVENTIONS' && (
                 <motion.div 
                   key="interventions"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="p-4 sm:p-8 max-w-5xl mx-auto space-y-8"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-6"
                 >
-                  <div className="bg-white border border-slate-200/60 rounded-[2.5rem] p-6 sm:p-8 shadow-sm space-y-6">
-                    <div>
-                      <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest leading-none">Historical Remedial Actions Catalog</h4>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Audit trail of supportive academic tutorial actions performed and finalized in previous terms</p>
-                    </div>
+                  <div>
+                    <h4 className="text-xs font-black text-slate-900 uppercase tracking-wide">Historical Remedial Actions</h4>
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Audit trail of supportive localized tutoring interventions finalized in past terms.</p>
+                  </div>
 
-                    <div className="space-y-4">
-                      {students.flatMap(s => (s.interventions || []).map(int => ({ ...int, studentName: s.name, class: s.currentClass, studentId: s.id }))).map((item, idx) => (
-                        <div key={idx} className="p-4 sm:p-6 bg-slate-50 border border-slate-150 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 hover:border-slate-200 transition-all">
-                          <div className="space-y-2 flex-1 min-w-0">
+                  <div className="grid grid-cols-1 gap-3">
+                    {students.flatMap(s => (s.interventions || []).map(int => ({ ...int, studentName: s.name, class: s.currentClass, studentId: s.id }))).length === 0 ? (
+                      <EmptyState context="results" variant="compact" />
+                    ) : (
+                      students.flatMap(s => (s.interventions || []).map(int => ({ ...int, studentName: s.name, class: s.currentClass, studentId: s.id }))).map((item, idx) => (
+                        <div key={idx} className="p-4 bg-slate-50/60 border border-slate-200 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                          <div className="space-y-1.5 flex-1 min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-[8px] font-black text-slate-800 bg-slate-200 px-2 py-0.5 rounded uppercase">COACHING FILE</span>
-                              <p className="text-xs font-black text-slate-900 truncate">{item.studentName} — <span className="text-slate-400">{item.class}</span></p>
+                              <span className="text-[8px] font-bold text-slate-600 bg-slate-200/70 px-1.5 py-0.5 rounded tracking-wide uppercase">COACHING FILE</span>
+                              <p className="text-xs font-bold text-slate-900 truncate">{item.studentName} <span className="text-slate-400 font-normal">({item.class})</span></p>
                             </div>
-                            <p className="text-[11px] font-bold text-slate-650 leading-normal">
-                              Trigger Cause: <span className="font-medium text-slate-500">{item.reason}</span>
+                            <p className="text-xs text-slate-600 font-medium">
+                              Trigger Cause: <span className="text-slate-500 font-normal">{item.reason}</span>
                             </p>
-                            <p className="text-[11px] font-bold text-slate-650 leading-normal">
-                              Coaching Strategy: <span className="font-medium text-slate-550 italic">"{item.action}"</span>
+                            <p className="text-xs text-slate-600 font-medium">
+                              Coaching Strategy: <span className="text-slate-500 font-normal italic">"{item.action}"</span>
                             </p>
                           </div>
 
                           <div className="text-left md:text-right shrink-0 border-l-2 md:border-l-0 md:border-r-2 border-slate-900 pl-3 md:pl-0 pr-0 md:pr-3">
-                            <p className="text-xs font-black text-slate-800 italic mb-1">
-                              {item.outcome}
-                            </p>
-                            <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400 block">Term: {item.term}</span>
+                            <p className="text-xs font-bold text-slate-800 italic">{item.outcome}</p>
+                            <span className="text-[9px] font-mono text-slate-400 block mt-0.5">Term: {item.term}</span>
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      ))
+                    )}
                   </div>
                 </motion.div>
               )}
 
-              {/* Past Observations Section Frame View */}
+              {/* Past Qualitative Observations Summary Frame Section */}
               {activeSubTab === 'OBS_SUMMARY' && (
                 <motion.div 
                   key="observations"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="p-4 sm:p-8 max-w-4xl mx-auto space-y-8"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-6"
                 >
-                  <div className="bg-white border border-slate-200/60 rounded-[2.5rem] p-6 sm:p-8 shadow-sm space-y-6">
-                    <div>
-                      <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest leading-none font-sans">Historical Qualitative Notes</h3>
-                      <p className="text-[10px] text-slate-450 font-bold uppercase mt-1">Registry of behavioral progress and student performance journals finalized in past years (Locked)</p>
-                    </div>
+                  <div>
+                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-wide">Historical Qualitative Observations</h3>
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Registry of developmental progress reports and performance logs locked in previous years.</p>
+                  </div>
 
-                    <div className="grid grid-cols-1 gap-6">
-                      {students.flatMap(s => (s.observations || []).map(obs => ({ ...obs, studentName: s.name, class: s.currentClass }))).map((entry, idx) => (
-                        <div key={idx} className="p-4 sm:p-6 bg-slate-50 border-l-4 border-slate-900 border-y border-r border-slate-150 rounded-r-2xl space-y-3">
-                          <div className="flex justify-between items-center bg-white border border-slate-150 px-4 py-2 rounded-xl gap-2">
-                            <div className="min-w-0">
-                              <p className="text-xs font-black text-slate-900 leading-none truncate">{entry.studentName}</p>
-                              <p className="text-[8px] font-bold text-slate-450 uppercase tracking-wider mt-1 truncate">{entry.class}</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {students.flatMap(s => (s.observations || []).map(obs => ({ ...obs, studentName: s.name, class: s.currentClass }))).length === 0 ? (
+                      <p className="text-xs font-medium text-slate-400 text-center col-span-2 py-6">No locked structural observations archived inside this current vault scope.</p>
+                    ) : (
+                      students.flatMap(s => (s.observations || []).map(obs => ({ ...obs, studentName: s.name, class: s.currentClass }))).map((entry, idx) => (
+                        <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 flex flex-col justify-between">
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center bg-white border border-slate-200/60 px-3 py-1.5 rounded-lg gap-2">
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold text-slate-900 truncate leading-tight">{entry.studentName}</p>
+                                <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">{entry.class}</p>
+                              </div>
+                              <span className="text-[9px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-md uppercase shrink-0">{entry.type}</span>
                             </div>
-                            <span className="text-[8px] font-black text-slate-700 bg-slate-100 px-2 py-0.5 rounded uppercase shrink-0">{entry.type}</span>
+                            
+                            <p className="text-xs font-medium italic text-slate-600 leading-relaxed px-1">
+                              "{entry.comment}"
+                            </p>
                           </div>
                           
-                          <p className="text-xs font-semibold italic leading-relaxed text-slate-600 font-sans px-2">
-                            "{entry.comment}"
-                          </p>
-                          
-                          <div className="flex justify-between items-center text-[8px] font-black uppercase tracking-wider text-slate-450 px-2 gap-2">
-                            <span className="truncate">Author: Instructor {entry.teacherName}</span>
-                            <span className="font-mono shrink-0">{entry.date}</span>
+                          <div className="flex justify-between items-center text-[9px] font-bold uppercase text-slate-400 pt-2 border-t border-slate-200/60 px-1 gap-2">
+                            <span className="truncate">By: {entry.teacherName}</span>
+                            <span className="font-mono text-[10px] tracking-tight shrink-0">{entry.date}</span>
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      ))
+                    )}
                   </div>
                 </motion.div>
               )}
 
             </div>
           )}
-
         </AnimatePresence>
       </div>
 

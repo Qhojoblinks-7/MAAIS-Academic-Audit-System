@@ -7,7 +7,6 @@ import {
   ShieldCheck,
   Settings,
   LogOut,
-  GraduationCap,
   Database,
   TrendingUp,
   AlertCircle,
@@ -27,26 +26,38 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { teacherService } from '../../services';
 import { useRole } from '../../context/RoleContext';
 import { useUI } from '../../context/UIContext';
 
 export function Sidebar() {
   const location = useLocation();
   const { user } = useRole();
-  const { setSettingsModalOpen, setSupportModalOpen } = useUI();
-  
+  const { setSettingsModalOpen, setSupportModalOpen, missingObservationCount, setMissingObservationCount } = useUI();
+
   const [showLogoutModal, setShowLogoutModal] = React.useState(false);
   const [activeSubMenu, setActiveSubMenu] = React.useState(null);
   const [unsavedMarks] = React.useState(12);
-  
+
   const sidebarRef = useRef(null);
+
+useEffect(() => {
+     if (user?.role !== 'TEACHER') return;
+     teacherService.getMissingObservations?.()
+       .then((data) => {
+         const missing = Array.isArray(data)
+           ? data.filter((item) => item.status === 'Missing').length
+           : 0;
+         setMissingObservationCount(missing);
+       })
+       .catch(() => setMissingObservationCount(0));
+   }, [setMissingObservationCount, user?.role]);
 
   const navItems = [
     {
       icon: LayoutDashboard,
       label: 'Dashboard',
       id: 'dashboard',
-      // STUDENT dashboard icon should open the StudentPortal
       path: user?.role === 'STUDENT' ? '/student/portal' : '/',
       roles: ['TEACHER', 'HOD', 'ADMIN', 'STUDENT'],
     },
@@ -104,21 +115,17 @@ export function Sidebar() {
     },
     { icon: Calendar, label: 'Timetable', id: 'timetable', path: '/timetable', roles: ['TEACHER', 'STUDENT'] },
     { icon: AlertCircle, label: 'Revisions', id: 'revisions', path: '/revisions', roles: ['TEACHER', 'HOD'], badge: 3 },
-     { icon: ClipboardCheck, label: 'Missing Obs', id: 'missing-obs', path: '/missing-observations', roles: ['TEACHER'], badge: 5, badgeColor: 'bg-warning' },
-     { icon: BarChart3, label: 'Analytics', id: 'analytics', path: '/teacher/analytics', roles: ['TEACHER'] },
-     { icon: Eye, label: 'Observations', id: 'observations', path: '/teacher/observations', roles: ['TEACHER'] },
-     { icon: GraduationCap, label: 'Grading', id: 'grading', path: '/grading', roles: ['TEACHER'] },
+    { icon: ClipboardCheck, label: 'Missing Obs', id: 'missing-obs', path: '/missing-observations', roles: ['TEACHER'], badge: missingObservationCount || 0, badgeColor: 'bg-warning' },
+    { icon: BarChart3, label: 'Analytics', id: 'analytics', path: '/teacher/analytics', roles: ['TEACHER'] },
     { icon: Database, label: 'Archive', id: 'archive', path: '/archive', roles: ['ADMIN', 'HOD'] },
     { icon: LibraryBig, label: 'Archive', id: 'teacher-archive', path: '/teacher/archive', roles: ['TEACHER'] },
     { icon: ShieldCheck, label: 'Certification', id: 'certification', path: '/certification', roles: ['HOD'], badge: 2, badgeColor: 'bg-success' },
-    { icon: Search,       label: 'Audit Log',    id: 'hod-audit', path: '/hod/audit', roles: ['HOD'] },
-    { icon: BarChart3,    label: 'Analytics',    id: 'analytics', path: '/hod/analytics', roles: ['HOD'] },
-    { icon: Settings,     label: 'Settings',     id: 'settings', path: '/hod/settings',  roles: ['HOD'] },
-    { icon: LifeBuoy,     label: 'Support',      id: 'support',  path: '/hod/support',   roles: ['HOD'] },
-
+    { icon: Search, label: 'Audit Log', id: 'hod-audit', path: '/hod/audit', roles: ['HOD'] },
+    { icon: BarChart3, label: 'Analytics', id: 'hod-analytics', path: '/hod/analytics', roles: ['HOD'] },
+    { icon: Settings, label: 'Settings', id: 'hod-settings', path: '/hod/settings', roles: ['HOD'] },
+    { icon: LifeBuoy, label: 'Support', id: 'hod-support', path: '/hod/support', roles: ['HOD'] },
   ];
 
-  // Auto-close open flyouts when clicking outside the menu
   useEffect(() => {
     function handleClickOutside(event) {
       if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
@@ -129,12 +136,12 @@ export function Sidebar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Clear submenus whenever the global location route changes
   useEffect(() => {
     setActiveSubMenu(null);
   }, [location.pathname]);
 
-  const filteredItems = navItems.filter(item => user && item.roles.includes(user.role));
+  const isAdminUser = user?.role === 'SUPER_ADMIN' || user?.role === 'HEADMASTER';
+  const filteredItems = navItems.filter(item => user && (item.roles.includes(user.role) || (isAdminUser && item.roles.includes('ADMIN'))));
 
   const handleLogout = () => {
     localStorage.clear();
@@ -144,10 +151,10 @@ export function Sidebar() {
 
   return (
     <>
-<aside 
-          ref={sidebarRef}
-          className="w-20 h-screen bg-background border-r border-border flex flex-col items-center py-8 gap-8 z-[60] select-none shrink-0 print:hidden"
-        >
+      <aside
+        ref={sidebarRef}
+        className="w-20 h-screen bg-background border-r border-border flex flex-col items-center py-8 gap-8 z-[60] select-none shrink-0 print:hidden"
+      >
         <Link to="/" className="w-12 h-12 bg-brand-primary rounded-2xl flex items-center justify-center text-surface font-semibold text-xl shadow-lg shadow-brand-primary/20 transition-transform active:scale-95">
           M
         </Link>
@@ -187,7 +194,7 @@ export function Sidebar() {
                   >
                     <div className="relative flex items-center justify-center w-6 h-6">
                       <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-                      
+
                       {item.badge && (
                         <div className={cn(
                           "absolute -top-2 -right-2 px-1.5 py-0.5 min-w-[1.15rem] h-4.5 text-surface text-[8px] font-bold rounded-full flex items-center justify-center border-2 border-background shadow-sm pointer-events-none",
@@ -318,8 +325,8 @@ export function Sidebar() {
                   <div className="w-12 h-12 bg-warning/10 rounded-2xl flex items-center justify-center text-warning">
                     <AlertTriangle size={24} />
                   </div>
-                  <button 
-                    onClick={() => setShowLogoutModal(false)} 
+                  <button
+                    onClick={() => setShowLogoutModal(false)}
                     className="p-2 hover:bg-muted rounded-xl transition-all text-text-secondary hover:text-text-primary"
                   >
                     <X size={20} />

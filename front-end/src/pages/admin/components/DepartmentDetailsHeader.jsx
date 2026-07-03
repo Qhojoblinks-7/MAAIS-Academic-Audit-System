@@ -9,6 +9,7 @@ import {
 import { cn } from '../../../lib/utils';
 
 export function DepartmentDetailsHeader({ selectedDept, onBack, onExport, onFreeze, activeTab, setActiveTab }) {
+  const isFrozen = selectedDept?.isFrozen;
   return (
     <div className={cn("p-6 text-white shrink-0 relative overflow-hidden transition-colors duration-500", selectedDept.color.replace('500', '900'))}>
       <div className="absolute top-0 right-0 p-6 opacity-[0.05] pointer-events-none">
@@ -30,10 +31,18 @@ export function DepartmentDetailsHeader({ selectedDept, onBack, onExport, onFree
                <Download size={14} />
                Export Dossier
              </button>
-             <button onClick={onFreeze} className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-rose-600/20 hover:bg-rose-700 transition-all">
-               <Lock size={14} />
-               Initiate Freeze
-             </button>
+              <button 
+                onClick={onFreeze} 
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg transition-all",
+                  isFrozen
+                    ? "bg-emerald-600 text-white shadow-emerald-600/20 hover:bg-emerald-700"
+                    : "bg-rose-600 text-white shadow-rose-600/20 hover:bg-rose-700"
+                )}
+              >
+                {isFrozen ? <ShieldCheck size={14} /> : <Lock size={14} />}
+                {isFrozen ? 'Lift Department Freeze' : 'Initiate Freeze'}
+              </button>
            </div>
 
           <div className="flex items-center gap-2">

@@ -71,7 +71,7 @@ export function AcademicPanel({ studentData }) {
             {/* Responsive chart container wrapper */}
             <div className="w-full overflow-x-auto overflow-y-hidden -mx-4 px-4 sm:mx-0 sm:px-0">
               <div className="h-64 sm:h-80 md:h-96 min-w-[320px] w-full pr-2">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <LineChart
                     data={processedChartData}
                     margin={{ top: 10, right: 10, left: -20, bottom: 0 }}

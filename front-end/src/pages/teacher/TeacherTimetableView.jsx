@@ -4,8 +4,7 @@ import { useTeacherTimetable } from '../../hooks/useTeacherTimetable';
 import { WeeklyTimetableView } from './WeeklyTimetableView';
 import { DailyTimetableView } from './DailyTimetableView';
 import { ResourceModal } from './ResourceModal';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../../components/ui/tooltip';
-import { Button } from '../../components/ui/button';
+import { cn } from '../../lib/utils';
 
 import { 
   Clock, 
@@ -93,27 +92,24 @@ export function TeacherTimetableView() {
           <div className="w-12 h-12 bg-danger/10 border border-danger/20 text-danger rounded-xl flex items-center justify-center mx-auto mb-3">
             <AlertCircle size={22} />
           </div>
-          <h3 className="text-sm font-bold text-text-primary">Data Boundary Isolation Timeout</h3>
+          <h3 className="text-sm font-bold text-text-primary">Timetable Load Error</h3>
           <p className="text-xs text-text-secondary mt-2 leading-relaxed">
-            We could not pull your specific subject data profile securely. Please reload to re-authenticate context.
+            {error?.message || 'We could not pull your timetable securely. Please reload to re-authenticate context.'}
           </p>
-          <Button 
-            onClick={() => window.location.reload()} 
-            variant="default"
-            size="sm"
-            className="mt-5 gap-2"
-          >
-            <RefreshCw size={12} />
-            Re-verify Security Token
-          </Button>
+<button
+             onClick={() => window.location.reload()} 
+             className={cn("mt-5 gap-2 inline-flex items-center justify-center rounded-lg border border-transparent bg-primary text-primary-foreground hover:bg-primary/80 h-8 px-2.5 text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50")}
+           >
+             <RefreshCw size={12} />
+             Re-verify Security Token
+           </button>
         </div>
       </div>
     );
   }
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <div className="flex-1 flex flex-col lg:flex-row bg-background overflow-hidden">
+    <div className="flex-1 flex flex-col lg:flex-row bg-background overflow-hidden">
         
         <div className="w-full lg:w-80 bg-surface border-b lg:border-b-0 lg:border-r border-border p-5 flex flex-col shrink-0 gap-5">
           <div>
@@ -124,36 +120,30 @@ export function TeacherTimetableView() {
             <p className="text-xs text-text-secondary mt-0.5">Isolated department access view.</p>
           </div>
 
-          <div className="bg-muted p-1 rounded-xl flex items-center gap-1">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => setView('weekly')}
-                    variant={view === 'weekly' ? 'secondary' : 'ghost'}
-                    size="sm"
-                    className="flex-1"
-                  >
-                    <Layers size={14} />
-                    Weekly View
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={12}>Weekly schedule grid</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => setView('daily')}
-                    variant={view === 'daily' ? 'secondary' : 'ghost'}
-                    size="sm"
-                    className="flex-1"
-                  >
-                    <Calendar size={14} />
-                    Daily Grid
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={12}>Daily class list</TooltipContent>
-              </Tooltip>
-          </div>
+<div className="bg-muted p-1 rounded-xl flex items-center gap-1">
+              <button
+                onClick={() => setView('weekly')}
+                className={cn(
+                  "flex-1 inline-flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+                  view === 'weekly' ? "bg-secondary text-secondary-foreground" : "hover:bg-muted hover:text-foreground"
+                )}
+                title="Weekly schedule grid"
+              >
+                <Layers size={14} />
+                Weekly View
+              </button>
+              <button
+                onClick={() => setView('daily')}
+                className={cn(
+                  "flex-1 inline-flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+                  view === 'daily' ? "bg-secondary text-secondary-foreground" : "hover:bg-muted hover:text-foreground"
+                )}
+                title="Daily class list"
+              >
+                <Calendar size={14} />
+                Daily Grid
+              </button>
+            </div>
 
           <hr className="border-border" />
 
@@ -210,19 +200,19 @@ export function TeacherTimetableView() {
             
           </div>
 
-          {view === 'daily' && (
-            <Button
-              onClick={() => {
-                setSelectedEntry(currentPeriod || timetable[0]);
-                setIsResourceModalOpen(true);
-              }}
-              disabled={timetable.length === 0}
-              className="w-full gap-2"
-            >
-              <FilePlus size={14} />
-              Attach Lesson Materials
-            </Button>
-          )}
+{view === 'daily' && (
+             <button
+               onClick={() => {
+                 setSelectedEntry(currentPeriod || timetable[0]);
+                 setIsResourceModalOpen(true);
+               }}
+               disabled={timetable.length === 0}
+               className={cn("w-full gap-2 inline-flex items-center justify-center rounded-lg border border-transparent bg-primary text-primary-foreground hover:bg-primary/80 h-8 px-2.5 text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50", "w-full gap-2")}
+             >
+               <FilePlus size={14} />
+               Attach Lesson Materials
+             </button>
+           )}
         </div>
 
         <div className="flex-1 overflow-hidden relative flex flex-col">
@@ -261,6 +251,5 @@ export function TeacherTimetableView() {
           setNewMaterial={setNewMaterial}
         />
       </div>
-    </TooltipProvider>
-  );
+    );
 }

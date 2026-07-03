@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, Send, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { notification } from '../../services/notificationService';
 import { eventBus } from '../../services/eventBus';
 
-export function GradeDiscussionThread({ subjectId, studentId }) {
+export function GradeDiscussionThread({ subjectId, studentId, sender = 'Teacher' }) {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -21,14 +20,14 @@ export function GradeDiscussionThread({ subjectId, studentId }) {
             id: 'msg1',
             content: 'I noticed the SBA score seems low for this term. Could you provide more details on the continuous assessment?',
             sender: 'HOD',
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
             read: true
           },
           {
             id: 'msg2',
             content: 'The SBA includes practical attendance (10 marks), project work (15 marks), and class exercises (5 marks). The student missed 2 practical sessions and submitted the project late.',
             sender: 'Teacher',
-            timestamp: new Date(Date.now() - 90 * 60 * 1000), // 1.5 hours ago
+            timestamp: new Date(Date.now() - 90 * 60 * 1000),
             read: true
           }
         ];
@@ -70,7 +69,7 @@ export function GradeDiscussionThread({ subjectId, studentId }) {
       const newMessage = {
         id: `msg${Date.now()}`,
         content: inputValue,
-        sender: 'Teacher', // In real app, this would come from user context
+        sender: sender,
         timestamp: new Date(),
         read: false
       };
@@ -79,20 +78,17 @@ export function GradeDiscussionThread({ subjectId, studentId }) {
       setMessages(prev => [...prev, newMessage]);
       setInputValue('');
 
-      // In real app, send to backend
-      // await discussionService.sendMessage({ subjectId, studentId, message: inputValue });
-
-      // Notify HOD via notification service
-      // This would typically be done via backend, but for demo we'll use eventBus
+// Emit via eventBus for real-time updates
       eventBus.emit('grade-discussion-message', {
         subjectId,
         studentId,
         message: inputValue,
-        sender: 'Teacher'
+        sender: sender
       });
 
-      // Create notification for HOD
-      // notification.notifyTeacherOfHODAction(studentId, 'DISCUSSION_MESSAGE', subjectId, inputValue);
+      // Notify the other party via notification service (for persistence)
+      // Note: For revision feeds, the notification is handled separately in TeacherRevisionsFeed/HODRevisionsFeed
+      // This component is primarily used in HODReview for grade discussions
     } catch (err) {
       console.error('Failed to send message:', err);
     } finally {

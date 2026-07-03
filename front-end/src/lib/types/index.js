@@ -3,7 +3,7 @@
  * @typedef { 'MALE' | 'FEMALE' } Gender
  * @typedef { 'CORE' | 'ELECTIVE' } SubjectType
  * @typedef { 'EXCELLENT' | 'VERY_GOOD' | 'GOOD' | 'CREDIT' | 'PASS' | 'WEAK_PASS' | 'FAILURE' } GradeRemark
- * @typedef { 'TERM_1' | 'TERM_2' | 'TERM_3' } TermNumber
+ * @typedef { 'TERM_1' | 'TERM_2' | 'TERM_3' | 'SEMESTER_1' | 'SEMESTER_2' } TermNumber
  * @typedef { 'FORM_1' | 'FORM_2' | 'FORM_3' } ClassLevel
  * @typedef { 'PROMOTED' | 'REPEATED' | 'GRADUATED' | 'WITHDRAWN' } PromotionStatus
  * @typedef { 'REPORT_CARD' | 'TRANSCRIPT' } DocumentType
@@ -108,6 +108,7 @@
  * @property {string} startDate
  * @property {string} endDate
  * @property {boolean} isActive
+ * @property {string} [termSystem]
  * @property {string} createdAt
  * @property {Term[]} [terms]
  *
@@ -279,6 +280,32 @@
  * @property {number} interventionAlerts
  */
 
+/**
+ * Format term number for display (handles both 3-term and 2-semester systems)
+ * @param {TermNumber|string} termNumber
+ * @returns {string}
+ */
+const formatTermNumber = (termNumber) => {
+  if (!termNumber) return '—';
+  const upperValue = String(termNumber).toUpperCase();
+  const numericMatch = upperValue.match(/_(\d+)$/);
+  
+  if (upperValue.startsWith('SEMESTER_')) {
+    return numericMatch ? `${getOrdinal(Number(numericMatch[1]))} Semester` : '—';
+  }
+  if (upperValue.startsWith('TERM_')) {
+    return numericMatch ? `${getOrdinal(Number(numericMatch[1]))} Term` : '—';
+  }
+  return termNumber;
+};
+
+const getOrdinal = (num) => {
+  const suffixes = ['th', 'st', 'nd', 'rd'];
+  const mod100 = num % 100;
+  const suffix = mod100 > 10 && mod100 < 14 ? 'th' : (suffixes[num % 10] || 'th');
+  return `${num}${suffix}`;
+};
+
 module.exports = {
   // Type-like constants for runtime checks
   ROLES: {
@@ -298,8 +325,18 @@ module.exports = {
     WEAK_PASS: 'WEAK_PASS',
     FAILURE: 'FAILURE',
   },
-  TERM_NUMBERS: { TERM_1: 'TERM_1', TERM_2: 'TERM_2', TERM_3: 'TERM_3' },
-  CLASS_LEVELS: { FORM_1: 'FORM_1', FORM_2: 'FORM_2', FORM_3: 'FORM_3' },
+  TERM_NUMBERS: { 
+    TERM_1: 'TERM_1', 
+    TERM_2: 'TERM_2', 
+    TERM_3: 'TERM_3',
+    SEMESTER_1: 'SEMESTER_1',
+    SEMESTER_2: 'SEMESTER_2',
+  },
+  TERM_SYSTEMS: {
+    THREE_TERMS: 'THREE_TERMS',
+    TWO_SEMESTERS: 'TWO_SEMESTERS',
+  },
+  CLASS_LEVELS: { FORM_1: 'Form 1', FORM_2: 'Form 2', FORM_3: 'Form 3' },
   PROMOTION_STATUSES: {
     PROMOTED: 'PROMOTED',
     REPEATED: 'REPEATED',
@@ -317,4 +354,6 @@ module.exports = {
     PROMOTE: 'PROMOTE',
     GRADE_CORRECTION: 'GRADE_CORRECTION',
   },
+  formatTermNumber,
+  getOrdinal,
 };

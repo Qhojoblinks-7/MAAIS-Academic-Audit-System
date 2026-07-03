@@ -1,123 +1,153 @@
 ﻿import React, { useState, useMemo } from 'react';
-import { 
-  Activity, 
-  Search, 
-  Filter, 
-  Download, 
-  Clock, 
-  Shield, 
-  AlertTriangle, 
-  Info, 
-  ChevronDown, 
-  ChevronUp, 
-  ExternalLink,
+import {
+  Activity,
+  Search,
+  Filter,
+  Download,
+  Shield,
+  AlertTriangle,
+  Info,
+  ChevronDown,
+  ChevronUp,
   Calendar,
   User,
   Terminal,
   Cpu,
-  Globe
+  Globe,
+  X,
+  ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { EmptyState } from '../../components/molecules';
 import { format } from 'date-fns';
 import { cn } from '../../lib/utils';
+import { toast, Toaster } from '../../components/ui/toast.tsx';
+import { useAdminAuditLogs } from '../../lib/hooks/api/admin';
+import { useNavigate } from 'react-router-dom';
 
-const MOCK_SYSTEM_LOGS = [
-  {
-    id: 'L-001',
-    timestamp: new Date().toISOString(),
-    severity: 'INFO',
-    category: 'AUTH',
-    event: 'Successful Admin Login via MFA',
-    user: 'immanuel.eshun@school.edu',
-    ipAddress: '192.168.1.45',
-    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
-    metadata: { method: 'Google OAuth', location: 'Accra, GH' }
-  },
-  {
-    id: 'L-002',
-    timestamp: new Date(Date.now() - 500000).toISOString(),
-    severity: 'WARNING',
-    category: 'SECURITY',
-    event: 'Multiple Failed Login Attempts Detected',
-    user: 'unknown.user@external.com',
-    ipAddress: '45.12.33.109',
-    userAgent: 'Python-requests/2.25.1', 
-    metadata: { count: 15, target: 'admin_portal' }
-  },
-  {
-    id: 'L-003',
-    timestamp: new Date(Date.now() - 1200000).toISOString(),
-    severity: 'ERROR',
-    category: 'SYSTEM',
-    event: 'Database Sync Failure: Node #14',
-    user: 'System Process',
-    ipAddress: '127.0.0.1',
-    userAgent: 'Internal Node Poller v2.0',
-    metadata: { error: 'Connection Timeout', retry_count: 3 }
-  },
-  {
-    id: 'L-004',
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
-    severity: 'CRITICAL',
-    category: 'SECURITY',
-    event: 'Unauthorised API Access Attempt in Vault',
-    user: 'guest_user_99',
-    ipAddress: '103.44.1.22',
-    userAgent: 'CURL/7.64.1',
-    metadata: { endpoint: '/api/v1/vault/keys', payload_size: '1.2MB' }
-  },
-  {
-    id: 'L-005',
-    timestamp: new Date(Date.now() - 7200000).toISOString(),
-    severity: 'INFO',
-    category: 'ACADEMIC',
-    event: 'Bulk Grade Export - SHS 3 Science',
-    user: 'Mr. Hackman',
-    ipAddress: '192.168.1.12',
-    userAgent: 'Chrome 120.0.0.0',
-    metadata: { file_name: 'results_shs3_sci.csv', records: 450 }
+const getSeverityStyle = (severity) => {
+  switch (severity) {
+    case 'CRITICAL': return 'bg-rose-100 text-rose-700 border-rose-200';
+    case 'ERROR': return 'bg-orange-100 text-orange-700 border-orange-200';
+    case 'WARNING': return 'bg-amber-100 text-amber-700 border-amber-200';
+    case 'INFO': return 'bg-blue-100 text-blue-700 border-blue-200';
+    default: return 'bg-slate-100 text-slate-700 border-slate-200';
   }
-];
+};
+
+const getCategoryIcon = (category) => {
+  switch (category) {
+    case 'AUTH': return <Shield size={14} />;
+    case 'SECURITY': return <AlertTriangle size={14} />;
+    case 'ACADEMIC': return <Activity size={14} />;
+    case 'SYSTEM': return <Cpu size={14} />;
+    case 'SUPPORT': return <Terminal size={14} />;
+    default: return <Terminal size={14} />;
+  }
+};
+
+const exportToCSV = (logs) => {
+  const headers = ['Timestamp', 'Severity', 'Category', 'Event', 'Actor', 'IP Address', 'User Agent'];
+  const rows = logs.map(log => [
+    format(new Date(log.timestamp), 'yyyy-MM-dd HH:mm:ss.SSS'),
+    log.severity,
+    log.category,
+    log.studentName,
+    log.userId,
+    log.ipAddress,
+    log.userAgent
+  ].map(field => `"${String(field).replace(/"/g, '""')}"`).join(','));
+  const csvContent = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `audit-logs-${format(new Date(), 'yyyy-MM-dd-HH-mm')}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
 
 export const ExtendedLogsView = () => {
+  const navigate = useNavigate();
+  const auditLogsQuery = useAdminAuditLogs();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSeverity, setSelectedSeverity] = useState('ALL');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [expandedLogId, setExpandedLogId] = useState(null);
+  const [dateRange, setDateRange] = useState({ from: '', to: '' });
+  const [showTemporalModal, setShowTemporalModal] = useState(false);
+  const [tempFrom, setTempFrom] = useState('');
+  const [tempTo, setTempTo] = useState('');
+
+  const auditLogs = useMemo(() => {
+    if (auditLogsQuery.data?.logs) {
+      return auditLogsQuery.data.logs.map((log) => {
+        const payload = log.payload || {};
+        return {
+          id: log.id,
+          timestamp: log.createdAt || new Date().toISOString(),
+          action: log.action || 'UPDATE',
+          studentName: payload.studentName || payload.teacherName || payload.staffName || payload.departmentName || 'System',
+          subject: log.entity || 'N/A',
+          oldValue: payload.oldGrade || payload.fromDepartmentName || '',
+          newValue: payload.newGrade || payload.toDepartmentName || '',
+          justification: payload.reason || payload.action || '',
+          userId: log.userEmail || log.userId,
+          userRole: log.userRole,
+          ipAddress: log.ipAddress || 'System',
+          userAgent: log.userAgent || 'Internal',
+          severity: log.action === 'DELETE' ? 'ERROR' : log.action === 'CREATE' ? 'INFO' : 'WARNING',
+          category: log.action === 'CREATE' || log.action === 'UPDATE' || log.action === 'LOCK' || log.action === 'UNLOCK' || log.action === 'GRADE_CORRECTION' || log.action === 'PROMOTE' ? 'ACADEMIC' : 'SYSTEM',
+          metadata: payload,
+        };
+      });
+    }
+    return [];
+  }, [auditLogsQuery.data]);
 
   const filteredLogs = useMemo(() => {
-    return MOCK_SYSTEM_LOGS.filter(log => {
-      const matchesSearch = log.event.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            log.user.toLowerCase().includes(searchQuery.toLowerCase());
+    return auditLogs.filter(log => {
+      const matchesSearch = log.studentName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            log.subject.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesSeverity = selectedSeverity === 'ALL' || log.severity === selectedSeverity;
       const matchesCategory = selectedCategory === 'ALL' || log.category === selectedCategory;
-      return matchesSearch && matchesSeverity && matchesCategory;
+      const matchesDate = (!dateRange.from || new Date(log.timestamp) >= new Date(dateRange.from)) &&
+                          (!dateRange.to || new Date(log.timestamp) <= new Date(dateRange.to));
+      return matchesSearch && matchesSeverity && matchesCategory && matchesDate;
     });
-  }, [searchQuery, selectedSeverity, selectedCategory]);
+  }, [auditLogs, searchQuery, selectedSeverity, selectedCategory, dateRange]);
 
   const toggleExpand = (id) => {
     setExpandedLogId(expandedLogId === id ? null : id);
   };
 
-  const getSeverityStyle = (severity) => {
-    switch (severity) {
-      case 'CRITICAL': return 'bg-rose-100 text-rose-700 border-rose-200';
-      case 'ERROR': return 'bg-orange-100 text-orange-700 border-orange-200';
-      case 'WARNING': return 'bg-amber-100 text-amber-700 border-amber-200';
-      case 'INFO': return 'bg-blue-100 text-blue-700 border-blue-200';
-      default: return 'bg-slate-100 text-slate-700 border-slate-200';
+  const handleExport = () => {
+    if (filteredLogs.length === 0) {
+      toast.error('No logs to export');
+      return;
     }
+    exportToCSV(filteredLogs);
+    toast.success(`Exported ${filteredLogs.length} audit log entries`);
   };
 
-  const getCategoryIcon = (category) => {
-    switch (category) {
-      case 'AUTH': return <Shield size={14} />;
-      case 'SECURITY': return <AlertTriangle size={14} />;
-      case 'ACADEMIC': return <Activity size={14} />;
-      case 'SYSTEM': return <Cpu size={14} />;
-      case 'SUPPORT': return <Terminal size={14} />;
-      default: return <Terminal size={14} />;
+  const handleTemporalShift = () => {
+    setShowTemporalModal(true);
+  };
+
+  const applyTemporalShift = () => {
+    if (tempFrom || tempTo) {
+      setDateRange({ from: tempFrom, to: tempTo });
     }
+    setShowTemporalModal(false);
+  };
+
+  const clearTemporalShift = () => {
+    setDateRange({ from: '', to: '' });
+    setTempFrom('');
+    setTempTo('');
+    setShowTemporalModal(false);
   };
 
   return (
@@ -140,12 +170,18 @@ export const ExtendedLogsView = () => {
           </div>
 
           <div className="flex gap-2 sm:gap-3 w-full lg:w-auto">
-            <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-3 bg-slate-100 text-slate-900 border border-slate-200 rounded-2xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all">
+            <button 
+              onClick={handleExport}
+              className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-3 bg-slate-100 text-slate-900 border border-slate-200 rounded-2xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all"
+            >
               <Download size={14} />
               <span className="hidden sm:inline">Export Archive</span>
               <span className="sm:hidden">Export</span>
             </button>
-            <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-3 bg-slate-900 text-white rounded-2xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 hover:bg-black transition-all">
+            <button 
+              onClick={handleTemporalShift}
+              className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-3 bg-slate-900 text-white rounded-2xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 hover:bg-black transition-all"
+            >
               <Calendar size={14} />
               <span>Temporal Shift</span>
             </button>
@@ -203,7 +239,7 @@ export const ExtendedLogsView = () => {
       </div>
 
       {/* Logs Content Container */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6">
+       <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 scrollbar-hide">
         <div className="max-w-7xl mx-auto pb-24">
           {filteredLogs.length > 0 ? (
             <div className="bg-white rounded-[1.5rem] sm:rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
@@ -264,7 +300,7 @@ export const ExtendedLogsView = () => {
                       {/* 3. Event Narrative */}
                       <div className="col-span-4 pr-2">
                         <p className="text-[13px] font-bold text-slate-800 tracking-tight leading-snug lg:leading-none">
-                          {log.event}
+                          {log.studentName} - {log.subject}
                         </p>
                       </div>
 
@@ -275,7 +311,7 @@ export const ExtendedLogsView = () => {
                             <User size={12} className="text-slate-400" />
                           </div>
                           <span className="text-[11px] font-black text-slate-600 truncate max-w-[180px] lg:max-w-[120px]">
-                            {log.user}
+                            {log.userId}
                           </span>
                         </div>
                         
@@ -335,19 +371,38 @@ export const ExtendedLogsView = () => {
                             {/* Column 3: Code Payload Payload */}
                             <div className="space-y-3 md:col-span-2 lg:col-span-1">
                               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Event Meta-Payload</h4>
-                              <div className="bg-slate-900 text-emerald-400 p-4 rounded-[1.25rem] font-mono text-[10px] overflow-x-auto shadow-xl max-h-[94px]">
+                               <div className="bg-slate-900 text-emerald-400 p-4 rounded-[1.25rem] font-mono text-[10px] overflow-x-auto shadow-xl max-h-[94px] scrollbar-hide">
                                 <pre className="whitespace-pre-wrap">{JSON.stringify(log.metadata, null, 2)}</pre>
                               </div>
                             </div>
 
                             {/* Action Row */}
                             <div className="md:col-span-2 lg:col-span-3 flex flex-col sm:flex-row justify-end gap-2.5 pt-2 border-t border-slate-100/70">
-                              <button className="w-full sm:w-auto px-5 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all text-center">
+                              <button 
+                                onClick={() => { 
+                                  navigator.clipboard.writeText(`${window.location.origin}/audit/log/${log.id}`);
+                                  toast.success('Evidence URI copied to clipboard');
+                                }}
+                                className="w-full sm:w-auto px-5 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all text-center"
+                              >
                                 Copy Evidence URI
                               </button>
-                              <button className="w-full sm:w-auto px-5 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/10 hover:bg-black transition-all flex items-center justify-center gap-2">
-                                <span>Audit Dossier</span>
-                                <ExternalLink size={12} />
+                              <button 
+                                onClick={() => {
+                                  const entityRoutes = {
+                                    GradeEntry: '/grading',
+                                    StudentProfile: '/identity/students',
+                                    StaffProfile: '/identity/staff',
+                                    Department: '/identity/departments'
+                                  };
+                                  const route = entityRoutes[log.subject] || '/admin/home';
+                                  toast.info(`Navigate to registry and search for "${log.studentName}"`);
+                                  navigate(route);
+                                }}
+                                className="w-full sm:w-auto px-5 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/10 hover:bg-black transition-all flex items-center justify-center gap-2"
+                              >
+                                <span>View Related Entity</span>
+                                <ArrowRight size={12} />
                               </button>
                             </div>
 
@@ -365,14 +420,70 @@ export const ExtendedLogsView = () => {
               <div className="w-20 h-20 sm:w-24 sm:h-24 bg-slate-100 rounded-[2rem] sm:rounded-[2.5rem] flex items-center justify-center mx-auto mb-6 sm:mb-8">
                 <Info size={36} className="text-slate-300" />
               </div>
-              <h3 className="text-lg sm:text-xl font-black text-slate-900 italic font-display">No logs found in the selected range</h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2 max-w-md mx-auto leading-relaxed">
-                Adjust your search parameters or temporal filters to view system activity
-              </p>
+              <EmptyState context="tickets" />
             </div>
           )}
         </div>
       </div>
+
+      {/* Temporal Shift Modal */}
+      <AnimatePresence>
+        {showTemporalModal && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowTemporalModal(false)} />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden"
+            >
+              <div className="p-5 bg-slate-900 text-white flex justify-between items-center">
+                <div>
+                  <h3 className="text-xl font-black italic font-display">Temporal Shift</h3>
+                  <p className="text-[8px] font-black uppercase text-white/50 tracking-wider mt-0.5">Filter by date range</p>
+                </div>
+                <X size={18} className="cursor-pointer hover:text-rose-500 transition-all" onClick={() => setShowTemporalModal(false)} />
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[8px] font-black uppercase text-slate-400 tracking-wider">From Date</label>
+                  <input
+                    type="date"
+                    value={tempFrom}
+                    onChange={(e) => setTempFrom(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-600 outline-none focus:ring-4 focus:ring-slate-900/5"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[8px] font-black uppercase text-slate-400 tracking-wider">To Date</label>
+                  <input
+                    type="date"
+                    value={tempTo}
+                    onChange={(e) => setTempTo(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-600 outline-none focus:ring-4 focus:ring-slate-900/5"
+                  />
+                </div>
+                <div className="flex gap-2.5 pt-2">
+                  <button
+                    onClick={clearTemporalShift}
+                    className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    onClick={applyTemporalShift}
+                    className="flex-1 px-4 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/10 hover:bg-black transition-all"
+                  >
+                    Apply
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <Toaster />
     </div>
   );
 };

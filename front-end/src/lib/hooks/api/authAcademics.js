@@ -1,9 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authApi, academicApi, usersApi } from '../../../lib/api';
 
+// ── Authentication ───────────────────────────────────────────────────────────
 export function useLogin() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: authApi.login,
+    onSuccess: () => {
+      // Clear all cached data on fresh login to prevent memory/state bleed
+      queryClient.clear();
+    },
   });
 }
 
@@ -16,6 +22,7 @@ export function useCurrentUser() {
   });
 }
 
+// ── Academic Year & Structure ────────────────────────────────────────────────
 export function useAcademicYear() {
   return useQuery({
     queryKey: ['academic', 'years', 'active'],
@@ -48,6 +55,7 @@ export function useClasses() {
   });
 }
 
+// ── Assignments ──────────────────────────────────────────────────────────────
 export function useTeacherAssignments(teacherId) {
   return useQuery({
     queryKey: ['academic', 'assignments', teacherId],
@@ -65,6 +73,7 @@ export function useMyAssignments() {
   });
 }
 
+// ── Users / Students ─────────────────────────────────────────────────────────
 export function useAllStudents() {
   return useQuery({
     queryKey: ['users', 'students'],
@@ -82,22 +91,48 @@ export function useStudentProfile(id) {
   });
 }
 
-export function useCreateMutation(mutationFn, queryKey) {
+// ── Generic Mutation Factories ────────────────────────────────────────────────
+export function useCreateMutation(mutationFn, options = {}) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn,
+    onSuccess: (_data, _variables, _context, queryClient) => {
+      queryClient.invalidateQueries(options.invalidate || []);
+    },
+    ...options,
+  });
+}
+
+export function useUpdateMutation(mutationFn, options = {}) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn,
+    onSuccess: (_data, _variables, _context, queryClient) => {
+      qc.invalidateQueries(options.invalidate || []);
+    },
+    ...options,
+  });
+}
+
+// ── Explicit Mutations (Replacing the generic wrappers) ──────────────────────
+export function useCreateStudent() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: usersApi.createStudent, // Assuming endpoint exists in your contract
     onSuccess: () => {
-      if (queryKey) queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: ['users', 'students'] });
     },
   });
 }
 
-export function useUpdateMutation(mutationFn, queryKey) {
+export function useUpdateStudentProfile() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn,
-    onSuccess: () => {
-      if (queryKey) queryClient.invalidateQueries({ queryKey });
+    mutationFn: ({ id, data }) => usersApi.updateStudentProfile(id, data), 
+    onSuccess: (_, { id }) => {
+      // Targets both the primary listing array and the specific individual view
+      queryClient.invalidateQueries({ queryKey: ['users', 'students', id] });
+      queryClient.invalidateQueries({ queryKey: ['users', 'students'] });
     },
   });
 }

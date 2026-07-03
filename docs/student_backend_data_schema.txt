@@ -1,0 +1,268 @@
+{
+  "student_role_backend_data_requirements": {
+    "overview": "Complete data schema for STUDENT role operations in MAAIS Academic Audit System",
+    "role_summary": {
+      "responsibilities": [
+        "Views own academic performance and report cards",
+        "Creates support tickets for academic or technical issues",
+        "Views own notifications and inbox",
+        "Views own behavior and intervention records",
+        "Generates own report card and transcript",
+        "Views class timetable"
+      ]
+    },
+    "1_authentication_and_profile": {
+      "endpoints": [
+        "/api/v1/auth/login",
+        "/api/v1/auth/refresh",
+        "/api/v1/auth/logout",
+        "/api/v1/auth/me"
+      ],
+      "profile_fields": {
+        "userId": "string",
+        "email": "string",
+        "studentId": "string",
+        "indexNumber": "string",
+        "name": "string",
+        "currentClassId": "string",
+        "currentClassName": "string",
+        "departmentId": "string",
+        "departmentName": "string",
+        "role": "STUDENT",
+        "gender": "string",
+        "dateOfBirth": "date"
+      }
+    },
+    "2_academic_performance": {
+      "endpoints": [
+        "/api/v1/grading/students/{studentId}/terms/{termId}",
+        "/api/v1/reports/report-cards/generate",
+        "/api/v1/reports/transcripts/generate",
+        "/api/v1/reports/verify/{hash}"
+      ],
+      "grade_fields": {
+        "id": "string",
+        "subjectId": "string",
+        "subjectName": "string",
+        "subjectCode": "string",
+        "classScore": "decimal",
+        "examScore": "decimal",
+        "totalScore": "decimal",
+        "grade": "string (A1-F9)",
+        "remark": "string",
+        "position": "integer",
+        "termId": "string"
+      },
+      "report_card_fields": {
+        "id": "string",
+        "studentId": "string",
+        "termId": "string",
+        "academicYear": "string",
+        "averageScore": "decimal",
+        "totalScore": "decimal",
+        "classPosition": "integer",
+        "classSize": "integer",
+        "conductGrade": "string",
+        "headmasterRemarks": "string",
+        "classTeacherComment": "string",
+        "hodComment": "string",
+        "attendancePercentage": "decimal",
+        "subjects": [
+          {
+            "subjectId": "string",
+            "subjectName": "string",
+            "classScore": "decimal",
+            "examScore": "decimal",
+            "totalScore": "decimal",
+            "grade": "string",
+            "remark": "string"
+          }
+        ],
+        "behaviorRatings": [
+          {
+            "category": "string",
+            "rating": "integer (1-5)",
+            "comment": "text"
+          }
+        ],
+        "pdfUrl": "string",
+        "qrCodeUrl": "string",
+        "systemHash": "string"
+      },
+      "transcript_fields": {
+        "id": "string",
+        "studentId": "string",
+        "academicYears": ["array of academic years with terms and grades"],
+        "totalAverage": "decimal",
+        "classPositions": ["array of term positions"],
+        "behaviorSummary": "text",
+        "headmasterRemarks": "text",
+        "pdfUrl": "string",
+        "qrCodeUrl": "string",
+        "systemHash": "string"
+      },
+      "permissions": "Students can only view their own approved grades and generate their own reports. Cannot view other students' grades."
+    },
+    "3_support_tickets": {
+      "endpoints": [
+        "POST /api/v1/comms/tickets",
+        "GET /api/v1/comms/tickets/my"
+      ],
+      "note": "GET /api/v1/comms/tickets is role-restricted to TEACHER/HOD/HEADMASTER/SUPER_ADMIN — not accessible to students.",
+      "ticket_fields": {
+        "id": "string",
+        "title": "string",
+        "description": "text",
+        "category": "Academic|Technical|Finance|General",
+        "priority": "HIGH|MEDIUM|LOW",
+        "status": "OPEN|IN_PROGRESS|RESOLVED",
+        "createdAt": "datetime",
+        "updatedAt": "datetime",
+        "resolvedAt": "datetime",
+        "replies": [
+          {
+            "message": "text",
+            "repliedBy": "string",
+            "repliedAt": "datetime",
+            "responderRole": "TEACHER|HOD|HEADMASTER|SUPER_ADMIN"
+          }
+        ]
+      },
+      "permissions": "Students can create tickets and view only their own tickets. Cannot update status or reply to their own tickets."
+    },
+    "4_notifications": {
+      "endpoints": [
+        "/api/v1/comms/notifications/{studentId}",
+        "/api/v1/comms/notifications/{id}/read"
+      ],
+      "notification_fields": {
+        "id": "string",
+        "title": "string",
+        "body": "text",
+        "channel": "APP|SMS",
+        "isRead": "boolean",
+        "createdAt": "datetime",
+        "deliveredAt": "datetime",
+        "readAt": "datetime"
+      },
+      "permissions": "Students can view and mark as read their own notifications only."
+    },
+    "5_behavior_and_interventions": {
+      "endpoints": [
+        "/api/v1/students/{id}/behavior",
+        "/api/v1/students/{id}/interventions"
+      ],
+      "behavior_fields": {
+        "id": "string",
+        "punctuality": "integer (rating)",
+        "attendance": "integer (rating)",
+        "attitude": "integer (rating)",
+        "conduct": "integer (rating)",
+        "remarks": "text",
+        "recordedById": "string (staff profile id)",
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      },
+      "character_trait_fields": {
+        "id": "string",
+        "leadership": "integer",
+        "discipline": "integer",
+        "teamwork": "integer",
+        "ethics": "integer",
+        "communication": "integer",
+        "responsibility": "integer",
+        "termId": "string",
+        "createdAt": "datetime"
+      },
+      "intervention_fields": {
+        "id": "string",
+        "alertType": "PERFORMANCE_DROP|ATTENDANCE_DROP|BEHAVIORAL",
+        "severity": "LOW|MEDIUM|HIGH|CRITICAL",
+        "status": "ACTIVE|IN_PROGRESS|RESOLVED|DISMISSED",
+        "notes": "text",
+        "resolvedAt": "datetime",
+        "resolvedBy": "string",
+        "createdAt": "datetime"
+      },
+      "permissions": "Students can view their own behavior records and interventions. Cannot create or modify them."
+    },
+    "6_timetable": {
+      "endpoints": [
+        "GET /api/v1/timetable (no role guard, returns all entries)",
+        "GET /api/v1/timetable/teacher/{teacherId}",
+        "GET /api/v1/timetable/class/{classId}",
+        "GET /api/v1/timetable/:id",
+        "GET /api/v1/timetable/clashes/{teacherId}"
+      ],
+      "note": "Timetable endpoints have no role guards. Students should ideally be restricted to their own class only.",
+      "timetable_fields": {
+        "id": "string",
+        "subjectId": "string",
+        "subjectName": "string",
+        "subjectCode": "string",
+        "teacherId": "string",
+        "teacherName": "string",
+        "day": "string (Monday-Friday)",
+        "startTime": "time (HH:MM)",
+        "endTime": "time (HH:MM)",
+        "room": "string",
+        "termId": "string",
+        "academicYear": "string"
+      },
+      "permissions": "Students can view timetable for their own class only."
+    },
+    "7_portal_dashboard": {
+      "endpoints": [
+        "/api/v1/portal/students/{id}/portal-data"
+      ],
+      "dashboard_fields": {
+        "student": {
+          "id": "string",
+          "indexNumber": "string",
+          "firstName": "string",
+          "lastName": "string",
+          "currentClass": "string",
+          "department": "string"
+        },
+        "recentGrades": [
+          {
+            "subject": "string",
+            "grade": "string",
+            "totalScore": "decimal",
+            "term": "string"
+          }
+        ],
+        "cgpa": "decimal (alias for averageScore)",
+        "classRank": "integer (classPosition from latest report)",
+        "approvalStatus": "string (APPROVED|PENDING based on releasedAt)",
+        "attendancePercentage": "decimal",
+        "recentResults": ["array of gradeEntry objects with subject"],
+        "notifications": ["array of notification objects (max 10)"],
+        "activeInterventions": ["array of interventionAlert objects"]
+      },
+      "permissions": "Students can view their own portal dashboard only. No role guard on this endpoint currently (should be secured)."
+    },
+    "8_notes_and_constraints": {
+      "security": [
+        "Students can only view their own data (grades, tickets, notifications, behavior, interventions)",
+        "Students cannot modify any academic records",
+        "Students cannot view other students' data",
+        "All grade views are restricted to APPROVED grades only (isApproved = true)",
+        "Students cannot create, update, or delete academic structure",
+        "Students cannot send notifications or communications"
+      ],
+      "data_isolation": [
+        "Row-level security: studentId is always derived from authenticated user",
+        "Grades filtered by isApproved = true",
+        "Tickets filtered by studentId",
+        "Notifications filtered by studentId",
+        "Behavior and interventions filtered by studentId"
+      ],
+      "unprotected_endpoints": [
+        "/api/v1/portal/students/:id/portal-data — no role guard, should be secured to STUDENT role only",
+        "/api/v1/students/:id/behavior — no role guard, should restrict to student viewing own records",
+        "/api/v1/students/:id/interventions — no role guard, should restrict to student viewing own records"
+      ]
+    }
+  }
+}

@@ -113,7 +113,9 @@ export function OverviewPanel({
               Attendance
             </p>
             <p className="text-xl sm:text-2xl font-black text-text-primary">
-              {studentData.attendance ? `${studentData.attendance}%` : '—'}
+              {studentData.attendance !== undefined && studentData.attendance !== null
+                ? `${Number(studentData.attendance).toFixed(0)}%`
+                : '—'}
             </p>
           </div>
           
@@ -215,7 +217,7 @@ export function OverviewPanel({
           {/* Activity/Logs Meta Card */}
           <div className="bg-background rounded-xl p-3.5 border border-border flex items-center justify-between">
             <span className="text-[9px] font-black text-text-secondary uppercase tracking-widest">
-              last seen
+              Last Seen
             </span>
             <span className="text-xs font-black text-text-primary">
               {studentData.lastSeen

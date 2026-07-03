@@ -1,0 +1,77 @@
+================================================================================
+          DETAILED ARCHITECTURAL GUIDE: THE MASTER TIMETABLE ENGINE
+================================================================================
+
+This document outlines the design architecture, user interaction mechanics, and
+automatic validation systems of the Master Timetable scheduling component in the
+Academic Architect administrative panel.
+
+--------------------------------------------------------------------------------
+1. TRACK SEGREGATION & CONTROLS
+--------------------------------------------------------------------------------
+High schools operating on double-track systems require parallel schedule networks. 
+The interface implements this with structural track separation:
+
+  - Track Filtering Switches:
+    - Filters sessions between "Gold Track" and "Green Track" instantly using clean
+      reactive state filters.
+    - Updates active table schedules and class loads dynamically.
+
+  - Class Specifiers:
+    - Dropdown controls let admins view and update individual classroom timetable sheets
+      independently (e.g., "SHS 3 Science 1", "SHS 3 Science 2").
+
+  - Export & Deploy Routines:
+    - "Distribute to Apps": Programmatically broadcasts updated timetable schedules 
+      to student and teacher mobile/web portals instantly.
+    - "Finalize Grid": Seals the current term's schedule configurations, locking 
+      it into official registrar records.
+
+--------------------------------------------------------------------------------
+2. THE DRAG-AND-DROP ASSIGNMENT ENGINE
+--------------------------------------------------------------------------------
+The grid supports interactive planning via HTML5 drag-and-drop mechanics:
+
+  - The Unassigned Backlog:
+    - Lists course blocks awaiting scheduling.
+    - Items display the subject name, target class, assigned tutor, and visual 
+      departmental color accents.
+    - Active drag states are initialized on the `onDragStart` handler, caching the 
+      lesson object inside the transfer channel:
+      `e.dataTransfer.setData('lessonId', lesson.id)`
+
+  - The Destination Slots:
+    - The calendar grid consists of standard school days (Monday to Friday) and 
+      pre-calibrated daily periods (1 through 8, plus snack/lunch breaks).
+    - Grid cells act as target dropped receivers. Hover states are highlighted using 
+      `onDragOver` styling indicators (`setDragOverSlot(key)`).
+    - Upon dropping on a cell (`onDrop`), the system captures the transfer ID, finds the 
+      respective course block, and updates the local state schedule map:
+      `[day-slotId]: lesson_object`
+
+--------------------------------------------------------------------------------
+3. HEURISTIC CONFLICT RESOLUTION (CLASH DETECTION)
+--------------------------------------------------------------------------------
+A smart conflict processor monitors schedule allocations in real-time. It computes 
+validation rules over the active schedule list whenever state edits occur:
+
+  - Heuristic Calculations (`useMemo`):
+    - Generates mapping indicators tracking tutor occupancy per time slot:
+      `teacherSlotKey = teacherName + periodId + dayName`
+    - Loops through scheduled items. If a duplicate `teacherSlotKey` is registered 
+      across different classroom columns, a validation conflict is raised.
+
+  - In-Grid Alerts:
+    - Clash-ridden cells trigger custom warning states: styled in soft rose hues, 
+      wrapped in high-visibility warning rings, and pulsing with a visual 
+      "Clash Detected" error flag detailing the exact double-booked teacher error.
+
+--------------------------------------------------------------------------------
+4. GRID INTERVAL STRUCTURE
+--------------------------------------------------------------------------------
+The table grid is divided into structured slots conforming to standard school days:
+  - 8 Interactive Academic Periods (40 minutes each).
+  - 2 Hardcoded Break Segments (Snack Break and Lunch Break).
+  - Break segments spans across the columns, disabling drag-and-drop capabilities 
+    to preserve student recess intervals.
+================================================================================

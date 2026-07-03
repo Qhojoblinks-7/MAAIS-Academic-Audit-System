@@ -1,44 +1,59 @@
 import React from 'react';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { EmptyState } from '../../../../components/molecules';
 
 export function BroadsheetComparisonPanel({ studentData }) {
   if (!studentData || !studentData.academicHistory || studentData.academicHistory.length === 0) {
-    return <p className="text-center text-text-secondary py-4">No academic history available for comparison.</p>;
+    return <EmptyState context="results" />;
   }
 
   const currentYearForm = studentData.yearForm || '—';
   const currentSemester = studentData.semester || '—';
 
-  // Find current term in academicHistory
-  const currentTerm = React.useMemo(() => {
-    return studentData.academicHistory.find(
-      term => term.year === currentYearForm && term.term === currentSemester
-    );
-  }, [studentData.academicHistory, currentYearForm, currentSemester]);
-
   // Sort academicHistory by year and term to find previous term securely
   const sortedHistory = React.useMemo(() => {
     return [...studentData.academicHistory].sort((a, b) => {
-      const yearA = a.year === 'SHS 1' ? 1 : a.year === 'SHS 2' ? 2 : 3;
-      const yearB = b.year === 'SHS 1' ? 1 : b.year === 'SHS 2' ? 2 : 3;
-      if (yearA !== yearB) return yearA - yearB;
-      
-      const termA = a.term === 'Term 1' ? 1 : a.term === 'Term 2' ? 2 : 3;
-      const termB = b.term === 'Term 1' ? 1 : b.term === 'Term 2' ? 2 : 3;
-      return termA - termB;
+      if (a.year !== b.year) return a.year.localeCompare(b.year);
+
+      const termA = (a.term || '').match(/\d+/);
+      const termB = (b.term || '').match(/\d+/);
+      const numA = termA ? parseInt(termA[0], 10) : 999;
+      const numB = termB ? parseInt(termB[0], 10) : 999;
+      return numA - numB;
     });
   }, [studentData.academicHistory]);
+
+  // Find current term in academicHistory (fallback to latest available term)
+  const currentTerm = React.useMemo(() => {
+    const currentTermNum = (currentSemester || '').match(/\d+/);
+    let term = studentData.academicHistory.find(t => {
+      if (t.year !== currentYearForm) return false;
+      const termNum = (t.term || '').match(/\d+/);
+      return currentTermNum && termNum && currentTermNum[0] === termNum[0];
+    });
+    if (!term && sortedHistory.length > 0) {
+      term = sortedHistory[sortedHistory.length - 1];
+    }
+    return term;
+  }, [studentData.academicHistory, sortedHistory, currentYearForm, currentSemester]);
 
   const comparisonData = React.useMemo(() => {
     if (!currentTerm) return null;
 
-    const currentIndex = sortedHistory.findIndex(
-      term => term.year === currentYearForm && term.term === currentSemester
-    );
+    if (sortedHistory.length < 2) {
+      return null;
+    }
 
-    if (currentIndex <= 0) return null;
+    const currentIndex = sortedHistory.findIndex(
+      term => term.year === currentTerm.year && term.term === currentTerm.term
+    );
+    if (currentIndex <= 0) {
+      return null;
+    }
 
     const previousTerm = sortedHistory[currentIndex - 1];
+
+    if (!previousTerm) return null;
 
     const currentSubjects = new Map();
     (currentTerm.subjects || []).forEach(subj => {
@@ -67,7 +82,7 @@ export function BroadsheetComparisonPanel({ studentData }) {
   }, [currentTerm, sortedHistory, currentYearForm, currentSemester]);
 
   if (!currentTerm) {
-    return <p className="text-center text-text-secondary py-4">Current term data not found in ledger maps.</p>;
+    return <EmptyState context="results" variant="compact" />;
   }
 
   if (!comparisonData) {
@@ -151,11 +166,11 @@ export function BroadsheetComparisonPanel({ studentData }) {
                  );
                })}
                {allSubjectNames.length === 0 && (
-                 <TableRow>
-                   <TableCell colSpan="5" className="px-4 py-6 text-center text-sm text-text-secondary">
-                     No matching subjects found between sequential target profiles.
-                   </TableCell>
-                 </TableRow>
+                  <TableRow>
+                    <TableCell colSpan="5" className="px-4 py-6 text-center text-sm text-text-secondary">
+                      <EmptyState context="results" variant="compact" />
+                    </TableCell>
+                  </TableRow>
                )}
              </TableBody>
            </Table>

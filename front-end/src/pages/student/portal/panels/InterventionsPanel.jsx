@@ -1,8 +1,61 @@
 import React from 'react';
 import { AlertTriangle, MessageSquare, CheckCircle, Bell } from 'lucide-react';
 import { cn } from '../ui/cn';
+import { EmptyState } from '../../../../components/molecules';
 
-export function InterventionsPanel({ notifications = [], studentData }) {
+export function InterventionsPanel({ notifications = [], studentData, activeInterventions: propInterventions }) {
+  const backendInterventions = React.useMemo(() => {
+    const source = propInterventions || studentData?.activeInterventions;
+    if (!Array.isArray(source)) return [];
+    return source.map((a, idx) => ({
+      id: a.id || `backend-intervention-${idx}`,
+      type: 'intervention',
+      message: a.description || `Performance drop alert: ${a.dropPercentage?.toFixed?.(1) ?? a.dropPercentage}% decline detected.`,
+      timestamp: a.createdAt || a.timestamp || new Date().toISOString(),
+      read: a.status === 'RESOLVED' || a.resolved,
+    }));
+  }, [propInterventions, studentData?.activeInterventions]);
+
+  const generatedInterventions = React.useMemo(() => {
+    const history = studentData?.academicHistory;
+    if (!history || !Array.isArray(history)) return [];
+    if (backendInterventions.length > 0) return [];
+
+    const coreMathScores = [];
+    history.forEach((term, index) => {
+      const coreMath = (term.subjects || []).find(subj => 
+        (subj.name || subj.subject || '').toLowerCase().trim() === 'core mathematics'
+      );
+      const scoreValue = coreMath?.score ?? coreMath?.totalScore ?? 0;
+      if (coreMath && scoreValue > 0) {
+        coreMathScores.push({
+          term: `${term.year || ''} ${term.term || ''}`.trim(),
+          score: scoreValue,
+          index: index,
+        });
+      }
+    });
+
+    const interventions = [];
+    for (let i = 1; i < coreMathScores.length; i++) {
+      const prevScore = coreMathScores[i - 1].score;
+      const currScore = coreMathScores[i].score;
+      if (prevScore > 0) {
+        const dropPercentage = ((prevScore - currScore) / prevScore) * 100;
+        if (dropPercentage >= 15) {
+          interventions.push({
+            id: `intervention-drop-${coreMathScores[i].term.replace(/\s+/g, '-')}-${i}`,
+            type: 'intervention',
+            message: `Your Core Math score dropped by ${Math.round(dropPercentage)}% from ${prevScore}% to ${currScore}% (${coreMathScores[i - 1].term} to ${coreMathScores[i].term}).`,
+            timestamp: new Date().toISOString(),
+            read: false,
+          });
+        }
+      }
+    }
+    return interventions;
+  }, [studentData?.academicHistory, backendInterventions.length]);
+
   const allNotifications = React.useMemo(() => {
     return Array.isArray(notifications) ? notifications.map(n => ({
       ...n,
@@ -12,59 +65,10 @@ export function InterventionsPanel({ notifications = [], studentData }) {
       read: n.read !== undefined ? n.read : (n.status === 'RESOLVED' ? true : false),
     })) : [];
   }, [notifications]);
-   
-  // Track consecutive term grade deltas cleanly using stable references
-  const generatedInterventions = React.useMemo(() => {
-    const interventions = [];
-    const history = studentData?.academicHistory;
-    
-    if (!history || !Array.isArray(history)) return interventions;
-    
-    // Extract valid historical marks for tracking performance over time
-    const coreMathScores = [];
-    
-    history.forEach((term, index) => {
-      const coreMath = (term.subjects || []).find(subj => 
-        (subj.name || subj.subject || '').toLowerCase().trim() === 'core mathematics'
-      );
-      
-      const scoreValue = coreMath?.score ?? coreMath?.totalScore ?? 0;
-      if (coreMath && scoreValue > 0) {
-        coreMathScores.push({
-          term: `${term.year || ''} ${term.term || ''}`.trim(),
-          score: scoreValue,
-          index: index
-        });
-      }
-    });
-    
-    // Flag critical performance drops greater than or equal to 15%
-    for (let i = 1; i < coreMathScores.length; i++) {
-      const prevScore = coreMathScores[i - 1].score;
-      const currScore = coreMathScores[i].score;
-      
-      if (prevScore > 0) {
-        const dropPercentage = ((prevScore - currScore) / prevScore) * 100;
-        
-        if (dropPercentage >= 15) {
-          interventions.push({
-            id: `intervention-drop-${coreMathScores[i].term.replace(/\s+/g, '-')}-${i}`,
-            type: 'intervention',
-            message: `Your Core Math score dropped by ${Math.round(dropPercentage)}% from ${prevScore}% to ${currScore}% (${coreMathScores[i - 1].term} to ${coreMathScores[i].term}).`,
-            timestamp: new Date().toISOString(),
-            read: false
-          });
-        }
-      }
-    }
-    
-    return interventions;
-  }, [studentData?.academicHistory]);
-  
-  // Combine user notifications with dynamically derived interventions cleanly
+
   const combinedNotifications = React.useMemo(() => {
-    return [...allNotifications, ...generatedInterventions];
-  }, [allNotifications, generatedInterventions]);
+    return [...allNotifications, ...backendInterventions, ...generatedInterventions];
+  }, [allNotifications, backendInterventions, generatedInterventions]);
 
   return (
     <div className="space-y-4 sm:space-y-6 w-full">
@@ -129,9 +133,9 @@ export function InterventionsPanel({ notifications = [], studentData }) {
             })}
           </div>
         ) : (
-          <div className="text-center py-8 bg-background rounded-xl border border-dashed border-border/60">
-            <p className="text-text-secondary text-xs font-medium">No system interventions or active alerts logged.</p>
-          </div>
+            <div className="py-8 bg-background rounded-xl border border-dashed border-border/60">
+              <EmptyState context="grades" variant="compact" />
+            </div>
         )}
       </div>
     </div>

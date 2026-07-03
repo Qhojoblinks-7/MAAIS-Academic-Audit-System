@@ -6,7 +6,6 @@ import {
   Calendar,
   AlertCircle,
   ClipboardCheck,
-  GraduationCap,
   Database,
   LifeBuoy,
   Settings,
@@ -14,23 +13,47 @@ import {
   X,
   AlertTriangle,
   BarChart3,
-  Eye,
   ChevronRight,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
 import { useUI } from '../../context/UIContext';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../ui/tooltip';
+import { teacherService } from '../../services';
 
 export function TeacherSidebar() {
   const location = useLocation();
   const { user } = useRole();
-  const { setSettingsModalOpen, setSupportModalOpen } = useUI();
-
+  const { setSettingsModalOpen, setSupportModalOpen, revisionCount, missingObservationCount, setMissingObservationCount } = useUI();
   const [showLogoutModal, setShowLogoutModal] = React.useState(false);
   const [activeSubMenu, setActiveSubMenu] = React.useState(null);
-  const [unsavedMarks] = React.useState(12);
+  const [unsavedMarks, setUnsavedMarks] = React.useState(0);
   const sidebarRef = useRef(null);
+
+React.useEffect(() => {
+     const fetchPendingData = async () => {
+       try {
+         const [revisions, missingObs] = await Promise.all([
+           teacherService.getGradeRevisions(),
+           teacherService.getMissingObservations(),
+         ]);
+
+         const pendingRevisions = Array.isArray(revisions)
+           ? revisions.filter(r => r.status === 'AWAITING_APPROVAL' || r.status === 'PENDING').length
+           : 0;
+         const missingCount = Array.isArray(missingObs)
+           ? missingObs.filter(o => o.status === 'Missing').length
+           : 0;
+
+         setUnsavedMarks(pendingRevisions + missingCount);
+         setMissingObservationCount(missingCount);
+       } catch (err) {
+         setUnsavedMarks(0);
+         setMissingObservationCount(0);
+       }
+     };
+
+     fetchPendingData();
+   }, [setMissingObservationCount]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -64,33 +87,21 @@ export function TeacherSidebar() {
       label: 'Revisions',
       id: 'revisions',
       path: '/revisions',
-      badge: 3,
+      badge: revisionCount || 0,
     },
     {
       icon: ClipboardCheck,
       label: 'Missing Obs',
       id: 'missing-obs',
       path: '/missing-observations',
-      badge: 5,
+      badge: missingObservationCount || 0,
       badgeColor: 'bg-amber-500',
-    },
-    {
-      icon: GraduationCap,
-      label: 'Grading',
-      id: 'grading',
-      path: '/grading',
     },
     {
       icon: BarChart3,
       label: 'Analytics',
       id: 'analytics',
       path: '/teacher/analytics',
-    },
-    {
-      icon: Eye,
-      label: 'Observations',
-      id: 'observations',
-      path: '/teacher/observations',
     },
     {
       icon: Database,
@@ -107,19 +118,14 @@ export function TeacherSidebar() {
   };
 
   return (
-    <TooltipProvider delayDuration={200}>
+    <>
       <aside
         ref={sidebarRef}
         className="w-20 h-screen bg-background border-r border-border flex flex-col items-center py-8 gap-8 z-[60] select-none shrink-0 print:hidden"
       >
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Link to="/" className="w-12 h-12 bg-brand-primary rounded-2xl flex items-center justify-center text-surface font-semibold text-xl shadow-lg shadow-brand-primary/20 transition-transform active:scale-95">
-              M
-            </Link>
-          </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={12}>Home</TooltipContent>
-        </Tooltip>
+        <Link to="/" className="w-12 h-12 bg-brand-primary rounded-2xl flex items-center justify-center text-surface font-semibold text-xl shadow-lg shadow-brand-primary/20 transition-transform active:scale-95" title="Home">
+          M
+        </Link>
 
         <nav className="flex-1 flex flex-col gap-4 w-full px-3 overflow-y-auto no-scrollbar">
           {teacherMenu.map((item) => {
@@ -130,52 +136,44 @@ export function TeacherSidebar() {
             return (
               <div key={item.id} className="relative flex justify-center w-full">
                 {hasSubMenu ? (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => setActiveSubMenu(isSubMenuOpen ? null : item.id)}
-                        className={cn(
-                          "p-3 rounded-2xl transition-all duration-200 relative w-12 h-12 flex items-center justify-center",
-                          isActive || isSubMenuOpen
-                            ? "bg-surface text-brand-primary shadow-md ring-1 ring-border"
-                            : "text-text-secondary hover:bg-surface hover:text-text-primary"
-                        )}
-                      >
-                        <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-                        {isActive && <div className="absolute left-0 w-1 h-5 bg-brand-primary rounded-r-full" />}
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" sideOffset={12}>{item.label}</TooltipContent>
-                  </Tooltip>
+                  <button
+                    onClick={() => setActiveSubMenu(isSubMenuOpen ? null : item.id)}
+                    className={cn(
+                      "p-3 rounded-2xl transition-all duration-200 relative w-12 h-12 flex items-center justify-center",
+                      isActive || isSubMenuOpen
+                        ? "bg-surface text-brand-primary shadow-md ring-1 ring-border"
+                        : "text-text-secondary hover:bg-surface hover:text-text-primary"
+                    )}
+                    title={item.label}
+                  >
+                    <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                    {isActive && <div className="absolute left-0 w-1 h-5 bg-brand-primary rounded-r-full" />}
+                  </button>
                 ) : (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Link
-                        to={item.path}
-                        className={cn(
-                          "rounded-2xl transition-all duration-200 relative w-12 h-12 flex items-center justify-center shrink-0",
-                          isActive
-                            ? "bg-surface text-brand-primary shadow-md ring-1 ring-border"
-                            : "text-text-secondary hover:bg-surface hover:text-text-primary"
-                        )}
-                      >
-                        <div className="relative flex items-center justify-center w-6 h-6">
-                          <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                  <Link
+                    to={item.path}
+                    className={cn(
+                      "rounded-2xl transition-all duration-200 relative w-12 h-12 flex items-center justify-center shrink-0",
+                      isActive
+                        ? "bg-surface text-brand-primary shadow-md ring-1 ring-border"
+                        : "text-text-secondary hover:bg-surface hover:text-text-primary"
+                    )}
+                    title={item.label}
+                  >
+                    <div className="relative flex items-center justify-center w-6 h-6">
+                      <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
 
-                          {item.badge && (
-                            <div className={cn(
-                              "absolute -top-2 -right-2 px-1.5 py-0.5 min-w-[1.15rem] h-4.5 text-surface text-[8px] font-bold rounded-full flex items-center justify-center border-2 border-background shadow-sm pointer-events-none",
-                              item.badgeColor || "bg-danger"
-                            )}>
-                              {item.badge}
-                            </div>
-                          )}
+                      {item.badge && (
+                        <div className={cn(
+                          "absolute -top-2 -right-2 px-1.5 py-0.5 min-w-[1.15rem] h-4.5 text-surface text-[8px] font-bold rounded-full flex items-center justify-center border-2 border-background shadow-sm pointer-events-none",
+                          item.badgeColor || "bg-danger"
+                        )}>
+                          {item.badge}
                         </div>
-                        {isActive && <div className="absolute left-0 w-1 h-5 bg-brand-primary rounded-r-full" />}
-                      </Link>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" sideOffset={12}>{item.label}</TooltipContent>
-                  </Tooltip>
+                      )}
+                    </div>
+                    {isActive && <div className="absolute left-0 w-1 h-5 bg-brand-secondary rounded-r-full" />}
+                  </Link>
                 )}
 
                 <AnimatePresence>
@@ -223,39 +221,27 @@ export function TeacherSidebar() {
         </nav>
 
         <div className="flex flex-col gap-4 mt-auto px-3 w-full items-center">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => setSupportModalOpen(true)}
-                className="p-3 rounded-2xl text-text-secondary hover:bg-surface hover:text-text-primary transition-all duration-200 w-12 h-12 flex items-center justify-center"
-              >
-                <LifeBuoy size={22} />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={12}>ICT Support</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => setSettingsModalOpen(true)}
-                className="p-3 rounded-2xl text-text-secondary hover:bg-surface hover:text-text-primary transition-all duration-200 w-12 h-12 flex items-center justify-center"
-              >
-                <Settings size={22} />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={12}>Settings</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => setShowLogoutModal(true)}
-                className="p-3 rounded-2xl text-text-secondary hover:bg-danger/10 hover:text-danger transition-all duration-200 w-12 h-12 flex items-center justify-center"
-              >
-                <LogOut size={22} />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={12}>Logout</TooltipContent>
-          </Tooltip>
+          <button
+            onClick={() => setSupportModalOpen(true)}
+            className="p-3 rounded-2xl text-text-secondary hover:bg-surface hover:text-text-primary transition-all duration-200 w-12 h-12 flex items-center justify-center"
+            title="ICT Support"
+          >
+            <LifeBuoy size={22} />
+          </button>
+          <button
+            onClick={() => setSettingsModalOpen(true)}
+            className="p-3 rounded-2xl text-text-secondary hover:bg-surface hover:text-text-primary transition-all duration-200 w-12 h-12 flex items-center justify-center"
+            title="Settings"
+          >
+            <Settings size={22} />
+          </button>
+          <button
+            onClick={() => setShowLogoutModal(true)}
+            className="p-3 rounded-2xl text-text-secondary hover:bg-danger/10 hover:text-danger transition-all duration-200 w-12 h-12 flex items-center justify-center"
+            title="Logout"
+          >
+            <LogOut size={22} />
+          </button>
         </div>
       </aside>
 
@@ -299,9 +285,9 @@ export function TeacherSidebar() {
                       <AlertCircle size={18} />
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-text-primary">Unsaved Data Discovered</p>
+                      <p className="text-xs font-semibold text-text-primary">Pending Work Detected</p>
                       <p className="text-xs text-text-secondary mt-0.5">
-                        There are {unsavedMarks} data nodes currently sitting in your local cache (SHS 2 Science).
+                        You have {unsavedMarks} pending grade revision{unsavedMarks !== 1 ? 's' : ''} and missing observation{unsavedMarks !== 1 ? 's' : ''} awaiting your attention.
                       </p>
                     </div>
                   </div>
@@ -329,7 +315,7 @@ export function TeacherSidebar() {
           </div>
         )}
       </AnimatePresence>
-    </TooltipProvider>
+    </>
   );
 }
 

@@ -14,7 +14,7 @@ const TICKET_COLUMNS = [
 
 const PRIORITY_ALERT = { HIGH: 'rose', MEDIUM: 'amber', LOW: 'blue' };
 
-function KanbanCard({ ticket, actions }) {
+function KanbanCard({ ticket, actions, isTicketSLABreach }) {
   return (
     <motion.div
       layout
@@ -32,7 +32,7 @@ function KanbanCard({ ticket, actions }) {
              {new Date(ticket.updatedAt).toLocaleDateString()}
            </span>
          )}
-         {ticket.createdAt && ticket.status !== 'RESOLVED' && isTicketSLABreach(ticket.createdAt) && (
+         {ticket.createdAt && ticket.status !== 'RESOLVED' && isTicketSLABreach?.(ticket.createdAt) && (
            <span className="text-[9px] text-red-500 ml-1" title="SLA breached">
              <AlertTriangle size={10} />
            </span>
@@ -85,12 +85,20 @@ export function SupportTicketKanban({
   columns = TICKET_COLUMNS,
   className,
 }) {
-  const { supportTickets, getFilteredTickets, ticketTabs, setTicketTabs, updateTicketAction, escalateTicketAction, createTicket, isLoading, isTicketSLABreach } = useHOD();
+  const { supportTickets, ticketTabs, setTicketTabs, isLoading, isTicketSLABreach } = useHOD();
   const tickets = controlledTickets ?? supportTickets;
-  const filtered = getFilteredTickets(tickets);
 
   const [newTicketSubject, setNewTicketSubject] = useState('');
   const [newTicketDesc, setNewTicketDesc] = useState('');
+
+  const filtered = useMemo(() => {
+    let result = Array.isArray(tickets) ? tickets : [];
+    if (ticketTabs !== 'all') {
+      const targetTab = ticketTabs.toUpperCase();
+      result = result.filter((t) => (t.status || '').toUpperCase() === targetTab);
+    }
+    return result;
+  }, [tickets, ticketTabs]);
 
   // Group tickets by status
   const columnsData = useMemo(() => {
@@ -116,6 +124,14 @@ export function SupportTicketKanban({
     setNewTicketSubject('');
     setNewTicketDesc('');
   };
+
+  if (isLoading || !tickets) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <LoadingSpinner size="sm" className="text-emerald-600" />
+      </div>
+    );
+  }
 
   return (
     <div className={cn('space-y-3', className)}>
@@ -188,6 +204,7 @@ export function SupportTicketKanban({
                 <KanbanCard
                   key={ticket.id || i}
                   ticket={ticket}
+                  isTicketSLABreach={isTicketSLABreach}
                   actions={
                     ticket.status !== 'RESOLVED'
                       ? [

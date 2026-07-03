@@ -1,0 +1,87 @@
+================================================================================
+          DETAILED ARCHITECTURAL GUIDE: STRUCTURAL EXPORT ENGINE
+================================================================================
+
+This document details the operational logic, dataset structure, and administrative
+utility of the Structural Export mechanism within the Academic Architect portal.
+
+--------------------------------------------------------------------------------
+1. THE CORE OBJECTIVE
+--------------------------------------------------------------------------------
+The "Structural Export" feature serves as the official data utility for compiling
+the entire active academic hierarchy into a portable, lightweight, high-fidelity
+JSON schema. It provides school administrators with a self-contained snapshot of 
+the school's physical and logical organization structure.
+
+--------------------------------------------------------------------------------
+2. DATASET SCHEMATICS & TREE STRUCTURE
+--------------------------------------------------------------------------------
+When an administrator triggers a Structural Export, the engine compiles the 
+hierarchical `yearsList` state tree. The exported dataset maps three distinct 
+organizational tiers:
+
+  - Level 1: Year Group Nodes (The Physical Grade Cohorts)
+    Contains metadata of Year Groups (e.g. SHS 1, SHS 2, SHS 3, and any custom entries
+    like SHS 4) representing general grade levels:
+    - `id` (e.g., "YG1")
+    - `name` (e.g., "SHS 1")
+    - `programs` (Array of associated academic branches)
+
+  - Level 2: Program Tracks (The Curricular Specializations)
+    Each Year Group contains specialized curricular tracks, detailing:
+    - `id` (e.g., "P1-SCI")
+    - `name` (e.g., "Science", "Business", "General Arts")
+    - `classrooms` (Array of physical student sections)
+
+  - Level 3: Classroom Units (The Physical Execution Cells)
+    The physical student clusters under each specialization, capturing:
+    - `id` (e.g., "C1-1")
+    - `name` (e.g., "1 Science 1")
+    - `capacity` (Integer maximum load, e.g., 45)
+    - `studentCount` (Active enrolled students, e.g., 42)
+    - `houses` (Real-time demographic allocation counts across student houses: 
+      Guggisberg, Aggrey, Nkrumah)
+
+--------------------------------------------------------------------------------
+3. TECHNICAL IMPLEMENTATION & STREAM FILE GENERATION
+--------------------------------------------------------------------------------
+To ensure 100% client-side portability, the download engine bypasses external 
+servers, generating a direct data-URI stream instantly:
+
+  - Stream Generation:
+    Converts the reactive `yearsList` state variable directly into formatted JSON.
+    ```js
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(yearsList, null, 2));
+    ```
+
+  - Dynamic Anchor Dispatch:
+    Programmatically spawns a temporary virtual `<a>` element, sets the download file 
+    shorthand signature, triggers a simulated dispatch click, and removes the element 
+    silently from the DOM:
+    ```js
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `school_academic_structure_${Date.now()}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    ```
+
+--------------------------------------------------------------------------------
+4. STRATEGIC ADMINISTRATIVE USE CASES
+--------------------------------------------------------------------------------
+This exported schema provides several downstream utilities:
+
+  - Backup & Disaster Recovery:
+    Allows admins to capture an offline snapshot of the institutional tree before 
+    making significant revisions or beginning new term onboarding phases.
+
+  - Integration Readiness:
+    The output format is perfectly structured to feed external software, such as 
+    national databases (e.g., CSSPS/WAEC systems), timetabling engines, or analytical 
+    reporting software.
+
+  - Structural Migration:
+    Acts as a data blueprint that can be re-uploaded to seed future academic years or 
+    cloned across sister institutions.
+================================================================================

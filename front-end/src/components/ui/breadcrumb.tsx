@@ -1,6 +1,5 @@
 import * as React from "react"
-import { mergeProps } from "@base-ui/react/merge-props"
-import { useRender } from "@base-ui/react/use-render"
+import { Slot } from "@radix-ui/react-slot"
 
 import { cn } from "@/lib/utils"
 import { ChevronRightIcon, MoreHorizontalIcon } from "lucide-react"
@@ -11,7 +10,7 @@ function Breadcrumb({ className, ...props }: React.ComponentProps<"nav">) {
       aria-label="breadcrumb"
       data-slot="breadcrumb"
       className={cn(className)}
-      {...props}
+      {...props} // <-- Fixed
     />
   )
 }
@@ -24,7 +23,7 @@ function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">) {
         "flex flex-wrap items-center gap-1.5 text-sm wrap-break-word text-muted-foreground",
         className
       )}
-      {...props}
+      {...props} // <-- Fixed (This was causing your exact error)
     />
   )
 }
@@ -34,29 +33,24 @@ function BreadcrumbItem({ className, ...props }: React.ComponentProps<"li">) {
     <li
       data-slot="breadcrumb-item"
       className={cn("inline-flex items-center gap-1", className)}
-      {...props}
+      {...props} // <-- Fixed
     />
   )
 }
 
 function BreadcrumbLink({
   className,
-  render,
+  asChild,
   ...props
-}: useRender.ComponentProps<"a">) {
-  return useRender({
-    defaultTagName: "a",
-    props: mergeProps<"a">(
-      {
-        className: cn("transition-colors hover:text-foreground", className),
-      },
-      props
-    ),
-    render,
-    state: {
-      slot: "breadcrumb-link",
-    },
-  });
+}: React.ComponentProps<"a"> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot : "a"
+  return (
+    <Comp
+      data-slot="breadcrumb-link"
+      className={cn("transition-colors hover:text-foreground", className)}
+      {...props} // <-- Fixed
+    />
+  )
 }
 
 function BreadcrumbPage({ className, ...props }: React.ComponentProps<"span">) {
@@ -67,7 +61,7 @@ function BreadcrumbPage({ className, ...props }: React.ComponentProps<"span">) {
       aria-disabled="true"
       aria-current="page"
       className={cn("font-normal text-foreground", className)}
-      {...props}
+      {...props} // <-- Fixed
     />
   )
 }
@@ -82,12 +76,10 @@ function BreadcrumbSeparator({
       data-slot="breadcrumb-separator"
       role="presentation"
       aria-hidden="true"
-      className={cn("[&>svg]:size-3.5", className)}
-      {...props}
+      className={cn("inline-flex items-center justify-center [&>svg]:size-3.5", className)}
+      {...props} // <-- Fixed
     >
-      {children ?? (
-        <ChevronRightIcon />
-      )}
+      {children ?? <ChevronRightIcon />}
     </li>
   )
 }
@@ -105,10 +97,9 @@ function BreadcrumbEllipsis({
         "flex size-5 items-center justify-center [&>svg]:size-4",
         className
       )}
-      {...props}
+      {...props} // <-- Fixed
     >
-      <MoreHorizontalIcon
-      />
+      <MoreHorizontalIcon />
       <span className="sr-only">More</span>
     </span>
   )

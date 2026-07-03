@@ -13,11 +13,6 @@ export function AdminPageHeader({ title, subtitle, icon: Icon, actions, backLink
               <span>Back</span>
             </Link>
           )}
-          <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.25em] text-slate-400 mb-2">
-            <span>Academic Engine</span>
-            <ChevronRight size={10} />
-            <span className="text-slate-900 uppercase">{title}</span>
-          </div>
           <h1 className="text-2xl font-black text-slate-900 italic font-display tracking-tight leading-none">
             {subtitle}
           </h1>

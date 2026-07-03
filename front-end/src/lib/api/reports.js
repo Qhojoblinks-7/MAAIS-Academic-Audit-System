@@ -1,8 +1,8 @@
 import { api } from './client';
 
 export const reportsApi = {
-  generateReportCard: async (studentId, termId, documentType, purpose) =>
-    api.post('/reports/generate', { studentId, termId, documentType, purpose }),
+  generateReportCard: async (studentId, termId) =>
+    api.post('/reports/report-cards/generate', { studentId, termId }),
 
   getStudentReportCard: async (studentId, termId) =>
     api.get(`/reports/students/${studentId}/terms/${termId}/report-card`),
@@ -10,8 +10,6 @@ export const reportsApi = {
   getStudentTranscript: async (studentId) => api.get(`/reports/students/${studentId}/transcript`),
 
   verifyDocument: async (hash) => api.get(`/reports/verify/${hash}`),
-
-  releaseReportCard: async (reportCardId) => api.patch(`/reports/report-cards/${reportCardId}/release`),
 };
 
 export default reportsApi;

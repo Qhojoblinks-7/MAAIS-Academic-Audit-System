@@ -1,17 +1,17 @@
-ï»¿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Settings2, BookOpen, Clock, 
-  ShieldCheck, AlertTriangle, Save, 
+  Settings2, ShieldCheck, AlertTriangle, Save, 
   Plus, Trash2, Edit3, Lock, Unlock,
   HelpCircle, ChevronRight, Gauge,
   Palette, History, Info, ShieldAlert,
   Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
 import { useUI } from '../../context/UIContext';
 import { useNavigate } from 'react-router-dom';
-import { auditTrail } from '../../services/auditTrailService';
+import { useActiveYear, useLockTerm, useUnlockTerm, useComplianceWarnings, useTermSummary, useAllClasses, useUpdateGradingRules, useAllDepartments } from '../../lib/hooks';
 import {
   Table,
   TableHeader,
@@ -43,28 +43,47 @@ const DEFAULT_BOUNDARIES = [
 
 export const GradingRulesView = () => {
   const { isTermFinalized, setIsTermFinalized } = useUI();
+  const TERM_DISPLAY = { TERM_1: 'Term 1', TERM_2: 'Term 2', TERM_3: 'Term 3', SEMESTER_1: 'Semester 1', SEMESTER_2: 'Semester 2' };
   const [caWeight, setCaWeight] = useState(30);
   const [examWeight, setExamWeight] = useState(70);
   const [boundaries, setBoundaries] = useState(DEFAULT_BOUNDARIES);
   const [normalizationEnabled, setNormalizationEnabled] = useState(true);
-  
-   const [deadlineDate, setDeadlineDate] = useState('2026-07-15');
+    const [departmentalOverrideEnabled, setDepartmentalOverrideEnabled] = useState(false);
+    const [departmentOverrides, setDepartmentOverrides] = useState({});
+    
+    const [deadlineDate, setDeadlineDate] = useState('2026-07-15');
    const [deadlineTime, setDeadlineTime] = useState('23:59');
-   const [showSealConfirm, setShowSealConfirm] = useState(false);
-   const [initialState, setInitialState] = useState({});
-   
-   const navigate = useNavigate();
+const [showSealConfirm, setShowSealConfirm] = useState(false);
+    const [initialState, setInitialState] = useState({});
+    const [showComplianceResult, setShowComplianceResult] = useState(false);
+    const [complianceWarnings, setComplianceWarnings] = useState([]);
+    
+    const navigate = useNavigate();
 
-    useEffect(() => {
-      setInitialState({
-        caWeight,
-        examWeight,
-        boundaries,
-        normalizationEnabled,
-        deadlineDate,
-        deadlineTime
-      });
-    }, []);
+    const activeYearQuery = useActiveYear();
+    const lockTermMutation = useLockTerm();
+    const unlockTermMutation = useUnlockTerm();
+    const updateGradingRulesMutation = useUpdateGradingRules();
+    const departmentsQuery = useAllDepartments();
+    const complianceQuery = useComplianceWarnings();
+
+    const departments = departmentsQuery.data || [];
+    const activeTerm = activeYearQuery.data?.terms?.find(t => t.isActive);
+
+    const termSummaryQuery = useTermSummary(activeTerm?.id);
+
+useEffect(() => {
+       setInitialState({
+         caWeight,
+         examWeight,
+         boundaries,
+         normalizationEnabled,
+         departmentalOverrideEnabled,
+         departmentOverrides,
+         deadlineDate,
+         deadlineTime
+       });
+     }, []);
 
     const handleWeightChange = (value) => {
       setCaWeight(value);
@@ -96,40 +115,50 @@ export const GradingRulesView = () => {
       setBoundaries(prevBoundaries => [...prevBoundaries, newBoundary]);
     };
 
-    const handleAuditTrailClick = () => {
-      navigate('/audit');
+const handleAuditTrailClick = () => {
+       navigate('/audit');
+     };
+
+    const runComplianceSuite = () => {
+      if (complianceQuery.data) {
+        setComplianceWarnings(complianceQuery.data);
+        setShowComplianceResult(true);
+      } else if (complianceQuery.isError) {
+        setComplianceWarnings([{ severity: 'high', msg: 'Failed to fetch compliance data.' }]);
+        setShowComplianceResult(true);
+      }
     };
 
-   const handleCommitChanges = async () => {
-     if (isTermFinalized) return;
+ const handleCommitChanges = async () => {
+      if (isTermFinalized) {
+        toast.info('Unlock the term first before committing changes.');
+        return;
+      }
 
-     try {
-       const currentState = {
-         caWeight,
-         examWeight,
-         boundaries,
-         normalizationEnabled,
-         deadlineDate,
-         deadlineTime
-       };
+      try {
+        const submissionDeadline = `${deadlineDate}T${deadlineTime}:00`;
 
-       await auditTrail.logChange(
-         'grading_rules',
-         'current_term',
-         initialState,
-         currentState,
-         'Grading rules updated via Commit Changes'
-       );
+        const payload = {
+          termId: activeTerm?.id,
+          caWeight,
+          examWeight,
+          normalizationEnabled,
+          submissionDeadline,
+        };
 
-       // Update initialState to currentState after successful commit
-       setInitialState(currentState);
+        await updateGradingRulesMutation.mutateAsync(payload);
 
-       alert('Changes committed successfully!');
-     } catch (error) {
-       console.error('Failed to commit changes:', error);
-       alert('Failed to commit changes. Please try again.');
-     }
-    };
+        setInitialState({
+          ...initialState,
+          ...payload,
+        });
+        toast.success('Changes committed successfully!');
+      } catch (error) {
+        console.error('Failed to commit changes:', error);
+        const reason = error?.response?.data?.freezeReason || error?.message || 'Please try again.';
+        toast.error(`Failed to commit changes: ${reason}`);
+      }
+     };
 
     const getTimeRemaining = () => {
       const deadline = new Date(`${deadlineDate}T${deadlineTime}:00`);
@@ -186,16 +215,22 @@ export const GradingRulesView = () => {
                   This action will <span className="font-black text-rose-600">permanently freeze</span> all marks and assessments for this term. Publication protocols will trigger immediately.
                 </p>
 
-                <div className="space-y-4 mb-10">
-                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Target Term</p>
-                      <p className="text-sm font-black text-slate-900">Academic Year 2025/26 - Term 2</p>
-                   </div>
-                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Impact Radius</p>
-                      <p className="text-sm font-black text-slate-900">2,450 Transcripts & 54 Grad sheets</p>
-                   </div>
-                </div>
+                 <div className="space-y-4 mb-10">
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Target Term</p>
+                       <p className="text-sm font-black text-slate-900">
+                         {termSummaryQuery.isLoading ? 'Loading...' : termSummaryQuery.data?.termLabel || '—'}
+                       </p>
+                    </div>
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Impact Radius</p>
+                       <p className="text-sm font-black text-slate-900">
+                         {termSummaryQuery.isLoading
+                           ? 'Loading...'
+                           : `${termSummaryQuery.data?.studentCount?.toLocaleString() ?? '—'} Students & ${termSummaryQuery.data?.gradeEntryCount?.toLocaleString() ?? '—'} Grade Entries`}
+                       </p>
+                    </div>
+                 </div>
 
                 <div className="flex gap-4">
                    <button 
@@ -204,15 +239,29 @@ export const GradingRulesView = () => {
                    >
                      Abort
                    </button>
-                   <button 
-                     onClick={() => {
-                       setIsTermFinalized(true);
-                       setShowSealConfirm(false);
-                     }}
-                     className="flex-1 py-4 bg-rose-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-rose-900/20 hover:bg-rose-700 transition-all"
-                   >
-                     Finalize Term
-                   </button>
+                     <button 
+                       onClick={() => {
+                         if (activeTerm?.id) {
+                           lockTermMutation.mutate(activeTerm.id, {
+                             onSuccess: () => {
+                               setIsTermFinalized(true);
+                               setShowSealConfirm(false);
+                               toast.success('Term sealed successfully. Grading is now locked.');
+                             },
+                             onError: (error) => {
+                               const reason = error?.response?.data?.freezeReason || error?.message || 'Please try again.';
+                               toast.error(`Failed to seal term: ${reason}`);
+                             },
+                           });
+                         } else {
+                           setIsTermFinalized(true);
+                           setShowSealConfirm(false);
+                         }
+                       }}
+                      className="flex-1 py-4 bg-rose-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-rose-900/20 hover:bg-rose-700 transition-all"
+                    >
+                      {lockTermMutation.isPending ? 'Sealing...' : 'Finalize Term'}
+                    </button>
                 </div>
              </motion.div>
           </div>
@@ -222,11 +271,6 @@ export const GradingRulesView = () => {
       <div className="max-w-7xl mx-auto space-y-10 pb-20">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">
-              <span>Academic Engine</span>
-              <ChevronRight size={10} />
-              <span className="text-slate-900">Grading & Assessment Rules</span>
-            </div>
             <h1 className="text-3xl font-black italic font-display text-slate-900 tracking-tight leading-none">
               The Grading Protocol
             </h1>
@@ -337,37 +381,90 @@ export const GradingRulesView = () => {
                         <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">Scale all raw scores to 100% automatically</p>
                       </div>
                     </label>
-                  </div>
-                  <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-500/10">
-                     <div className="flex items-start gap-3">
-                        <Info size={16} className="text-emerald-600 mt-0.5" />
-                        <div>
-                           <p className="text-[11px] font-black text-emerald-600 uppercase tracking-widest">Departmental Override</p>
-                           <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter mt-0.5">Allow Tech/Voc to use 40/60 split.</p>
-                        </div>
-                     </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* 2. Grade Boundary Configuration (The WAEC Scale) */}
-            <section className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
-               <div className="p-10 border-b border-slate-100 flex justify-between items-center">
-                 <div>
-                   <h3 className="text-[13px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
-                       <Palette size={16} className="text-emerald-600" />
-                       WAEC Scale Calibration
-                   </h3>
-                   <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Mapping Percentage Thresholds to Terminal Grades</p>
+</div>
+                   <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-500/10">
+                      <div className="flex items-start gap-3 mb-3">
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <div className={cn(
+                            "w-5 h-5 rounded-md border-2 border-slate-300 flex items-center justify-center transition-all",
+                            departmentalOverrideEnabled ? "bg-emerald-600 border-emerald-600" : ""
+                          )}>
+                            {departmentalOverrideEnabled && <ShieldCheck size={12} className="text-white" />}
+                            <input 
+                              type="checkbox" 
+                              className="sr-only" 
+                              checked={departmentalOverrideEnabled}
+                              disabled={isTermFinalized}
+                              onChange={(e) => setDepartmentalOverrideEnabled(e.target.checked)}
+                            />
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-black text-emerald-600 uppercase tracking-widest">Departmental Override</p>
+                            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter mt-0.5">Allow Tech/Voc to use 40/60 split.</p>
+                          </div>
+                        </label>
+                      </div>
+{departmentalOverrideEnabled && (
+                         <div className="mt-3 pt-3 border-t border-emerald-200/50">
+                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Departments Requiring Override</p>
+                           <div className="space-y-2 max-h-40 overflow-y-auto scrollbar-hide">
+                             {departments.map(dept => (
+                               <label key={dept.id} className="flex items-center gap-2 cursor-pointer">
+                                 <div className={cn(
+                                   "w-4 h-4 rounded border border-slate-300 flex items-center justify-center transition-all",
+                                   departmentOverrides[dept.id] ? "bg-emerald-600 border-emerald-600" : ""
+                                 )}>
+                                   {departmentOverrides[dept.id] && <ShieldCheck size={10} className="text-white" />}
+                                   <input 
+                                     type="checkbox" 
+                                     className="sr-only" 
+                                     checked={departmentOverrides[dept.id] || false}
+                                     disabled={isTermFinalized}
+                                     onChange={(e) => setDepartmentOverrides(prev => ({ ...prev, [dept.id]: e.target.checked }))}
+                                   />
+                                 </div>
+                                 <span className="text-[10px] font-bold text-slate-600">{dept.name || dept.label}</span>
+                               </label>
+                             ))}
+                           </div>
+                         </div>
+                       )}
+                       {!departmentalOverrideEnabled && departments.length > 0 && (
+                         <div className="mt-3 pt-3 border-t border-emerald-200/50">
+                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Available Departments</p>
+                           <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto scrollbar-hide">
+                             {departments.map(dept => (
+                               <span key={dept.id} className="px-2 py-1 bg-white border border-emerald-200 rounded-lg text-[9px] font-bold text-emerald-700">
+                                 {dept.name || dept.label}
+                               </span>
+                             ))}
+                           </div>
+                         </div>
+                       )}
+                   </div>
                  </div>
-                 <button className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:text-slate-900 transition-colors">
-                   <HelpCircle size={18} />
-                 </button>
                </div>
-               
-<div className="overflow-x-auto">
-                  <Table>
+             </section>
+
+{/* 2. Grade Boundary Configuration (The WAEC Scale) */}
+             <section className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-visible">
+                <div className="p-10 border-b border-slate-100 flex justify-between items-center">
+                  <div>
+                    <h3 className="text-[13px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <Palette size={16} className="text-emerald-600" />
+                        WAEC Scale Calibration
+                    </h3>
+                    <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Mapping Percentage Thresholds to Terminal Grades</p>
+                  </div>
+                   <button 
+                     onClick={() => toast.info('WAEC calibration maps score ranges to terminal grades (A1-F9). Adjust boundaries carefully — they directly affect transcript quality and ranking.')}
+                     className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:text-slate-900 transition-colors"
+                   >
+                     <HelpCircle size={18} />
+                   </button>
+                </div>
+                <div className="overflow-visible">
+                   <Table containerClassName="overflow-visible">
                     <TableHeader>
                       <TableRow className="bg-slate-50 border-b border-slate-100">
                          <TableHead className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Score Range (%)</TableHead>
@@ -376,10 +473,10 @@ export const GradingRulesView = () => {
                          <TableHead className="px-10 py-5"></TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody className="divide-y divide-slate-50">
+                    <TableBody className="divide-y divide-slate-50 relative">
                       {boundaries.map((b) => (
-                        <TableRow key={b.id} className="hover:bg-slate-50/50 transition-colors group">
-                          <TableCell className="px-10 py-6">
+                        <TableRow key={b.id} className="hover:bg-slate-50/50 transition-colors group overflow-visible">
+<TableCell className="px-6 py-6 overflow-visible">
                             <div className="flex items-center gap-3">
                                <input 
                                  type="number" 
@@ -389,7 +486,7 @@ export const GradingRulesView = () => {
                                  onChange={(e) => handleBoundaryChange(b.id, 'min', e.target.value === '' ? '' : parseInt(e.target.value))}
                                  className="w-16 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-[12px] font-black font-mono text-center outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
                                />
-                               <span className="text-slate-300 font-black">â€”</span>
+                               <span className="text-slate-300 font-black">—</span>
                                <input 
                                  type="number" 
                                  value={b.max}
@@ -408,22 +505,19 @@ export const GradingRulesView = () => {
                               "bg-rose-50 text-rose-600 border-rose-100"
                             )}>
                               {b.grade}
-                            </span>
-                          </TableCell>
-                          <TableCell className="px-10 py-6">
-                            <div className="relative flex items-center gap-2">
-                              <div className="relative flex-1">
-                                <Edit3 size={12} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-hover:text-emerald-600 transition-colors" />
-                                <input 
-                                  type="text"
-                                  value={b.remark}
-                                  disabled={isTermFinalized}
-                                  onChange={(e) => handleBoundaryChange(b.id, 'remark', e.target.value)}
-                                  className="w-full pl-10 pr-4 py-3 bg-transparent border border-transparent hover:border-slate-200 rounded-xl text-[12px] font-bold text-slate-600 outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 transition-all font-sans"
-                                />
-                              </div>
-                              
-                              {/* Smart Suggestion Dropdown */}
+</span>
+                             </TableCell>
+                             <TableCell className="px-12 py-6 relative flex-1">
+                               <Edit3 size={12} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-hover:text-emerald-600 transition-colors" />
+                               <input 
+                                 type="text"
+                                 value={b.remark}
+                                 disabled={isTermFinalized}
+                                 onChange={(e) => handleBoundaryChange(b.id, 'remark', e.target.value)}
+                                 className="w-full pl-10 pr-4 py-3 bg-transparent border border-transparent hover:border-slate-200 rounded-xl text-[12px] font-bold text-slate-600 outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 transition-all font-sans"
+                               />
+                             </TableCell>
+                             <TableCell className="px-10 py-6 text-right flex items-center gap-2 justify-end">
                               <div className="relative group/suggest">
                                 <button 
                                   disabled={isTermFinalized}
@@ -432,36 +526,33 @@ export const GradingRulesView = () => {
                                   <Sparkles size={14} />
                                 </button>
                                 {!isTermFinalized && (
-                                  <div className="absolute right-0 bottom-full mb-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 hidden group-hover/suggest:block z-50">
-                                     <div className="px-3 py-2 border-b border-slate-50 mb-1">
-                                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Smart Suggestions</p>
-                                     </div>
-                                     {b.suggestionPool?.map((suggestion, idx) => (
-                                       <button 
-                                         key={idx}
-                                         onClick={() => handleBoundaryChange(b.id, 'remark', suggestion)}
-                                         className="w-full text-left px-3 py-2 text-[10px] font-bold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors leading-tight"
-                                       >
-                                         {suggestion}
-                                       </button>
-                                     ))}
-                                     {(!b.suggestionPool || b.suggestionPool.length === 0) && (
-                                       <div className="px-3 py-2 text-[10px] font-medium text-slate-400 italic">No templates for this category.</div>
-                                     )}
+                                  <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 hidden group-hover/suggest:block z-[1000] scrollbar-hide flex flex-col">
+                                    <div className="px-3 py-2 border-b border-slate-50 mb-1">
+                                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Smart Suggestions</p>
+                                    </div>
+                                    {b.suggestionPool?.map((suggestion, idx) => (
+                                        <button 
+                                        key={idx}
+                                        onClick={() => handleBoundaryChange(b.id, 'remark', suggestion)}
+                                        className="w-full text-left px-3 py-2 text-[10px] font-bold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors leading-tight flex items-center"
+                                      >
+                                        {suggestion}
+                                      </button>
+                                    ))}
+                                    {(!b.suggestionPool || b.suggestionPool.length === 0) && (
+                                      <div className="px-3 py-2 text-[10px] font-medium text-slate-400 italic">No templates for this category.</div>
+                                    )}
                                   </div>
                                 )}
                               </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="px-10 py-6 text-right">
-                             <button 
-                               disabled={isTermFinalized}
-                               onClick={() => handleDeleteBoundary(b.id)}
-                               className="text-slate-300 hover:text-rose-500 disabled:hover:text-slate-300 transition-colors opacity-0 group-hover:opacity-100"
-                             >
-                               <Trash2 size={16} />
-                             </button>
-                          </TableCell>
+                              <button 
+                                disabled={isTermFinalized}
+                                onClick={() => handleDeleteBoundary(b.id)}
+                                className="text-slate-300 hover:text-rose-500 disabled:hover:text-slate-300 transition-colors opacity-0 group-hover:opacity-100"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                           </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -488,15 +579,27 @@ export const GradingRulesView = () => {
                  <Lock size={200} />
                </div>
                
-               <div className="relative z-10">
-                 <div className="w-16 h-16 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[1.5rem] flex items-center justify-center mb-8">
-                   {isTermFinalized ? <Lock className="text-rose-400" size={32} /> : <Unlock className="text-emerald-400" size={32} />}
-                 </div>
-                 
-                 <h3 className="text-2xl font-black text-white italic font-display tracking-tight leading-none mb-3">Terminal Validation Lock</h3>
-                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed mb-10">
-                   Encrypt and freeze the database for report generation. Once locked, no teacher can modify marks.
-                 </p>
+                <div className="relative z-10">
+                  <div className="flex items-start justify-between mb-8">
+                    <div className="w-16 h-16 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[1.5rem] flex items-center justify-center">
+                      {isTermFinalized ? <Lock className="text-rose-400" size={32} /> : <Unlock className="text-emerald-400" size={32} />}
+                    </div>
+                    <span className={cn(
+                      "text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-lg border",
+                      isTermFinalized 
+                        ? "bg-rose-500/20 text-rose-300 border-rose-400/30 animate-pulse" 
+                        : "bg-emerald-500/20 text-emerald-300 border-emerald-400/30"
+                    )}>
+                      {isTermFinalized ? 'TERM LOCKED' : 'TERM UNLOCKED'}
+                    </span>
+                  </div>
+                  
+                  <h3 className="text-2xl font-black text-white italic font-display tracking-tight leading-none mb-3">Terminal Validation Lock</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed mb-10">
+                    {isTermFinalized 
+                      ? 'Grading is suspended. No teacher can modify marks. Use Emergency Unlock to restore access.' 
+                      : 'Encrypt and freeze the database for report generation. Once locked, no teacher can modify marks.'}
+                  </p>
                  
                  <div className="space-y-6 mb-12">
                    <div className="flex justify-between items-end">
@@ -530,8 +633,28 @@ export const GradingRulesView = () => {
                    </div>
                  </div>
 
-                 <button 
-                  onClick={() => isTermFinalized ? setIsTermFinalized(false) : setShowSealConfirm(true)}
+                  <button 
+                   onClick={() => {
+                      if (isTermFinalized) {
+                        if (activeTerm?.id) {
+                          unlockTermMutation.mutate(activeTerm.id, {
+                            onSuccess: () => {
+                              setIsTermFinalized(false);
+                              toast.success('Term unlocked. Teachers can now modify grades.');
+                            },
+                            onError: (error) => {
+                              const reason = error?.response?.data?.freezeReason || error?.message || 'Please try again.';
+                              toast.error(`Failed to unlock term: ${reason}`);
+                            },
+                          });
+                        } else {
+                          setIsTermFinalized(false);
+                          toast.success('Term unlocked. Teachers can now modify grades.');
+                        }
+                      } else {
+                        setShowSealConfirm(true);
+                      }
+                    }}
                   className={cn(
                     "w-full py-5 rounded-[2rem] text-[11px] font-black uppercase tracking-widest transition-all shadow-2xl flex items-center justify-center gap-3",
                     isTermFinalized 
@@ -539,8 +662,8 @@ export const GradingRulesView = () => {
                       : "bg-emerald-600 text-white shadow-emerald-900/40"
                   )}
                  >
-                   {isTermFinalized ? <Unlock size={16} /> : <Lock size={16} />}
-                   {isTermFinalized ? 'Emergency Unlock Portal' : 'Apply Final Seal (Lock Term 2)'}
+                    {isTermFinalized ? <Unlock size={16} /> : <Lock size={16} />}
+                    {isTermFinalized ? 'Emergency Unlock Portal' : `Apply Final Seal (Lock ${TERM_DISPLAY[activeTerm?.termNumber] || activeTerm?.termNumber || 'Term'})`}
                  </button>
                  
                  {isTermFinalized && (
@@ -551,34 +674,35 @@ export const GradingRulesView = () => {
                </div>
             </section>
 
-            <section className="bg-white rounded-[2.5rem] border border-slate-200 p-8 shadow-sm">
-               <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2 mb-8">
-                  <AlertTriangle size={18} className="text-amber-500" />
-                  System Warnings
-               </h3>
-               <div className="space-y-4">
-                 {[
-                   { msg: '7 Subject Classes have unentered CA marks.', severity: 'high' },
-                   { msg: 'WASSCE Boundary calibration differs from 2025 standard.', severity: 'low' },
-                   { msg: 'Normalisation active for raw marks (Base 100).', severity: 'info' }
-                 ].map((w, i) => (
-                   <div key={i} className={cn(
-                     "p-4 rounded-2xl border flex gap-4 items-start",
-                     w.severity === 'high' ? "bg-rose-50 border-rose-100 text-rose-900" :
-                     w.severity === 'low' ? "bg-amber-50 border-amber-100 text-amber-900" :
-                     "bg-blue-50 border-blue-100 text-blue-900"
-                   )}>
-                     <div className="mt-1">
-                        {w.severity === 'high' ? <ShieldCheck size={14} /> : <Info size={14} />}
-                     </div>
-                     <p className="text-[11px] font-bold leading-tight">{w.msg}</p>
-                   </div>
-                 ))}
-               </div>
-               
-               <button className="w-full mt-8 py-4 bg-slate-50 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 hover:text-slate-900 transition-all border border-slate-100">
-                 Run Compliance Suite
-               </button>
+<section className="bg-white rounded-[2.5rem] border border-slate-200 p-8 shadow-sm">
+              <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2 mb-8">
+                <AlertTriangle size={18} className="text-amber-500" />
+                System Warnings
+              </h3>
+              <div className="space-y-4">
+                {!showComplianceResult ? (
+                  <div className="p-4 rounded-2xl border flex gap-4 items-start bg-slate-50 border-slate-100 text-slate-500">
+                    <div className="mt-1"><Info size={14} /></div>
+                    <p className="text-[11px] font-bold leading-tight">Run Compliance Suite to generate live diagnostics.</p>
+                  </div>
+                ) : complianceWarnings.map((w, i) => (
+                  <div key={i} className={cn(
+                    "p-4 rounded-2xl border flex gap-4 items-start",
+                    w.severity === 'high' ? "bg-rose-50 border-rose-100 text-rose-900" :
+                    w.severity === 'low' ? "bg-amber-50 border-amber-100 text-amber-900" :
+                    "bg-blue-50 border-blue-100 text-blue-900"
+                  )}>
+                    <div className="mt-1">
+                      {w.severity === 'high' ? <ShieldCheck size={14} /> : <Info size={14} />}
+                    </div>
+                    <p className="text-[11px] font-bold leading-tight">{w.msg}</p>
+                  </div>
+                ))}
+              </div>
+              
+              <button onClick={runComplianceSuite} className="w-full mt-8 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-slate-900/10">
+                Run Compliance Suite
+              </button>
             </section>
           </div>
 

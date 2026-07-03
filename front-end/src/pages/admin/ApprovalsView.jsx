@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { EmptyState } from '../../components/molecules';
 import { 
   Users, AlertCircle, Clock, TrendingUp, Check, X, 
   ThumbsUp, ThumbsDown, FileCheck, Search, 
@@ -37,7 +38,7 @@ export function ApprovalsView() {
   };
   
   return (
-    <div className="flex-1 overflow-y-auto bg-slate-50 p-6">
+    <div className="flex-1 overflow-y-auto bg-slate-50 p-6 scrollbar-hide">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -122,7 +123,7 @@ export function ApprovalsView() {
         <div className="bg-white rounded-xl border border-slate-200/50">
           {filteredApprovals.length === 0 ? (
             <div className="p-8 text-center">
-              <p className="text-slate-500 text-lg">No approval requests found</p>
+              <EmptyState context="tickets" />
               {filter !== 'all' && (
                 <button 
                   onClick={() => setFilter('all')}

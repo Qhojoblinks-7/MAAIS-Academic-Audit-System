@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { EmptyState } from '../../components/molecules';
 import {
   AlertTriangle,
   Hourglass,
@@ -22,16 +23,36 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useHOD } from '../../context/HODContext';
+import { useBreadcrumb } from '../../context/BreadcrumbContext';
 import { statusStyles, severityStyles } from '../shared/RevisionsFeed';
 import { hodService } from '../../services/hodService';
 import { auditTrail } from '../../services/auditTrailService';
 import { notification } from '../../services/notificationService';
 import { eventBus } from '../../services/eventBus';
 
+function formatTime(isoString) {
+  if (!isoString) return 'Unknown';
+  const date = new Date(isoString);
+  const now = new Date();
+  const diffMinutes = Math.floor((now - date) / (1000 * 60));
+  if (diffMinutes < 1) return 'Just now';
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+}
+
 const HODRevisionsFeed = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { revisions = [], refreshRevisions, isLoading } = useHOD();
+  const { setBreadcrumb } = useBreadcrumb();
+
+  useEffect(() => {
+    auditTrail.setUseHodApi(true);
+  }, []);
+
   const [activeTab, setActiveTab] = useState('pending');
   const [selected, setSelected] = useState(null);
   const [hodComment, setHodComment] = useState('');
@@ -56,17 +77,27 @@ const HODRevisionsFeed = () => {
     }
   }, [searchParams, revisions]);
 
+  useEffect(() => {
+    const tabLabel = activeTab === 'pending' ? 'Pending' : activeTab === 'resolved' ? 'Resolved' : 'All';
+    const crumbs = [{ label: 'Correction Requests', path: '/revisions' }, { label: tabLabel, path: null }];
+    if (selected) {
+      crumbs.push({ label: selected.student || 'Revision', path: null });
+    }
+    setBreadcrumb(crumbs);
+  }, [activeTab, selected, setBreadcrumb]);
+
   const filteredData = revisions.filter(item => {
+    const isResolved = (r) => (r.status || '').toUpperCase() === 'RESOLVED' || (r.status || '').toUpperCase() === 'REJECTED';
     const matchesTab = activeTab === 'all' 
       ? true 
       : activeTab === 'pending' 
-        ? item.status !== 'RESOLVED' 
-        : item.status === 'RESOLVED';
+        ? !isResolved(item)
+        : isResolved(item);
         
     const matchesSearch = 
-      item.student.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.subject.toLowerCase().includes(searchQuery.toLowerCase());
+      (item.student || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.subject || '').toLowerCase().includes(searchQuery.toLowerCase());
 
     return matchesTab && matchesSearch;
   });
@@ -117,30 +148,38 @@ const HODRevisionsFeed = () => {
      }
    };
  
-   const sendDiscussionMessage = async () => {
-     if (!discussionInput.trim() || !selected) return;
- 
-     try {
-       setIsDiscussionLoading(true);
-       
-       // In a real implementation, this would send to backend and notify via notification service
-       // For now, we'll just show a toast/alert
-       alert('Discussion message sent: ' + discussionInput);
-       
-       // Clear input
-       setDiscussionInput('');
-       
-       // In a real app, you would:
-       // 1. Send message to backend API to persist it
-       // 2. Use notificationService to alert the other party (HOD/Teacher)
-       // 3. Update the discussion thread with the new message
-     } catch (err) {
-       console.error('Failed to send discussion message:', err);
-       alert('Failed to send message');
-     } finally {
-       setIsDiscussionLoading(false);
-     }
-   };
+const sendDiscussionMessage = async () => {
+    if (!discussionInput.trim() || !selected) return;
+
+    try {
+      setIsDiscussionLoading(true);
+
+      const newMessage = {
+        id: Date.now(),
+        role: 'HOD',
+        user: 'HOD',
+        message: discussionInput,
+        time: 'Just now'
+      };
+
+      const updatedRevision = {
+        ...selected,
+        history: [...(selected.history || []), newMessage]
+      };
+
+      await hodService.updateHODComment(selected.id, discussionInput);
+      await notification.notifyTeacherOfHODAction(selected.teacherId || selected.teacher_id, 'DIRECT_MESSAGE', selected.id, discussionInput);
+
+      setSelected(updatedRevision);
+      setDiscussionInput('');
+      refreshRevisions?.();
+    } catch (err) {
+      console.error('Failed to send discussion message:', err);
+      alert('Failed to send message');
+    } finally {
+      setIsDiscussionLoading(false);
+    }
+  };
 
   return (
     <div className="flex-1 flex w-full h-full min-h-0 overflow-hidden bg-slate-50/40 font-sans antialiased">
@@ -161,44 +200,47 @@ const HODRevisionsFeed = () => {
 
             <div className="hidden sm:flex items-center gap-1.5 bg-amber-50 text-amber-800 px-2.5 py-1 rounded-lg border border-amber-200/30 text-[11px] font-semibold">
               <AlertTriangle size={12} className="text-amber-600 animate-pulse" />
-              <span>{revisions.filter(r => r.status !== 'RESOLVED').length} Pending Approvals</span>
+              <span>{revisions.filter(r => (r.status || '').toUpperCase() !== 'RESOLVED' && (r.status || '').toUpperCase() !== 'REJECTED').length} Pending Approvals</span>
+            </div>
+</div>
+
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+              <div className="flex p-0.5 bg-slate-100 rounded-lg border border-slate-200/40">
+                {['pending', 'resolved', 'all'].map((tab) => {
+                  const isResolved = (r) => (r.status || '').toUpperCase() === 'RESOLVED' || (r.status || '').toUpperCase() === 'REJECTED';
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => {
+                        setActiveTab(tab);
+                        const nextList = revisions.filter(r => tab === 'all' ? true : tab === 'pending' ? !isResolved(r) : isResolved(r));
+                        setSelected(nextList[0] || null);
+                      }}
+                      className={cn(
+                        "px-4 py-1.5 text-xs font-semibold capitalize rounded-md transition-all duration-150",
+                        activeTab === tab 
+                          ? "bg-white text-slate-900 shadow-sm border border-slate-200/20 font-bold" 
+                          : "text-slate-500 hover:text-slate-800"
+                      )}
+                    >
+                      {tab === 'pending' ? 'Needs Approval' : tab}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="relative flex-1 max-w-xs">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search student, code, course..."
+                  className="w-full pl-9 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-950/5 focus:border-slate-400 transition-all placeholder:text-slate-400"
+                />
+              </div>
             </div>
           </div>
-
-          <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
-            <div className="flex p-0.5 bg-slate-100 rounded-lg border border-slate-200/40">
-              {['pending', 'resolved', 'all'].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => {
-                    setActiveTab(tab);
-                    const nextList = revisions.filter(r => tab === 'all' ? true : tab === 'pending' ? r.status !== 'RESOLVED' : r.status === 'RESOLVED');
-                    setSelected(nextList[0] || null);
-                  }}
-                  className={cn(
-                    "px-4 py-1.5 text-xs font-semibold capitalize rounded-md transition-all duration-150",
-                    activeTab === tab 
-                      ? "bg-white text-slate-900 shadow-sm border border-slate-200/20 font-bold" 
-                      : "text-slate-500 hover:text-slate-800"
-                  )}
-                >
-                  {tab === 'pending' ? 'Needs Approval' : tab}
-                </button>
-              ))}
-            </div>
-
-            <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search student, code, course..."
-                className="w-full pl-9 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-950/5 focus:border-slate-400 transition-all placeholder:text-slate-400"
-              />
-            </div>
-          </div>
-        </div>
 
         <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30 space-y-3 min-h-0 no-scrollbar">
           {filteredData.length === 0 ? (
@@ -226,22 +268,22 @@ const HODRevisionsFeed = () => {
                       : "border-slate-200/70 hover:border-slate-350 hover:shadow-sm"
                   )}
                 >
-                  {isSelected && (
+{isSelected && (
                     <div className="absolute top-0 bottom-0 left-0 w-1 bg-slate-900 rounded-l-xl" />
                   )}
 
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded border tracking-wide", statusStyles[job.status])}>
-                        {job.status === 'AWAITING_APPROVAL' ? 'Awaiting Approval' : job.status === 'TEACHER_REPLIED' ? 'Teacher Replied' : 'Resolved'}
+                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded border tracking-wide", statusStyles[(job.status || '').toUpperCase()] || 'bg-slate-100')}>
+                        {(job.status || '').toUpperCase() === 'AWAITING_APPROVAL' ? 'Awaiting Approval' : (job.status || '').toUpperCase() === 'TEACHER_REPLIED' ? 'Teacher Replied' : (job.status || '').toUpperCase() === 'REJECTED' ? 'Rejected' : 'Resolved'}
                       </span>
-                      <span className={cn("text-[9px] font-extrabold px-1.5 py-0.5 rounded border tracking-wider", severityStyles[job.severity])}>
+                      <span className={cn("text-[9px] font-extrabold px-1.5 py-0.5 rounded border tracking-wider", severityStyles[job.severity] || '')}>
                         {job.severity}
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 text-slate-400 text-[11px] font-medium">
                       <Clock size={12} />
-                      <span>{job.time}</span>
+                      <span>{typeof job.time === 'string' ? job.time : formatTime(job.time)}</span>
                     </div>
                   </div>
 
@@ -303,26 +345,28 @@ const HODRevisionsFeed = () => {
               <div className="space-y-3.5">
                 <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Teacher Communication</h4>
                 
-                <div className="space-y-3 relative before:absolute before:top-2 before:bottom-2 before:left-[13px] before:w-0.5 before:bg-slate-100">
-                  {selected.history?.map((node) => (
-                    <div key={node.id} className="flex gap-3 relative z-10">
-                      <div className={cn(
-                        "w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-sm ring-4 ring-white shrink-0 mt-0.5",
-                        node.role === 'HOD' ? 'bg-amber-600' : node.role === 'TEACHER' ? 'bg-sky-600' : 'bg-slate-800'
-                      )}>
-                        {node.role[0]}
-                      </div>
-                      
-                      <div className="flex-1 bg-slate-50 border border-slate-200/60 rounded-xl p-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[11px] font-bold text-slate-800">{node.user}</span>
-                          <span className="text-[10px] text-slate-400">{node.time}</span>
-                        </div>
-                        <p className="text-xs text-slate-600 leading-relaxed font-mono">"{node.message}"</p>
-                      </div>
-                    </div>
-                  ))}
-                 </div>
+<div className="space-y-3 relative before:absolute before:top-2 before:bottom-2 before:left-[13px] before:w-0.5 before:bg-slate-100">
+                   {Array.isArray(selected.history) && selected.history.length > 0 ? selected.history.map((node) => (
+                     <div key={node.id} className="flex gap-3 relative z-10">
+                       <div className={cn(
+                         "w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-sm ring-4 ring-white shrink-0 mt-0.5",
+                         node.role === 'HOD' ? 'bg-amber-600' : node.role === 'TEACHER' ? 'bg-sky-600' : 'bg-slate-800'
+                       )}>
+                         {node.role[0]}
+                       </div>
+                       
+                       <div className="flex-1 bg-slate-50 border border-slate-200/60 rounded-xl p-3">
+                         <div className="flex items-center justify-between mb-1">
+                           <span className="text-[11px] font-bold text-slate-800">{node.user}</span>
+                           <span className="text-[10px] text-slate-400">{formatTime(node.time)}</span>
+                         </div>
+                         <p className="text-xs text-slate-600 leading-relaxed font-mono">"{node.message}"</p>
+                       </div>
+                     </div>
+                   )) : (
+                      <EmptyState context="tickets" variant="compact" />
+                   )}
+                  </div>
                </div>
  
                {/* Grade Discussion Thread */}
@@ -332,9 +376,9 @@ const HODRevisionsFeed = () => {
                      Grade Discussion
                    </h4>
                    <div className="flex items-center gap-2">
-                     <span className="text-sm text-slate-500">
-                       {selected.history?.length || 0} messages
-                     </span>
+<span className="text-sm text-slate-500">
+                        {Array.isArray(selected.history) ? selected.history.length : 0} messages
+                      </span>
                      <button
                        onClick={() => setDiscussionExpanded(!discussionExpanded)}
                        className="p-1 hover:bg-slate-100 rounded hover:text-slate-700 transition-colors"
@@ -344,46 +388,49 @@ const HODRevisionsFeed = () => {
                    </div>
                  </div>
                  
-                 {discussionExpanded && (
-                   <div className="space-y-2">
-                     {selected.history?.length === 0 ? (
-                       <p className="text-center py-4 text-slate-500 italic">
-                         No discussion yet. Start the conversation!
-                       </p>
-                     ) : (
-                       <div className="space-y-2">
-                         {selected.history.map((msg) => (
-                           <div key={msg.id} className={cn(
-                             "flex gap-3",
-                             msg.role === 'TEACHER' ? 'flex-row' : 'flex-row-reverse'
-                           )}>
-                             <div className="w-8 h-8 flex items-center justify-center rounded-full 
-                               {msg.role === 'HOD' ? 'bg-amber-100 text-amber-600' : 'bg-sky-100 text-sky-600'}">
-                               {msg.role === 'HOD' ? 'H' : 'T'}
-                             </div>
-                             <div className="flex-1 max-w-[80%]">
-                               <div className={cn(
-                                 "px-3 py-2 rounded-xl",
-                                 msg.role === 'HOD' ? 'bg-amber-50 text-slate-800 rounded-tr-none' : 
-                                   'bg-sky-50 text-slate-800 rounded-tl-none'
-                               )}>
-                                 <p className="text-xs font-medium text-slate-500 mb-0.5">
-                                   {msg.user}
-                                 </p>
-                                 <p className="text-sm text-slate-800 whitespace-pre-wrap break-words">
-                                   {msg.message}
-                                 </p>
-                                 <p className="text-xs text-slate-400 mt-1">
-                                   {msg.time}
-                                 </p>
-                               </div>
-                             </div>
-                           </div>
-                         ))}
-                       </div>
-                     )}
-                   </div>
-                 )}
+{discussionExpanded && (
+                     <div className="space-y-2">
+                       {!Array.isArray(selected.history) || selected.history.length === 0 ? (
+                         <p className="text-center py-4 text-slate-500 italic">
+                           No discussion yet. Start the conversation!
+                         </p>
+                       ) : (
+                         <div className="space-y-2">
+                           {selected.history.map((msg) => (
+                            <div key={msg.id} className={cn(
+                              "flex gap-3",
+                              msg.role === 'TEACHER' ? 'flex-row' : 'flex-row-reverse'
+                            )}>
+                              <div className={cn(
+                                "w-8 h-8 flex items-center justify-center rounded-full",
+                                msg.role === 'HOD' ? 'bg-amber-100 text-amber-600' : msg.role === 'TEACHER' ? 'bg-sky-100 text-sky-600' : 'bg-slate-200 text-slate-600'
+                              )}>
+                                {msg.role === 'HOD' ? 'H' : msg.role === 'TEACHER' ? 'T' : '?'}
+                              </div>
+                              <div className="flex-1 max-w-[80%]">
+                                <div className={cn(
+                                  "px-3 py-2 rounded-xl",
+                                  msg.role === 'HOD' ? 'bg-amber-50 text-slate-800 rounded-tr-none' : 
+                                    msg.role === 'TEACHER' ? 'bg-sky-50 text-slate-800 rounded-tl-none' :
+                                    'bg-slate-100 text-slate-800 rounded-tl-none'
+                                )}>
+                                  <p className="text-xs font-medium text-slate-500 mb-0.5">
+                                    {msg.user}
+                                  </p>
+                                  <p className="text-sm text-slate-800 whitespace-pre-wrap break-words">
+                                    {msg.message}
+                                  </p>
+<p className="text-xs text-slate-400 mt-1">
+                                     {formatTime(msg.time)}
+                                   </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                  
                  <div className="mt-3 pt-2 border-t border-slate-200">
                    <div className="flex items-center gap-2">

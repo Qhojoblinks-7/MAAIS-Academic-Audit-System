@@ -1,15 +1,10 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { QrCode, CheckCircle2, Clock, ArrowRight, X, Star } from 'lucide-react';
+import { QrCode, CheckCircle2, Clock, ArrowRight, X, Star, AlertCircle, Users } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
-
-const myObservations = [
-  { id: 'o1', type: 'Lab Safety', student: 'Angela Owusu', teacher: 'Mr. Mensah', comment: 'Exhibited high safety protocol compliance.', date: 'Nov 14, 2025' },
-  { id: 'o2', type: 'Collaboration', student: 'Kwame Mensah', teacher: 'Dr. Boateng', comment: 'Led the workshop group effectively.', date: 'Jan 22, 2026' },
-  { id: 'o3', type: 'Behavioral', student: 'Yaw Boateng', teacher: 'Mrs. Owusu', comment: 'Improvement in task submission timeliness.', date: 'Mar 05, 2026' },
-];
+import { teacherService } from '../../services';
 
 export function SupportView() {
   const navigate = useNavigate();
@@ -17,17 +12,86 @@ export function SupportView() {
   const [activeTab, setActiveTab] = React.useState('academics');
   const [title, setTitle] = React.useState('');
   const [message, setMessage] = React.useState('');
+  const [myObservations, setMyObservations] = React.useState([]);
+  const [tickets, setTickets] = React.useState([]);
+  const [behaviorLogs, setBehaviorLogs] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
 
-  const tickets = [
-    { id: 't1', subject: 'Grading discrepancy in Algebra topic', status: 'IN_PROGRESS', priority: 'HIGH', date: '2026-05-12' },
-    { id: 't2', subject: 'Report card PDF not downloading', status: 'OPEN', priority: 'MEDIUM', date: '2026-05-15' },
-    { id: 't3', subject: 'Subject not appearing on my dashboard', status: 'RESOLVED', priority: 'LOW', date: '2026-04-28' },
-  ];
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [obs, issues, ticketData] = await Promise.all([
+          teacherService.getSupportObservations(),
+          teacherService.getGradeIssues(),
+          teacherService.getObservationLogs(),
+        ]);
+
+        const observations = Array.isArray(obs) ? obs : [];
+        const gradeIssues = Array.isArray(issues) ? issues : [];
+        const logs = Array.isArray(ticketData) ? ticketData : [];
+
+        const mappedObs = observations.map(o => ({
+          id: o.id,
+          type: o.type || 'Observation',
+          student: o.student || 'Unknown Student',
+          teacher: o.teacher || 'Unknown Teacher',
+          comment: o.comment || o.observationText || '',
+          date: o.date ? new Date(o.date).toLocaleDateString() : 'N/A',
+        }));
+
+        const mappedTickets = gradeIssues.map(issue => ({
+          id: issue.id || issue.recordId,
+          subject: issue.issue || 'Grade Issue',
+          status: issue.status || 'OPEN',
+          priority: 'MEDIUM',
+          date: issue.date || new Date().toISOString().split('T')[0],
+        }));
+
+        setMyObservations(mappedObs);
+        setTickets(mappedTickets);
+
+        const uniqueStudentIds = [];
+        const seen = new Set();
+        for (const issue of gradeIssues) {
+          const sid = issue.studentId || issue.student?.id || issue.recordId;
+          if (sid && !seen.has(sid)) {
+            seen.add(sid);
+            uniqueStudentIds.push(sid);
+          }
+        }
+
+        if (uniqueStudentIds.length > 0) {
+          const behaviorPromises = uniqueStudentIds.slice(0, 10).map(id =>
+            teacherService.getStudentBehavior(id).catch(err => {
+              console.error(`[SupportView] Failed to fetch behavior for ${id}:`, err);
+              return null;
+            })
+          );
+          const behaviorResults = await Promise.all(behaviorPromises);
+          const logs = [];
+          for (const result of behaviorResults) {
+            if (result?.logs && Array.isArray(result.logs)) {
+              logs.push(...result.logs);
+            }
+          }
+          setBehaviorLogs(logs);
+        }
+      } catch (err) {
+        console.error('[SupportView] Failed to load data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const statusStyles = {
     OPEN: 'bg-gray-50 text-gray-600 border-gray-200',
     IN_PROGRESS: 'bg-amber-50 text-amber-700 border-amber-100',
     RESOLVED: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    AWAITING_APPROVAL: 'bg-blue-50 text-blue-700 border-blue-100',
+    PENDING: 'bg-orange-50 text-orange-700 border-orange-100',
   };
 
   return (

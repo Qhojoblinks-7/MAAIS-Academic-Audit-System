@@ -1,0 +1,170 @@
+MAAIS AUDIT TRAIL — REMAINING GAPS & CLOSURE PLAN
+Generated: 2026-06-28
+Status: Audit trail is ~95% complete. These are the remaining integrity gaps before reaching 100%.
+
+================================================================================
+GAP 1: NO AUDITOR ROLE
+================================================================================
+WHAT IS MISSING:
+  The Role enum (prisma/schema.prisma) has no read-only AUDITOR role.
+  Currently only HOD and SUPER_ADMIN can view audit logs. If an organization
+  needs external or internal auditors with read-only access, there is no role
+  for them.
+
+WHY IT IS NEEDED:
+  Compliance frameworks (e.g., Ghana Education Service audits, internal board
+  reviews) often require assigning read-only audit access to people who are
+  NOT HODs and NOT super-admins. Without an AUDITOR role, the app cannot
+  support segregated audit review duties.
+
+RISK:
+  Compliance risk. Auditors must either be given HOD privileges (too much
+  access) or cannot do their job at all.
+
+FILES TO CHANGE:
+  - prisma/schema.prisma        (add AUDITOR to Role enum)
+  - src/hod/hod-teachers.service.ts  (allow AUDITOR in getAuditLogs/addAuditLogComment)
+  - src/admin/admin.service.ts       (allow AUDITOR in getAuditLogs)
+
+================================================================================
+GAP 2: BROKEN MIGRATION FILE FOR DB TRIGGER
+================================================================================
+WHAT IS MISSING:
+  prisma/migrations/20260628160636_audit_logs_insert_only_trigger/migration.sql
+  contains a DO$$ BEGIN...END$$ block that fails on Neon PostgreSQL with
+  syntax error P3009. We manually applied the trigger via scripts/create-audit-trigger.cjs
+  and then ran `prisma migrate resolve --applied` to mark it as applied.
+
+  On a FRESH database, running `prisma migrate deploy` would fail and block ALL
+  future migrations because the broken file is still in the migrations folder.
+
+WHY IT IS NEEDED:
+  Any new environment (staging, production, new developer machine, CI/CD
+  pipeline) that runs `prisma migrate deploy` against an empty database will
+  hit the syntax error and stop. The DB trigger will not be created, which
+  means audit_logs will NOT be immutable at the database level on fresh setups.
+
+RISK:
+  Deployment risk. A fresh-environment deploy breaks at the migration step.
+
+FIX:
+  Replace the DO$$ block in migration.sql with a safe, idempotent SQL routine:
+    - CREATE OR REPLACE FUNCTION prevent_audit_log_modification()
+    - CREATE TRIGGER audit_logs_insert_only IF NOT EXISTS
+  The migration file must contain raw SQL that Neon accepts without wrapping
+  in a DO block.
+
+================================================================================
+GAP 3: DATABASEINITSERVICE DOES NOT AUTO-CREATE TRIGGER
+================================================================================
+WHAT IS MISSING:
+  src/common/services/database-init.service.ts only checks whether the trigger
+  exists and logs a warning if it does not. It does NOT create the trigger.
+
+  Current behavior on fresh DB: startup prints WARNING, but trigger is absent.
+
+WHY IT IS NEEDED:
+  As a safety net for environments where migrations may have been skipped or
+  the migration history was manually manipulated. The OnModuleInit hook should
+  guarantee the trigger exists, not just complain about it.
+
+RISK:
+  If migration history is reset or a new environment is bootstrapped without
+  running the manual script, audit_logs remain mutable at the DB level.
+
+FIX:
+  Change DatabaseInitService.onModuleInit() to execute raw CREATE FUNCTION and
+  CREATE TRIGGER statements via prisma.$executeRaw`...` when the trigger is
+  missing. Use simple CREATE OR REPLACE + CREATE TRIGGER statements (no DO$$).
+
+================================================================================
+GAP 4: @AUDIT() INTERCEPTOR IS NOT APPLIED TO GRADING ENDPOINTS
+================================================================================
+WHAT IS MISSING:
+  The AuditInterceptor is registered globally and has @Audit() decorator logic,
+  but it is NOT applied to any grading controller method. Grading endpoints log
+  audit entries via explicit prisma.auditLog.create() calls inside the service.
+
+  If a developer later adds a new grading endpoint (e.g., a bulk delete, a
+  mass transfer, a term-lock) and forgets to add the explicit auditLog.create()
+  call, there is no automatic safety net.
+
+WHY IT IS NEEDED:
+  The interceptor exists as a universal audit pattern. Applying it to grading
+  endpoints creates a defense-in-depth layer: even if an explicit log call is
+  accidentally omitted, the interceptor captures the action.
+
+RISK:
+  Silent audit gaps due to developer oversight when extending grading features.
+
+FIX:
+  Apply @Audit(AuditAction.UPDATE, 'GradeEntry') decorator to:
+    - grading.controller.ts  -> upsertGrade, correctGrade, lockGrade, unlockGrade, approveGrade
+  The explicit auditLog.create() calls in the service can remain — the interceptor
+  will run too, but its catch block swallows errors, so it will not break requests.
+  This makes grading audited at BOTH layers (defense in depth).
+
+================================================================================
+GAP 5: FRONTEND INTERVENTIONSPANEL DOUBLE-COUNTS
+================================================================================
+WHAT IS MISSING:
+  front-end/src/pages/student/portal/panels/InterventionsPanel.jsx falls back
+  to client-side Core Math computation when backend activeInterventions is empty
+  OR undefined, but NOT when it is an empty array [].
+  If the backend returns [], both backendInterventions ([] mapped) and
+  generatedInterventions (client-side) run, producing duplicates.
+
+WHY IT IS NEEDED:
+  Concise, accurate display. The student portal should show either the
+  authoritative backend alerts OR the client-side fallback, never both.
+
+RISK:
+  Minor UX issue only. No data integrity problem.
+
+FIX:
+  Change the guard from `if (backendInterventions.length > 0)` to
+  `if (backendInterventions) return []` (treat any defined backend value as
+  authoritative).
+
+================================================================================
+GAP 6: AUDIT LOG EXPORT BUTTON IS STUBBED
+================================================================================
+WHAT IS MISSING:
+  front-end/src/pages/admin/AuditLogsView.jsx line 76 shows an "Export Registry"
+  button that triggers alert('coming soon'). No CSV/Excel/PDF export exists.
+
+WHY IT IS NEEDED:
+  Auditors and admins need to extract audit trail data for offline review,
+  board presentations, or regulatory submission.
+
+RISK:
+  UX gap only. No data integrity problem.
+
+FIX:
+  Implement client-side CSV export from the already-fetched auditLogs array, or
+  add a backend /admin/audit-logs/export endpoint that streams a CSV.
+
+================================================================================
+PRIORITY SUMMARY
+================================================================================
+HIGH (data integrity / compliance):
+  1. Broken migration file           -> blocks fresh deploys
+  2. DatabaseInitService won't auto-create trigger on fresh DB
+  3. @Audit() safety-net missing on grading endpoints
+
+MEDIUM (compliance / access control):
+  4. No AUDITOR role
+
+LOW (UX / polish):
+  5. InterventionsPanel double-count fix
+  6. Audit log export button
+
+================================================================================
+EXECUTION ORDER RECOMMENDED
+================================================================================
+1. Fix migration.sql (Gap 2) — unblocks fresh DBs
+2. Fix DatabaseInitService (Gap 3) — runtime safety net
+3. Add AUDITOR role (Gap 4) — access control
+4. Apply @Audit() to grading controllers (Gap 5) — defense in depth
+5. InterventionsPanel guard (Gap 6) — quick polish
+6. Export button implementation (Gap 7) — quick polish

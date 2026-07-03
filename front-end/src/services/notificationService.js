@@ -1,8 +1,7 @@
 import { getAuthToken } from './auth';
 import { dataSync } from './dataSyncLayer';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-const USE_MOCK = !BASE_URL || import.meta.env.VITE_USE_MOCK_API === 'true';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 const NOTIFICATION_SOUND_URL = '/sounds/notification.mp3';
 
 function getHeaders() {
@@ -14,21 +13,25 @@ function getHeaders() {
 }
 
 async function request(method, path, body) {
-  if (USE_MOCK) {
-    // Mock response for local development
-    return { success: true, id: Date.now() };
-  }
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers: getHeaders(),
-    credentials: 'include',
-    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-  });
+  try {
+    const res = await fetch(`${BASE_URL}${path}`, {
+      method,
+      headers: getHeaders(),
+      credentials: 'include',
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+    });
 
-  if (!res.ok) {
-    throw new Error(`Notification request failed: ${res.status}`);
+    if (!res.ok) {
+      throw new Error(`Notification request failed: ${res.status}`);
+    }
+    return res.status === 204 ? undefined : res.json();
+  } catch (err) {
+    if (err instanceof TypeError && err.message === 'Failed to fetch') {
+      console.warn(`[NotificationService] Network error for ${method} ${path}: backend may be unreachable`);
+      return null;
+    }
+    throw err;
   }
-  return res.status === 204 ? undefined : res.json();
 }
 
 class NotificationService {
@@ -111,7 +114,7 @@ class NotificationService {
   async sendHODAlert(teacherId, action, details) {
     // Send via REST API (for persistence)
     try {
-      const result = await request('POST', '/api/notifications/hod-action', {
+      const result = await request('POST', '/comms/notifications/hod-action', {
         teacherId,
         action,
         details,
@@ -151,7 +154,7 @@ class NotificationService {
   async sendTeacherAlertToHOD(teacherId, action, details) {
     // Send via REST API (for persistence)
     try {
-      const result = await request('POST', '/api/notifications/teacher-action', {
+      const result = await request('POST', '/comms/notifications/teacher-action', {
         teacherId,
         action,
         details,
@@ -185,8 +188,10 @@ class NotificationService {
       'GRADE_DRAFT_SAVED': 'Grade Draft Saved',
       'GRADE_SUBMITTED_TO_HOD': 'Grade Submitted for Review',
       'GRADE_REVISION_REQUESTED': 'Grade Revision Requested',
+      'GRADE_REVISION_REQUESTED_BY_HOD': 'HOD Requested Grade Revision',
       'HOD_COMMENT_ADDED': 'HOD Feedback Added',
       'GRADE_REVISION_REJECTED': 'Grade Revision Rejected',
+      'GRADE_REVISION_APPROVED': 'Grade Revision Approved',
       'DIRECT_MESSAGE': 'New Direct Message'
     };
     return titles[action] || 'Notification';
@@ -197,9 +202,11 @@ class NotificationService {
       'GRADE_DRAFT_SAVED': `A grade draft has been saved for ${details.className || 'a class'}`,
       'GRADE_SUBMITTED_TO_HOD': `Grades have been submitted for review for ${details.className || 'a class'}`,
       'GRADE_REVISION_REQUESTED': `A grade revision has been requested for ${details.className || 'a class'}`,
+      'GRADE_REVISION_REQUESTED_BY_HOD': `HOD has requested a revision for ${details.className || 'a class'}`,
       'HOD_COMMENT_ADDED': `HOD feedback has been added: ${details.message || ''}`,
       'GRADE_REVISION_REJECTED': `Grade revision rejected: ${details.reason || ''}`,
-      'DIRECT_MESSAGE': details.message || 'You have a new direct message'
+      'GRADE_REVISION_APPROVED': `Grade revision approved for ${details.className || 'a class'}`,
+      'DIRECT_MESSAGE': details.message || 'You have a new notification'
     };
     return messages[action] || 'You have a new notification';
   }
@@ -209,6 +216,7 @@ class NotificationService {
       'GRADE_DRAFT_SAVED': 'Teacher Saved Grade Draft',
       'GRADE_SUBMITTED_TO_HOD': 'Teacher Submitted Grades for Review',
       'GRADE_REVISION_REQUESTED': 'Teacher Requested Grade Revision',
+      'GRADE_REVISION_REQUESTED_BY_HOD': 'HOD Requested Grade Revision',
       'DIRECT_MESSAGE': 'New Direct Message from Teacher'
     };
     return titles[action] || 'Notification';
@@ -219,17 +227,23 @@ class NotificationService {
       'GRADE_DRAFT_SAVED': `Teacher has saved a draft for ${details.className || 'a class'}`,
       'GRADE_SUBMITTED_TO_HOD': `Teacher has submitted grades for review for ${details.className || 'a class'}`,
       'GRADE_REVISION_REQUESTED': `Teacher has requested a grade revision for ${details.className || 'a class'}`,
+      'GRADE_REVISION_REQUESTED_BY_HOD': `HOD has requested a grade revision for ${details.className || 'a class'}`,
       'DIRECT_MESSAGE': details.message || 'You have received a direct message from a teacher'
     };
     return messages[action] || 'You have a new notification';
   }
 
   async markAsRead(notificationId) {
-    return request('PATCH', `/api/notifications/${notificationId}/read`);
+    return request('PATCH', `/comms/notifications/${notificationId}/read`);
   }
 
-  async getUnread(userId) {
-    return request('GET', `/api/notifications/unread?userId=${userId}`);
+  async getUnread() {
+    return request('GET', `/comms/notifications/unread`);
+  }
+
+  async getUnreadForStudent(studentProfileId) {
+    const notifs = await request('GET', `/comms/notifications/${studentProfileId}`);
+    return (notifs || []).filter((n) => !n.isRead);
   }
 
   subscribe(callback) {

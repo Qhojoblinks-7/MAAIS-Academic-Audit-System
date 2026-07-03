@@ -2,32 +2,43 @@ import React from 'react';
 import { ClassCard } from '../../components/shared/ClassCard';
 import { motion } from 'framer-motion';
 import { useRole } from '../../context/RoleContext';
+import { useUI } from '../../context/UIContext';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Percent, GraduationCap, Layers, AlertTriangle, CheckCircle2, Clock, RefreshCw } from 'lucide-react';
-import mockTeacherService from '../../services/mockTeacherService';
+import { teacherService } from '../../services';
 import { NotificationBell } from '../../components/shared/NotificationBell';
 import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 
 export function TeacherDashboard() {
   const { user } = useRole();
+  const { rightPanelVisible } = useUI();
   const navigate = useNavigate();
 
   const [rolloverBannerVisible, setRolloverBannerVisible] = React.useState(false);
   const [rolloverChanges, setRolloverChanges] = React.useState([]);
   const [teacherClasses, setTeacherClasses] = React.useState([]);
 
-  const staffId = user?.staffId || user?.id || 'unknown';
-  const ROLLOVER_STORAGE_KEY = `maais_rollover_subjects.${staffId}`;
-  const SESSION_SEEN_KEY = `maais_seen_rollover.${staffId}`;
+  const teacherId = user?.profileId || user?.id;
+  const ROLLOVER_STORAGE_KEY = `maais_rollover_subjects.${teacherId}`;
+  const SESSION_SEEN_KEY = `maais_seen_rollover.${teacherId}`;
+
+  const fetchBackendClasses = async () => {
+    if (!teacherId) {
+      return [];
+    }
+    return teacherService.getClasses(teacherId);
+  };
 
   React.useEffect(() => {
-    if (!staffId) return;
-    mockTeacherService.getClasses(staffId).then(setTeacherClasses);
-  }, [staffId]);
+    if (!teacherId) return;
+    fetchBackendClasses()
+      .then(setTeacherClasses)
+      .catch((err) => console.error('[TeacherDashboard] failed to load classes:', err));
+  }, [teacherId]);
 
   React.useEffect(() => {
-    if (!staffId || !teacherClasses || teacherClasses.length === 0) return;
+    if (!teacherId || !teacherClasses || teacherClasses.length === 0) return;
 
     const currentSubjects = [...new Set(teacherClasses.map(c => c.subject))].sort();
     const hasSeenThisSession = sessionStorage.getItem(SESSION_SEEN_KEY);
@@ -57,7 +68,7 @@ export function TeacherDashboard() {
     }
 
     localStorage.setItem(ROLLOVER_STORAGE_KEY, JSON.stringify(currentSubjects));
-  }, [staffId, ROLLOVER_STORAGE_KEY, SESSION_SEEN_KEY]);
+  }, [teacherId, ROLLOVER_STORAGE_KEY, SESSION_SEEN_KEY, teacherClasses]);
 
   const handleDismissBanner = () => {
     setRolloverBannerVisible(false);
@@ -76,7 +87,7 @@ export function TeacherDashboard() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background p-6 md:p-8 select-none">
+    <div className="flex-1 overflow-y-auto bg-background p-6 md:p-8 select-none no-scrollbar">
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
@@ -134,9 +145,6 @@ export function TeacherDashboard() {
               Academic Workspace & Assessment Matrix
             </p>
           </div>
-          <div className="flex items-center gap-4 text-[9px] font-black text-success uppercase tracking-widest">
-            <NotificationBell />
-          </div>
         </header>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
@@ -188,7 +196,7 @@ export function TeacherDashboard() {
 
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className={`grid grid-cols-1 md:grid-cols-2 ${rightPanelVisible ? 'lg:grid-cols-2' : 'lg:grid-cols-3'} gap-6`}>
           {teacherClasses.map((cls, idx) => (
             <motion.div
               key={cls.id}

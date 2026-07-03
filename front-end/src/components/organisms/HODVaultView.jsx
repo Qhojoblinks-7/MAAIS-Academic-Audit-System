@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Users, TrendingUp, ShieldCheck, Award } from 'lucide-react';
+import { Users, TrendingUp, ShieldCheck, Award, ShieldAlert } from 'lucide-react';
 import { HODArchiveKPICard } from '../molecules/HODArchiveKPICard';
 import { HODArchiveFilterMatrix } from '../molecules/HODArchiveFilterMatrix';
 import { HODArchiveStudentRow } from '../molecules/HODArchiveStudentRow';
+import { EmptyState } from '../molecules/EmptyState';
 
 export function HODVaultView({ 
   students = [], 
@@ -17,7 +18,8 @@ export function HODVaultView({
   onYearChange,
   totalAlumniCount,
   departmentAverage,
-  verifiedSealsCount
+  verifiedSealsCount,
+  hasSealedTerms = false
 }) {
   
   // Memoized unique current class streams array
@@ -48,6 +50,18 @@ export function HODVaultView({
       exit={{ opacity: 0, y: -10 }}
       className="p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto"
     >
+      {hasSealedTerms && (
+        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-center gap-3">
+          <div className="w-10 h-10 bg-rose-100 rounded-xl flex items-center justify-center shrink-0">
+            <ShieldAlert size={20} className="text-rose-600" />
+          </div>
+          <div>
+            <p className="text-xs font-black text-rose-900 uppercase tracking-wider">Seals Frozen — Archive Secured</p>
+            <p className="text-[10px] font-bold text-rose-700 mt-0.5">All student dockets in The Vault are locked with tamper-evident SECURE status. Grade entry is suspended.</p>
+          </div>
+        </div>
+      )}
+
       {/* Analytic KPI Grid Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <HODArchiveKPICard 
@@ -124,10 +138,8 @@ export function HODVaultView({
             {/* Pure Grid Rows Container */}
             <div className="divide-y divide-slate-100">
               {filteredStudents.length === 0 ? (
-                <div className="px-8 py-16 text-center">
-                  <p className="text-sm font-medium text-slate-400">
-                    No students match current filter parameters
-                  </p>
+                <div className="px-8 py-16">
+                  <EmptyState context="students" variant="compact" />
                 </div>
               ) : (
                 filteredStudents.map(student => (

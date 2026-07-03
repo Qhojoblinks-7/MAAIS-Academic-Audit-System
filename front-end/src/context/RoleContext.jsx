@@ -1,103 +1,211 @@
-import React, { createContext, useContext, useState } from 'react';
-import mockApiData from '../data/mockApiData.json';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { clearAuthToken, getAuthToken, setAuthToken } from '../services/auth';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 const RoleContext = createContext(undefined);
 
-const getHODUser = () => {
-  const hodUser = mockApiData.users?.hodUsers?.[0];
-  const department = mockApiData.departments?.items?.find(d => d.hodId === hodUser?.id);
-  return {
-    id: hodUser?.id || 'hod001',
-    username: hodUser?.username || 'hod.agric',
-    name: hodUser?.name || 'Mr. Kwame Asante',
-    role: 'HOD',
-    departmentId: department?.id || '1',
-    departmentName: department?.name || 'Agriculture',
-    avatar: hodUser?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=HOD',
-    currentTerm: '2026',
-  };
+const BACKEND_TO_FRONTEND_ROLE = {
+  SUPER_ADMIN: 'ADMIN',
+  HEADMASTER: 'ADMIN',
+  HOD: 'HOD',
+  TEACHER: 'TEACHER',
+  STUDENT: 'STUDENT',
+  PARENT: null,
 };
 
-const getTeacherUser = () => {
-  const teacher = mockApiData.users?.teacherUsers?.[0];
+function normalizeRole(role) {
+  return BACKEND_TO_FRONTEND_ROLE[role] || role || null;
+}
+
+const parseUserProfile = (data, jwtPayload) => {
+  const payload = jwtPayload || {};
+  const userId = data?.id || payload.sub || payload.id;
+  const profileId = data?.studentProfile?.id || data?.staffProfile?.id || data?.parentProfile?.id || payload.profileId || null;
+  
+  const name = data?.name || payload.name ||
+    (data?.studentProfile ? `${data.studentProfile.firstName} ${data.studentProfile.lastName}` : '') ||
+    (data?.staffProfile ? `${data.staffProfile.firstName} ${data.staffProfile.lastName}` : '') ||
+    (data?.parentProfile ? `${data.parentProfile.firstName} ${data.parentProfile.lastName}` : '');
+
+  const departmentId = data?.departmentId || data?.staffProfile?.departmentId || data?.studentProfile?.departmentId || payload.departmentId || null;
+  const avatar = data?.studentProfile?.photoUrl || data?.staffProfile?.photoUrl || data?.avatar || payload.avatar || null;
+
   return {
-    id: teacher?.id || 'teacher001',
-    username: teacher?.username || 'mensah.agric',
-    name: teacher?.name || 'Mr. Kwame Mensah',
-    role: 'TEACHER',
-    departmentId: teacher?.departmentId || '1',
-    avatar: teacher?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Hackman',
+    id: userId,
+    profileId,
+    name,
+    role: normalizeRole(data?.role || payload.role),
+    departmentId,
+    departmentName: data?.department?.name || null,
+    avatar,
     currentTerm: '2026',
   };
-};
-
-const getAdminUser = () => {
-  const admin = mockApiData.users?.adminUsers?.[0];
-  return {
-    id: admin?.id || 'admin001',
-    username: admin?.username || 'admin.system',
-    name: admin?.name || 'System Admin',
-    role: 'ADMIN',
-    departmentId: null, // Admin not tied to a specific department
-    avatar: admin?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin',
-    currentTerm: '2026',
-  };
-};
-
-const getStudentUser = () => {
-  const student = mockApiData.students?.items?.[0];
-  const department = mockApiData.departments?.items?.find(d => d.name === student?.department);
-  return {
-    id: student?.id || 'stud001',
-    username: student?.index || '001',
-    name: student?.name || 'Angela Owusu',
-    role: 'STUDENT',
-    departmentId: department?.id || '1',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Angela',
-    currentTerm: '2026',
-  };
-};
-
-const mockUsers = {
-  TEACHER: getTeacherUser(),
-  HOD: getHODUser(),
-  ADMIN: getAdminUser(),
-  STUDENT: getStudentUser(),
 };
 
 export function RoleProvider({ children }) {
-  const [user, setUser] = useState(mockUsers.STUDENT);
+  const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const setRole = (role) => {
-    if (mockUsers[role]) {
-      setUser(mockUsers[role]);
-      setIsAuthenticated(true);
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchMe = async () => {
+      try {
+        const token = getAuthToken();
+        if (!token) {
+          if (!cancelled) {
+            setUser(null);
+            setIsAuthenticated(false);
+            setLoading(false);
+          }
+          return;
+        }
+
+        const res = await fetch(`${API_BASE_URL}/auth/me`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: 'include',
+        });
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            const refreshToken = localStorage.getItem('refreshToken') || sessionStorage.getItem('refreshToken');
+            const userId = localStorage.getItem('userId');
+            
+            if (refreshToken && userId) {
+              try {
+                const refreshRes = await fetch(`${API_BASE_URL}/auth/refresh`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId, refreshToken }),
+                  credentials: 'include',
+                });
+
+                if (refreshRes.ok && !cancelled) {
+                  const refreshData = await refreshRes.json();
+                  if (refreshData.accessToken) {
+                    setAuthToken(refreshData.accessToken);
+                    
+                    const newRes = await fetch(`${API_BASE_URL}/auth/me`, {
+                      method: 'GET',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${refreshData.accessToken}`,
+                      },
+                      credentials: 'include',
+                    });
+
+                    if (newRes.ok && !cancelled) {
+                      const data = await newRes.json();
+                      const payload = (() => {
+                        try { return JSON.parse(atob(refreshData.accessToken.split('.')[1])); }
+                        catch { return {}; }
+                      })();
+
+                      setUser(parseUserProfile(data, payload));
+                      setIsAuthenticated(true);
+                      setLoading(false);
+                      return;
+                    }
+                  }
+                }
+              } catch (refreshError) {
+                console.error('Token refresh failed:', refreshError);
+              }
+            }
+
+            if (!cancelled) {
+              clearAuthToken();
+              localStorage.removeItem('refreshToken');
+              localStorage.removeItem('userId');
+              if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.removeItem('refreshToken');
+                sessionStorage.removeItem('userId');
+              }
+              setUser(null);
+              setIsAuthenticated(false);
+              setLoading(false);
+            }
+            return;
+          }
+          throw new Error(`auth/me failed: ${res.status}`);
+        }
+
+        const data = await res.json();
+        const payload = (() => {
+          try { return JSON.parse(atob(token.split('.')[1])); }
+          catch { return {}; }
+        })();
+
+        if (!cancelled) {
+          setUser(parseUserProfile(data, payload));
+          setIsAuthenticated(true);
+        }
+      } catch (e) {
+        console.error('Auth check failed:', e);
+        if (!cancelled) {
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchMe();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const logout = useCallback(() => {
+    clearAuthToken();
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('userId');
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem('refreshToken');
+      sessionStorage.removeItem('userId');
     }
-  };
-
-  const logout = () => {
     setUser(null);
     setIsAuthenticated(false);
-  };
+    window.location.href = '/401';
+  }, []);
 
-  const login = (credentials) => {
-    if (!credentials?.token) return false;
+  const login = useCallback((credentials) => {
+    if (!credentials?.token) {
+      return false;
+    }
     try {
       const payload = JSON.parse(atob(credentials.token.split('.')[1]));
-      if (payload.role && mockUsers[payload.role]) {
-        setUser({ ...mockUsers[payload.role], ...payload });
-        setIsAuthenticated(true);
-        return true;
-      }
+      const profile = parseUserProfile(credentials.user, payload);
+      setUser(profile);
+      setIsAuthenticated(true);
+      return true;
     } catch (e) {
       console.error('Token validation failed:', e);
+      return false;
     }
-    return false;
-  };
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    user,
+    setRole: () => {},
+    logout,
+    login,
+    isAuthenticated
+  }), [user, logout, login, isAuthenticated]);
+
+  if (loading) {
+    return null;
+  }
 
   return (
-    <RoleContext.Provider value={{ user, setRole, logout, login, isAuthenticated }}>
+    <RoleContext.Provider value={contextValue}>
       {children}
     </RoleContext.Provider>
   );

@@ -1,0 +1,120 @@
+Role Inheritance in RBAC Architecture
+=====================================
+
+Overview
+--------
+Role-Based Access Control (RBAC) is the authorization model used by this system. 
+Each endpoint is guarded by an explicit whitelist of roles via the @Roles() decorator 
+and RolesGuard. While this explicit-whitelist approach is safe, it is brittle at scale. 
+Role inheritance solves the maintenance and correctness problems that arise as the 
+organization and codebase grow.
+
+How This System Currently Works
+-------------------------------
+The backend uses a flat equality check in the RolesGuard:
+
+    const hasRole = requiredRoles.some((role) => user?.role === role);
+
+There is no cascading permission logic. Every controller endpoint must manually 
+list every role that should have access. For example:
+
+    @Roles(Role.TEACHER, Role.HOD, Role.HEADMASTER, Role.SUPER_ADMIN)
+    getClasses(...)
+
+This means:
+- SUPER_ADMIN and HEADMASTER can access most endpoints because they are explicitly included.
+- HOD cannot access TEACHER-only endpoints unless explicitly listed.
+- TEACHER cannot access HOD-only endpoints.
+- STUDENT has its own isolated set of endpoints.
+
+Why Inheritance Matters
+-----------------------
+
+1. PREVENTS PERMISSION GAPS AT SCALE
+    
+   In the current system, almost every useful endpoint needs this whitelist:
+   [TEACHER, HOD, HEADMASTER, SUPER_ADMIN]. Without inheritance, every new 
+   endpoint must manually list all four roles. If a developer forgets HOD on 
+   a new teacher-facing endpoint, the HOD workflow breaks silently.
+   
+   With inheritance, HOD automatically inherits TEACHER permissions, so the 
+   endpoint only needs @Roles(Role.TEACHER) and the hierarchy carries the rest.
+
+2. MIRRORS REAL ORGANIZATIONAL STRUCTURE
+    
+   In this school system:
+   - A HOD is a teacher with added oversight duties.
+   - An admin (HEADMASTER/SUPER_ADMIN) is a HOD with system-wide authority.
+   
+   The business logic already assumes this: HODs approve teacher work, admins 
+   archive HOD decisions. Inheritance encodes that truth in the authorization 
+   layer instead of scattering it across every controller.
+
+3. ELIMINATES MAINTENANCE DEBT
+    
+   Current model: every role change requires hunting through every controller.
+   In a school hierarchy that grows (e.g., adding DEAN, COORDINATOR), you would 
+   need to update 50+ @Roles() decorators.
+   
+   With inheritance: define the hierarchy once, and all permissions cascade.
+   Adding a new mid-level role takes minutes instead of hours.
+
+4. REDUCES ATTACK SURFACE
+    
+   Without inheritance, developers sometimes take shortcuts — they add 
+   SUPER_ADMIN to an endpoint just to "make it work" instead of properly 
+   scoping HOD access. This over-privileges the highest role and creates 
+   security debt.
+   
+   Inheritance enforces the correct semantic relationship: HODs get teacher 
+   access because they ARE teachers with management duties, not because someone 
+   forgot to restrict the endpoint.
+
+Proposed Hierarchy
+------------------
+    SUPER_ADMIN / HEADMASTER
+           |
+        HOD
+           |
+        TEACHER
+           |
+        STUDENT
+
+Permission Flow:
+- SUPER_ADMIN/HEADMASTER inherits everything below.
+- HOD inherits TEACHER permissions plus HOD-only management actions.
+- TEACHER inherits STUDENT read access plus teacher-only grading/observation actions.
+- STUDENT has only student-facing read/write permissions.
+
+Concrete Example: Grade Entry Workflow
+--------------------------------------
+With explicit whitelists (current):
+- POST /grading/entries needs @Roles(TEACHER, HOD, HEADMASTER, SUPER_ADMIN)
+- GET /grading/students/:id/terms/:termId needs @Roles(TEACHER, HOD, HEADMASTER, SUPER_ADMIN, STUDENT)
+- POST /hod/records/:id/approve needs @Roles(HOD)
+- Every new endpoint requires manually listing 4-5 roles.
+
+With inheritance:
+- POST /grading/entries needs @Roles(TEACHER) only
+  - HOD, HEADMASTER, SUPER_ADMIN inherit access.
+- POST /hod/records/:id/approve needs @Roles(HOD) only
+  - HEADMASTER, SUPER_ADMIN inherit access.
+- GET /grading/students/:id/terms/:termId needs @Roles(STUDENT) for read
+  - TEACHER inherits, HOD inherits, etc.
+
+Implementation Path
+-------------------
+1. Add a role hierarchy definition in the backend (e.g., in a RolesGuard helper).
+2. Modify the RolesGuard to check inheritance, not just equality.
+3. Gradually reduce @Roles() lists to the minimum required role.
+4. Add integration tests verifying each role's effective permissions.
+
+Conclusion
+----------
+Inheritance is critical because it transforms RBAC from a manual, error-prone 
+whitelist system into an expression of organizational reality. It prevents the 
+drift between frontend and backend role checks, reduces the chance of permission 
+gaps, and makes the system maintainable as it grows.
+
+Without inheritance, every new feature risks introducing authorization bugs. 
+With it, the access control layer becomes self-documenting and structurally sound.

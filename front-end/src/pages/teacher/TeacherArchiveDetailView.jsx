@@ -229,7 +229,8 @@ const handleExportTranscript = async () => {
           
           <!-- Premium Institutional Branding Segment -->
           <table class="header-grid">
-            <tr>
+            <tbody>
+              <tr>
               <td class="logo-badge">
                 MSH
               </td>
@@ -239,46 +240,53 @@ const handleExportTranscript = async () => {
                 <p class="institution-contact">Central Region, Ghana • Verification Registry Portal: records@mando.edu.gh</p>
               </td>
             </tr>
-          </table>
+          </tbody>
+        </table>
 
           <div class="document-tag">Official Academic Transcript Record</div>
 
           <!-- Modern Balanced Multi-Column Info Hub -->
           <table class="layout-split">
-            <tr>
-              <td class="column-main">
-                <h2 class="panel-title">Student Profile Identity</h2>
-                <table class="profile-grid">
-                  <tr>
-                    <td class="meta-label">Legal Name:</td>
-                    <td class="meta-value">${student.name || 'N/A'}</td>
-                  </tr>
-                  <tr>
-                    <td class="meta-label">Index ID:</td>
-                    <td class="meta-value" style="font-family: monospace; font-size: 13px; color: #0f172a;">${student.index || 'N/A'}</td>
-                  </tr>
-                  <tr>
-                    <td class="meta-label">Curriculum Stream:</td>
-                    <td class="meta-value">${student.currentClass?.includes('Agric') ? 'General Agriculture Program' : 'General Science Pathway'}</td>
-                  </tr>
-                  <tr>
-                    <td class="meta-label">Record Status:</td>
-                    <td><span class="status-capsule">Concluded Alumni</span></td>
-                  </tr>
-                </table>
-              </td>
-              
-              <td class="column-side">
-                <h2 class="panel-title">Scale Matrix (WAEC)</h2>
-                <table class="scale-table">
-                  <tr><td class="scale-key">A1</td><td>75% - 100% (Excellent)</td></tr>
-                  <tr><td class="scale-key">B2 - B3</td><td>65% - 74% (Very Good / Good)</td></tr>
-                  <tr><td class="scale-key">C4 - C6</td><td>50% - 64% (Credit Pass)</td></tr>
-                  <tr><td class="scale-key">D7 - E8</td><td>40% - 49% (Pass / Weak)</td></tr>
-                  <tr><td class="scale-key">F9</td><td>0% - 39% (Fail Evaluation)</td></tr>
-                </table>
-              </td>
-            </tr>
+            <tbody>
+              <tr>
+                <td class="column-main">
+                  <h2 class="panel-title">Student Profile Identity</h2>
+                  <table class="profile-grid">
+                    <tbody>
+                      <tr>
+                        <td class="meta-label">Legal Name:</td>
+                        <td class="meta-value">${student.name || 'N/A'}</td>
+                      </tr>
+                      <tr>
+                        <td class="meta-label">Index ID:</td>
+                        <td class="meta-value" style="font-family: monospace; font-size: 13px; color: #0f172a;">${student.index || 'N/A'}</td>
+                      </tr>
+                      <tr>
+                        <td class="meta-label">Curriculum Stream:</td>
+                        <td class="meta-value">${student.currentClass?.includes('Agric') ? 'General Agriculture Program' : 'General Science Pathway'}</td>
+                      </tr>
+                      <tr>
+                        <td class="meta-label">Record Status:</td>
+                        <td><span class="status-capsule">Concluded Alumni</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </td>
+
+                <td class="column-side">
+                  <h2 class="panel-title">Scale Matrix (WAEC)</h2>
+                  <table class="scale-table">
+                    <tbody>
+                      <tr><td class="scale-key">A1</td><td>75% - 100% (Excellent)</td></tr>
+                      <tr><td class="scale-key">B2 - B3</td><td>65% - 74% (Very Good / Good)</td></tr>
+                      <tr><td class="scale-key">C4 - C6</td><td>50% - 64% (Credit Pass)</td></tr>
+                      <tr><td class="scale-key">D7 - E8</td><td>40% - 49% (Pass / Weak)</td></tr>
+                      <tr><td class="scale-key">F9</td><td>0% - 39% (Fail Evaluation)</td></tr>
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+            </tbody>
           </table>
 
           <!-- Main Transcript Ledger Block -->
@@ -335,7 +343,8 @@ const handleExportTranscript = async () => {
 
           <!-- Modern Verification Desk Authentication Block -->
           <table class="registry-footer">
-            <tr>
+            <tbody>
+              <tr>
               <td class="sign-block">
                 <div class="sign-line"></div>
                 <p style="font-size: 11px; font-weight: 700; color: #0f172a; margin: 0; text-transform: uppercase; letter-spacing: 0.3px;">Mr. J. E. Mensah</p>
@@ -346,7 +355,8 @@ const handleExportTranscript = async () => {
                   <div style="margin-top: 26px; line-height: 1.4; font-size: 8px; letter-spacing: 0.2px;">AUTHENTICITY<br>REGISTRY SEAL</div>
                 </div>
               </td>
-            </tr>
+              </tr>
+            </tbody>
           </table>
 
           <!-- Security Footprint Meta Track -->
@@ -522,7 +532,7 @@ const handleExportTranscript = async () => {
             </div>
           ) : (
             <div className="h-[300px] w-full pt-4">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <AreaChart data={student.history}>
                   <defs>
                     <linearGradient id="teacherTrendGlow" x1="0" y1="0" x2="0" y2="1">
@@ -723,7 +733,7 @@ const handleExportTranscript = async () => {
                     </div>
                   ))
                 ) : (
-                  <p className="text-xs text-slate-400 text-center italic py-8">No qualitative academic observations logged for this record cycle.</p>
+                  <EmptyState context="results" variant="compact" />
                 )}
               </div>
             </div>

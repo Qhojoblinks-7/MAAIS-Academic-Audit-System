@@ -1,0 +1,84 @@
+================================================================================
+          DETAILED ARCHITECTURAL GUIDE: THE GRADING PROTOCOL ENGINE
+================================================================================
+
+This document outlines the operational specifications and design logic of the 
+Grading Protocol Engine inside the GradingRulesView module of the Administrative 
+Architect panel.
+
+--------------------------------------------------------------------------------
+1. THE GLOBAL WEIGHTING SPLIT
+--------------------------------------------------------------------------------
+The engine facilitates the standardization of assessment weighting across all academic 
+programs, defining the relative balance between cumulative term-work and final exams:
+
+  - Continuous Assessment (CA) vs. Final Examination:
+    - Default setting is calibrated to the standard WAEC/WASSCE 30/70 split 
+      (30% class tests, quizzes, and assignments; 70% formal exam).
+    - An interactive slider lets administrators dynamically slide the ratio 
+      (e.g., 40/60 or 50/50) in real-time.
+
+  - Auto-Normalization Logic:
+    - Scales raw student marks dynamically to the designated 100% baseline, 
+      eliminating rounding discrepancies and ensuring equitable score aggregation.
+
+  - Program Overrides:
+    - Provides specific override switches (e.g. allowing Technical/Vocational 
+      tracks to employ a specialized 40/60 practical-heavy split).
+
+--------------------------------------------------------------------------------
+2. WAEC SCALE CALIBRATION (GRADE BOUNDARIES)
+--------------------------------------------------------------------------------
+The boundary grid serves as the official translation layer between raw numerical percentages 
+and official terminal West African Examination Council (WAEC) letter grades:
+
+  - Threshold Calibration Grid:
+    - Tracks nine standard WAEC grading tiers: A1, B2, B3, C4, C5, C6, D7, E8, F9.
+    - Features reactive, direct inputs allowing admins to change the Minimum and 
+      Maximum percentage brackets for each grade level on the fly.
+
+  - Smart Automated Remarks (AI Sparkles Pooled Suggestion):
+    - To reduce workload, teachers can choose predefined comments for report cards.
+    - Built-in logic matches grades against smart thematic pools:
+      - Distinction: Outstanding academic achievements, rigor, and mastery.
+      - Credit: Commendable performance, solid efforts, steady work.
+      - Pass: Satisfactory results with recommendations for steady practice.
+      - Fail: Urgent remedial warnings and direct guidance recommendations.
+    - Admins can customize the template strings directly or insert entirely new tiers.
+
+--------------------------------------------------------------------------------
+3. TERMINAL VALIDATION LOCK (THE FINAL SEAL)
+--------------------------------------------------------------------------------
+The final seal represents a high-integrity, server-authoritative validation lock 
+designed to secure grades before report cards and transcripts are issued:
+
+  - The Lockdown Status (Read-Only State):
+    - Applying the "Final Seal" freezes the database for the active term.
+    - No teacher can modify grade sheets, insert assessments, or change scores.
+    - Protects the system from late, uncoordinated, or malicious modifications.
+
+  - Submission Deadline Tracking:
+    - Implements a date and time picker allowing administrators to publish a 
+      strict grade entry cutoff.
+    - A live countdown timer renders the remaining time ("X days, Y hours remaining") 
+      or alerts admins when the "DEADLINE PASSED".
+
+  - High-Impact Radius Indicators:
+    - Before freezing, the seal reviews system metrics (e.g., "Impact Radius: 2,450 
+      Transcripts & 54 Grad sheets") to ensure admins recognize the full scope.
+
+  - Emergency Bypass Portal:
+    - In case of extraordinary omissions, the platform includes a secure 
+      "Emergency Unlock Portal" allowing authorized administrators to temporarily 
+      lift the database freeze and return the system to write mode.
+
+--------------------------------------------------------------------------------
+4. INTEGRITY WARNINGS & COMPLIANCE
+--------------------------------------------------------------------------------
+The dashboard incorporates a live diagnostic compliance board:
+  - Real-time diagnostics highlighting unsubmitted class marks (e.g., "7 Subject 
+    Classes have unentered CA marks").
+  - Mismatch indicators tracking alignment deviations from past academic terms.
+  - "Run Compliance Suite" triggers cross-verification routines to validate grading 
+    consistency and data integrity.
+================================================================================

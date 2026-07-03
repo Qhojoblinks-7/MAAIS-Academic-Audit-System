@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, ChevronRight, ChevronDown, Send, Flag, AlertTriangle, User, Clock, MessageSquare } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { StatusBadge, JustificationQualityIndicator, ActionButtonGroup, HODCommentInput } from '../molecules';
+import { EmptyState } from '../molecules/EmptyState';
 import { useHOD } from '../../context/HODContext';
 
 function TimelineEntry({ log, onComment, isExpanded, onToggle }) {
@@ -64,7 +65,7 @@ function TimelineEntry({ log, onComment, isExpanded, onToggle }) {
                   <span className="text-gray-300">|</span>
                   <span className="font-mono">{log.recordId || '—'}</span>
                   <span className="text-gray-300">|</span>
-                  <span className="text-gray-400">{log.recordType || '—'}</span>
+                  <span className="text-gray-400">{log.entityType || log.recordType || '—'}</span>
                 </div>
 
                 {(log.oldValue || log.newValue) && (
@@ -131,6 +132,7 @@ export function AuditLogTimeline({
     { value: 'RESOLVED', label: 'Resolved' },
     { value: 'FLAGGED', label: 'Flagged' },
     { value: 'LOCKED', label: 'Locked' },
+    { value: 'PENDING', label: 'Pending' },
     { value: 'DRAFT', label: 'Draft' },
   ];
 
@@ -155,7 +157,7 @@ export function AuditLogTimeline({
 
       <div className="space-y-2">
         {logs.length === 0 ? (
-          <div className="text-center py-8 text-xs text-gray-400">No audit logs match the selected filter.</div>
+          <EmptyState context="tickets" variant="compact" />
         ) : (
           logs.map((log, i) => (
             <TimelineEntry

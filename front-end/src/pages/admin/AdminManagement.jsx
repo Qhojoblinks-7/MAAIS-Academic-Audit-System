@@ -5,20 +5,25 @@ import { cn } from '../../lib/utils';
 import { StaffRegistry } from './StaffRegistry';
 import { InfrastructureView } from './components/InfrastructureView';
 import { ProtocolsView } from './components/ProtocolsView';
-import mockApiData from '../../data/mockApiData.json';
 
 const iconMap = { Users, Server, Globe };
+
+const ADMIN_TABS = [
+  { id: 'registry', label: 'Staff Registry', icon: 'Users' },
+  { id: 'infrastructure', label: 'Infrastructure', icon: 'Server' },
+  { id: 'protocols', label: 'Security Protocols', icon: 'Globe' },
+];
 
 export function AdminManagement() {
   const [activeTab, setActiveTab] = React.useState('registry');
 
-  const tabs = (mockApiData.engineRoom?.adminTabs || []).map(tab => ({
+  const tabs = ADMIN_TABS.map(tab => ({
     ...tab,
-    icon: iconMap[tab.icon] || Users
+    icon: iconMap[tab.icon] || Users,
   }));
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#F9F9F7] p-6 lg:p-12 pb-32 lg:pb-24">
+    <div className="flex-1 overflow-y-auto bg-[#F9F9F7] p-6 lg:p-12 pb-32 lg:pb-24 scrollbar-hide">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

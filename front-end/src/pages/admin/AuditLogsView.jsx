@@ -12,49 +12,79 @@ import {
 } from '../../components/ui/table';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
-
-const auditLogs = [
-  {
-    id: '1',
-    studentName: 'Angela Owusu',
-    subject: 'General Agric',
-    action: 'UPDATE',
-    oldValue: 45,
-    newValue: 85,
-    justification: 'Error in practical sheet entry - re-evaluated after review.',
-    userId: 'Mr. Hackman',
-    timestamp: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    studentName: 'Kofi Mensah',
-    subject: 'Core Math',
-    action: 'LOCK',
-    justification: 'Term results finalized by HOD.',
-    userId: 'HOD Martha Baah',
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
-  },
-  {
-    id: '3',
-    studentName: 'Yaw Boateng',
-    subject: 'English',
-    action: 'CREATE',
-    newValue: 72,
-    justification: 'Initial mark entry.',
-    userId: 'Mr. Hackman',
-    timestamp: new Date(Date.now() - 7200000).toISOString(),
-  }
-];
-
-const actionBadgeStyles = {
-  UPDATE: 'bg-warning/10 text-warning border-warning/20',
-  LOCK: 'bg-success/10 text-success border-success/20',
-  CREATE: 'bg-brand-primary/10 text-brand-primary border-brand-primary/20',
-};
+import { useAdminAuditLogs } from '../../lib/hooks/api/admin';
 
 export function AuditLogsView() {
+  const auditLogsQuery = useAdminAuditLogs();
+  
+  const actionBadgeStyles = {
+    UPDATE: 'bg-warning/10 text-warning border-warning/20',
+    LOCK: 'bg-success/10 text-success border-success/20',
+    CREATE: 'bg-brand-primary/10 text-brand-primary border-brand-primary/20',
+    DELETE: 'bg-destructive/10 text-destructive border-destructive/20',
+  };
+
+  const auditLogs = React.useMemo(() => {
+    if (auditLogsQuery.data?.logs) {
+      return auditLogsQuery.data.logs.map((log) => {
+        const payload = log.payload || {};
+        const action = log.action || 'UPDATE';
+        let studentName = 'System';
+        let subject = log.entity || 'N/A';
+        let oldValue = '';
+        let newValue = '';
+        let justification = '';
+
+        if (payload.studentId) {
+          studentName = `Student ${payload.studentId}`;
+        }
+        if (payload.subjectId) {
+          subject = `Subject ${payload.subjectId}`;
+        }
+
+        if (action === 'GRADE_CORRECTION') {
+          oldValue = typeof payload.oldValue === 'string' ? payload.oldValue : '';
+          newValue = typeof payload.newValue === 'string' ? payload.newValue : '';
+          justification = payload.justification || '';
+          if (payload.fieldChanged) {
+            subject = `${subject} (${payload.fieldChanged})`;
+          }
+        } else if (action === 'CREATE' || action === 'UPDATE') {
+          const newObj = payload.newValue || {};
+          const oldObj = payload.oldValue || {};
+          if (newObj.grade) newValue = `Grade: ${newObj.grade}`;
+          else if (newObj.totalScore != null) newValue = `Score: ${newObj.totalScore}`;
+          else if (newObj.classScore != null) newValue = `SBA: ${newObj.classScore}`;
+          if (oldObj.grade) oldValue = `Grade: ${oldObj.grade}`;
+          else if (oldObj.totalScore != null) oldValue = `Score: ${oldObj.totalScore}`;
+          else if (oldObj.classScore != null) oldValue = `SBA: ${oldObj.classScore}`;
+        } else if (action === 'LOCK' || action === 'UNLOCK') {
+          newValue = action === 'LOCK' ? 'Locked' : 'Unlocked';
+        }
+
+        return {
+          id: log.id,
+          timestamp: log.createdAt || new Date().toISOString(),
+          action,
+          studentName,
+          subject,
+          oldValue,
+          newValue,
+          justification,
+          userId: log.userEmail || log.userId,
+          ipAddress: log.ipAddress || 'System',
+          userAgent: log.userAgent || 'Internal',
+          severity: action === 'DELETE' ? 'ERROR' : action === 'CREATE' || action === 'GRADE_CORRECTION' ? 'INFO' : 'WARNING',
+          category: ['CREATE','UPDATE','LOCK','UNLOCK','GRADE_CORRECTION'].includes(action) ? 'ACADEMIC' : 'SYSTEM',
+          metadata: payload,
+        };
+      });
+    }
+    return [];
+  }, [auditLogsQuery.data]);
+
   return (
-    <div className="flex-1 overflow-y-auto bg-background p-6 lg:p-12 pb-32 lg:pb-24">
+    <div className="flex-1 overflow-y-auto bg-background p-6 lg:p-12 pb-32 lg:pb-24 scrollbar-hide">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -76,10 +106,20 @@ export function AuditLogsView() {
             </div>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" size="sm" className="font-black uppercase tracking-widest text-muted-foreground">
+            <Button 
+              onClick={() => alert('Export registry functionality coming soon')}
+              variant="outline" 
+              size="sm" 
+              className="font-black uppercase tracking-widest text-muted-foreground"
+            >
               Export Registry
             </Button>
-            <Button variant="default" size="sm" className="font-black uppercase tracking-widest bg-success">
+            <Button 
+              onClick={() => alert('Filter nodes functionality coming soon')}
+              variant="default" 
+              size="sm" 
+              className="font-black uppercase tracking-widest bg-success"
+            >
               Filter Nodes
             </Button>
           </div>
@@ -87,7 +127,7 @@ export function AuditLogsView() {
 
         {/* Audit Log Table */}
         <Card className="rounded-[2.5rem] overflow-hidden">
-          <div className="overflow-x-auto">
+           <div className="overflow-x-auto scrollbar-hide">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/30 border-b border-border">

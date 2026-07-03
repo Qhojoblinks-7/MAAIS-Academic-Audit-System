@@ -1,26 +1,51 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 
 const UIContext = React.createContext(undefined);
 
 export function UIProvider({ children }) {
-  const [settingsModalOpen, setSettingsModalOpen] = React.useState(false);
-  const [supportModalOpen, setSupportModalOpen] = React.useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
-  const [isDraftMode, setIsDraftMode] = React.useState(() => {
-    const saved = localStorage.getItem('draftMode');
-    return saved ? JSON.parse(saved) : true;
-  });
-  const [isTermFinalized, setIsTermFinalized] = React.useState(false);
-  const [isOnline, setIsOnline] = React.useState(navigator.onLine);
-  const [screenWidth, setScreenWidth] = React.useState(window.innerWidth);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [supportModalOpen, setSupportModalOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isTermFinalized, setIsTermFinalized] = useState(false);
+  const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const [revisionCount, setRevisionCount] = useState(0);
+  const [missingObservationCount, setMissingObservationCount] = useState(0);
+  const [rightPanelVisible, setRightPanelVisible] = useState(true);
 
+  const [isDraftMode, setIsDraftMode] = useState(() => {
+    try {
+      const saved = localStorage.getItem('draftMode');
+      return saved ? JSON.parse(saved) : true;
+    } catch {
+      return true;
+    }
+  });
+
+  // Calculate initial window states safely to avoid SSR layout mismatch crashes
+  const [deviceType, setDeviceType] = useState(() => {
+    const width = typeof window !== 'undefined' ? window.innerWidth : 1024;
+    return {
+      isMobile: width < 768,
+      isTablet: width >= 768 && width < 1024,
+      isDesktop: width >= 1024,
+      width
+    };
+  });
+
+  // ── Sync Draft Settings ──────────────────────────────────────────────────
   useEffect(() => {
-    localStorage.setItem('draftMode', JSON.stringify(isDraftMode));
+    try {
+      localStorage.setItem('draftMode', JSON.stringify(isDraftMode));
+    } catch (e) {
+      console.warn('Failed to persist draftMode state to localStorage:', e);
+    }
   }, [isDraftMode]);
 
+  // ── Network Connectivity Monitor ──────────────────────────────────────────
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     return () => {
@@ -29,35 +54,86 @@ export function UIProvider({ children }) {
     };
   }, []);
 
+  // ── Throttled Layout Breakpoint Engine ────────────────────────────────────
   useEffect(() => {
-    const handleResize = () => setScreenWidth(window.innerWidth);
+    let timeoutId = null;
+    
+    const handleResize = () => {
+      // Use a lightweight debounce macro to avoid choking UI threads during window scaling
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        const currentWidth = window.innerWidth;
+        setDeviceType((prev) => {
+          const nextMobile = currentWidth < 768;
+          const nextTablet = currentWidth >= 768 && currentWidth < 1024;
+          const nextDesktop = currentWidth >= 1024;
+
+          // Prevent state commitment if the breakpoint zone remains unaltered
+          if (
+            prev.isMobile === nextMobile &&
+            prev.isTablet === nextTablet &&
+            prev.isDesktop === nextDesktop &&
+            prev.width === currentWidth
+          ) {
+            return prev;
+          }
+
+          return {
+            isMobile: nextMobile,
+            isTablet: nextTablet,
+            isDesktop: nextDesktop,
+            width: currentWidth
+          };
+        });
+      }, 100); // 100ms processing buffer
+    };
+
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(timeoutId);
+    };
   }, []);
 
-  const isMobile = screenWidth < 768;
-  const isTablet = screenWidth >= 768 && screenWidth < 1024;
-  const isDesktop = screenWidth >= 1024;
+  // ── Memoized Context Payload ──────────────────────────────────────────────
+  const contextValue = useMemo(() => ({
+    settingsModalOpen,
+    setSettingsModalOpen,
+    supportModalOpen,
+    setSupportModalOpen,
+    mobileMenuOpen,
+    setMobileMenuOpen,
+    isDraftMode,
+    setIsDraftMode,
+    isTermFinalized,
+    setIsTermFinalized,
+    isOnline,
+    setIsOnline,
+    screenWidth: deviceType.width,
+    isMobile: deviceType.isMobile,
+    isTablet: deviceType.isTablet,
+    isDesktop: deviceType.isDesktop,
+    revisionCount,
+    setRevisionCount,
+    missingObservationCount,
+    setMissingObservationCount,
+    rightPanelVisible,
+    setRightPanelVisible,
+  }), [
+    settingsModalOpen,
+    supportModalOpen,
+    mobileMenuOpen,
+    isDraftMode,
+    isTermFinalized,
+    isOnline,
+    deviceType,
+    revisionCount,
+    missingObservationCount,
+    rightPanelVisible
+  ]);
 
   return (
-<UIContext.Provider value={{
-       settingsModalOpen,
-       setSettingsModalOpen,
-       supportModalOpen,
-       setSupportModalOpen,
-       mobileMenuOpen,
-       setMobileMenuOpen,
-       isDraftMode,
-       setIsDraftMode,
-       isTermFinalized,
-       setIsTermFinalized,
-       isOnline,
-       setIsOnline,
-       screenWidth,
-       isMobile,
-       isTablet,
-       isDesktop,
-     }}>
+    <UIContext.Provider value={contextValue}>
       {children}
     </UIContext.Provider>
   );
