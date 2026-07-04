@@ -278,32 +278,32 @@ return (
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0 no-scrollbar">
+<div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0 no-scrollbar">
               
-<div className="space-y-3.5">
-                 <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Communication Logs</h4>
-                 
-                 <div className="space-y-3 relative before:absolute before:top-2 before:bottom-2 before:left-[13px] before:w-0.5 before:bg-border">
-                   {Array.isArray(selected.history) && selected.history.length > 0 ? selected.history.map((node) => (
-                     <div key={node.id} className="flex gap-3 relative z-10">
-                       <div className={cn(
-                         "w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-background shadow-sm ring-4 ring-background shrink-0 mt-0.5",
-                         node.role === 'HOD' ? 'bg-warning' : node.role === 'TEACHER' ? 'bg-brand-secondary' : 'bg-foreground'
-                       )}>
-                         {node.role[0]}
-                       </div>
-                       
-                       <div className="flex-1 bg-muted border border-border/60 rounded-xl p-3">
-                         <div className="flex items-center justify-between mb-1">
-                           <span className="text-[11px] font-bold text-foreground">{node.user}</span>
-                           <span className="text-[10px] text-muted-foreground">{node.time}</span>
-                         </div>
-                         <p className="text-xs text-foreground leading-relaxed font-mono">"{node.message}"</p>
-                       </div>
-                     </div>
-                   )) : null}
-                  </div>
+              <div className="space-y-3.5">
+                <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Communication Logs</h4>
+                
+                <div className="space-y-3 relative before:absolute before:top-2 before:bottom-2 before:left-[13px] before:w-0.5 before:bg-border">
+                  {Array.isArray(selected.history) && selected.history.length > 0 ? selected.history.map((node) => (
+                    <div key={node.id} className="flex gap-3 relative z-10">
+                      <div className={cn(
+                        "w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-background shadow-sm ring-4 ring-background shrink-0 mt-0.5",
+                        node.role === 'HOD' ? 'bg-warning' : node.role === 'TEACHER' ? 'bg-brand-secondary' : 'bg-foreground'
+                      )}>
+                        {node.role[0]}
+                      </div>
+                      
+                      <div className="flex-1 bg-muted border border-border/60 rounded-xl p-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[11px] font-bold text-foreground">{node.user}</span>
+                          <span className="text-[10px] text-muted-foreground">{node.time}</span>
+                        </div>
+                        <p className="text-xs text-foreground leading-relaxed font-mono">"{node.message}"</p>
+                      </div>
+                    </div>
+                  )) : null}
                 </div>
+              </div>
 
               {/* Grade Discussion Thread */}
               <div className="border-t border-border pt-6">
@@ -325,14 +325,14 @@ return (
                 </div>
                 
 {discussionExpanded && (
-                   <div className="space-y-2">
-                     {!Array.isArray(selected.history) || selected.history.length === 0 ? (
-                       <p className="text-center py-4 text-muted-foreground italic">
-                         No discussion yet. Start the conversation!
-                       </p>
-                     ) : (
-                       <div className="space-y-2">
-                         {selected.history.map((msg) => (
+                  <div className="space-y-2">
+                    {!Array.isArray(selected.history) || selected.history.length === 0 ? (
+                      <p className="text-center py-4 text-muted-foreground italic">
+                        No discussion yet. Start the conversation!
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {selected.history.map((msg) => (
                           <div key={msg.id} className={cn(
                             "flex gap-3",
                             msg.role === 'TEACHER' ? 'flex-row' : 'flex-row-reverse'
@@ -341,7 +341,7 @@ return (
                               {msg.role === 'HOD' ? 'bg-warning/20 text-warning' : 'bg-brand-secondary/20 text-brand-secondary'}">
                               {msg.role === 'HOD' ? 'H' : 'T'}
                             </div>
-                            <div className="flex-1 max-w-[80%]">
+<div className="flex-1 max-w-[80%]">
                               <div className={cn(
                                 "px-3 py-2 rounded-xl",
                                 msg.role === 'HOD' ? 'bg-warning/10 text-foreground rounded-tr-none' : 

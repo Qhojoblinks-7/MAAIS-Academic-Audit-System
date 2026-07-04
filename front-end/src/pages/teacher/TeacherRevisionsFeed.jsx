@@ -339,10 +339,10 @@ const sendDiscussionMessage = async () => {
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0 no-scrollbar">
               
-              <div className="space-y-3.5">
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">HOD Communications</h4>
-                
-<div className="space-y-3 relative before:absolute before:top-2 before:bottom-2 before:left-[13px] before:w-0.5 before:bg-slate-100">
+<div className="space-y-3.5">
+                 <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">HOD Communications</h4>
+                 
+                 <div className="space-y-3 relative before:absolute before:top-2 before:bottom-2 before:left-[13px] before:w-0.5 before:bg-slate-100">
                    {Array.isArray(selected.history) && selected.history.length > 0 ? selected.history.map((node) => (
                      <div key={node.id} className="flex gap-3 relative z-10">
                        <div className={cn(
@@ -362,7 +362,7 @@ const sendDiscussionMessage = async () => {
                      </div>
                    )) : null}
                   </div>
-               </div>
+                </div>
  
                {/* Grade Discussion Thread */}
                <div className="border-t border-slate-100 pt-6">
@@ -384,14 +384,14 @@ const sendDiscussionMessage = async () => {
                  </div>
                  
 {discussionExpanded && (
-                     <div className="space-y-2">
-                       {!Array.isArray(selected.history) || selected.history.length === 0 ? (
-                         <p className="text-center py-4 text-slate-500 italic">
-                           No discussion yet. Start the conversation!
-                         </p>
-                       ) : (
-                         <div className="space-y-2">
-                           {selected.history.map((msg) => (
+                  <div className="space-y-2">
+{!Array.isArray(selected.history) || selected.history.length === 0 ? (
+                        <p className="text-center py-4 text-slate-500 italic">
+                          No discussion yet. Start the conversation!
+                        </p>
+                      ) : (
+                        <div className="space-y-2">
+                          {selected.history.map((msg) => (
                             <div key={msg.id} className={cn(
                               "flex gap-3",
                               msg.role === 'TEACHER' ? 'flex-row' : 'flex-row-reverse'
@@ -412,16 +412,16 @@ const sendDiscussionMessage = async () => {
                                   <p className="text-xs font-medium text-slate-500 mb-0.5">
                                     {msg.user}
                                   </p>
-<p className="text-sm text-slate-800 whitespace-pre-wrap break-words">
-                                     {msg.message}
-                                   </p>
-                                   <p className="text-xs text-slate-400 mt-1">
-                                     {formatTime(msg.time)}
-                                   </p>
-                                 </div>
-                               </div>
-                             </div>
-                           ))}
+                                  <p className="text-sm text-slate-800 whitespace-pre-wrap break-words">
+                                    {msg.message}
+                                  </p>
+                                  <p className="text-xs text-slate-400 mt-1">
+                                    {formatTime(msg.time)}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
