@@ -38,25 +38,21 @@ export default defineConfig(({ mode }) => {
     build: {
       sourcemap: !isProd,
       chunkSizeWarningLimit: 500,
-      minify: 'esbuild', // Lightning-fast minification
+      minify: 'terser', // Safer minification for complex libraries like motion
       cssMinify: true,   // Aggressively shrinks Tailwind's output
       
       rollupOptions: {
         // 2. Aggressive Tree-Shaking configuration
         treeshake: {
           preset: 'recommended',
-          propertyReadSideEffects: false, // Allows dropping unused object properties/methods
+          propertyReadSideEffects: true, // Preserve side-effectful property reads
         },
         output: {
           // 3. Isolated Chunking Strategy for the "Reactive Store Hydration" pattern
           manualChunks(id) {
             if (id.includes('node_modules')) {
-              // Isolate state engines so they remain unblocked and cached by the browser long-term
               if (id.includes('zustand') || id.includes('@tanstack') || id.includes('localforage')) {
                 return 'state-engine';
-              }
-              if (id.includes('react')) {
-                return 'react-core';
               }
               return 'vendor-utils';
             }
