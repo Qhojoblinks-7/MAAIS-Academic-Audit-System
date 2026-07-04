@@ -8,8 +8,10 @@ export const adminApi = {
   createParent: (dto) => api.post('/users/parents', dto),
   getAllParents: () => api.get('/users/parents'),
   getAllStudents: () => api.get('/users/students'),
+  getStudentCount: () => api.get('/users/students/count'),
   getStudentProfile: (id) => api.get(`/users/students/${id}`),
   updateStudentProfile: (id, body) => api.patch(`/users/students/${id}`, body),
+  getStaffCount: () => api.get('/users/staff/count'),
   getAllStaff: () => api.get('/users/staff'),
   deactivateUser: (id) => api.patch(`/users/${id}/deactivate`),
 

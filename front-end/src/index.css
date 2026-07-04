@@ -48,6 +48,21 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 
   /* 2. Responsive, Fluid Typography Mappings (Screen Size Aware) */
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
@@ -227,4 +242,20 @@ body {
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* ==========================================================================
+   TEXT VISUAL HIERARCHY UTILITIES
+   Opacity-based tier system for consistent semantic text display.
+   ========================================================================== */
+@utility text-primary { color: var(--color-text-primary); }
+@utility text-secondary { color: var(--color-text-secondary); }
+@utility text-secondary-hierarchy {
+  color: color-mix(in srgb, var(--color-text-secondary) 50%, transparent);
+}
+@utility text-muted {
+  color: color-mix(in srgb, var(--color-text-secondary) 30%, transparent);
+}
+@utility text-faint {
+  color: color-mix(in srgb, var(--color-text-secondary) 20%, transparent);
 }

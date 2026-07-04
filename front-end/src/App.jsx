@@ -317,6 +317,13 @@ function AppContent() {
   } = useUI();
   const systemFreezeQuery = useSystemFreeze();
   const isSystemFrozen = systemFreezeQuery.data?.systemFrozen ?? false;
+  const [freezeAck, setFreezeAck] = React.useState(() => {
+    const saved = sessionStorage.getItem('freezeAck');
+    return saved && saved !== '' ? new Date(saved) : null;
+  });
+
+  const ackExpiry = freezeAck ? new Date(freezeAck.getTime() + 24 * 60 * 60 * 1000) : null;
+  const isAckExpired = ackExpiry ? new Date() > ackExpiry : true;
 
   // Inactivity Timeout Auto Log-Out Handler (15 Mins)
   React.useEffect(() => {
@@ -376,7 +383,7 @@ function AppContent() {
 
   return (
     <div className="flex h-screen bg-background font-sans selection:bg-success/20 selection:text-success">
-      {isSystemFrozen && user?.role !== "STUDENT" && (
+      {isSystemFrozen && user?.role !== "STUDENT" && (!freezeAck || isAckExpired) && (
         <>
           {user?.role === "SUPER_ADMIN" || user?.role === "HEADMASTER" ? (
             <div className="fixed top-0 left-0 right-0 z-[300] bg-rose-600 text-white px-4 py-2.5 flex items-center justify-center gap-3 shadow-lg">
@@ -410,7 +417,11 @@ function AppContent() {
                   Read-only access remains available. Contact your administrator for more information.
                 </p>
                 <Button 
-                  onClick={() => {}}
+                  onClick={() => {
+                    const now = new Date();
+                    sessionStorage.setItem('freezeAck', now.toISOString());
+                    setFreezeAck(now);
+                  }}
                   className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white"
                 >
                   Understood

@@ -11,6 +11,22 @@ export function useAllStudents() {
   });
 }
 
+export function useStudentCount() {
+  return useQuery({
+    queryKey: ['admin', 'students', 'count'],
+    queryFn: adminApi.getStudentCount,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useStaffCount() {
+  return useQuery({
+    queryKey: ['admin', 'staff', 'count'],
+    queryFn: adminApi.getStaffCount,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
 export function useStudentProfile(id) {
   return useQuery({
     queryKey: ['admin', 'students', id],

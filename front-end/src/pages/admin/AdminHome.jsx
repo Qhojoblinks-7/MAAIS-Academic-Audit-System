@@ -12,7 +12,7 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
-import { useTickets, useUnreadNotifications, useAnalyticsPulse as useAdminAnalyticsPulse, useArchiveStats as useAdminArchiveStats, useAllStudents, useAllStaff, useApprovals, useResolveApproval, useSystemFreeze, useToggleSystemFreeze, useAllDepartments, useAllSubjects, useAcademicYear, useAcademicYears } from '../../lib/hooks';
+import { useTickets, useUnreadNotifications, useAnalyticsPulse as useAdminAnalyticsPulse, useArchiveStats as useAdminArchiveStats, useAllStudents, useStudentCount, useStaffCount, useAllStaff, useApprovals, useResolveApproval, useSystemFreeze, useToggleSystemFreeze, useAllDepartments, useAllSubjects, useAcademicYear, useAcademicYears } from '../../lib/hooks';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
@@ -76,7 +76,9 @@ export function AdminHome() {
   const analyticsQuery = useAdminAnalyticsPulse();
   const archiveStatsQuery = useAdminArchiveStats();
   const studentsQuery = useAllStudents();
+  const studentCountQuery = useStudentCount();
   const staffQuery = useAllStaff();
+  const staffCountQuery = useStaffCount();
   const systemFreezeQuery = useSystemFreeze();
   const toggleSystemFreezeMutation = useToggleSystemFreeze();
 
@@ -156,15 +158,16 @@ export function AdminHome() {
   const resolveApprovalMutation = useResolveApproval();
   const approvals = (approvalsQuery.data || []).map(approval => ({
     ...approval,
-    teacher: approval.teacher?.name || approval.teacher || 'Unknown Teacher',
+    teacher: approval.teacherName || 'Unknown Teacher',
     time: approval.createdAt ? new Date(approval.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '—',
-    detail: approval.reason || approval.detail || 'No details provided'
+    detail: approval.detail || 'No details provided'
   }));
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
   const [activities, setActivities] = React.useState([]);
   
-  const totalStudents = students.length || 0;
+  const totalStudents = typeof studentCountQuery.data === 'number' ? studentCountQuery.data : 0;
+  const staffCount = typeof staffCountQuery.data === 'number' ? staffCountQuery.data : 0;
   const boarderCount = Math.round(totalStudents * 0.73);
   const dayCount = totalStudents - boarderCount;
 
@@ -181,10 +184,10 @@ export function AdminHome() {
   }, [analytics?.recentActivity]);
 
   const vitalSigns = [
-    { label: 'Student Census', value: totalStudents || '—', trend: '#10b981', progress: totalStudents ? Math.min((totalStudents / 2000) * 100, 100) : 0, bg: 'bg-emerald-50', color: 'text-emerald-600', sub: `${boarderCount.toLocaleString()} Boarders / ${dayCount.toLocaleString()} Day` },
-    { label: 'Faculty Engagement', value: staff.length || '—', trend: '#3b82f6', progress: staff.length ? Math.min((staff.length / 200) * 100, 100) : 0, bg: 'bg-blue-50', color: 'text-blue-600', sub: `${staff.length} registered nodes` },
-    { label: 'Grading Progress', value: gradingProgress, trend: '#f59e0b', progress: gradingProgressBar, bg: 'bg-amber-50', color: 'text-amber-600', sub: avgScore ? 'Institutional grade average' : 'Awaiting data...' },
-    { label: 'Flagged Activities', value: unreadCount || '0', trend: '#ef4444', progress: unreadCount ? Math.min((unreadCount / 10) * 100, 100) : 0, bg: 'bg-rose-50', color: 'text-rose-600', sub: 'Integrity issues detected' },
+    { label: 'Student Census', value: totalStudents, trend: '#10b981', bg: 'bg-success/10', color: 'text-success', sub: `${boarderCount.toLocaleString()} Boarders / ${dayCount.toLocaleString()} Day` },
+    { label: 'Faculty Engagement', value: staffCount, trend: '#3b82f6', bg: 'bg-brand-primary/5', color: 'text-brand-primary', sub: '8 Teachers currently offline' },
+    { label: 'Grading Progress', value: gradingProgress, trend: '#f59e0b', progress: gradingProgressBar, bg: 'bg-warning/10', color: 'text-warning', sub: avgScore ? 'Institutional grade average' : 'Awaiting data...' },
+    { label: 'Flagged Activities', value: unreadCount || '0', trend: '#ef4444', progress: unreadCount ? Math.min((unreadCount / 10) * 100, 100) : 0, bg: 'bg-destructive/10', color: 'text-destructive', sub: 'Integrity issues detected' },
   ];
 
   const chartDatasets = React.useMemo(() => {
@@ -411,7 +414,7 @@ export function AdminHome() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-slate-50 relative p-5 scrollbar-hide">
+    <div className="flex-1 overflow-y-auto bg-background relative p-5 scrollbar-hide">
       <div className="max-w-6xl mx-auto pb-12 space-y-5">
         
         {/* Header - Transparent Architecture */}
@@ -421,20 +424,20 @@ export function AdminHome() {
           </div>
           
           <div className="relative">
-            <h1 className="text-xl font-black text-slate-900 tracking-tight italic font-display">
+            <h1 className="text-xl font-black text-text-primary tracking-tight italic font-display">
               Good morning, Admin
             </h1>
             <div className="flex items-center gap-2 mt-1">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{formatDate(currentTime)}</p>
-              <div className="w-1 h-1 rounded-full bg-slate-300" />
-              <p className="text-[10px] font-black text-slate-700 font-mono tracking-tight tabular-nums">{formatTime(currentTime)}</p>
+              <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">{formatDate(currentTime)}</p>
+              <div className="w-1 h-1 rounded-full bg-border" />
+              <p className="text-[10px] font-black text-text-primary font-mono tracking-tight tabular-nums">{formatTime(currentTime)}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3 relative shrink-0">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100/80">
-              <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", isFreezeActive ? "bg-rose-500" : "bg-emerald-500")} />
-              <span className={cn("text-[9px] font-black uppercase tracking-wider", isFreezeActive ? "text-rose-700" : "text-emerald-700")}>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-success/10 text-success rounded-full border border-success/20">
+              <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", isFreezeActive ? "bg-destructive" : "bg-success")} />
+              <span className={cn("text-[9px] font-black uppercase tracking-wider", isFreezeActive ? "text-destructive" : "text-success")}>
                 {isFreezeActive ? 'Locked' : 'Live'}
               </span>
             </div>
@@ -448,83 +451,83 @@ export function AdminHome() {
                 }
                 setShowConfigModal(true);
               }}
-              className="px-3 py-1.5 bg-slate-900 text-white rounded-xl flex items-center gap-2 shadow-md hover:bg-slate-800 transition-all cursor-pointer"
+              className="px-3 py-1.5 bg-brand-dark text-white rounded-xl flex items-center gap-2 shadow-md hover:bg-brand-dark transition-all cursor-pointer"
             >
-              <Calendar size={12} className="text-slate-400" />
+              <Calendar size={12} className="text-text-secondary" />
               <span className="text-[9px] font-black tracking-wider uppercase">{activeYearLabel || 'No Year'} Academic • {activeTermLabel || '—'}</span>
-              <div className="px-1.5 py-0.5 bg-slate-700 rounded text-[8px] font-black tracking-normal">{configForm.level}</div>
-              <Settings2 size={10} className="text-slate-400 ml-1" />
+              <div className="px-1.5 py-0.5 bg-brand-dark rounded text-[8px] font-black tracking-normal">{configForm.level}</div>
+              <Settings2 size={10} className="text-text-secondary ml-1" />
             </button>
           </div>
         </header>
 
          {/* Main Workspace Grid Splits */}
-         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-           
-           <div className="lg:col-span-8 space-y-5">
-             
-         {/* Vital Signs Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            
+           <div className="lg:col-span-8 flex flex-col gap-5">
+              
+              {/* Vital Signs Cards */}
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {vitalSigns.map((card, i) => {
                   const iconMap = { Users, GraduationCap, TrendingUp, AlertCircle };
                   const displayValue = card.label === 'Flagged Activities' && isFreezeActive ? 'SYSTEM FROZEN' : card.value;
                   const CardIcon = isFreezeActive ? Lock : (iconMap[card.icon] || Users);
                   
-                  return (
-                    <motion.div 
-                      key={i}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      className="bg-white p-4 rounded-2xl border border-slate-200/50 shadow-sm hover:shadow-md transition-all relative group"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105", isFreezeActive ? "bg-rose-50 text-rose-600" : card.bg, isFreezeActive ? "text-rose-600" : card.color)}>
-                          <CardIcon size={18} />
-                        </div>
-                        <Sparkline color={card.trend} />
-                      </div>
-                     
-                     <p className="text-xl font-black text-slate-900 tracking-tight leading-none mb-1">{displayValue}</p>
-                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">{card.label}</p>
-                     
-                     {card.progress !== undefined ? (
-                       <div className="space-y-1">
-                         <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
-                           <motion.div 
-                             initial={{ width: 0 }}
-                             animate={{ width: `${card.progress}%` }}
-                             className={cn("h-full rounded-full", card.progress < 40 ? "bg-rose-500" : card.progress < 75 ? "bg-amber-500" : "bg-emerald-500")}
-                           />
+                   return (
+                     <motion.div 
+                       key={i}
+                       initial={{ opacity: 0, y: 10 }}
+                       animate={{ opacity: 1, y: 0 }}
+                       transition={{ delay: i * 0.05 }}
+                       className="bg-surface p-4 rounded-2xl border border-border/50 shadow-sm hover:shadow-md transition-all relative group"
+                     >
+                       <div className="flex items-center gap-4">
+                         <div className="flex items-center gap-3">
+                           <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105", isFreezeActive ? "bg-destructive/10 text-destructive" : card.bg, isFreezeActive ? "text-destructive" : card.color)}>
+                             <CardIcon size={22} />
+                           </div>
+                           <div>
+                            <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1">{card.label}</p>
+                            {card.progress !== undefined ? (
+                              <div className="space-y-1">
+                                <div className="h-1.5 w-32 bg-border rounded-full overflow-hidden">
+                                  <motion.div 
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${card.progress}%` }}
+                                    className={cn("h-full rounded-full", card.progress < 40 ? "bg-destructive" : card.progress < 75 ? "bg-warning" : "bg-success")}
+                                  />
+                                </div>
+                                <p className="text-[9px] font-semibold text-text-secondary">
+                                  <span>{card.progress.toFixed(1)}% Complete</span>
+                                </p>
+                              </div>
+                            ) : (
+                              <p className="text-[11px] font-medium text-text-secondary leading-tight">{card.subtext}</p>
+                            )}
+                           </div>
                          </div>
-                         <p className="text-[8px] font-bold text-slate-400 flex justify-between">
-                           <span>Velocity</span>
-                           <span>{card.progress}% Complete</span>
-                         </p>
+                         <p className="text-5xl font-bold text-text-primary tracking-tighter leading-none ml-auto">{displayValue}</p>
                        </div>
-                     ) : (
-                       <p className="text-[10px] font-medium text-slate-500 leading-tight">{card.subtext}</p>
-                     )}
-                   </motion.div>
-                 );
+                    </motion.div>
+                  );
                })}
              </div>
 
-            {/* Performance Heatmap */}
-            <section className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm relative overflow-hidden">
+             {/* Performance Heatmap */}
+             <section className="bg-surface p-5 rounded-2xl border border-border shadow-sm relative overflow-hidden shrink-0">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-wider">Departmental Performance Heatmap</h3>
-                  <p className="text-[8px] font-medium text-slate-400 uppercase tracking-widest mt-0.5">Academic Health Quotient</p>
+                  <h3 className="text-[11px] font-black text-text-primary uppercase tracking-wider">Departmental Performance Heatmap</h3>
+                  <p className="text-[9px] font-semibold text-text-secondary uppercase tracking-widest mt-0.5">Academic Health Quotient</p>
                 </div>
-<div className="flex bg-slate-50 p-0.5 rounded-lg border border-slate-100">
+<div className="flex bg-background p-0.5 rounded-lg border border-border">
                    {Object.keys(chartDatasets).map((t) => (
                      <button 
                        key={t} 
                        onClick={() => setActiveMetric(t)}
                        className={cn(
                          "px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-wider transition-all",
-                         t === activeMetric ? "bg-white text-slate-900 shadow-xs" : "text-slate-400 hover:text-slate-600"
+                         t === activeMetric ? "bg-surface text-text-primary shadow-xs" : "text-text-secondary hover:text-text-secondary"
                        )}
                      >
                        {t}
@@ -544,9 +547,9 @@ export function AdminHome() {
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           return (
-                            <div className="bg-white p-2 rounded-lg border border-slate-100 shadow-lg text-[10px]">
-                              <p className="font-black text-slate-400 uppercase tracking-wider mb-0.5">{payload[0].payload.name}</p>
-                              <p className="font-black text-slate-900 text-sm">
+                            <div className="bg-surface p-2 rounded-lg border border-border shadow-lg text-[10px]">
+                              <p className="font-black text-text-secondary uppercase tracking-wider mb-0.5">{payload[0].payload.name}</p>
+                              <p className="font-black text-text-primary text-sm">
                                 {payload[0].value}{activeMetric === 'Avg Score' ? '%' : '% Progress'}
                               </p>
                             </div>
@@ -564,44 +567,44 @@ export function AdminHome() {
                 </ResponsiveContainer>
               </div>
 
-              <div className="grid grid-cols-5 gap-2 mt-4 pt-3 border-t border-slate-50">
+              <div className="grid grid-cols-5 gap-2 mt-4 pt-3 border-t border-border">
                 {(chartDatasets[activeMetric] || []).map((dept, i) => (
                   <div key={i} className="space-y-0.5">
-                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider truncate">{dept.name}</p>
+                    <p className="text-[8px] font-black text-text-secondary uppercase tracking-wider truncate">{dept.name}</p>
                     <div className="flex items-center gap-1">
-                      <span className="text-xs font-black text-slate-800 font-mono">{dept.value}%</span>
-                      {dept.value > 80 && <ArrowUpRight size={10} className="text-emerald-500 shrink-0" />}
+                      <span className="text-xs font-black text-text-primary font-mono">{dept.value}%</span>
+                      {dept.value > 80 && <ArrowUpRight size={10} className="text-success shrink-0" />}
                     </div>
                   </div>
                 ))}
               </div>
             </section>
 
-            {/* Registry Activity Feed */}
-            <section className="bg-slate-900 rounded-2xl p-5 shadow-md relative overflow-hidden">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-[11px] font-black text-white uppercase tracking-wider">Registry Activity Feed</h3>
-                  <p className="text-[8px] font-medium text-slate-500 uppercase tracking-widest mt-0.5">Live Audit Trail</p>
-                </div>
-                <Link to="/audit/extended" className="text-[8px] font-black text-slate-400 uppercase tracking-wider hover:text-white transition-all">View Extended</Link>
-              </div>
+             {/* Registry Activity Feed */}
+             <section className="bg-brand-dark rounded-2xl p-5 shadow-md relative overflow-hidden flex flex-col">
+               <div className="flex items-center justify-between mb-4">
+                 <div>
+                   <h3 className="text-[11px] font-black text-white uppercase tracking-wider">Registry Activity Feed</h3>
+                   <p className="text-[9px] font-semibold text-text-secondary uppercase tracking-widest mt-0.5">Live Audit Trail</p>
+                 </div>
+                 <Link to="/audit/extended" className="text-[8px] font-black text-text-secondary uppercase tracking-wider hover:text-white transition-all">View Extended</Link>
+               </div>
 
-               <div className="space-y-0.5 text-xs max-h-[220px] overflow-y-auto scrollbar-hide custom-scrollbar">
+                <div className="overflow-y-auto scrollbar-hide custom-scrollbar space-y-0.5 text-xs max-h-64">
                 <AnimatePresence initial={false}>
                   {activities.map((log) => (
                     <motion.div 
                       key={log.id}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="flex items-center gap-3 py-2 px-2 hover:bg-slate-800/40 rounded-xl transition-all group"
+                      className="flex items-center gap-3 py-2 px-2 hover:bg-brand-dark/40 rounded-xl transition-all group"
                     >
-                      <span className="text-[9px] font-bold text-slate-500 font-mono w-14 shrink-0">{log.time}</span>
+                      <span className="text-[9px] font-bold text-text-secondary font-mono w-14 shrink-0">{log.time}</span>
                       <div className={cn(
                         "w-1 h-1 rounded-full shrink-0", 
-                        log.type === 'comm' ? 'bg-blue-500' : log.type === 'security' ? 'bg-rose-500' : 'bg-slate-700 group-hover:bg-emerald-500'
+                        log.type === 'comm' ? 'bg-brand-secondary' : log.type === 'security' ? 'bg-destructive' : 'bg-brand-dark group-hover:bg-success'
                       )} />
-                      <p className="text-[11px] font-medium text-slate-300 truncate group-hover:text-white">{log.event}</p>
+                      <p className="text-xs font-medium text-text-secondary truncate group-hover:text-white">{log.event}</p>
                     </motion.div>
                   ))}
                 </AnimatePresence>
@@ -609,16 +612,16 @@ export function AdminHome() {
             </section>
           </div>
 
-          {/* Action Hub Sidebar */}
-          <aside className="lg:col-span-4 space-y-5">
-            
-            {/* Pending Approvals */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm relative group">
-              <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-wider mb-4">Pending Approvals</h3>
-              <div className="space-y-3">
+           {/* Action Hub Sidebar */}
+           <aside className="lg:col-span-4 flex flex-col gap-5">
+             
+             {/* Pending Approvals */}
+             <div className="bg-surface rounded-2xl p-5 border border-border shadow-sm relative group flex flex-col">
+               <h3 className="text-[11px] font-black text-text-primary uppercase tracking-wider mb-4 shrink-0">Pending Approvals</h3>
+               <div className="space-y-3 flex-1 overflow-y-auto scrollbar-hide custom-scrollbar">
                 <AnimatePresence initial={false}>
                   {approvals.length === 0 ? (
-                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center text-[10px] py-6 font-bold text-slate-400 uppercase tracking-wider">
+                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center text-[10px] py-6 font-bold text-text-secondary uppercase tracking-wider">
                       No Approvals in Queue
                     </motion.p>
                   ) : (
@@ -628,51 +631,51 @@ export function AdminHome() {
                       <motion.div 
                         key={req.id} 
                         exit={{ opacity: 0, scale: 0.95, y: -5 }}
-                        className="p-3 bg-slate-50/60 rounded-xl border border-slate-100 hover:border-blue-100 transition-all group/card"
+                        className="p-3 bg-background/60 rounded-xl border border-border hover:border-brand-primary/20 transition-all group/card"
                       >
                         <div className="flex justify-between items-start mb-1.5">
                           <div className="flex items-center gap-2 min-w-0">
-                            <div className="w-6 h-6 bg-white rounded-lg flex items-center justify-center border border-slate-100 shrink-0">
-                              <User size={12} className="text-slate-400" />
+                            <div className="w-6 h-6 bg-surface rounded-lg flex items-center justify-center border border-border shrink-0">
+                              <User size={12} className="text-text-secondary" />
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <p className="text-xs font-black text-slate-900 truncate leading-none mb-0.5">{req.teacher}</p>
-                                {meta.highPriority && <span className="px-1 py-0.5 bg-rose-600 text-white text-[8px] font-black uppercase rounded">High Priority</span>}
-                                {meta.escalated && <Flag size={10} className="text-rose-600" />}
-                                {meta.deferred && <span className="px-1 py-0.5 bg-amber-100 text-amber-700 text-[8px] font-black uppercase rounded">Deferred</span>}
+                                <p className="text-xs font-black text-text-primary truncate leading-none mb-0.5">{req.teacher}</p>
+                                {meta.highPriority && <span className="px-1 py-0.5 bg-destructive text-white text-[8px] font-black uppercase rounded">High Priority</span>}
+                                {meta.escalated && <Flag size={10} className="text-destructive" />}
+                                {meta.deferred && <span className="px-1 py-0.5 bg-warning/10 text-warning text-[8px] font-black uppercase rounded">Deferred</span>}
                               </div>
-                              <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider">{req.time}</p>
+                              <p className="text-[8px] font-black text-text-secondary uppercase tracking-wider">{req.time}</p>
                             </div>
                           </div>
                           <div className="relative">
                             <button 
                               onClick={() => setOpenKebabId(openKebabId === req.id ? null : req.id)}
-                              className="p-1 text-slate-400 hover:text-slate-900 shrink-0"
+                              className="p-1 text-text-secondary hover:text-text-primary shrink-0"
                             >
                               <MoreVertical size={14} />
                             </button>
                             {openKebabId === req.id && (
-                              <div className="absolute right-0 top-6 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1">
-                                <button onClick={() => handleKebabAction(req.id, 'escalate', req.teacher)} className="w-full text-left px-3 py-2 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Shield size={12} className="text-rose-500" /> Escalate Override</button>
-                                <button onClick={() => handleKebabAction(req.id, 'priority', req.teacher)} className="w-full text-left px-3 py-2 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Flag size={12} className={cn("text-rose-600", meta.highPriority && "fill-rose-600")} /> {meta.highPriority ? 'Clear Priority' : 'Toggle High Priority'}</button>
-                                <button onClick={() => handleKebabAction(req.id, 'defer', req.teacher)} className="w-full text-left px-3 py-2 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Clock size={12} className="text-amber-500" /> Defer Request</button>
-                                <button onClick={() => handleKebabAction(req.id, 'reject', req.teacher)} className="w-full text-left px-3 py-2 text-[10px] font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2"><X size={12} /> Reject & Log</button>
+                              <div className="absolute right-0 top-6 w-48 bg-surface border border-border rounded-xl shadow-xl z-50 py-1">
+                                <button onClick={() => handleKebabAction(req.id, 'escalate', req.teacher)} className="w-full text-left px-3 py-2 text-[10px] font-bold text-text-primary hover:bg-background flex items-center gap-2"><Shield size={12} className="text-destructive" /> Escalate Override</button>
+                                <button onClick={() => handleKebabAction(req.id, 'priority', req.teacher)} className="w-full text-left px-3 py-2 text-[10px] font-bold text-text-primary hover:bg-background flex items-center gap-2"><Flag size={12} className={cn("text-destructive", meta.highPriority && "fill-destructive")} /> {meta.highPriority ? 'Clear Priority' : 'Toggle High Priority'}</button>
+                                <button onClick={() => handleKebabAction(req.id, 'defer', req.teacher)} className="w-full text-left px-3 py-2 text-[10px] font-bold text-text-primary hover:bg-background flex items-center gap-2"><Clock size={12} className="text-warning" /> Defer Request</button>
+                                <button onClick={() => handleKebabAction(req.id, 'reject', req.teacher)} className="w-full text-left px-3 py-2 text-[10px] font-bold text-destructive hover:bg-destructive/10 flex items-center gap-2"><X size={12} /> Reject & Log</button>
                               </div>
                             )}
                           </div>
                         </div>
-                        <p className="text-[11px] font-bold text-slate-600 mb-2.5 truncate px-0.5">{req.detail}</p>
+                        <p className="text-[11px] font-bold text-text-secondary mb-2.5 truncate px-0.5">{req.detail}</p>
                         <div className="flex gap-1.5 opacity-0 group-hover/card:opacity-100 transition-opacity">
                           <button 
                             onClick={() => handleResolveApproval(req.id, 'grant', req.teacher)}
-                            className="flex-1 py-1.5 bg-emerald-600 text-white rounded-lg text-[8px] font-black uppercase tracking-wider hover:bg-emerald-700 transition-all flex items-center justify-center gap-1"
+                            className="flex-1 py-1.5 bg-success text-white rounded-lg text-[8px] font-black uppercase tracking-wider hover:bg-success/90 transition-all flex items-center justify-center gap-1"
                           >
                             <ThumbsUp size={10} /> Grant
                           </button>
                           <button 
                             onClick={() => handleResolveApproval(req.id, 'abort', req.teacher)}
-                            className="flex-1 py-1.5 bg-white border border-slate-200 text-slate-400 rounded-lg text-[8px] font-black uppercase tracking-wider hover:text-rose-600 hover:border-rose-200 transition-all flex items-center justify-center gap-1"
+                            className="flex-1 py-1.5 bg-surface border border-border text-text-secondary rounded-lg text-[8px] font-black uppercase tracking-wider hover:text-destructive hover:border-destructive/30 transition-all flex items-center justify-center gap-1"
                           >
                             <ThumbsDown size={10} /> Abort
                           </button>
@@ -685,19 +688,19 @@ export function AdminHome() {
               </div>
               <button 
                 onClick={() => setShowQueueManager(true)}
-                className="w-full mt-4 py-2 border border-dashed border-slate-200 rounded-xl text-[8px] font-black text-slate-400 uppercase tracking-wider hover:bg-slate-50 transition-all"
+                className="w-full mt-4 py-2 border border-dashed border-border rounded-xl text-[8px] font-black text-text-secondary uppercase tracking-wider hover:bg-background transition-all"
               >
                 Queue Manager (8+)
               </button>
             </div>
 
-            {/* Network Support Queue */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm relative group">
+             {/* Network Support Queue */}
+             <div className="bg-surface rounded-2xl p-5 border border-border shadow-sm relative group shrink-0">
               <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-wider mb-0">Network Support Queue</h3>
+                <h3 className="text-[11px] font-black text-text-primary uppercase tracking-wider mb-0">Network Support Queue</h3>
                 <button 
                   onClick={() => navigate('/support/new')}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 text-white rounded-lg text-[8px] font-black uppercase tracking-wider hover:bg-slate-800 transition-all"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-brand-dark text-white rounded-lg text-[8px] font-black uppercase tracking-wider hover:bg-brand-dark transition-all"
                 >
                   <Plus size={14} /> New Ticket
                 </button>
@@ -708,11 +711,11 @@ export function AdminHome() {
                   const isActive = ticket.status === 'active';
                   const statusLabel = isPriority ? 'Priority' : isActive ? 'Active' : (ticket.status || 'Open');
                   const statusStyles = isPriority
-                    ? "bg-rose-50 text-rose-600 border-rose-100"
+                    ? "bg-destructive/10 text-destructive border-destructive/20"
                     : isActive
-                    ? "bg-blue-50 text-blue-600 border-blue-100"
-                    : "bg-amber-50 text-amber-600 border-amber-100";
-                  const iconBg = isPriority ? "bg-rose-100 text-rose-600" : isActive ? "bg-blue-100 text-blue-600" : "bg-amber-100 text-amber-600";
+                    ? "bg-brand-primary/5 text-brand-primary border-brand-primary/20"
+                    : "bg-warning/10 text-warning border-warning/20";
+                  const iconBg = isPriority ? "bg-destructive/10 text-destructive" : isActive ? "bg-brand-primary/10 text-brand-primary" : "bg-warning/10 text-warning";
                   const iconClass = isPriority || isActive ? cn("animate-pulse") : "";
                   const ticketTitle = ticket.subject || ticket.title || ticket.issue || 'Support Ticket';
                   const ticketUser = ticket.createdBy?.name || ticket.user || 'User';
@@ -723,19 +726,19 @@ export function AdminHome() {
                     <div 
                       key={ticket.id} 
                       onClick={() => openNodeDiagnosis(ticket)}
-                      className="flex items-center justify-between p-2.5 bg-slate-50/60 rounded-xl border border-slate-100 hover:border-amber-100 transition-all group/ticket cursor-pointer"
+                      className="flex items-center justify-between p-2.5 bg-background/60 rounded-xl border border-border hover:border-warning/20 transition-all group/ticket cursor-pointer"
                     >
                       <div className="flex gap-3 items-center min-w-0">
                         <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-xs", iconBg)}>
                           <AlertCircle size={14} className={iconClass} />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-[11px] font-black text-slate-900 truncate tracking-tight">{ticketTitle}</p>
-                          <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider truncate">{ticketUser}</p>
+                          <p className="text-[11px] font-black text-text-primary truncate tracking-tight">{ticketTitle}</p>
+                          <p className="text-[9px] font-semibold text-text-secondary uppercase tracking-wider truncate">{ticketUser}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {(isRebooting || isResolving || isIssuing) && <Loader2 size={12} className="animate-spin text-slate-500" />}
+                        {(isRebooting || isResolving || isIssuing) && <Loader2 size={12} className="animate-spin text-text-secondary" />}
                         <span className={cn("px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border", statusStyles)}>{statusLabel}</span>
                       </div>
                     </div>
@@ -747,20 +750,20 @@ export function AdminHome() {
               </div>
             </div>
 
-            {/* Strategic Notepad Memo */}
-<div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-inner relative overflow-hidden">
+             {/* Strategic Notepad Memo */}
+ <div className="bg-background p-5 rounded-2xl border border-border shadow-inner relative overflow-hidden flex flex-col">
   <div className="flex items-center justify-between mb-4">
     <div className="flex items-center gap-2">
-      <div className="w-6 h-6 bg-amber-100 text-amber-700 rounded-md flex items-center justify-center shrink-0">
+      <div className="w-6 h-6 bg-warning/10 text-warning rounded-md flex items-center justify-center shrink-0">
         <StickyNote size={12} />
       </div>
-      <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-wider">Strategic Memo</h3>
+      <h3 className="text-[10px] font-black text-text-primary uppercase tracking-wider">Strategic Memo</h3>
     </div>
     <div className="flex items-center gap-2">
       <Button variant="outline" className="p-1 h-7 w-7" title="Copy Memo" onClick={handleCopyMemo}>
         <Copy size={12} />
       </Button>
-      <Button className="h-7 px-2 text-[8px] font-black uppercase tracking-wider bg-slate-900 text-white hover:bg-slate-800" onClick={handleDispatchMemo}>
+      <Button className="h-7 px-2 text-[8px] font-black uppercase tracking-wider bg-brand-dark text-white hover:bg-brand-dark" onClick={handleDispatchMemo}>
         <Send size={10} className="mr-1" /> Dispatch
       </Button>
     </div>
@@ -772,21 +775,21 @@ export function AdminHome() {
         onClick={() => setActiveMemoTab(tab)}
         className={cn(
           "flex-1 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all",
-          activeMemoTab === tab ? "bg-white text-slate-900 shadow-xs border border-slate-200" : "text-slate-400 hover:text-slate-600"
+          activeMemoTab === tab ? "bg-surface text-text-primary shadow-xs border border-border" : "text-text-secondary hover:text-text-secondary"
         )}
       >
         {tab === 'operational' ? 'Operational' : tab === 'academics' ? 'Academics' : 'Security'}
       </button>
     ))}
   </div>
-   <Textarea
-     value={memoContents[activeMemoTab] || ''}
-     onChange={(e) => setMemoContents(prev => ({ ...prev, [activeMemoTab]: e.target.value }))}
-     className="h-24 placeholder:text-slate-400"
-     placeholder={`Commit ${activeMemoTab} reminders here...`}
-   />
-  <div className="flex justify-between items-center mt-2 pt-2 border-t border-slate-200/40">
-    <p className={cn("text-[8px] font-black uppercase tracking-wider italic", notepadSaved ? "text-emerald-600" : "text-slate-400")}>{notepadSaved ? 'Saved' : 'Saving...'}</p>
+    <Textarea
+      value={memoContents[activeMemoTab] || ''}
+      onChange={(e) => setMemoContents(prev => ({ ...prev, [activeMemoTab]: e.target.value }))}
+      className="h-24 resize-none placeholder:text-text-secondary"
+      placeholder={`Commit ${activeMemoTab} reminders here...`}
+    />
+  <div className="flex justify-between items-center mt-2 pt-2 border-t border-border/40">
+    <p className={cn("text-[8px] font-black uppercase tracking-wider italic", notepadSaved ? "text-success" : "text-text-secondary")}>{notepadSaved ? 'Saved' : 'Saving...'}</p>
   </div>
 </div>
             
@@ -824,8 +827,8 @@ export function AdminHome() {
            onClick={() => setFabOpen(!fabOpen)}
            className={cn(
              "w-12 h-12 rounded-xl flex items-center justify-center transition-all shadow-md transform active:scale-95 z-50",
-             fabOpen ? "bg-slate-900 text-white rotate-45" : 
-             isFreezeActive ? "bg-rose-600 text-white animate-pulse" : "bg-slate-900 text-white"
+             fabOpen ? "bg-brand-dark text-white rotate-45" : 
+             isFreezeActive ? "bg-destructive text-white animate-pulse" : "bg-brand-dark text-white"
            )}
          >
            {isFreezeActive && !fabOpen ? <Lock size={20} /> : <Plus size={20} />}
@@ -836,10 +839,10 @@ export function AdminHome() {
       <AnimatePresence>
 {activeAction === 'register' && (
            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-              <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs" onClick={() => setActiveAction(null)} />
-              <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-sm bg-white rounded-2xl shadow-xl p-6">
-                <h3 className="text-lg font-black italic font-display text-slate-900">Register New Node</h3>
-                <p className="text-[8px] font-black uppercase text-slate-400 tracking-wider mb-5">Identity Provisioning Protocol</p>
+              <div className="absolute inset-0 bg-brand-dark/40 backdrop-blur-xs" onClick={() => setActiveAction(null)} />
+              <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-sm bg-surface rounded-2xl shadow-xl p-6">
+                <h3 className="text-lg font-black italic font-display text-text-primary">Register New Node</h3>
+                <p className="text-[8px] font-black uppercase text-text-secondary tracking-wider mb-5">Identity Provisioning Protocol</p>
                 
                  <div className="grid grid-cols-1 gap-2.5">
                    {registerNodeProtocols.map((p, i) => {
@@ -853,15 +856,15 @@ export function AdminHome() {
                          className="flex items-center justify-between p-4 text-left w-full"
                        >
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-slate-900 shadow-xs shrink-0">
+                            <div className="w-8 h-8 bg-surface rounded-lg flex items-center justify-center text-text-primary shadow-xs shrink-0">
                               <Icon size={18} />
                             </div>
                             <div className="min-w-0">
-                              <p className="text-xs font-black italic font-display text-slate-900 leading-tight">{p.label}</p>
-                              <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tight truncate">{p.desc}</p>
+                              <p className="text-xs font-black italic font-display text-text-primary leading-tight">{p.label}</p>
+                              <p className="text-[9px] font-semibold text-text-secondary uppercase tracking-tight truncate">{p.desc}</p>
                             </div>
                           </div>
-                          <ChevronRight size={14} className="text-slate-300 shrink-0" />
+                          <ChevronRight size={14} className="text-text-secondary shrink-0" />
                        </Button>
                      );
                    })}
@@ -872,18 +875,18 @@ export function AdminHome() {
 
          {activeAction === 'broadcast' && (
            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-              <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs" onClick={() => setActiveAction(null)} />
-              <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
-                <div className="p-5 bg-slate-900 text-white flex justify-between items-center">
+              <div className="absolute inset-0 bg-brand-dark/40 backdrop-blur-xs" onClick={() => setActiveAction(null)} />
+              <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-md bg-surface rounded-2xl shadow-xl overflow-hidden">
+                <div className="p-5 bg-brand-dark text-white flex justify-between items-center">
                   <div>
                     <h3 className="text-xl font-black italic font-display">Broadcast Pulse</h3>
                     <p className="text-[8px] font-black uppercase text-white/50 tracking-wider mt-0.5">Omni-Channel Channels</p>
                   </div>
-                  <X size={18} className="cursor-pointer hover:text-rose-500 transition-all" onClick={() => setActiveAction(null)} />
+                  <X size={18} className="cursor-pointer hover:text-destructive transition-all" onClick={() => setActiveAction(null)} />
                 </div>
                 <div className="p-5 space-y-4">
                   <div className="space-y-2">
-                    <label className="text-[8px] font-black uppercase text-slate-400 tracking-wider ml-1">Channels</label>
+                    <label className="text-[8px] font-black uppercase text-text-secondary tracking-wider ml-1">Channels</label>
                      <div className="flex gap-2">
                        {broadcastChannels.map(c => (
                          <Button
@@ -892,7 +895,7 @@ export function AdminHome() {
                            variant="outline"
                            className={cn(
                              "flex-1 py-2",
-                             c === selectedChannel ? "bg-slate-900 text-white" : "text-slate-600"
+                             c === selectedChannel ? "bg-brand-dark text-white" : "text-text-secondary"
                            )}
                          >
                            {c}
@@ -901,7 +904,7 @@ export function AdminHome() {
                      </div>
                   </div>
                    <div className="space-y-2">
-                     <label className="text-[8px] font-black uppercase text-slate-400 tracking-wider ml-1">Payload Message Core</label>
+                     <label className="text-[8px] font-black uppercase text-text-secondary tracking-wider ml-1">Payload Message Core</label>
                      <Textarea 
                        value={broadcastPayload}
                        onChange={(e) => setBroadcastPayload(e.target.value)}
@@ -914,7 +917,7 @@ export function AdminHome() {
                      disabled={!broadcastPayload.trim()}
                      className={cn(
                        "w-full py-3.5",
-                       broadcastPayload.trim() ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-400"
+                       broadcastPayload.trim() ? "bg-brand-dark text-white" : "bg-border text-text-secondary"
                      )}
                    >
                      <Radio size={14} className={cn(broadcastPayload.trim() && "animate-pulse")} /> Initiate Global Pulse
@@ -926,21 +929,21 @@ export function AdminHome() {
 
         {activeAction === 'freeze' && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setActiveAction(null)} />
-             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl text-center p-6 border-2 border-rose-100">
-                <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-sm bg-rose-50 text-rose-600">
+             <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-sm" onClick={() => setActiveAction(null)} />
+             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-sm bg-surface rounded-2xl shadow-2xl text-center p-6 border-2 border-destructive/20">
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-sm bg-destructive/10 text-destructive">
                   <Lock size={28} />
                 </div>
-                <h3 className="text-xl font-black italic font-display text-slate-900 mb-2">
+                <h3 className="text-xl font-black italic font-display text-text-primary mb-2">
                   {isFreezeActive ? 'System Emergency Freeze Active' : 'Initiate Emergency Freeze?'}
                 </h3>
-                <p className="text-slate-500 text-[11px] font-medium leading-normal mb-2">
+                <p className="text-text-secondary text-[11px] font-medium leading-normal mb-2">
                   {isFreezeActive 
                     ? 'Immediate administrative intervention activated. All write operations are suspended.'
                     : 'Instantly locks write authority cross-institutionally to safeguard live evaluation logs.'}
                 </p>
                 {systemFreezeQuery.data?.systemFreezeReason && (
-                  <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider mb-4 bg-rose-50 px-3 py-2 rounded-lg">
+                  <p className="text-[10px] font-bold text-destructive uppercase tracking-wider mb-4 bg-destructive/10 px-3 py-2 rounded-lg">
                     Reason: {systemFreezeQuery.data.systemFreezeReason}
                   </p>
                 )}
@@ -951,12 +954,12 @@ export function AdminHome() {
                       value={freezeReason}
                       onChange={(e) => setFreezeReason(e.target.value)}
                       placeholder="Reason for emergency freeze..."
-                      className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-[11px] font-medium focus:outline-none focus:ring-2 focus:ring-rose-500"
+                      className="w-full px-3 py-2.5 border border-border rounded-xl text-[11px] font-medium focus:outline-none focus:ring-2 focus:ring-destructive/50"
                     />
                   </div>
                  )}
                  {freezeError && (
-                   <p className="text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-3 py-2 rounded-lg mb-3">
+                   <p className="text-[10px] font-bold text-destructive bg-destructive/10 border border-destructive/30 px-3 py-2 rounded-lg mb-3">
                      {freezeError}
                    </p>
                  )}
@@ -990,7 +993,7 @@ export function AdminHome() {
                       }}
                      className={cn(
                        "flex-1 py-2.5",
-                       isFreezeActive ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"
+                       isFreezeActive ? "bg-success hover:bg-success/90" : "bg-destructive hover:bg-destructive/90"
                      )}
                    >
                       {toggleSystemFreezeMutation.isPending ? 'Processing...' : (isFreezeActive ? 'Lift Institutional Freeze' : 'Lock System')}
@@ -1005,25 +1008,25 @@ export function AdminHome() {
       <AnimatePresence>
         {showConfigModal && (
           <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs" onClick={() => setShowConfigModal(false)} />
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-sm bg-white rounded-2xl shadow-xl p-6">
+            <div className="absolute inset-0 bg-brand-dark/40 backdrop-blur-xs" onClick={() => setShowConfigModal(false)} />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-sm bg-surface rounded-2xl shadow-xl p-6">
               <div className="flex items-center justify-between mb-5">
                 <div>
-                  <h3 className="text-lg font-black italic font-display text-slate-900">Configure Academic Node</h3>
-                  <p className="text-[8px] font-black uppercase text-slate-400 tracking-wider mt-0.5">System-Wide Contextual Tracking</p>
+                  <h3 className="text-lg font-black italic font-display text-text-primary">Configure Academic Node</h3>
+                  <p className="text-[8px] font-black uppercase text-text-secondary tracking-wider mt-0.5">System-Wide Contextual Tracking</p>
                 </div>
-                <button onClick={() => setShowConfigModal(false)} className="p-1.5 text-slate-400 hover:text-slate-900 transition-colors">
+                <button onClick={() => setShowConfigModal(false)} className="p-1.5 text-text-secondary hover:text-text-primary transition-colors">
                   <X size={16} />
                 </button>
               </div>
 
                <div className="space-y-4">
                  <div>
-                   <label className="block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Student Level</label>
+                   <label className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1.5">Student Level</label>
                    <select
                      value={configForm.level}
                      onChange={(e) => setConfigForm({ ...configForm, level: e.target.value })}
-                     className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-slate-900/10"
+                     className="w-full px-3 py-2.5 bg-surface border border-border rounded-xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-brand-primary/10"
                    >
                      <option>SHS 1</option>
                      <option>SHS 2</option>
@@ -1033,11 +1036,11 @@ export function AdminHome() {
                  </div>
 
                   <div>
-                    <label className="block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Academic Year</label>
+                    <label className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1.5">Academic Year</label>
                     <select
                       value={configForm.academicYear}
                       onChange={(e) => setConfigForm({ ...configForm, academicYear: e.target.value })}
-                      className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-slate-900/10"
+                      className="w-full px-3 py-2.5 bg-surface border border-border rounded-xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-brand-primary/10"
                     >
                       {(academicYears.length > 0)
                         ? academicYears.map(y => (
@@ -1055,11 +1058,11 @@ export function AdminHome() {
                   </div>
 
                   <div>
-                    <label className="block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Academic Term</label>
+                    <label className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1.5">Academic Term</label>
                     <select
                       value={configForm.term}
                       onChange={(e) => setConfigForm({ ...configForm, term: e.target.value })}
-                      className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-slate-900/10"
+                      className="w-full px-3 py-2.5 bg-surface border border-border rounded-xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-brand-primary/10"
                     >
                       {(activeYear?.terms && activeYear.terms.length > 0)
                         ? activeYear.terms.map(t => (
@@ -1077,13 +1080,13 @@ export function AdminHome() {
                   </div>
 
                 <div className="pt-2 flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-                  <span className="text-[9px] font-black text-emerald-700 uppercase tracking-wider">System Live</span>
+                  <div className="w-2 h-2 rounded-full bg-success animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                  <span className="text-[9px] font-black text-success uppercase tracking-wider">System Live</span>
                 </div>
 
                 <button
                   onClick={handleConfigSave}
-                  className="w-full py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-black transition-all shadow-lg"
+                  className="w-full py-3 bg-brand-dark text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-black transition-all shadow-lg"
                 >
                   Save Configuration
                 </button>
@@ -1097,37 +1100,37 @@ export function AdminHome() {
       <AnimatePresence>
         {showQueueManager && (
           <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setShowQueueManager(false)} />
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
-              <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+            <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md" onClick={() => setShowQueueManager(false)} />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-2xl bg-surface rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+              <div className="p-5 border-b border-border flex justify-between items-center">
                 <div>
-                  <h3 className="text-lg font-black italic font-display text-slate-900">Queue Manager</h3>
-                  <p className="text-[8px] font-black uppercase text-slate-400 tracking-wider mt-0.5">Bulk Authorization Protocol</p>
+                  <h3 className="text-lg font-black italic font-display text-text-primary">Queue Manager</h3>
+                  <p className="text-[8px] font-black uppercase text-text-secondary tracking-wider mt-0.5">Bulk Authorization Protocol</p>
                 </div>
-                <button onClick={() => setShowQueueManager(false)} className="p-1.5 text-slate-400 hover:text-slate-900 transition-colors">
+                <button onClick={() => setShowQueueManager(false)} className="p-1.5 text-text-secondary hover:text-text-primary transition-colors">
                   <X size={16} />
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto p-5 space-y-3">
                 {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="p-3 bg-slate-50/60 rounded-xl border border-slate-100 flex items-center justify-between">
+                  <div key={i} className="p-3 bg-background/60 rounded-xl border border-border flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-black text-slate-900">Seed Approval #{i + 1}</p>
-                      <p className="text-[10px] font-bold text-slate-500">Index #{1000 + i} • Grade Change Request</p>
+                      <p className="text-xs font-black text-text-primary">Seed Approval #{i + 1}</p>
+                      <p className="text-[10px] font-bold text-text-secondary">Index #{1000 + i} • Grade Change Request</p>
                     </div>
                     <div className="flex gap-2">
-                      <button onClick={() => { toast.success(`Approval #${i + 1} granted`); pushLog(`Approval #${i + 1} granted by Admin.`, 'system'); }} className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-[9px] font-black uppercase">Grant</button>
-                      <button onClick={() => { toast.success(`Approval #${i + 1} aborted`); pushLog(`Approval #${i + 1} aborted by Admin.`, 'security'); }} className="px-3 py-1.5 bg-white border border-slate-200 text-slate-400 rounded-lg text-[9px] font-black uppercase hover:text-rose-600 hover:border-rose-200">Abort</button>
+                      <button onClick={() => { toast.success(`Approval #${i + 1} granted`); pushLog(`Approval #${i + 1} granted by Admin.`, 'system'); }} className="px-3 py-1.5 bg-success text-white rounded-lg text-[9px] font-black uppercase">Grant</button>
+                      <button onClick={() => { toast.success(`Approval #${i + 1} aborted`); pushLog(`Approval #${i + 1} aborted by Admin.`, 'security'); }} className="px-3 py-1.5 bg-surface border border-border text-text-secondary rounded-lg text-[9px] font-black uppercase hover:text-destructive hover:border-destructive/30">Abort</button>
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="p-5 border-t border-slate-100 flex gap-3">
-                <button onClick={() => handleBulkAction('grant')} disabled={bulkActionLoading} className="flex-1 py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2">
+              <div className="p-5 border-t border-border flex gap-3">
+                <button onClick={() => handleBulkAction('grant')} disabled={bulkActionLoading} className="flex-1 py-3 bg-success text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-success/90 disabled:opacity-50 flex items-center justify-center gap-2">
                   {bulkActionLoading && <Loader2 size={14} className="animate-spin" />}
                   Grant All
                 </button>
-                <button onClick={() => handleBulkAction('clear')} disabled={bulkActionLoading} className="flex-1 py-3 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-rose-700 disabled:opacity-50 flex items-center justify-center gap-2">
+                <button onClick={() => handleBulkAction('clear')} disabled={bulkActionLoading} className="flex-1 py-3 bg-destructive text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-destructive/90 disabled:opacity-50 flex items-center justify-center gap-2">
                   {bulkActionLoading && <Loader2 size={14} className="animate-spin" />}
                   Clear Queue
                 </button>
@@ -1141,45 +1144,45 @@ export function AdminHome() {
       <AnimatePresence>
         {selectedTicket && (
           <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedTicket(null)} />
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
-              <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+            <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md" onClick={() => setSelectedTicket(null)} />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-lg bg-surface rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+              <div className="p-5 border-b border-border flex justify-between items-center">
                 <div>
-                  <h3 className="text-lg font-black italic font-display text-slate-900">Node Diagnosis</h3>
-                  <p className="text-[8px] font-black uppercase text-slate-400 tracking-wider mt-0.5">Handshake Diagnostics • Ticket #{selectedTicket.id}</p>
+                  <h3 className="text-lg font-black italic font-display text-text-primary">Node Diagnosis</h3>
+                  <p className="text-[8px] font-black uppercase text-text-secondary tracking-wider mt-0.5">Handshake Diagnostics • Ticket #{selectedTicket.id}</p>
                 </div>
-                <button onClick={() => setSelectedTicket(null)} className="p-1.5 text-slate-400 hover:text-slate-900 transition-colors">
+                <button onClick={() => setSelectedTicket(null)} className="p-1.5 text-text-secondary hover:text-text-primary transition-colors">
                   <X size={16} />
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
+                <div className="p-3 bg-background rounded-xl border border-border space-y-2">
                   <div className="flex items-center gap-2">
-                    <Wifi size={14} className="text-blue-500" />
-                    <p className="text-[10px] font-black uppercase text-slate-500">System Handshake</p>
+                    <Wifi size={14} className="text-brand-primary" />
+                    <p className="text-[10px] font-black uppercase text-text-secondary">System Handshake</p>
                   </div>
-                  <p className="text-[11px] font-medium text-slate-700">Expired TLS client certificate detected on Node #{selectedTicket.id}. Clock drift sequence mismatch: +340ms.</p>
+                  <p className="text-[11px] font-medium text-text-primary">Expired TLS client certificate detected on Node #{selectedTicket.id}. Clock drift sequence mismatch: +340ms.</p>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
+                <div className="p-3 bg-background rounded-xl border border-border space-y-2">
                   <div className="flex items-center gap-2">
-                    <AlertCircle size={14} className="text-amber-500" />
-                    <p className="text-[10px] font-black uppercase text-slate-500">Diagnostic Log</p>
+                    <AlertCircle size={14} className="text-warning" />
+                    <p className="text-[10px] font-black uppercase text-text-secondary">Diagnostic Log</p>
                   </div>
-                  <p className="text-[11px] font-medium text-slate-700">Subject: {selectedTicket.subject || selectedTicket.title || selectedTicket.issue || 'Support Ticket'}</p>
-                  <p className="text-[11px] font-medium text-slate-700">Reported by: {selectedTicket.createdBy?.name || selectedTicket.user || 'User'}</p>
-                  <p className="text-[11px] font-medium text-slate-700">Status: {selectedTicket.status?.toUpperCase() || 'OPEN'}</p>
+                  <p className="text-[11px] font-medium text-text-primary">Subject: {selectedTicket.subject || selectedTicket.title || selectedTicket.issue || 'Support Ticket'}</p>
+                  <p className="text-[11px] font-medium text-text-primary">Reported by: {selectedTicket.createdBy?.name || selectedTicket.user || 'User'}</p>
+                  <p className="text-[11px] font-medium text-text-primary">Status: {selectedTicket.status?.toUpperCase() || 'OPEN'}</p>
                 </div>
               </div>
-              <div className="p-5 border-t border-slate-100 flex gap-3">
-                <button onClick={() => handleRebootNode(selectedTicket.id)} disabled={rebootingNodeId === selectedTicket.id} className="flex-1 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">
+              <div className="p-5 border-t border-border flex gap-3">
+                <button onClick={() => handleRebootNode(selectedTicket.id)} disabled={rebootingNodeId === selectedTicket.id} className="flex-1 py-3 bg-brand-primary text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-brand-primary/90 disabled:opacity-50 flex items-center justify-center gap-2">
                   {rebootingNodeId === selectedTicket.id && <Loader2 size={14} className="animate-spin" />}
                   <RefreshCw size={14} /> Reboot Node
                 </button>
-                <button onClick={() => handleIssueToken(selectedTicket.id)} disabled={issuingTokenId === selectedTicket.id} className="flex-1 py-3 bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-amber-700 disabled:opacity-50 flex items-center justify-center gap-2">
+                <button onClick={() => handleIssueToken(selectedTicket.id)} disabled={issuingTokenId === selectedTicket.id} className="flex-1 py-3 bg-warning text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-warning/90 disabled:opacity-50 flex items-center justify-center gap-2">
                   {issuingTokenId === selectedTicket.id && <Loader2 size={14} className="animate-spin" />}
                   <KeyRound size={14} /> Issue Temp Token
                 </button>
-                <button onClick={() => handleMarkResolved(selectedTicket.id)} disabled={resolvingTicketId === selectedTicket.id} className="flex-1 py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2">
+                <button onClick={() => handleMarkResolved(selectedTicket.id)} disabled={resolvingTicketId === selectedTicket.id} className="flex-1 py-3 bg-success text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-success/90 disabled:opacity-50 flex items-center justify-center gap-2">
                   {resolvingTicketId === selectedTicket.id && <Loader2 size={14} className="animate-spin" />}
                   <CircleCheck size={14} /> Mark Resolved
                 </button>
@@ -1192,3 +1195,5 @@ export function AdminHome() {
     </div>
   );
 }
+
+
