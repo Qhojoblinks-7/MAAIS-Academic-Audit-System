@@ -129,7 +129,9 @@ function GradingRouteLoader() {
   const subjectParam = searchParams.get("subject");
   const classParam = searchParams.get("class");
   const getMissingObsId = searchParams.get("missing");
-  const getTargetStudentIndex = searchParams.get("student");
+  const getTargetStudentId = searchParams.get("studentId");
+  const getTargetStudentName = searchParams.get("studentName");
+  const getTargetStudentIndex = searchParams.get("index");
 
   const [gradingData, setGradingData] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
@@ -208,15 +210,11 @@ function GradingRouteLoader() {
   const { students, subjectConfig } = gradingData;
   const fallbackStudent =
     students.find((s) => s.auditStatus === "MISSING") || students[0] || null;
-  const targetStudentId = getTargetStudentIndex
-    ? students.find(
-        (s) =>
-          Number(s.index) === Number(getTargetStudentIndex) ||
-          s.id === getTargetStudentIndex,
-      )?.id ||
-      fallbackStudent?.id ||
-      null
-    : fallbackStudent?.id || null;
+  const targetStudentId = getTargetStudentId || fallbackStudent?.id || null;
+
+  console.log('[GradingRouteLoader] URL params:', { subject: subjectParam, class: classParam, missingObsId: getMissingObsId, targetStudentId: getTargetStudentId });
+  console.log('[GradingRouteLoader] students count:', students.length, 'student ids:', students.map(s => ({ id: s.id, index: s.index, name: s.name, auditStatus: s.auditStatus })));
+  console.log('[GradingRouteLoader] resolved targetStudentId:', targetStudentId, 'fallbackStudent:', fallbackStudent?.id);
 
   const DEFAULT_CLASS_INFO = {
     id: gradingData.classId || subjectParam,
@@ -248,6 +246,9 @@ function GradingRouteLoader() {
       isTermFinalized={false}
       missingObsId={getMissingObsId}
       targetStudentId={targetStudentId}
+      targetStudentName={getTargetStudentName}
+      targetStudentIndex={getTargetStudentIndex}
+      noAssignmentWarning={!students.length && !!getTargetStudentId}
     />
   );
 }

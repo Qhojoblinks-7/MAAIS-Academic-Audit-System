@@ -9,6 +9,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { teacherService } from '../../services';
 import { useBreadcrumb } from '../../context/BreadcrumbContext';
+import { useUI } from '../../context/UIContext';
 import { EmptyState } from '../../components/molecules';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
@@ -61,6 +62,13 @@ function CreateObsModal({ isOpen, onClose, onSave, editingObs, disabled = false 
   const [index, setIndex] = useState('');
   const [comment, setComment] = useState('');
 
+  const formFields = [
+    { label: 'Subject Name', type: 'text', placeholder: 'e.g. Agricultural Science', value: type, onChange: setType },
+    { label: 'Student Name', type: 'text', placeholder: 'e.g. Angela Owusu', value: student, onChange: setStudent },
+    { label: 'Class', type: 'text', placeholder: 'e.g. SHS 1 Agric B', value: className, onChange: setClassName },
+    { label: 'Student Index No.', type: 'text', placeholder: 'e.g. 001', value: index, onChange: setIndex },
+  ];
+
   useEffect(() => {
     if (isOpen) {
       setType(editingObs?.type || 'Behavioral');
@@ -94,19 +102,14 @@ function CreateObsModal({ isOpen, onClose, onSave, editingObs, disabled = false 
               <h3 className="text-lg font-black text-foreground">{editingObs ? 'Edit Observation' : 'New Observation'}</h3>
               <Button variant="ghost" size="icon" onClick={onClose}><X size={20} /></Button>
             </div>
-            <div className="p-8 space-y-5">
-              {[
-                 { label: 'Subject Name', type: 'text', placeholder: 'e.g. Agricultural Science', value: type, onChange: setType },
-                 { label: 'Student Name', type: 'text', placeholder: 'e.g. Angela Owusu', value: student, onChange: setStudent },
-                 { label: 'Class', type: 'text', placeholder: 'e.g. SHS 1 Agric B', value: className, onChange: setClassName },
-                 { label: 'Student Index No.', type: 'text', placeholder: 'e.g. 001', value: index, onChange: setIndex },
-               ].map(field => (
+             <div className="p-8 space-y-5">
+               {formFields.map((field) => (
                  <div key={field.label}>
                    <label className="block text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-2">{field.label}</label>
                    {field.type === 'select' ? (
                      <select value={field.value} onChange={(e) => field.onChange(e.target.value)}
                        className="w-full px-5 py-3.5 bg-muted border border-border rounded-xl text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/10">
-                       {field.options.map(o => <option key={o} value={o}>{o}</option>)}
+                       {field.options?.map((o) => <option key={o} value={o}>{o}</option>)}
                      </select>
                    ) : (
                      <Input type="text" placeholder={field.placeholder} value={field.value} onChange={(e) => field.onChange(e.target.value)}
@@ -114,7 +117,7 @@ function CreateObsModal({ isOpen, onClose, onSave, editingObs, disabled = false 
                    )}
                  </div>
                ))}
-              <div>
+               <div>
                 <label className="block text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-2">Comment</label>
                 <Textarea
                   placeholder="Describe the observation in detail…"
@@ -145,12 +148,14 @@ function CreateObsModal({ isOpen, onClose, onSave, editingObs, disabled = false 
 
 export function TeacherMissingObservations() {
   const { setBreadcrumb } = useBreadcrumb();
+  const { setMissingObservationCount } = useUI();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('missing');
   const [searchQuery, setSearchQuery] = useState('');
   const [obsTypeFilter, setObsTypeFilter] = useState('All');
-  const [observations, setObservations] = useState([]);
+  const [missingObservations, setMissingObservations] = useState([]);
+  const [loggedObservations, setLoggedObservations] = useState([]);
   const [showCreate, setShowCreate] = useState(false);
   const [editingObs, setEditingObs] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -182,10 +187,12 @@ export function TeacherMissingObservations() {
 
     return {
       id: obs.id,
+      studentId: obs.studentId,
       student: obs.student || 'Unknown',
       index: obs.index || '',
       class: obs.class || 'Unknown Class',
       teacher: obs.teacher || 'Unknown',
+      hod: obs.hod || 'Unknown',
       type: obs.type || 'Unknown Subject',
       status: obs.status || 'Missing',
       comment: obs.comment || '',
@@ -242,21 +249,19 @@ export function TeacherMissingObservations() {
         setError(partialErrors.map((result) => result.error).join('; '));
       }
 
-      const missing = Array.isArray(missingResult) ? missingResult : [];
-      const logs = Array.isArray(logsResult) ? logsResult : [];
-      const merged = new Map();
+      const missing = Array.isArray(missingResult) ? missingResult.map(normalizeObservation).filter((obs) => obs.id) : [];
+      const logs = Array.isArray(logsResult) ? logsResult.map(normalizeObservation).filter((obs) => obs.id) : [];
 
-      [...missing, ...logs]
-        .map(normalizeObservation)
-        .filter((obs) => obs.id)
-        .forEach((obs) => merged.set(obs.id, obs));
+      console.log('[TeacherMissingObservations] fetched missing:', missing.length, missing.slice(0, 2));
+      console.log('[TeacherMissingObservations] fetched logs:', logs.length, logs.slice(0, 2));
 
-      setObservations([...merged.values()].sort((a, b) => {
-        if (a.status !== b.status) return a.status === 'Missing' ? -1 : 1;
-        return new Date(b.date) - new Date(a.date);
-      }));
+      setMissingObservations(missing);
+      setLoggedObservations(logs);
+      setMissingObservationCount(missing.length);
     } catch (err) {
-      setObservations([]);
+      setMissingObservations([]);
+      setLoggedObservations([]);
+      setMissingObservationCount(0);
       setError(err?.message || 'Failed to sync observations from MAAIS backend');
     } finally {
       setIsLoading(false);
@@ -267,13 +272,14 @@ export function TeacherMissingObservations() {
     fetchObservations();
   }, []);
 
-  const filteredObservations = useMemo(() => {
-    return observations.filter((obs) => {
-      const matchesTab =
-        activeTab === 'all' ? true :
-        activeTab === 'missing' ? obs.status === 'Missing' :
-        obs.status === 'Logged';
+  const sourceObservations = activeTab === 'missing'
+    ? missingObservations
+    : activeTab === 'logged'
+      ? loggedObservations
+      : [...missingObservations, ...loggedObservations];
 
+  const filteredObservations = useMemo(() => {
+    return sourceObservations.filter((obs) => {
       const query = searchQuery.trim().toLowerCase();
       const matchesSearch = !query || [
         obs.student,
@@ -285,14 +291,11 @@ export function TeacherMissingObservations() {
 
       const matchesType = obsTypeFilter === 'All' || obs.type === obsTypeFilter;
 
-      return matchesTab && matchesSearch && matchesType;
+      return matchesSearch && matchesType;
     });
-  }, [activeTab, searchQuery, obsTypeFilter, observations]);
+  }, [sourceObservations, searchQuery, obsTypeFilter]);
 
-  const missingCount = useMemo(() =>
-    observations.filter((o) => o.status === 'Missing').length,
-    [observations]
-  );
+  const missingCount = missingObservations.length;
 
   const handleSave = async (newObs) => {
     if (isSaving) return;
@@ -435,7 +438,7 @@ export function TeacherMissingObservations() {
                   <SlidersHorizontal size={13} /> Observation Logs
                 </div>
                 <span className="text-[11px] font-medium text-text-secondary">
-                  Showing {filteredObservations.length} of {observations.length} logs
+                  Showing {filteredObservations.length} of {sourceObservations.length} {activeTab === 'missing' ? 'missing' : activeTab === 'logged' ? 'logged' : 'total'} observations
                 </span>
               </div>
 
@@ -482,6 +485,8 @@ export function TeacherMissingObservations() {
                                 <span className="font-semibold text-text-primary">{obs.class}</span>
                                 <span className="text-border">•</span>
                                 <span>Instructed by {obs.teacher}</span>
+                                <span className="text-border">•</span>
+                                <span className="text-text-primary font-semibold">HOD: {obs.hod}</span>
                                 <span className="text-border hidden md:inline">•</span>
                                 <span className="inline-flex px-2 py-0.5 rounded border text-[9px] font-black uppercase tracking-widest text-text-primary" style={{color: tc }}>{obs.type}</span>
                               </div>
@@ -508,15 +513,25 @@ export function TeacherMissingObservations() {
                             </div>
 
                             <div className="flex items-center gap-1">
-                              {isMissing ? (
+                               {isMissing ? (
                                 <button
-                                  onClick={() => navigate(`/grading?missing=${encodeURIComponent(obs.id)}&student=${encodeURIComponent(obs.index)}&subject=${encodeURIComponent(obs.type)}&class=${encodeURIComponent(obs.class)}`)}
+                                  onClick={() => {
+                                    console.log('[TeacherMissingObservations] navigating to grading for obs:', {
+                                      id: obs.id,
+                                      studentId: obs.studentId,
+                                      subject: obs.type,
+                                      class: obs.class,
+                                      student: obs.student,
+                                      index: obs.index,
+                                    });
+                                    navigate(`/grading?missing=${encodeURIComponent(obs.id)}&studentId=${encodeURIComponent(obs.studentId)}&studentName=${encodeURIComponent(obs.student)}&index=${encodeURIComponent(obs.index)}&subject=${encodeURIComponent(obs.type)}&class=${encodeURIComponent(obs.class)}`);
+                                  }}
                                   className="p-1.5 bg-success/10 hover:bg-brand-dark border border-success/20 rounded-lg text-success hover:text-surface transition-all shadow-sm flex items-center justify-center group-hover:translate-x-0.5"
                                   title="Resolve observation entry"
                                 >
                                   <ArrowRight size={13} />
                                 </button>
-                              ) : (
+                               ) : (
                                 <>
                                   <button
                                     onClick={() => setEditingObs({ ...obs })}

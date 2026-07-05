@@ -1,5 +1,5 @@
 import React from 'react';
-import { X } from 'lucide-react';
+import { X, AlertTriangle } from 'lucide-react';
 import { toast } from '../../components/ui/toast';
 import { ObservationSidebar } from '../../components/shared/ObservationSidebar';
 import { JustificationPopup } from '../../components/shared/CorrectionMode';
@@ -12,6 +12,8 @@ import { GradingSheetFooter } from '../../components/ui/grading-sheet/GradingShe
 import { TermSealBanner } from '../../components/ui/grading-sheet/TermSealBanner';
 import { teacherService } from '../../services/teacherService';
 import { GRADE_SCALE } from '../../constants/grading';
+import { Button } from '../../components/ui/button';
+import { useNavigate } from 'react-router-dom';
 import {
   Table,
   TableBody,
@@ -43,10 +45,13 @@ import {
  * Exposes GRADE_SCALE via named export.
  */
 export function GradingSheet(props) {
+  const navigate = useNavigate();
   const logic = useGradingSheetLogic({
     ...props,
     teacherId: props.teacherId,
   });
+
+  const [sidebarSaving, setSidebarSaving] = React.useState(false);
 
   const {
     // Data
@@ -102,11 +107,32 @@ export function GradingSheet(props) {
     revisionSubmitting,
     doRequestRevision,
     stpValidating,
+    noAssignmentWarning,
   } = logic;
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="flex-1 flex overflow-hidden bg-slate-100">
+      {noAssignmentWarning && (
+        <div className="flex-1 flex items-center justify-center bg-background p-6">
+          <div className="max-w-md bg-surface border border-border rounded-2xl shadow-sm p-8 text-center">
+            <AlertTriangle size={32} className="text-warning mx-auto mb-4" />
+            <h2 className="text-lg font-bold text-text-primary mb-2">Class Access Required</h2>
+            <p className="text-sm text-text-secondary mb-4">
+              You are not assigned to this class section. Grade entry is restricted to assigned teachers only.
+            </p>
+            <p className="text-xs text-text-secondary mb-6">
+              Use the <strong>Observation Hub</strong> to log behavioral observations for any student in your subject.
+            </p>
+            <Button onClick={() => navigate('/missing-observations')} className="bg-brand-primary text-white">
+              Go to Observation Hub
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {!noAssignmentWarning && (
+      <div className="flex-1 flex overflow-hidden bg-slate-100">
 
       {/* ── LEFT / MAIN PANE ── */}
       <div className="flex-1 overflow-y-auto p-6 relative">
@@ -200,39 +226,38 @@ export function GradingSheet(props) {
           onRatingChange={updateBehavioralRating}
           comment={behavioralComment[selectedStudent?.id] || ''}
           onCommentChange={updateBehavioralComment}
-          onSave={() => {
-            if (isTermFinalized) return;
+          onSave={async () => {
+            if (isTermFinalized || sidebarSaving) return;
             const sid = selectedStudent?.id;
             if (!sid) return;
-            const ratings = behavioralRatings[sid] || {};
             const comment = behavioralComment[sid] || '';
-            const flagged = flaggedStudents[sid] || false;
-            const labSafety = labSafetyCompliance[sid] || false;
 
-            if (isMissingObsMode && selectedStudent?.gradeEntryId) {
-              teacherService.createObservation({
-                gradeEntryId: selectedStudent.gradeEntryId,
-                comment,
-                observationText: comment,
-              }).then(() => {
+            setSidebarSaving(true);
+            try {
+              if (isMissingObsMode && selectedStudent?.gradeEntryId) {
+                await teacherService.createObservation({
+                  gradeEntryId: selectedStudent.gradeEntryId,
+                  comment,
+                  observationText: comment,
+                });
                 toast.success('Observation saved successfully');
-              }).catch((err) => {
-                console.error('Failed to save observation:', err);
-                toast.error('Failed to save observation');
-              });
-            } else {
-              console.log('[WAEC STP §7] Behavioral ratings saved:', sid, {
-                ratings,
-                comment,
-                flagged,
-                labSafetyCompliant: labSafety,
-              });
+              } else if (isMissingObsMode) {
+                toast.error('Cannot save observation: grade entry not found for this student');
+              } else {
+                toast.success('Behavioral ratings saved');
+              }
+            } catch (err) {
+              console.error('Failed to save observation:', err);
+              toast.error(err?.message || 'Failed to save observation');
+            } finally {
+              setSidebarSaving(false);
             }
           }}
           onFlagChange={updateFlagged}
           safetyChecked={labSafetyCompliance[selectedStudent?.id] || false}
           onSafetyCheckChange={updateLabSafety}
           disabled={isTermFinalized}
+          saving={sidebarSaving}
         />
       )}
 
@@ -294,6 +319,8 @@ export function GradingSheet(props) {
           </div>
         </div>
       )}
+      </div>
+    )}
     </div>
   );
 }

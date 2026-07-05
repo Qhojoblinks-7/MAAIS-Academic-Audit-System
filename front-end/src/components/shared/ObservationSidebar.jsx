@@ -22,12 +22,12 @@ export function ObservationSidebar({
   safetyChecked = false,
   onSafetyCheckChange,
   disabled = false,
+  saving = false,
 }) {
   const safeStudent = student || { name: '', index: '' };
   const isCorrection = mode === 'correction';
   const isCompliance = mode === 'compliance';
 
-  // Fallback local state if state-lifting props aren't wired up from parent yet
   const [localIsFlagged, setLocalIsFlagged] = React.useState(false);
   const [localSafetyChecked, setLocalSafetyChecked] = React.useState(false);
 
@@ -144,27 +144,27 @@ export function ObservationSidebar({
                 ))}
               </div>
 
-{/* Safety Guidelines Form Control */}
-               <div className="pt-3 border-t border-gray-100">
-                 <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Safety & Status</h4>
-                 <div className="flex flex-col gap-3">
-                <label 
-                     className="flex items-center gap-3 cursor-pointer select-none group"
-                   >
-                      <input
-                        type="checkbox"
-                        checked={activeSafety}
-                        onChange={(e) => toggleSafety(e.target.checked)}
-                        className="sr-only"
-                      />
-                      <div className={cn(
-                        "w-6 h-6 border-2 border-emerald-600 rounded flex items-center justify-center transition-all shrink-0 group-hover:scale-105",
-                        activeSafety ? "bg-emerald-600" : "bg-white"
-                      )}>
-                        {activeSafety && <ShieldCheck size={16} className="text-white" />}
-                      </div>
-                      <span className="text-xs font-bold text-gray-700">Followed Lab Safety Guidelines</span>
-                    </label>
+              {/* Safety Guidelines Form Control */}
+              <div className="pt-3 border-t border-gray-100">
+                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Safety & Status</h4>
+                <div className="flex flex-col gap-3">
+                  <label 
+                       className="flex items-center gap-3 cursor-pointer select-none group"
+                     >
+                       <input
+                         type="checkbox"
+                         checked={activeSafety}
+                         onChange={(e) => toggleSafety(e.target.checked)}
+                         className="sr-only"
+                       />
+                       <div className={cn(
+                         "w-6 h-6 border-2 border-emerald-600 rounded flex items-center justify-center transition-all shrink-0 group-hover:scale-105",
+                         activeSafety ? "bg-emerald-600" : "bg-white"
+                       )}>
+                         {activeSafety && <ShieldCheck size={16} className="text-white" />}
+                       </div>
+                       <span className="text-xs font-bold text-gray-700">Followed Lab Safety Guidelines</span>
+                     </label>
 
                   {/* Flag Switch Mechanism */}
                   <div className="flex items-center justify-between pt-1">
@@ -220,15 +220,15 @@ export function ObservationSidebar({
           <button
             type="button"
             onClick={onSave}
-            disabled={disabled}
+            disabled={disabled || saving}
             className={cn(
               "flex-1 py-2.5 font-black rounded-full text-xs transition-all shadow-md",
-              disabled
+              disabled || saving
                 ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                 : "bg-[#015D34] text-white hover:bg-emerald-900 shadow-emerald-900/10 cursor-pointer"
             )}
           >
-            Save
+            {saving ? 'Saving...' : 'Save'}
           </button>
           <button
             type="button"

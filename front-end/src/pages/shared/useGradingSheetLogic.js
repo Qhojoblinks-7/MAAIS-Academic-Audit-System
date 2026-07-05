@@ -38,6 +38,8 @@ export function useGradingSheetLogic({
   isMissingObsMode: isMissingObsModeProp = false,
   revisionId: revisionIdProp,
   targetStudentId: targetStudentIdProp,
+  targetStudentName: targetStudentNameProp,
+  targetStudentIndex: targetStudentIndexProp,
   missingObsId: missingObsIdProp,
   teacherId: teacherIdProp = null,
 }) {
@@ -105,11 +107,32 @@ export function useGradingSheetLogic({
 
   // Pre-select when external target arrives
   useEffect(() => {
-    if (targetStudentIdProp && students.length > 0) {
+    console.log('[useGradingSheetLogic] targetStudentIdProp changed:', targetStudentIdProp, 'students count:', students.length);
+    if (targetStudentIdProp) {
       const found = students.find(s => s.id === targetStudentIdProp);
-      if (found) setSelectedStudent(found);
+      if (found) {
+        setSelectedStudent(found);
+      } else if (students.length === 0) {
+        const syntheticStudent = {
+          id: targetStudentIdProp,
+          name: targetStudentNameProp || 'Selected Student',
+          index: targetStudentIndexProp || '',
+          auditStatus: 'MISSING',
+          sba: 0,
+          exam: 0,
+          final: 0,
+          grade: '',
+          remark: '',
+          gradeEntryId: null,
+        };
+        console.log('[useGradingSheetLogic] creating synthetic student for sidebar:', syntheticStudent);
+        setSelectedStudent(syntheticStudent);
+      } else {
+        console.log('[useGradingSheetLogic] falling back to first student:', students[0] ? { id: students[0].id, name: students[0].name } : 'NO STUDENTS');
+        setSelectedStudent(students[0]);
+      }
     }
-  }, [targetStudentIdProp, students]);
+  }, [targetStudentIdProp, students, targetStudentNameProp]);
 
   // ── UI state ────────────────────────────────────────────────────────────────
   const [submissionStatus, setSubmissionStatus] = useState('DRAFT');
@@ -227,8 +250,6 @@ export function useGradingSheetLogic({
         subjectId: backendIds?.subjectId,
         termId: backendIds?.termId,
         remark: student.remark || '',
-        hasObservation: !!(student.auditStatus === 'OK' || student.auditStatus === 'ACTIVE'),
-        observationText: student.remark || '',
       };
       const sba = parseFloat(student.sba);
       const exam = parseFloat(student.exam);

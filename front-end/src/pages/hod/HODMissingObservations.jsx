@@ -234,15 +234,15 @@ export function HODMissingObservations() {
                           <div className="w-8 flex justify-end">
                             {isMissing ? (
                                // NOTE: HODs resolving observations is debatable — this navigates to grading sheet
-                               <Button
-                                 onClick={() => navigate(`/grading?missing=${obs.id}&student=${obs.index}`)}
-                                 variant="outline"
-                                 size="sm"
-                                 className="p-1.5 transition-transform group-hover:translate-x-0.5"
-                                 title="Resolve observation entry window"
-                               >
-                                 <ArrowRight size={13} />
-                               </Button>
+                                <Button
+                                  onClick={() => navigate(`/grading?missing=${obs.id}&studentId=${obs.studentId}`)}
+                                  variant="outline"
+                                  size="sm"
+                                  className="p-1.5 transition-transform group-hover:translate-x-0.5"
+                                  title="Resolve observation entry window"
+                                >
+                                  <ArrowRight size={13} />
+                                </Button>
                              ) : (
                               <ChevronRight size={14} className="text-brand-primary opacity-0 group-hover:opacity-100 transition-opacity pr-1" />
                             )}

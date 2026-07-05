@@ -35,7 +35,11 @@ const gradingService = {
   
   getStudentsForGrading: ({ subjectId, classId, termId }) =>
     request('GET', `/grading/students/for-grading?subjectId=${encodeURIComponent(subjectId)}&classId=${encodeURIComponent(classId)}${termId ? `&termId=${encodeURIComponent(termId)}` : ''}`)
-      .then(r => r?.data ?? r ?? []),
+      .then(r => {
+        const data = r?.data ?? r ?? [];
+        console.log('[gradingService] getStudentsForGrading returned:', Array.isArray(data) ? data.length : 'non-array', 'students for', { subjectId, classId, termId });
+        return Array.isArray(data) ? data : [];
+      }),
 
   getLastSaved: () =>
     request('GET', '/grading/last-saved')
