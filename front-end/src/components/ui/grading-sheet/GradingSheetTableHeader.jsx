@@ -51,7 +51,7 @@ export function GradingSheetTableHeader({
             <button 
               type="button"
               onClick={() => setIsExamExpanded(!isExamExpanded)} 
-              className="text-slate-400 hover:text-emerald-600 transition-colors outline-none focus:ring-1 focus:ring-emerald-500 rounded-full"
+              className="text-slate-400 hover:text-emerald-600 transition-colors outline-none focus:ring-1 focus:ring-emerald-500 rounded-full cursor-pointer"
               title={isExamExpanded ? "Collapse Breakdown Columns" : "Expand Section Details"}
             >
               {isExamExpanded ? <MinusCircle size={15} /> : <PlusCircle size={15} />}

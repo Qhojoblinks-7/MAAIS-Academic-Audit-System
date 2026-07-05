@@ -4,7 +4,7 @@ import {
   ArrowRight, AlertTriangle, CheckCircle2, Search,
   Clock, Calendar, Sparkles, SlidersHorizontal, Inbox, ChevronRight
 } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { useBreadcrumb } from '../../context/BreadcrumbContext';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ const mockObservations = [
 export function HODMissingObservations() {
   const { setBreadcrumb } = useBreadcrumb();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('missing');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -114,7 +115,7 @@ export function HODMissingObservations() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200",
+                  "px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer",
                   activeTab === tab.id
                     ? "bg-card text-brand-primary font-bold"
                     : "text-muted-foreground hover:text-foreground"
@@ -232,16 +233,17 @@ export function HODMissingObservations() {
 
                           <div className="w-8 flex justify-end">
                             {isMissing ? (
-                              <Button
-                                onClick={() => window.location.href = `/grading?missing=${obs.id}&student=${obs.index}`}
-                                variant="outline"
-                                size="sm"
-                                className="p-1.5 transition-transform group-hover:translate-x-0.5"
-                                title="Resolve observation entry window"
-                              >
-                                <ArrowRight size={13} />
-                              </Button>
-                            ) : (
+                               // NOTE: HODs resolving observations is debatable — this navigates to grading sheet
+                               <Button
+                                 onClick={() => navigate(`/grading?missing=${obs.id}&student=${obs.index}`)}
+                                 variant="outline"
+                                 size="sm"
+                                 className="p-1.5 transition-transform group-hover:translate-x-0.5"
+                                 title="Resolve observation entry window"
+                               >
+                                 <ArrowRight size={13} />
+                               </Button>
+                             ) : (
                               <ChevronRight size={14} className="text-brand-primary opacity-0 group-hover:opacity-100 transition-opacity pr-1" />
                             )}
                           </div>

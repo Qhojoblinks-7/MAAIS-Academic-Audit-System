@@ -115,11 +115,13 @@ export function useResetStaffCredentials() {
 }
 
 // ── Academic Structure ───────────────────────────────────────────────────────
-export function useActiveYear() {
+export function useActiveYear(options = {}) {
   return useQuery({
     queryKey: ['admin', 'academic', 'activeYear'],
     queryFn: adminApi.getActiveYear,
     staleTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: true,
+    ...options,
   });
 }
 
@@ -401,7 +403,7 @@ export function useUpdateTicketStatus() {
 export function useUpsertGrade() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ dto, submittedById }) => adminApi.upsertGrade(dto, submittedById),
+    mutationFn: (dto) => adminApi.upsertGrade(dto),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['grading'] }),
   });
 }
@@ -409,7 +411,7 @@ export function useUpsertGrade() {
 export function useBulkUpsertGrades() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ entries, submittedById }) => adminApi.bulkUpsertGrades(entries, submittedById),
+    mutationFn: (entries) => adminApi.bulkUpsertGrades(entries),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['grading'] }),
   });
 }
@@ -417,7 +419,7 @@ export function useBulkUpsertGrades() {
 export function useLockGrade() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ gradeEntryId, lockedById }) => adminApi.lockGrade(gradeEntryId, lockedById),
+    mutationFn: (gradeEntryId) => adminApi.lockGrade(gradeEntryId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['grading'] }),
   });
 }
@@ -433,7 +435,7 @@ export function useUnlockGrade() {
 export function useApproveGrade() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ gradeEntryId, approvedById }) => adminApi.approveGrade(gradeEntryId, approvedById),
+    mutationFn: (gradeEntryId) => adminApi.approveGrade(gradeEntryId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['grading'] }),
   });
 }
@@ -441,7 +443,7 @@ export function useApproveGrade() {
 export function useBulkApproveGrades() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ ids, approvedById }) => adminApi.bulkApproveGrades(ids, approvedById),
+    mutationFn: (ids) => adminApi.bulkApproveGrades(ids),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['grading'] }),
   });
 }
@@ -449,7 +451,7 @@ export function useBulkApproveGrades() {
 export function useCorrectGrade() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ dto, changedById }) => adminApi.correctGrade(dto, changedById),
+    mutationFn: (dto) => adminApi.correctGrade(dto),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['grading'] }),
   });
 }

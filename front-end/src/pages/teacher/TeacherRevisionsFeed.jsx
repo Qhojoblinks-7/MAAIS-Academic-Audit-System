@@ -25,6 +25,7 @@ import { useBreadcrumb } from '../../context/BreadcrumbContext';
 import { teacherService } from '../../services';
 import { notification } from '../../services/notificationService';
 import { statusStyles, severityStyles } from '../shared/RevisionsFeed';
+import { toast } from '../../components/ui/toast';
 
 function formatTime(isoString) {
   if (!isoString) return 'Unknown';
@@ -66,6 +67,20 @@ const TeacherRevisionsFeed = () => {
       }
     };
     fetchRevisions();
+  }, [user?.id, user?.profileId, setRevisionCount]);
+
+  useEffect(() => {
+    if (!user?.id && !user?.profileId) return;
+    const interval = setInterval(async () => {
+      try {
+        const data = await teacherService.getGradeRevisions?.(user.id || user.profileId) || [];
+        setRevisions(data);
+        setRevisionCount(Array.isArray(data) ? data.filter(r => r.status !== 'RESOLVED' && r.status !== 'REJECTED').length : 0);
+      } catch (e) {
+        // silent refresh
+      }
+    }, 30000);
+    return () => clearInterval(interval);
   }, [user?.id, user?.profileId, setRevisionCount]);
 
   useEffect(() => {
@@ -120,17 +135,18 @@ const TeacherRevisionsFeed = () => {
       };
 
       await teacherService.updateGradeRevision?.(selected.id, updatedRevision);
-      await notification.notifyHODOfTeacherAction(selected.id, 'TEACHER_REPLIED', replyText);
 
       setRevisions(prev => prev.map(item => item.id === selected.id ? updatedRevision : item));
       setSelected(updatedRevision);
       setReplyText('');
+      toast.success('Response submitted to HOD');
     } catch (e) {
       console.error('Failed to submit response:', e);
+      toast.error('Failed to submit response');
     }
   };
 
-const sendDiscussionMessage = async () => {
+  const sendDiscussionMessage = async () => {
     if (!discussionInput.trim() || !selected) return;
 
     try {
@@ -150,13 +166,14 @@ const sendDiscussionMessage = async () => {
       };
 
       await teacherService.updateGradeRevision?.(selected.id, updatedRevision);
-      await notification.notifyHODOfTeacherAction(selected.id, 'DIRECT_MESSAGE', discussionInput);
 
       setRevisions(prev => prev.map(item => item.id === selected.id ? updatedRevision : item));
       setSelected(updatedRevision);
       setDiscussionInput('');
+      toast.success('Message sent to HOD');
     } catch (err) {
       console.error('Failed to send discussion message:', err);
+      toast.error('Failed to send message');
     } finally {
       setIsDiscussionLoading(false);
     }
@@ -203,7 +220,7 @@ const sendDiscussionMessage = async () => {
                         setSelected(nextList[0] || null);
                       }}
                      className={cn(
-                       "px-4 py-1.5 text-xs font-semibold capitalize rounded-md transition-all duration-150 flex items-center gap-1.5",
+                       "px-4 py-1.5 text-xs font-semibold capitalize rounded-md transition-all duration-150 flex items-center gap-1.5 cursor-pointer",
                        activeTab === tab 
                          ? "bg-white text-slate-900 shadow-sm border border-slate-200/20 font-bold" 
                          : "text-slate-500 hover:text-slate-800"
@@ -270,11 +287,11 @@ const sendDiscussionMessage = async () => {
                   )}
 
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
+                     <div className="flex items-center gap-2">
                       <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded border tracking-wide", statusStyles[(job.status || '').toUpperCase()] || 'bg-slate-100')}>
-                        {(job.status || '').toUpperCase() === 'AWAITING_APPROVAL' ? 'Awaiting HOD' : (job.status || '').toUpperCase() === 'TEACHER_REPLIED' ? 'HOD Reviewing' : 'Resolved'}
+                        {(job.status || '').toUpperCase() === 'AWAITING_APPROVAL' ? 'Awaiting HOD' : (job.status || '').toUpperCase() === 'TEACHER_REPLIED' ? 'HOD Reviewing' : (job.status || '').toUpperCase() === 'REJECTED' ? 'Rejected' : (job.status || '').toUpperCase() === 'RESOLVED' ? 'Resolved' : 'Unknown'}
                       </span>
-                      <span className={cn("text-[9px] font-extrabold px-1.5 py-0.5 rounded border tracking-wider", severityStyles[job.severity] || '')}>
+                       <span className={cn("text-[9px] font-extrabold px-1.5 py-0.5 rounded border tracking-wider", severityStyles[job.severity] || '')}>
                         {job.severity}
                       </span>
                     </div>
@@ -331,14 +348,14 @@ const sendDiscussionMessage = async () => {
               </div>
               <button
                 onClick={() => setSelected(null)}
-                className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded-lg transition-all"
+                className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded-lg transition-all cursor-pointer"
               >
                 <X size={15} />
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0 no-scrollbar">
-              
+               
 <div className="space-y-3.5">
                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">HOD Communications</h4>
                  
@@ -362,8 +379,8 @@ const sendDiscussionMessage = async () => {
                      </div>
                    )) : null}
                   </div>
-                </div>
- 
+               </div>
+  
                {/* Grade Discussion Thread */}
                <div className="border-t border-slate-100 pt-6">
                  <div className="flex items-center justify-between mb-3">
@@ -376,7 +393,7 @@ const sendDiscussionMessage = async () => {
                       </span>
                      <button
                        onClick={() => setDiscussionExpanded(!discussionExpanded)}
-                       className="p-1 hover:bg-slate-100 rounded hover:text-slate-700 transition-colors"
+                       className="p-1 hover:bg-slate-100 rounded hover:text-slate-700 transition-colors cursor-pointer"
                      >
                        {discussionExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                      </button>
@@ -384,141 +401,143 @@ const sendDiscussionMessage = async () => {
                  </div>
                  
 {discussionExpanded && (
-                  <div className="space-y-2">
+                   <div className="space-y-2">
 {!Array.isArray(selected.history) || selected.history.length === 0 ? (
-                        <p className="text-center py-4 text-slate-500 italic">
-                          No discussion yet. Start the conversation!
-                        </p>
-                      ) : (
-                        <div className="space-y-2">
-                          {selected.history.map((msg) => (
-                            <div key={msg.id} className={cn(
-                              "flex gap-3",
-                              msg.role === 'TEACHER' ? 'flex-row' : 'flex-row-reverse'
-                            )}>
-                              <div className={cn(
-                                "w-8 h-8 flex items-center justify-center rounded-full",
-                                msg.role === 'HOD' ? 'bg-amber-100 text-amber-600' : msg.role === 'TEACHER' ? 'bg-sky-100 text-sky-600' : 'bg-slate-200 text-slate-600'
-                              )}>
-                                {msg.role === 'HOD' ? 'H' : msg.role === 'TEACHER' ? 'T' : '?'}
-                              </div>
-                              <div className="flex-1 max-w-[80%]">
-                                <div className={cn(
-                                  "px-3 py-2 rounded-xl",
-                                  msg.role === 'HOD' ? 'bg-amber-50 text-slate-800 rounded-tr-none' : 
-                                    msg.role === 'TEACHER' ? 'bg-sky-50 text-slate-800 rounded-tl-none' :
-                                    'bg-slate-100 text-slate-800 rounded-tl-none'
-                                )}>
-                                  <p className="text-xs font-medium text-slate-500 mb-0.5">
-                                    {msg.user}
-                                  </p>
-                                  <p className="text-sm text-slate-800 whitespace-pre-wrap break-words">
-                                    {msg.message}
-                                  </p>
-                                  <p className="text-xs text-slate-400 mt-1">
-                                    {formatTime(msg.time)}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                 
-                  <div className="mt-3 pt-2 border-t border-slate-200">
-                   <div className="flex items-center gap-2">
-                     <div className="flex-1">
-                       <textarea
-                         value={discussionInput}
-                         onChange={(e) => setDiscussionInput(e.target.value)}
-                         placeholder="Type your message..."
-                         rows={2}
-                         className="w-full p-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500/20"
-                         disabled={isDiscussionLoading}
-                       />
+                         <p className="text-center py-4 text-slate-500 italic">
+                           No discussion yet. Start the conversation!
+                         </p>
+                       ) : (
+                         <div className="space-y-2">
+                           {selected.history.map((msg) => (
+                             <div key={msg.id} className={cn(
+                               "flex gap-3",
+                               msg.role === 'TEACHER' ? 'flex-row' : 'flex-row-reverse'
+                             )}>
+                               <div className={cn(
+                                 "w-8 h-8 flex items-center justify-center rounded-full",
+                                 msg.role === 'HOD' ? 'bg-amber-100 text-amber-600' : msg.role === 'TEACHER' ? 'bg-sky-100 text-sky-600' : 'bg-slate-200 text-slate-600'
+                               )}>
+                                 {msg.role === 'HOD' ? 'H' : msg.role === 'TEACHER' ? 'T' : '?'}
+                               </div>
+                               <div className="flex-1 max-w-[80%]">
+                                 <div className={cn(
+                                   "px-3 py-2 rounded-xl",
+                                   msg.role === 'HOD' ? 'bg-amber-50 text-slate-800 rounded-tr-none' : 
+                                     msg.role === 'TEACHER' ? 'bg-sky-50 text-slate-800 rounded-tl-none' :
+                                     'bg-slate-100 text-slate-800 rounded-tl-none'
+                                 )}>
+                                   <p className="text-xs font-medium text-slate-500 mb-0.5">
+                                     {msg.user}
+                                   </p>
+                                   <p className="text-sm text-slate-800 whitespace-pre-wrap break-words">
+                                     {msg.message}
+                                   </p>
+                                   <p className="text-xs text-slate-400 mt-1">
+                                     {formatTime(msg.time)}
+                                   </p>
+                                 </div>
+                               </div>
+                             </div>
+                           ))}
+                         </div>
+                       )}
                      </div>
-                     <button
-                       onClick={sendDiscussionMessage}
-                       disabled={isDiscussionLoading || !discussionInput.trim()}
-                       className="px-3 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-colors disabled:opacity-50"
-                     >
-                       {isDiscussionLoading ? 'Sending...' : 'Send'}
-                     </button>
-                   </div>
-                 </div>
-               </div>
-               {/* End Grade Discussion Thread */}
- 
-               {selected.status === 'AWAITING_APPROVAL' && (
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Add Teacher Response</label>
-                  <div className="relative">
-                    <textarea
-                      rows={4}
-                      value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      placeholder="Provide additional context or evidence for HOD review..."
-                      className="w-full p-3 bg-slate-50/60 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/5 focus:border-slate-500 placeholder-slate-400 resize-none transition-all leading-relaxed"
-                    />
-                    <div className="absolute bottom-3 right-3 text-slate-300 pointer-events-none">
-                      <MessageSquare size={13} />
+                   )}
+                  
+                   <div className="mt-3 pt-2 border-t border-slate-200">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <textarea
+                          value={discussionInput}
+                          onChange={(e) => setDiscussionInput(e.target.value)}
+                          placeholder="Type your message..."
+                          rows={2}
+                          className="w-full p-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500/20"
+                          disabled={isDiscussionLoading}
+                        />
+                      </div>
+                      <button
+                        onClick={sendDiscussionMessage}
+                        disabled={isDiscussionLoading || !discussionInput.trim()}
+                        className="px-3 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        {isDiscussionLoading ? 'Sending...' : 'Send'}
+                      </button>
                     </div>
                   </div>
                 </div>
-              )}
+                {/* End Grade Discussion Thread */}
+ 
+                 {selected.status === 'AWAITING_APPROVAL' || selected.status === 'REJECTED' ? (
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Add Teacher Response</label>
+                    <div className="relative">
+                      <textarea
+                        rows={4}
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        placeholder="Provide additional context or evidence for HOD review..."
+                        className="w-full p-3 bg-slate-50/60 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/5 focus:border-slate-500 placeholder-slate-400 resize-none transition-all leading-relaxed"
+                      />
+                      <div className="absolute bottom-3 right-3 text-slate-300 pointer-events-none">
+                        <MessageSquare size={13} />
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
 
-            </div>
+              <div className="p-4 border-t border-slate-100 bg-slate-50/40 space-y-2 shrink-0">
+                {selected.status === 'AWAITING_APPROVAL' || selected.status === 'REJECTED' ? (
+                  <>
+                    <button
+                      onClick={() => navigate(`/grading?revision=${selected.id}&student=${selected.index}`)}
+                      className="w-full py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-slate-800 transition-all shadow-sm flex items-center justify-center gap-1.5 group"
+                    >
+                      Open Correction Sheet 
+                      <ArrowRight size={13} className="text-slate-400 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                    </button>
 
-            <div className="p-4 border-t border-slate-100 bg-slate-50/40 space-y-2 shrink-0">
-              {selected.status === 'AWAITING_APPROVAL' ? (
-                <>
-                  <button
-                    onClick={() => navigate(`/grading?revision=${selected.id}&student=${selected.index}`)}
-                    className="w-full py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-slate-800 transition-all shadow-sm flex items-center justify-center gap-1.5 group"
-                  >
-                    Open Correction Sheet 
-                    <ArrowRight size={13} className="text-slate-400 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
-                  </button>
-
-                  <button
-                    disabled={!replyText.trim()}
-                    onClick={appendTeacherResponse}
-                    className={cn(
-                      "w-full py-2 rounded-xl text-xs font-semibold tracking-wide border transition-all flex items-center justify-center gap-1.5",
-                      replyText.trim() 
-                        ? "bg-white border-slate-200 text-slate-700 hover:bg-slate-100 cursor-pointer shadow-sm" 
-                        : "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60"
-                    )}
-                  >
-                    <CornerDownRight size={13} />
-                    Submit Response to HOD
-                  </button>
-                </>
-              ) : selected.status === 'TEACHER_REPLIED' ? (
-                <div className="flex items-center gap-2 text-[10px] font-bold text-sky-700 bg-sky-50 px-3 py-2 rounded-lg">
-                  <Clock size={14} />
-                  Waiting for HOD Final Decision
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-3 py-2 rounded-lg">
-                  <Check size={14} />
-                  Grade Revision Finalized
-                </div>
-              )}
+                    <button
+                      disabled={!replyText.trim()}
+                      onClick={appendTeacherResponse}
+                      className={cn(
+                        "w-full py-2 rounded-xl text-xs font-semibold tracking-wide border transition-all flex items-center justify-center gap-1.5",
+                        replyText.trim() 
+                          ? "bg-white border-slate-200 text-slate-700 hover:bg-slate-100 cursor-pointer shadow-sm" 
+                          : "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60"
+                      )}
+                    >
+                      <CornerDownRight size={13} />
+                      Submit Response to HOD
+                    </button>
+                  </>
+                ) : selected.status === 'TEACHER_REPLIED' ? (
+                  <div className="flex items-center gap-2 text-[10px] font-bold text-sky-700 bg-sky-50 px-3 py-2 rounded-lg">
+                    <Clock size={14} />
+                    Waiting for HOD Final Decision
+                  </div>
+                ) : (
+                  <div className={cn(
+                    "flex items-center gap-2 text-[10px] font-bold px-3 py-2 rounded-lg",
+                    selected.status === 'REJECTED' ? "text-red-700 bg-red-50" : "text-emerald-700 bg-emerald-50"
+                  )}>
+                    <Check size={14} />
+                    {selected.status === 'REJECTED' ? 'Rejected — Awaiting Further Action' : 'Grade Revision Finalized'}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          ) : (
+            <div className="w-[28rem] bg-slate-50/20 border-l border-slate-200/60 hidden lg:flex flex-col items-center justify-center p-8 text-center shrink-0">
+              <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center mb-3 text-slate-400">
+                <Check size={16} />
+              </div>
+              <p className="text-xs font-semibold text-slate-700">No Request Selected</p>
+              <p className="text-[11px] text-slate-400 mt-0.5 max-w-[200px]">Select a grade revision request to view HOD feedback and respond.</p>
             </div>
-          </motion.div>
-        ) : (
-          <div className="w-[28rem] bg-slate-50/20 border-l border-slate-200/60 hidden lg:flex flex-col items-center justify-center p-8 text-center shrink-0">
-            <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center mb-3 text-slate-400">
-              <Check size={16} />
-            </div>
-            <p className="text-xs font-semibold text-slate-700">No Request Selected</p>
-            <p className="text-[11px] text-slate-400 mt-0.5 max-w-[200px]">Select a grade revision request to view HOD feedback and respond.</p>
-          </div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
     </div>
   );
 };

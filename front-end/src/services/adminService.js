@@ -16,7 +16,7 @@ async function request(method, path, body) {
     method,
     headers: getHeaders(),
     credentials: 'include',
-    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+    ...(body != null && method !== 'GET' && method !== 'HEAD' ? { body: JSON.stringify(body) } : {}),
   });
 
   if (!res.ok) {
@@ -137,20 +137,20 @@ function createRealService() {
     addTicketReply: (id, dto) => request('POST', `/comms/tickets/${id}/reply`, dto),
 
     // ── Grading (Admin / HOD level) ──────────────────────────────────────────
-    upsertGrade: (dto, submittedById) =>
-      request('POST', '/grading/entries', { ...dto, submittedById }),
-    bulkUpsertGrades: (entries, submittedById) =>
-      request('POST', '/grading/entries/bulk', { entries, submittedById }),
-    lockGrade: (gradeEntryId, lockedById) =>
-      request('PATCH', `/grading/entries/${gradeEntryId}/lock`, { lockedById }),
+    upsertGrade: (dto) =>
+      request('POST', '/grading/entries', dto),
+    bulkUpsertGrades: (entries) =>
+      request('POST', '/grading/entries/bulk', { entries }),
+    lockGrade: (gradeEntryId) =>
+      request('PATCH', `/grading/entries/${gradeEntryId}/lock`),
     unlockGrade: (gradeEntryId) =>
-      request('PATCH', `/grading/entries/${gradeEntryId}/unlock`, null),
-    approveGrade: (gradeEntryId, approvedById) =>
-      request('PATCH', `/grading/entries/${gradeEntryId}/approve`, { approvedById }),
-    bulkApproveGrades: (ids, approvedById) =>
-      request('POST', '/grading/entries/bulk-approve', { ids, approvedById }),
-    correctGrade: (dto, changedById) =>
-      request('POST', '/grading/corrections', { ...dto, changedById }),
+      request('PATCH', `/grading/entries/${gradeEntryId}/unlock`),
+    approveGrade: (gradeEntryId) =>
+      request('PATCH', `/grading/entries/${gradeEntryId}/approve`),
+    bulkApproveGrades: (ids) =>
+      request('POST', '/grading/entries/bulk-approve', { ids }),
+    correctGrade: (dto) =>
+      request('POST', '/grading/corrections', dto),
     getMissingObservations: (termId) =>
       request('GET', `/grading/missing-observations?termId=${termId}`),
     getGradeEntry: (id) => request('GET', `/grading/entries/${id}`),
@@ -218,6 +218,7 @@ function createRealService() {
 
     // ── Archive (Admin) ──────────────────────────────────────────────────────
     runPromotion: (dto) => request('POST', '/archive/promote', dto),
+    unlockTerm: (id) => request('POST', `/hod/unlock-matrix/${id}`),
 
     // ── Approvals ──────────────────────────────────────────────────────────────
     getApprovals: (query = {}) => request('GET', '/approvals', query),

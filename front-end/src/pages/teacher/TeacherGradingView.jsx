@@ -85,6 +85,12 @@ export function TeacherGradingView() {
   const activeTerm = activeYearQuery.data?.terms?.find(t => t.isActive);
   const isTermFinalized = activeTerm?.isLocked ?? false;
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      activeYearQuery.refetch();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [activeYearQuery]);
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -139,6 +145,15 @@ export function TeacherGradingView() {
     const students = await teacherService.getGradingStudents(cls.subject, cls.className);
     setGradingStudents(students || []);
   }, []);
+
+  useEffect(() => {
+    if (!selectedClass) return;
+    const interval = setInterval(async () => {
+      const students = await teacherService.getGradingStudents(selectedClass.subject, selectedClass.className);
+      setGradingStudents(students || []);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [selectedClass]);
 
   const handleCloseSheet = useCallback(() => {
     setSelectedClass(null);

@@ -211,7 +211,8 @@ function GradingRouteLoader() {
   const targetStudentId = getTargetStudentIndex
     ? students.find(
         (s) =>
-          s.index === getTargetStudentIndex || s.id === getTargetStudentIndex,
+          Number(s.index) === Number(getTargetStudentIndex) ||
+          s.id === getTargetStudentIndex,
       )?.id ||
       fallbackStudent?.id ||
       null

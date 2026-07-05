@@ -178,105 +178,188 @@ function normalizeObservationPayload(observation) {
 }
 
 async function request(method, path, body) {
+  console.log(`[TeacherService] ${method} ${path}`, body ? { body } : '');
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
     headers: getHeaders(),
     credentials: 'include',
-    ...(body !== undefined && method !== 'GET' && method !== 'HEAD' ? { body: JSON.stringify(body) } : {}),
+    ...(body != null && method !== 'GET' && method !== 'HEAD' ? { body: JSON.stringify(body) } : {}),
   });
 
   if (!res.ok) {
+    let errorBody;
+    try {
+      errorBody = await res.clone().json();
+    } catch {
+      errorBody = await res.text();
+    }
     const err = new Error(`Request failed: ${res.status} ${method} ${path}`);
     err.status = res.status;
+    err.response = errorBody;
+    console.error(`[TeacherService] ${method} ${path} failed:`, JSON.stringify(errorBody, null, 2));
     throw err;
   }
 
   if (res.status === 204) return undefined;
-  return res.json();
+  const data = await res.json();
+  console.log(`[TeacherService] ${method} ${path} succeeded`, data ? JSON.stringify(data, null, 2) : '');
+  return data;
 }
 
 function createRealService() {
   return {
-    getClasses: (teacherId, params = undefined) =>
-      request('GET', `/teacher/classes/${teacherId}`, params ? { params } : undefined)
-        .then(r => r?.data ?? r),
-    getProfile: () =>
-      request('GET', '/teacher/profile').then(r => r?.data ?? r),
-    getAnalytics: (teacherId) =>
-      request('GET', `/teacher/classes/${teacherId}/analytics`).then(r => normalizeAnalyticsPayload(r?.data ?? r)),
-    getObservations: (teacherId, params = {}) =>
-      request('GET', `/teacher/classes/${teacherId}/observations`, params ? { params } : undefined)
-        .then(r => r?.data ?? r),
-    getGradeRevisions: (teacherId) =>
-      request('GET', `/teacher/grade-revisions`).then(r => r?.data ?? r),
-    getMissingObservations: () =>
-      request('GET', '/grading/audit-tray').then((r) => {
+    getClasses: (teacherId, params = undefined) => {
+      console.log(`[TeacherService] getClasses called with teacherId: ${teacherId}`);
+      return request('GET', `/teacher/classes/${teacherId}`, params ? { params } : undefined)
+        .then(r => r?.data ?? r);
+    },
+    getProfile: () => {
+      console.log('[TeacherService] getProfile called');
+      return request('GET', '/teacher/profile').then(r => r?.data ?? r);
+    },
+    getAnalytics: (teacherId) => {
+      console.log(`[TeacherService] getAnalytics called with teacherId: ${teacherId}`);
+      return request('GET', `/teacher/classes/${teacherId}/analytics`)
+        .then(r => normalizeAnalyticsPayload(r?.data ?? r));
+    },
+    getObservations: (teacherId, params = {}) => {
+      console.log(`[TeacherService] getObservations called with teacherId: ${teacherId}`);
+      return request('GET', `/teacher/classes/${teacherId}/observations`, params ? { params } : undefined)
+        .then(r => r?.data ?? r);
+    },
+    getGradeRevisions: (teacherId) => {
+      console.log(`[TeacherService] getGradeRevisions called`);
+      return request('GET', `/teacher/grade-revisions`).then(r => r?.data ?? r);
+    },
+    getMissingObservations: () => {
+      console.log('[TeacherService] getMissingObservations called');
+      return request('GET', '/teacher/missing-observations').then((r) => {
         const data = r?.data ?? r ?? [];
         return Array.isArray(data) ? data : [];
-      }),
-    getObservationLogs: () =>
-      request('GET', '/teacher/observations').then((r) => {
+      });
+    },
+    getObservationLogs: () => {
+      console.log('[TeacherService] getObservationLogs called');
+      return request('GET', '/teacher/observations').then((r) => {
         const data = r?.data ?? r ?? [];
         return Array.isArray(data) ? data : [];
-      }),
-    getSupportObservations: () =>
-      request('GET', '/teacher/support/observations').then(r => r?.data ?? r).catch(() => []),
-    getGradeIssues: () =>
-      request('GET', '/teacher/grade-issues').catch(() => []),
-
-    getGradeIssueStatusMeta: () =>
-      request('GET', '/teacher/grade-issues/meta').catch(() => ({})),
-    getTimetable: (teacherId) =>
-      request('GET', `/timetable?teacherId=${encodeURIComponent(teacherId)}`).then(r => normalizeTimetableEntries(r?.data ?? r)),
-    submitGradeRevision: (revisionData) =>
-      request('POST', '/teacher/grade-revisions', revisionData).then(r => r?.data ?? r),
-    updateGradeRevision: (revisionId, updatedData) =>
-      request('PATCH', `/teacher/grade-revisions/${revisionId}`, updatedData).then(r => r?.data ?? r),
-    getSettingsClasses: () =>
-      request('GET', '/teacher/settings/classes').then(r => r?.data ?? r),
-    getNotificationPreferences: () =>
-      request('GET', '/teacher/settings/preferences').then(r => r?.data ?? r),
-
-    updateProfile: (profile) =>
-      request('PATCH', '/teacher/profile', profile).then(r => r?.data ?? r),
-
-    submitSupportTicket: (ticketData) =>
-      request('POST', '/comms/tickets', ticketData).then(r => r?.data ?? r),
-    getGradingStudents: (subject, className) =>
-      request('GET', `/teacher/grading/students?subject=${encodeURIComponent(subject)}&class=${encodeURIComponent(className)}`)
-        .then(r => r?.data ?? r),
-    getSubjectConfig: () =>
-      request('GET', '/teacher/subject-config').then(r => r?.data ?? r),
-    getGradingStatusMeta: () =>
-      request('GET', '/teacher/grading/status-meta').then(r => r?.data ?? r),
-    getGradingFilterOptions: () =>
-      request('GET', '/teacher/grading/filters').then(r => r?.data ?? r),
-    getGradingIds: (subjectName, className) =>
-      request('GET', `/teacher/grading/ids?subject=${encodeURIComponent(subjectName)}&class=${encodeURIComponent(className)}`)
-        .then(r => r?.data ?? r ?? {}),
-    bulkUpsertGradeEntries: (entries) =>
-      request('POST', '/grading/entries/bulk', { entries }).then(r => r?.data ?? r),
-    createObservation: (observation) =>
-      request('POST', '/teacher/observations', normalizeObservationPayload(observation)).then(r => r?.data ?? r),
-    updateObservation: (observationId, patch) =>
-      request('PATCH', `/teacher/observations/${observationId}`, normalizeObservationPayload(patch)).then(r => r?.data ?? r),
-    deleteObservation: (observationId) =>
-      request('DELETE', `/teacher/observations/${observationId}`).then(r => r?.data ?? r),
-
-    getTeacherArchive: () =>
-      request('GET', '/archive/vault/search').then(r => r?.data ?? r),
-
-    getStudentPortalData: (studentId) =>
-      request('GET', `/portal/students/${studentId}/portal-data`).then(r => r?.data ?? r),
-
-    getStudentBehavior: (studentId) =>
-      request('GET', `/students/${studentId}/behavior`).then(r => r?.data ?? r),
-
-    createBehavior: (studentId, data) =>
-      request('POST', `/students/${studentId}/behavior`, data).then(r => r?.data ?? r),
-
-    searchTeachers: (query) =>
-      request('GET', `/users/teachers${query ? `?search=${encodeURIComponent(query)}` : ''}`)
+      });
+    },
+    getSupportObservations: () => {
+      console.log('[TeacherService] getSupportObservations called');
+      return request('GET', '/teacher/support/observations').then(r => r?.data ?? r).catch(() => []);
+    },
+    getGradeIssues: () => {
+      console.log('[TeacherService] getGradeIssues called');
+      return request('GET', '/teacher/grade-issues').catch(() => []);
+    },
+    getGradeIssueStatusMeta: () => {
+      console.log('[TeacherService] getGradeIssueStatusMeta called');
+      return request('GET', '/teacher/grade-issues/meta').catch(() => ({}));
+    },
+    getTimetable: (teacherId) => {
+      console.log(`[TeacherService] getTimetable called with teacherId: ${teacherId}`);
+      return request('GET', `/timetable?teacherId=${encodeURIComponent(teacherId)}`)
+        .then(r => normalizeTimetableEntries(r?.data ?? r));
+    },
+    submitGradeRevision: (revisionData) => {
+      console.log('[TeacherService] submitGradeRevision called');
+      return request('POST', '/teacher/grade-revisions', revisionData).then(r => r?.data ?? r);
+    },
+    updateGradeRevision: (revisionId, updatedData) => {
+      console.log(`[TeacherService] updateGradeRevision called with revisionId: ${revisionId}`);
+      return request('PATCH', `/teacher/grade-revisions/${revisionId}`, updatedData).then(r => r?.data ?? r);
+    },
+    getSettingsClasses: () => {
+      console.log('[TeacherService] getSettingsClasses called');
+      return request('GET', '/teacher/settings/classes').then(r => r?.data ?? r);
+    },
+    getNotificationPreferences: () => {
+      console.log('[TeacherService] getNotificationPreferences called');
+      return request('GET', '/teacher/settings/preferences').then(r => r?.data ?? r);
+    },
+    updateProfile: (profile) => {
+      console.log('[TeacherService] updateProfile called');
+      return request('PATCH', '/teacher/profile', profile).then(r => r?.data ?? r);
+    },
+    submitSupportTicket: (ticketData) => {
+      console.log('[TeacherService] submitSupportTicket called');
+      return request('POST', '/comms/tickets', ticketData).then(r => r?.data ?? r);
+    },
+    getGradingStudents: (subject, className) => {
+      console.log(`[TeacherService] getGradingStudents called with subject: ${subject}, class: ${className}`);
+      return request('GET', `/teacher/grading/students?subject=${encodeURIComponent(subject)}&class=${encodeURIComponent(className)}`)
+        .then(r => r?.data ?? r);
+    },
+    getSubjectConfig: () => {
+      console.log('[TeacherService] getSubjectConfig called');
+      return request('GET', '/teacher/subject-config').then(r => r?.data ?? r);
+    },
+    getGradingStatusMeta: () => {
+      console.log('[TeacherService] getGradingStatusMeta called');
+      return request('GET', '/teacher/grading/status-meta').then(r => r?.data ?? r);
+    },
+    getGradingFilterOptions: () => {
+      console.log('[TeacherService] getGradingFilterOptions called');
+      return request('GET', '/teacher/grading/filters').then(r => r?.data ?? r);
+    },
+    getGradingIds: (subjectName, className) => {
+      console.log(`[TeacherService] getGradingIds called with subject: ${subjectName}, class: ${className}`);
+      return request('GET', `/teacher/grading/ids?subject=${encodeURIComponent(subjectName)}&class=${encodeURIComponent(className)}`)
+        .then(r => r?.data ?? r ?? {});
+    },
+    bulkUpsertGradeEntries: (entries) => {
+      console.log(`[TeacherService] bulkUpsertGradeEntries called with ${entries?.length || 0} entries`);
+      const validatedEntries = entries?.map((e, i) => {
+        const entry = {
+          studentId: e.studentId,
+          subjectId: e.subjectId,
+          termId: e.termId,
+          classScore: e.classScore,
+          examScore: e.examScore,
+          remark: e.remark,
+          hasObservation: e.hasObservation,
+          observationText: e.observationText
+        };
+        console.log(`[TeacherService] Entry ${i}: studentId=${e.studentId}, subjectId=${e.subjectId}, termId=${e.termId}, classScore=${e.classScore}, examScore=${e.examScore}`);
+        return entry;
+      });
+      console.log('[TeacherService] bulkUpsertGradeEntries payload:', JSON.stringify(validatedEntries, null, 2));
+      return request('POST', '/grading/entries/bulk', { entries: validatedEntries }).then(r => r?.data ?? r);
+    },
+    createObservation: (observation) => {
+      console.log('[TeacherService] createObservation called');
+      return request('POST', '/teacher/observations', normalizeObservationPayload(observation))
+        .then(r => r?.data ?? r);
+    },
+    updateObservation: (observationId, patch) => {
+      console.log(`[TeacherService] updateObservation called with observationId: ${observationId}`);
+      return request('PATCH', `/teacher/observations/${observationId}`, normalizeObservationPayload(patch))
+        .then(r => r?.data ?? r);
+    },
+    deleteObservation: (observationId) => {
+      console.log(`[TeacherService] deleteObservation called with observationId: ${observationId}`);
+      return request('DELETE', `/teacher/observations/${observationId}`).then(r => r?.data ?? r);
+    },
+    getTeacherArchive: () => {
+      console.log('[TeacherService] getTeacherArchive called');
+      return request('GET', '/archive/vault/search').then(r => r?.data ?? r);
+    },
+    getStudentPortalData: (studentId) => {
+      console.log(`[TeacherService] getStudentPortalData called with studentId: ${studentId}`);
+      return request('GET', `/portal/students/${studentId}/portal-data`).then(r => r?.data ?? r);
+    },
+    getStudentBehavior: (studentId) => {
+      console.log(`[TeacherService] getStudentBehavior called with studentId: ${studentId}`);
+      return request('GET', `/students/${studentId}/behavior`).then(r => r?.data ?? r);
+    },
+    createBehavior: (studentId, data) => {
+      console.log(`[TeacherService] createBehavior called for studentId: ${studentId}`);
+      return request('POST', `/students/${studentId}/behavior`, data).then(r => r?.data ?? r);
+    },
+    searchTeachers: (query) => {
+      console.log(`[TeacherService] searchTeachers called with query: ${query || ''}`);
+      return request('GET', `/users/teachers${query ? `?search=${encodeURIComponent(query)}` : ''}`)
         .then((res) => {
           const data = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
           return data.map((t) => ({
@@ -286,7 +369,8 @@ function createRealService() {
             indexNumber: t.staffId || '—',
             type: 'teacher',
           }));
-        }),
+        });
+    },
   };
 }
 

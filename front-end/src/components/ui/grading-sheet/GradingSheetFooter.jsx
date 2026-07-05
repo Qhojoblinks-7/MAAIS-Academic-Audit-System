@@ -40,46 +40,46 @@ export function GradingSheetFooter({
           A1(≥75) B2(70) B3(65) C4(60) C5(55) C6(50) D7(45) E8(40) F9(&lt;40)
         </div>
         
-        <button
-          onClick={onSaveDraft}
-          disabled={isSubmissionLocked}
-          className={cn(
-            "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2",
-            isSubmissionLocked 
-              ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
-              : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
-          )}
-        >
-          <Save size={14} /> Save Draft
-        </button>
-        
-        <button
-          onClick={onSubmitToHOD}
-          disabled={isSubmissionLocked || missingCount > 0}
-          className={cn(
-            "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2",
-            isSubmissionLocked || missingCount > 0
-              ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
-              : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-md"
-          )}
-        >
-          <Send size={14} /> Submit to HOD
-        </button>
+         <button
+           onClick={onSaveDraft}
+           disabled={isSubmissionLocked}
+           className={cn(
+             "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2",
+             isSubmissionLocked 
+               ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
+               : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 cursor-pointer"
+           )}
+         >
+           <Save size={14} /> Save Draft
+         </button>
+         
+         <button
+           onClick={onSubmitToHOD}
+           disabled={isSubmissionLocked || missingCount > 0}
+           className={cn(
+             "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2",
+             isSubmissionLocked || missingCount > 0
+               ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
+               : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-md cursor-pointer"
+           )}
+         >
+           <Send size={14} /> Submit to HOD
+         </button>
 
-        {onRequestRevision && (
-          <button
-            onClick={onRequestRevision}
-            disabled={isSubmissionLocked}
-            className={cn(
-              "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2",
-              isSubmissionLocked
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-200"
-            )}
-          >
-            <MessageSquare size={14} /> Request Revision
-          </button>
-        )}
+         {onRequestRevision && (
+           <button
+             onClick={onRequestRevision}
+             disabled={isSubmissionLocked}
+             className={cn(
+               "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2",
+               isSubmissionLocked
+                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                 : "bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-200 cursor-pointer"
+             )}
+           >
+             <MessageSquare size={14} /> Request Revision
+           </button>
+         )}
       </div>
     </footer>
   );

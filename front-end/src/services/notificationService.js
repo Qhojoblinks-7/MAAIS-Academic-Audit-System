@@ -118,14 +118,13 @@ class NotificationService {
         teacherId,
         action,
         details,
-        timestamp: new Date().toISOString(),
       });
       
       // Also send via WebSocket for real-time delivery
       dataSync.send({
         type: 'notification',
         data: {
-          id: Date.now().toString(), // Temporary ID, will be replaced by server
+          id: Date.now().toString(),
           teacherId,
           action,
           details,
@@ -155,17 +154,17 @@ class NotificationService {
     // Send via REST API (for persistence)
     try {
       const result = await request('POST', '/comms/notifications/teacher-action', {
-        teacherId,
+        recordId: details?.recordId || teacherId,
         action,
-        details,
-        timestamp: new Date().toISOString(),
+        message: details?.message || '',
+        className: details?.className || '',
       });
       
       // Also send via WebSocket for real-time delivery
       dataSync.send({
         type: 'notification',
         data: {
-          id: Date.now().toString(), // Temporary ID, will be replaced by server
+          id: Date.now().toString(),
           teacherId,
           action,
           details,

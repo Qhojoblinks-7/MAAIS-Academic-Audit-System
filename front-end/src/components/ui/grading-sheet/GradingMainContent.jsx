@@ -55,7 +55,7 @@ export function GradingMainContent({
             </div>
             <button
               onClick={onCloseSTP}
-              className="text-red-500 hover:bg-red-100 rounded p-1 shrink-0 text-xs font-black"
+              className="text-red-500 hover:bg-red-100 rounded p-1 shrink-0 text-xs font-black cursor-pointer"
             >
               ✕
             </button>

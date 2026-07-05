@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -29,31 +29,36 @@ export function TeacherSidebar() {
   const [unsavedMarks, setUnsavedMarks] = React.useState(0);
   const sidebarRef = useRef(null);
 
-React.useEffect(() => {
-     const fetchPendingData = async () => {
-       try {
-         const [revisions, missingObs] = await Promise.all([
-           teacherService.getGradeRevisions(),
-           teacherService.getMissingObservations(),
-         ]);
+  const fetchPendingData = useCallback(async () => {
+    try {
+      const [revisions, missingObs] = await Promise.all([
+        teacherService.getGradeRevisions(),
+        teacherService.getMissingObservations(),
+      ]);
 
-         const pendingRevisions = Array.isArray(revisions)
-           ? revisions.filter(r => r.status === 'AWAITING_APPROVAL' || r.status === 'PENDING').length
-           : 0;
-         const missingCount = Array.isArray(missingObs)
-           ? missingObs.filter(o => o.status === 'Missing').length
-           : 0;
+      const pendingRevisions = Array.isArray(revisions)
+        ? revisions.filter(r => r.status === 'AWAITING_APPROVAL' || r.status === 'PENDING').length
+        : 0;
+      const missingCount = Array.isArray(missingObs)
+        ? missingObs.filter(o => o.status === 'Missing').length
+        : 0;
 
-         setUnsavedMarks(pendingRevisions + missingCount);
-         setMissingObservationCount(missingCount);
-       } catch (err) {
-         setUnsavedMarks(0);
-         setMissingObservationCount(0);
-       }
-     };
+      setUnsavedMarks(pendingRevisions + missingCount);
+      setMissingObservationCount(missingCount);
+    } catch (err) {
+      setUnsavedMarks(0);
+      setMissingObservationCount(0);
+    }
+  }, [setMissingObservationCount]);
 
-     fetchPendingData();
-   }, [setMissingObservationCount]);
+  useEffect(() => {
+    fetchPendingData();
+  }, [fetchPendingData]);
+
+  useEffect(() => {
+    const interval = setInterval(fetchPendingData, 30000);
+    return () => clearInterval(interval);
+  }, [fetchPendingData]);
 
   useEffect(() => {
     function handleClickOutside(event) {

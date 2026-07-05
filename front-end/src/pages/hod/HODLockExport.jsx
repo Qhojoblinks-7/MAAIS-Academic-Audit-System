@@ -14,6 +14,7 @@ import {
   Download,
   Layers,
   MessageSquare,
+  X
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';

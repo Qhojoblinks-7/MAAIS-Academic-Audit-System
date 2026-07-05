@@ -1,5 +1,6 @@
 import React from 'react';
 import { X } from 'lucide-react';
+import { toast } from '../../components/ui/toast';
 import { ObservationSidebar } from '../../components/shared/ObservationSidebar';
 import { JustificationPopup } from '../../components/shared/CorrectionMode';
 import { useGradingSheetLogic } from './useGradingSheetLogic';
@@ -9,6 +10,7 @@ import { GradingSheetTableHeader } from '../../components/ui/grading-sheet/Gradi
 import { GradingSheetTableBody } from '../../components/ui/grading-sheet/GradingSheetTableBody';
 import { GradingSheetFooter } from '../../components/ui/grading-sheet/GradingSheetFooter';
 import { TermSealBanner } from '../../components/ui/grading-sheet/TermSealBanner';
+import { teacherService } from '../../services/teacherService';
 import { GRADE_SCALE } from '../../constants/grading';
 import {
   Table,
@@ -114,7 +116,9 @@ export function GradingSheet(props) {
 
         <div
           className={`max-w-full mx-auto transition-all duration-300 ${
-            isTermFinalized ? 'opacity-75 pointer-events-none select-none' : ''
+            isTermFinalized
+              ? 'opacity-40 pointer-events-none select-none grayscale'
+              : ''
           }`}
         >
           {/* Header */}
@@ -200,16 +204,35 @@ export function GradingSheet(props) {
             if (isTermFinalized) return;
             const sid = selectedStudent?.id;
             if (!sid) return;
-            console.log('[WAEC STP §7] Behavioral ratings saved:', sid, {
-              ratings: behavioralRatings[sid] || {},
-              comment: behavioralComment[sid] || '',
-              flagged: flaggedStudents[sid] || false,
-              labSafetyCompliant: labSafetyCompliance[sid] || false,
-            });
+            const ratings = behavioralRatings[sid] || {};
+            const comment = behavioralComment[sid] || '';
+            const flagged = flaggedStudents[sid] || false;
+            const labSafety = labSafetyCompliance[sid] || false;
+
+            if (isMissingObsMode && selectedStudent?.gradeEntryId) {
+              teacherService.createObservation({
+                gradeEntryId: selectedStudent.gradeEntryId,
+                comment,
+                observationText: comment,
+              }).then(() => {
+                toast.success('Observation saved successfully');
+              }).catch((err) => {
+                console.error('Failed to save observation:', err);
+                toast.error('Failed to save observation');
+              });
+            } else {
+              console.log('[WAEC STP §7] Behavioral ratings saved:', sid, {
+                ratings,
+                comment,
+                flagged,
+                labSafetyCompliant: labSafety,
+              });
+            }
           }}
           onFlagChange={updateFlagged}
           safetyChecked={labSafetyCompliance[selectedStudent?.id] || false}
           onSafetyCheckChange={updateLabSafety}
+          disabled={isTermFinalized}
         />
       )}
 

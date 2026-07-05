@@ -29,6 +29,7 @@ import { hodService } from '../../services/hodService';
 import { auditTrail } from '../../services/auditTrailService';
 import { notification } from '../../services/notificationService';
 import { eventBus } from '../../services/eventBus';
+import { toast } from '../../components/ui/toast';
 
 function formatTime(isoString) {
   if (!isoString) return 'Unknown';
@@ -65,6 +66,14 @@ const HODRevisionsFeed = () => {
     if (typeof refreshRevisions === 'function') {
       refreshRevisions();
     }
+  }, [refreshRevisions]);
+
+  useEffect(() => {
+    if (typeof refreshRevisions !== 'function') return;
+    const interval = setInterval(() => {
+      refreshRevisions();
+    }, 30000);
+    return () => clearInterval(interval);
   }, [refreshRevisions]);
 
   useEffect(() => {
@@ -108,7 +117,7 @@ const HODRevisionsFeed = () => {
     try {
       const oldVal = auditTrail?.captureSnapshot?.({ status: selected.status }) || {};
       await hodService.updateHODComment(selected.id, hodComment);
-      await hodService.approveGradeRevision?.(selected.id, hodComment);
+      const updated = await hodService.approveGradeRevision?.(selected.id, hodComment);
       
       if (auditTrail?.logChange) {
         await auditTrail.logChange('grade_revision', selected.id, oldVal, { status: 'RESOLVED', comment: hodComment }, hodComment);
@@ -117,13 +126,16 @@ const HODRevisionsFeed = () => {
         eventBus.emit('grade-revision-approved', { recordId: selected.id, studentName: selected.student });
       }
       if (notification?.notifyTeacherOfHODAction) {
-        await notification.notifyTeacherOfHODAction(selected.id, 'GRADE_REVISION_APPROVED', selected.id, hodComment);
+        await notification.notifyTeacherOfHODAction(selected.teacherId || selected.teacher_id, 'GRADE_REVISION_APPROVED', selected.id, hodComment);
       }
       
       refreshRevisions?.();
+      setSelected(updated || selected);
       setHodComment('');
+      toast.success('Grade revision approved');
     } catch (e) {
       console.error('Approval failed:', e);
+      toast.error('Approval failed: ' + (e.message || 'Unknown error'));
     }
   };
 
@@ -132,7 +144,7 @@ const HODRevisionsFeed = () => {
     
     try {
       const oldVal = auditTrail?.captureSnapshot?.({ rejected: false }) || {};
-      await hodService.rejectGradeRevision(selected.id, hodComment || 'No reason provided');
+      const updated = await hodService.rejectGradeRevision(selected.id, hodComment || 'No reason provided');
       
       if (auditTrail?.logChange) {
         await auditTrail.logChange('grade_revision', selected.id, oldVal, { rejected: true }, `HOD rejected revision: ${hodComment}`);
@@ -142,11 +154,14 @@ const HODRevisionsFeed = () => {
       }
       
        refreshRevisions?.();
+       setSelected(updated || selected);
        setHodComment('');
-     } catch (e) {
-       console.error('Rejection failed:', e);
-     }
-   };
+       toast.success('Grade revision rejected');
+      } catch (e) {
+        console.error('Rejection failed:', e);
+        toast.error('Rejection failed: ' + (e.message || 'Unknown error'));
+      }
+    };
  
 const sendDiscussionMessage = async () => {
     if (!discussionInput.trim() || !selected) return;
@@ -164,7 +179,7 @@ const sendDiscussionMessage = async () => {
 
       const updatedRevision = {
         ...selected,
-        history: [...(selected.history || []), newMessage]
+        history: [...(Array.isArray(selected.history) ? selected.history : []), newMessage]
       };
 
       await hodService.updateHODComment(selected.id, discussionInput);
@@ -217,7 +232,7 @@ const sendDiscussionMessage = async () => {
                         setSelected(nextList[0] || null);
                       }}
                       className={cn(
-                        "px-4 py-1.5 text-xs font-semibold capitalize rounded-md transition-all duration-150",
+                        "px-4 py-1.5 text-xs font-semibold capitalize rounded-md transition-all duration-150 cursor-pointer",
                         activeTab === tab 
                           ? "bg-white text-slate-900 shadow-sm border border-slate-200/20 font-bold" 
                           : "text-slate-500 hover:text-slate-800"
@@ -275,7 +290,7 @@ const sendDiscussionMessage = async () => {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded border tracking-wide", statusStyles[(job.status || '').toUpperCase()] || 'bg-slate-100')}>
-                        {(job.status || '').toUpperCase() === 'AWAITING_APPROVAL' ? 'Awaiting Approval' : (job.status || '').toUpperCase() === 'TEACHER_REPLIED' ? 'Teacher Replied' : (job.status || '').toUpperCase() === 'REJECTED' ? 'Rejected' : 'Resolved'}
+                        {(job.status || '').toUpperCase() === 'AWAITING_APPROVAL' ? 'Awaiting Approval' : (job.status || '').toUpperCase() === 'TEACHER_REPLIED' ? 'Teacher Replied' : (job.status || '').toUpperCase() === 'REJECTED' ? 'Rejected' : (job.status || '').toUpperCase() === 'RESOLVED' ? 'Resolved' : 'Unknown'}
                       </span>
                       <span className={cn("text-[9px] font-extrabold px-1.5 py-0.5 rounded border tracking-wider", severityStyles[job.severity] || '')}>
                         {job.severity}
@@ -334,7 +349,7 @@ const sendDiscussionMessage = async () => {
               </div>
               <button
                 onClick={() => setSelected(null)}
-                className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded-lg transition-all"
+                className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded-lg transition-all cursor-pointer"
               >
                 <X size={15} />
               </button>
@@ -381,7 +396,7 @@ const sendDiscussionMessage = async () => {
                       </span>
                      <button
                        onClick={() => setDiscussionExpanded(!discussionExpanded)}
-                       className="p-1 hover:bg-slate-100 rounded hover:text-slate-700 transition-colors"
+                       className="p-1 hover:bg-slate-100 rounded hover:text-slate-700 transition-colors cursor-pointer"
                      >
                        {discussionExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                      </button>
@@ -444,13 +459,13 @@ const sendDiscussionMessage = async () => {
                          disabled={isDiscussionLoading}
                        />
                      </div>
-                     <button
-                       onClick={sendDiscussionMessage}
-                       disabled={isDiscussionLoading || !discussionInput.trim()}
-                       className="px-3 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-colors disabled:opacity-50"
-                     >
-                       {isDiscussionLoading ? 'Sending...' : 'Send'}
-                     </button>
+                      <button
+                        onClick={sendDiscussionMessage}
+                        disabled={isDiscussionLoading || !discussionInput.trim()}
+                        className="px-3 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        {isDiscussionLoading ? 'Sending...' : 'Send'}
+                      </button>
                    </div>
                  </div>
                </div>

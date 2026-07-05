@@ -90,17 +90,17 @@ export const adminApi = {
   addTicketReply: (id, dto) => api.post(`/comms/tickets/${id}/reply`, dto),
 
   // ── Grading (Admin / HOD level) ────────────────────────────────────────────
-  upsertGrade: (dto, submittedById) => api.post('/grading/entries', { ...dto, submittedById }),
-  bulkUpsertGrades: (entries, submittedById) =>
-    api.post('/grading/entries/bulk', { entries, submittedById }),
-  lockGrade: (gradeEntryId, lockedById) =>
-    api.patch(`/grading/entries/${gradeEntryId}/lock`, { lockedById }),
+  upsertGrade: (dto) => api.post('/grading/entries', dto),
+  bulkUpsertGrades: (entries) =>
+    api.post('/grading/entries/bulk', { entries }),
+  lockGrade: (gradeEntryId) =>
+    api.patch(`/grading/entries/${gradeEntryId}/lock`),
   unlockGrade: (gradeEntryId) => api.patch(`/grading/entries/${gradeEntryId}/unlock`),
-  approveGrade: (gradeEntryId, approvedById) =>
-    api.patch(`/grading/entries/${gradeEntryId}/approve`, { approvedById }),
-  bulkApproveGrades: (ids, approvedById) =>
-    api.post('/grading/entries/bulk-approve', { ids, approvedById }),
-  correctGrade: (dto, changedById) => api.post('/grading/corrections', { ...dto, changedById }),
+  approveGrade: (gradeEntryId) =>
+    api.patch(`/grading/entries/${gradeEntryId}/approve`),
+  bulkApproveGrades: (ids) =>
+    api.post('/grading/entries/bulk-approve', { ids }),
+  correctGrade: (dto) => api.post('/grading/corrections', dto),
   getMissingObservations: (termId) =>
     api.get(`/grading/missing-observations?termId=${termId}`),
   getGradeEntry: (id) => api.get(`/grading/entries/${id}`),

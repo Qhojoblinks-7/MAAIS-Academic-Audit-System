@@ -24,23 +24,25 @@ export function GradingSheetTableBody({
    // Dynamic configuration definitions from subject profile metadata
    const sectionCount = DISPLAY_CLASS_INFO?.subjectConfig?.sectionCount || 2;
    const sectionFieldNames = (DISPLAY_CLASS_INFO?.sectionFieldNames || ['secA', 'secB', 'secC']).slice(0, sectionCount);
-   const isLocked = isTermFinalized || submissionStatus === 'SUBMITTED';
+   const isLocked = isTermFinalized || submissionStatus === 'SUBMITTED' || students.some(s => s.isLocked);
 
    const isInteractive = (student) => {
      if (isCorrectionMode || isMissingObsMode) {
        return student.id === targetStudentId || student.index === targetStudentId || student.name === targetStudentId;
      }
+     if (isLocked) return false;
      return true;
    };
 
    const getCursorClass = (student) => {
-     if (isCorrectionMode || isMissingObsMode) {
-       return (student.id === targetStudentId || student.index === targetStudentId || student.name === targetStudentId)
-         ? "cursor-pointer"
-         : "";
-     }
-     return "cursor-pointer";
-   };
+      if (isCorrectionMode || isMissingObsMode) {
+        return (student.id === targetStudentId || student.index === targetStudentId || student.name === targetStudentId)
+          ? "cursor-pointer"
+          : "";
+      }
+      if (isLocked) return "cursor-not-allowed";
+      return "cursor-pointer";
+    };
 
 return (
       <TableBody className="divide-y divide-slate-100 bg-surface">
@@ -64,9 +66,11 @@ return (
                 isSelected ? "bg-slate-50" : "hover:bg-slate-50/60",
                 isGhosted && "opacity-40 pointer-events-none filter saturate-50",
                 isAuditMissing && "bg-danger/5 hover:bg-danger/10",
+                isLocked && "bg-gray-100",
                 getCursorClass(student)
               )}
               onClick={() => {
+                if (isLocked) return;
                 if (canInteract && onStudentClick) {
                   onStudentClick(student);
                 }
@@ -94,13 +98,18 @@ return (
                     type="number" 
                     value={student.sba ?? ''} 
                     disabled={isLocked}
+                    readOnly={isLocked}
                     onBlur={(e) => {
                       if (e.target.value === '' || e.target.value === null) {
                         updateMark(student.id, 'sba', 0);
                       }
                     }}
                     onChange={(e) => updateMark(student.id, 'sba', e.target.value)} 
-                    className="w-16 px-1 py-1 bg-transparent text-center text-[11px] font-medium text-text-primary rounded border border-transparent transition-all focus:border-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200" 
+                    className={`w-16 px-1 py-1 text-center text-[11px] font-medium rounded border transition-all ${
+                      isLocked
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed border-gray-300'
+                        : 'bg-transparent text-text-primary border-transparent focus:border-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200'
+                    }`} 
                   />
                 </TableCell>
               )}
@@ -138,13 +147,18 @@ return (
                           type="number" 
                           value={student[fieldName] ?? ''} 
                           disabled={isLocked}
+                          readOnly={isLocked}
                           onBlur={(e) => {
                             if (e.target.value === '' || e.target.value === null) {
                               updateMark(student.id, fieldName, 0);
                             }
                           }}
                           onChange={(e) => updateMark(student.id, fieldName, e.target.value)} 
-                          className="w-16 px-1 py-1 bg-transparent text-center text-[11px] font-semibold text-text-primary rounded border border-transparent transition-all focus:border-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200" 
+                          className={`w-16 px-1 py-1 text-center text-[11px] font-semibold rounded border transition-all ${
+                            isLocked
+                              ? 'bg-gray-200 text-gray-500 cursor-not-allowed border-gray-300'
+                              : 'bg-transparent text-text-primary border-transparent focus:border-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200'
+                          }`} 
                         />
                       </TableCell>
                     );
@@ -163,13 +177,18 @@ return (
                   type="number" 
                   value={student.exam ?? ''} 
                   disabled={isLocked}
+                  readOnly={isLocked}
                   onBlur={(e) => {
                     if (e.target.value === '' || e.target.value === null) {
                       updateMark(student.id, 'exam', 0);
                     }
                   }}
                   onChange={(e) => updateMark(student.id, 'exam', e.target.value)} 
-                  className="w-16 px-1 py-1 bg-transparent text-center text-[11px] font-bold text-text-primary rounded border border-transparent transition-all focus:border-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200" 
+                  className={`w-16 px-1 py-1 text-center text-[11px] font-bold rounded border transition-all ${
+                    isLocked
+                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed border-gray-300'
+                      : 'bg-transparent text-text-primary border-transparent focus:border-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200'
+                  }`} 
                 />
               </TableCell>
 

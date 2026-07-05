@@ -1,20 +1,20 @@
 import { api } from './client';
 
 export const gradingApi = {
-  upsertGrade: async (dto, submittedById) => api.post('/grading/entries', { ...dto, submittedById }),
+  upsertGrade: async (dto) => api.post('/grading/entries', dto),
 
-  bulkUpsertGrades: async (entries, submittedById) => api.post('/grading/entries/bulk', { entries, submittedById }),
+  bulkUpsertGrades: async (entries) => api.post('/grading/entries/bulk', { entries }),
 
-  correctGrade: async (dto, changedById) => api.post('/grading/corrections', { ...dto, changedById }),
+  correctGrade: async (dto) => api.post('/grading/corrections', dto),
 
-  lockGrade: async (gradeEntryId, lockedById) => api.patch(`/grading/entries/${gradeEntryId}/lock`, { lockedById }),
+  lockGrade: async (gradeEntryId) => api.patch(`/grading/entries/${gradeEntryId}/lock`),
 
   unlockGrade: async (gradeEntryId) => api.patch(`/grading/entries/${gradeEntryId}/unlock`),
 
-  approveGrade: async (gradeEntryId, approvedById) => api.patch(`/grading/entries/${gradeEntryId}/approve`, { approvedById }),
+  approveGrade: async (gradeEntryId) => api.patch(`/grading/entries/${gradeEntryId}/approve`),
 
-  bulkApproveGrades: async (ids, approvedById) =>
-    api.post('/grading/entries/bulk-approve', { ids, approvedById }),
+  bulkApproveGrades: async (ids) =>
+    api.post('/grading/entries/bulk-approve', { ids }),
 
   getStudentTermGrades: async (studentId, termId) =>
     api.get(`/grading/students/${studentId}/terms/${termId}`),

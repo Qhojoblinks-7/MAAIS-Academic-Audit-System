@@ -21,6 +21,7 @@ export function ObservationSidebar({
   onFlagChange,
   safetyChecked = false,
   onSafetyCheckChange,
+  disabled = false,
 }) {
   const safeStudent = student || { name: '', index: '' };
   const isCorrection = mode === 'correction';
@@ -76,7 +77,7 @@ export function ObservationSidebar({
         <button 
           type="button"
           onClick={onClose} 
-          className="opacity-50 hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-black/5"
+          className="opacity-50 hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-black/5 cursor-pointer"
           aria-label="Close sidebar"
         >
           <ChevronRight size={18} />
@@ -95,7 +96,7 @@ export function ObservationSidebar({
             />
             <div>
               <h3 className="text-lg font-black text-gray-900 leading-tight">{safeStudent.name || 'Select Student'}</h3>
-              <p className="text-xs font-bold text-gray-500">Index No. {safeStudent.index || 'N/A'}</p>
+              <p className="text-xs font-bold text-gray-500">Index No. {safeStudent.index || safeStudent.id?.slice(0, 8) || 'N/A'}</p>
             </div>
           </div>
 
@@ -129,7 +130,7 @@ export function ObservationSidebar({
                           type="button"
                           onClick={() => onRatingChange?.(rating.id, num)}
                           className={cn(
-                            "w-7 h-7 rounded-full border-2 flex items-center justify-center text-[10px] font-black transition-all",
+                            "w-7 h-7 rounded-full border-2 flex items-center justify-center text-[10px] font-black transition-all cursor-pointer",
                             ratings[rating.id] === num
                               ? "bg-[#015D34] border-[#015D34] text-white shadow-md scale-105"
                               : "border-gray-200 text-gray-600 hover:border-[#015D34] hover:text-[#015D34] hover:bg-emerald-50"
@@ -147,24 +148,23 @@ export function ObservationSidebar({
                <div className="pt-3 border-t border-gray-100">
                  <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Safety & Status</h4>
                  <div className="flex flex-col gap-3">
-<label 
-                    className="flex items-center gap-3 cursor-pointer select-none group"
-                    onClick={() => toggleSafety()}
-                  >
-                     <input
-                       type="checkbox"
-                       checked={activeSafety}
-                       onChange={(e) => toggleSafety(e.target.checked)}
-                       className="sr-only"
-                     />
-                     <div className={cn(
-                       "w-6 h-6 border-2 border-emerald-600 rounded flex items-center justify-center transition-all shrink-0 group-hover:scale-105",
-                       activeSafety ? "bg-emerald-600" : "bg-white"
-                     )}>
-                       {activeSafety && <ShieldCheck size={16} className="text-white" />}
-                     </div>
-                     <span className="text-xs font-bold text-gray-700">Followed Lab Safety Guidelines</span>
-                   </label>
+                <label 
+                     className="flex items-center gap-3 cursor-pointer select-none group"
+                   >
+                      <input
+                        type="checkbox"
+                        checked={activeSafety}
+                        onChange={(e) => toggleSafety(e.target.checked)}
+                        className="sr-only"
+                      />
+                      <div className={cn(
+                        "w-6 h-6 border-2 border-emerald-600 rounded flex items-center justify-center transition-all shrink-0 group-hover:scale-105",
+                        activeSafety ? "bg-emerald-600" : "bg-white"
+                      )}>
+                        {activeSafety && <ShieldCheck size={16} className="text-white" />}
+                      </div>
+                      <span className="text-xs font-bold text-gray-700">Followed Lab Safety Guidelines</span>
+                    </label>
 
                   {/* Flag Switch Mechanism */}
                   <div className="flex items-center justify-between pt-1">
@@ -176,7 +176,7 @@ export function ObservationSidebar({
                       type="button"
                       onClick={toggleFlag}
                       className={cn(
-                        "w-12 h-6 rounded-full transition-all relative p-1 shadow-inner shrink-0",
+                        "w-12 h-6 rounded-full transition-all relative p-1 shadow-inner shrink-0 cursor-pointer",
                         activeFlagged ? "bg-red-500" : "bg-gray-200"
                       )}
                       aria-label="Flag student for review"
@@ -220,14 +220,26 @@ export function ObservationSidebar({
           <button
             type="button"
             onClick={onSave}
-            className="flex-1 py-2.5 bg-[#015D34] text-white font-black rounded-full text-xs hover:bg-emerald-900 transition-all shadow-md shadow-emerald-900/10"
+            disabled={disabled}
+            className={cn(
+              "flex-1 py-2.5 font-black rounded-full text-xs transition-all shadow-md",
+              disabled
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-[#015D34] text-white hover:bg-emerald-900 shadow-emerald-900/10 cursor-pointer"
+            )}
           >
             Save
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-black rounded-full text-xs hover:bg-gray-200 transition-all"
+            disabled={disabled}
+            className={cn(
+              "flex-1 py-2.5 font-black rounded-full text-xs transition-all",
+              disabled
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer"
+            )}
           >
             Close
           </button>

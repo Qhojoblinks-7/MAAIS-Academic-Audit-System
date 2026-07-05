@@ -38,7 +38,7 @@ export function CorrectionMode({
             <Send size={12} />
             Your Explanation
           </div>
-          <button type="button" className="p-1 text-gray-400 hover:text-emerald-600 transition-colors" aria-label="Attach documents">
+          <button type="button" className="p-1 text-gray-400 hover:text-emerald-600 transition-colors cursor-pointer" aria-label="Attach documents">
             <Paperclip size={14} />
           </button>
         </div>
@@ -54,7 +54,7 @@ export function CorrectionMode({
               key={tag}
               type="button"
               onClick={() => onReplyChange?.(tag)}
-              className="px-2 py-1 bg-gray-100 text-[9px] font-black text-gray-500 uppercase tracking-widest rounded-lg hover:bg-emerald-50 hover:text-emerald-600 transition-all"
+              className="px-2 py-1 bg-gray-100 text-[9px] font-black text-gray-500 uppercase tracking-widest rounded-lg hover:bg-emerald-50 hover:text-emerald-600 transition-all cursor-pointer"
             >
               {tag}
             </button>
@@ -65,7 +65,7 @@ export function CorrectionMode({
       <button
         type="button"
         onClick={onSubmitToHOD}
-        className="w-full py-3 bg-[#015D34] text-white font-black rounded-xl text-xs hover:bg-emerald-900 transition-all shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-2 mt-auto"
+        className="w-full py-3 bg-[#015D34] text-white font-black rounded-xl text-xs hover:bg-emerald-900 transition-all shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-2 mt-auto cursor-pointer"
       >
         Submit to HOD
         <ArrowRight size={16} />

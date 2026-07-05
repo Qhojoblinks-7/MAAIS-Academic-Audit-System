@@ -6,6 +6,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <SonnerToaster
       className="toaster group"
       position="bottom-center"
+      style={{ zIndex: 9999999999 }}
       toastOptions={{
         classNames: {
           toast:

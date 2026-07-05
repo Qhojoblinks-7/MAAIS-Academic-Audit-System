@@ -221,16 +221,21 @@ export function useGradingSheetLogic({
 
   // ── Business logic ───────────────────────────────────────────────────────────
   const mapStudentToBackendEntry = useCallback(
-    (student) => ({
-      studentId: student.id,
-      subjectId: backendIds?.subjectId,
-      termId: backendIds?.termId,
-      classScore: parseFloat(student.sba) || 0,
-      examScore: parseFloat(student.exam) || 0,
-      remark: student.remark || '',
-      hasObservation: !!(student.auditStatus === 'OK' || student.auditStatus === 'ACTIVE'),
-      observationText: student.remark || '',
-    }),
+    (student) => {
+      const entry = {
+        studentId: student.id,
+        subjectId: backendIds?.subjectId,
+        termId: backendIds?.termId,
+        remark: student.remark || '',
+        hasObservation: !!(student.auditStatus === 'OK' || student.auditStatus === 'ACTIVE'),
+        observationText: student.remark || '',
+      };
+      const sba = parseFloat(student.sba);
+      const exam = parseFloat(student.exam);
+      if (!isNaN(sba)) entry.classScore = sba;
+      if (!isNaN(exam)) entry.examScore = exam;
+      return entry;
+    },
     [backendIds],
   );
 
@@ -246,26 +251,25 @@ export function useGradingSheetLogic({
       if (result && Array.isArray(result)) {
         const entryMap = new Map(result.map((e) => [e.studentId, e.id]));
         const corrections = Array.from(pendingCorrections.current.entries());
-        if (corrections.length > 0) {
-          await Promise.all(
-            corrections.map(([studentId, data]) => {
-              const gradeEntryId = entryMap.get(studentId);
-              if (!gradeEntryId) return null;
-              return gradingApi
-                .correctGrade(
-                  {
-                    gradeEntryId,
-                    fieldChanged: data.field,
-                    newValue: data.newValue,
-                    reason: data.justification,
-                  },
-                  teacherId,
-                )
-                .catch((err) => {
-                  console.error('[GradingSheet] correction sync failed:', err);
-                });
-            }),
-          );
+if (corrections.length > 0) {
+           await Promise.all(
+             corrections.map(([studentId, data]) => {
+               const gradeEntryId = entryMap.get(studentId);
+               if (!gradeEntryId) return null;
+               return gradingApi
+                 .correctGrade(
+                   {
+                     gradeEntryId,
+                     fieldChanged: data.field,
+                     newValue: data.newValue,
+                     reason: data.justification,
+                   },
+                 )
+                 .catch((err) => {
+                   console.error('[GradingSheet] correction sync failed:', err);
+                 });
+             }),
+           );
           pendingCorrections.current.clear();
         }
       }
@@ -297,6 +301,7 @@ export function useGradingSheetLogic({
         await persistGradesToBackend(students);
         setAutosaveStatus('saved');
         setLastSavedAt(new Date());
+        toast.success('Saved');
         setTimeout(() => setAutosaveStatus('idle'), 2000);
       } catch (e) {
         setAutosaveStatus('error');
@@ -306,6 +311,26 @@ export function useGradingSheetLogic({
 
     return () => {
       if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    };
+  }, [students, backendReady, persistGradesToBackend]);
+
+  // ── 5-minute bulk draft sync ────────────────────────────────────────────────
+  const bulkIntervalRef = useRef(null);
+
+  useEffect(() => {
+    if (!backendReady || !students?.length) return;
+
+    bulkIntervalRef.current = setInterval(async () => {
+      try {
+        await persistGradesToBackend(students);
+        toast.success('Bulk draft submitted');
+      } catch (e) {
+        console.error('Bulk draft submission failed:', e);
+      }
+    }, 300000);
+
+    return () => {
+      if (bulkIntervalRef.current) clearInterval(bulkIntervalRef.current);
     };
   }, [students, backendReady, persistGradesToBackend]);
 
@@ -477,6 +502,7 @@ runCheck();
     }
     persistGradesToBackend(students)
       .then(() => {
+        toast.success('Bulk draft submitted');
         if (teacherId) {
           notification.sendHODAlert(
             teacherId,

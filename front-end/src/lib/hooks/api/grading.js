@@ -42,18 +42,10 @@ export function useClassPerformance(classId, termId) {
 export function useUpsertGrade() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ dto, submittedById }) => gradingApi.upsertGrade(dto, submittedById),
-    // FIX: Expect studentId/termId context variables to target-invalidate active views
-    onSuccess: (_, { dto }) => {
+    mutationFn: (dto) => gradingApi.upsertGrade(dto),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['grading', 'entries'] });
       queryClient.invalidateQueries({ queryKey: ['grading', 'missing-observations'] });
-      
-      if (dto.studentId) {
-        queryClient.invalidateQueries({ queryKey: ['grading', 'students', dto.studentId] });
-      }
-      if (dto.classId) {
-        queryClient.invalidateQueries({ queryKey: ['grading', 'classes', dto.classId] });
-      }
     },
   });
 }
@@ -61,7 +53,7 @@ export function useUpsertGrade() {
 export function useBulkUpsertGrades() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ entries, submittedById }) => gradingApi.bulkUpsertGrades(entries, submittedById),
+    mutationFn: (entries) => gradingApi.bulkUpsertGrades(entries),
     onSuccess: () => {
       // Bulk modifications update everything under the grading tree
       queryClient.invalidateQueries({ queryKey: ['grading'] });
@@ -72,12 +64,10 @@ export function useBulkUpsertGrades() {
 export function useCorrectGrade() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ dto, changedById }) => gradingApi.correctGrade(dto, changedById),
-    onSuccess: (_, { dto }) => {
+    mutationFn: (dto) => gradingApi.correctGrade(dto),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['grading', 'entries'] });
-      // FIX: Ensure corrections cascade down to individual sheets and class statistics
-      if (dto.studentId) queryClient.invalidateQueries({ queryKey: ['grading', 'students', dto.studentId] });
-      if (dto.classId) queryClient.invalidateQueries({ queryKey: ['grading', 'classes', dto.classId] });
+      queryClient.invalidateQueries({ queryKey: ['grading', 'missing-observations'] });
     },
   });
 }
@@ -85,7 +75,7 @@ export function useCorrectGrade() {
 export function useLockGrade() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ gradeEntryId, lockedById }) => gradingApi.lockGrade(gradeEntryId, lockedById),
+    mutationFn: (gradeEntryId) => gradingApi.lockGrade(gradeEntryId),
     onSuccess: () => {
       // Locking grade state blocks editing; components tracking eligibility must update
       queryClient.invalidateQueries({ queryKey: ['grading', 'entries'] });
@@ -108,7 +98,7 @@ export function useUnlockGrade() {
 export function useApproveGrade() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ gradeEntryId, approvedById }) => gradingApi.approveGrade(gradeEntryId, approvedById),
+    mutationFn: (gradeEntryId) => gradingApi.approveGrade(gradeEntryId),
     onSuccess: () => {
       // FIX: Invalidate entries, student summaries, and performance trends globally since status shifted to locked/finalized
       queryClient.invalidateQueries({ queryKey: ['grading', 'entries'] });
@@ -121,7 +111,7 @@ export function useApproveGrade() {
 export function useBulkApproveGrades() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ ids, approvedById }) => gradingApi.bulkApproveGrades(ids, approvedById),
+    mutationFn: (ids) => gradingApi.bulkApproveGrades(ids),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['grading'] });
     },

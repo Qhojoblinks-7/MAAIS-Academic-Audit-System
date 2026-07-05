@@ -5,7 +5,7 @@ import {
   Clock, Calendar, Sparkles, SlidersHorizontal, Inbox,
   Plus, PenLine, Trash2, X, Filter
 } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { teacherService } from '../../services';
 import { useBreadcrumb } from '../../context/BreadcrumbContext';
@@ -96,24 +96,24 @@ function CreateObsModal({ isOpen, onClose, onSave, editingObs, disabled = false 
             </div>
             <div className="p-8 space-y-5">
               {[
-                { label: 'Observation Type', type: 'select', options: OBS_TYPES, value: type, onChange: setType },
-                { label: 'Student Name', type: 'text', placeholder: 'e.g. Angela Owusu', value: student, onChange: setStudent },
-                { label: 'Class', type: 'text', placeholder: 'e.g. SHS 1 Agric B', value: className, onChange: setClassName },
-                { label: 'Student Index No.', type: 'text', placeholder: 'e.g. 001', value: index, onChange: setIndex },
-              ].map(field => (
-                <div key={field.label}>
-                  <label className="block text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-2">{field.label}</label>
-                  {field.type === 'select' ? (
-                    <select value={field.value} onChange={(e) => field.onChange(e.target.value)}
-                      className="w-full px-5 py-3.5 bg-muted border border-border rounded-xl text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/10">
-                      {field.options.map(o => <option key={o} value={o}>{o}</option>)}
-                    </select>
-                  ) : (
-                    <Input type="text" placeholder={field.placeholder} value={field.value} onChange={(e) => field.onChange(e.target.value)}
-                      className="w-full px-5 py-3.5 font-medium focus:ring-2 focus:ring-brand-primary/10" />
-                  )}
-                </div>
-              ))}
+                 { label: 'Subject Name', type: 'text', placeholder: 'e.g. Agricultural Science', value: type, onChange: setType },
+                 { label: 'Student Name', type: 'text', placeholder: 'e.g. Angela Owusu', value: student, onChange: setStudent },
+                 { label: 'Class', type: 'text', placeholder: 'e.g. SHS 1 Agric B', value: className, onChange: setClassName },
+                 { label: 'Student Index No.', type: 'text', placeholder: 'e.g. 001', value: index, onChange: setIndex },
+               ].map(field => (
+                 <div key={field.label}>
+                   <label className="block text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-2">{field.label}</label>
+                   {field.type === 'select' ? (
+                     <select value={field.value} onChange={(e) => field.onChange(e.target.value)}
+                       className="w-full px-5 py-3.5 bg-muted border border-border rounded-xl text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/10">
+                       {field.options.map(o => <option key={o} value={o}>{o}</option>)}
+                     </select>
+                   ) : (
+                     <Input type="text" placeholder={field.placeholder} value={field.value} onChange={(e) => field.onChange(e.target.value)}
+                       className="w-full px-5 py-3.5 font-medium focus:ring-2 focus:ring-brand-primary/10" />
+                   )}
+                 </div>
+               ))}
               <div>
                 <label className="block text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-2">Comment</label>
                 <Textarea
@@ -146,6 +146,7 @@ function CreateObsModal({ isOpen, onClose, onSave, editingObs, disabled = false 
 export function TeacherMissingObservations() {
   const { setBreadcrumb } = useBreadcrumb();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('missing');
   const [searchQuery, setSearchQuery] = useState('');
   const [obsTypeFilter, setObsTypeFilter] = useState('All');
@@ -176,18 +177,18 @@ export function TeacherMissingObservations() {
   }, [activeTab, setBreadcrumb]);
 
   const normalizeObservation = (obs) => {
-    const rawDate = obs.updatedAt || obs.createdAt || obs.submittedAt || obs.date;
+    const rawDate = obs.updatedAt || obs.createdAt || obs.date;
     const parsedDate = rawDate ? new Date(rawDate).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
 
     return {
-      id: obs.id || obs.gradeEntryId || `${obs.student || ''}-${obs.index || ''}-${obs.class || ''}-${obs.type || ''}`,
-      student: obs.student || obs.studentName || 'Unknown',
-      index: obs.index || obs.indexNumber || obs.studentIndex || '',
-      class: obs.class || obs.className || 'Unknown Class',
-      teacher: obs.teacher || obs.teacherName || 'Unknown',
-      type: obs.type || obs.subject || obs.subjectName || 'Unknown Subject',
-      status: obs.status || (obs.hasObservation ? 'Logged' : 'Missing'),
-      comment: obs.comment || obs.observationText || obs.remark || '',
+      id: obs.id,
+      student: obs.student || 'Unknown',
+      index: obs.index || '',
+      class: obs.class || 'Unknown Class',
+      teacher: obs.teacher || 'Unknown',
+      type: obs.type || 'Unknown Subject',
+      status: obs.status || 'Missing',
+      comment: obs.comment || '',
       date: Number.isNaN(new Date(parsedDate).getTime()) ? new Date().toISOString().slice(0, 10) : parsedDate,
     };
   };
@@ -200,13 +201,23 @@ export function TeacherMissingObservations() {
     return [];
   };
 
-  const buildObservationPayload = (obs) => ({
-    ...obs,
-    className: obs.class,
-    studentIndex: obs.index,
-    subjectName: obs.type,
-    observationText: obs.comment,
-  });
+  const buildObservationPayload = (obs) => {
+    const payload = {
+      gradeEntryId: obs.id,
+      comment: obs.comment || '',
+      observationText: obs.comment || '',
+    };
+    if (!payload.gradeEntryId) {
+      payload.index = obs.index;
+      payload.class = obs.class;
+      payload.type = obs.type;
+      payload.subject = obs.type;
+      payload.subjectName = obs.type;
+      payload.className = obs.class;
+      payload.studentIndex = obs.index;
+    }
+    return payload;
+  };
 
   const fetchObservations = async () => {
     setError('');
@@ -288,10 +299,11 @@ export function TeacherMissingObservations() {
     setIsSaving(true);
     setError('');
     try {
+      const payload = buildObservationPayload(newObs);
       if (editingObs) {
-        await teacherService.updateObservation(editingObs.id, buildObservationPayload(newObs));
+        await teacherService.updateObservation(editingObs.id, payload);
       } else {
-        await teacherService.createObservation(buildObservationPayload(newObs));
+        await teacherService.createObservation(payload);
       }
       setEditingObs(null);
       setShowCreate(false);
@@ -366,7 +378,7 @@ export function TeacherMissingObservations() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    "px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200",
+                    "px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer",
                     activeTab === tab.id ? "bg-surface text-warning shadow-sm font-bold" : "text-text-secondary hover:text-text-primary"
                   )}
                 >
@@ -498,9 +510,7 @@ export function TeacherMissingObservations() {
                             <div className="flex items-center gap-1">
                               {isMissing ? (
                                 <button
-                                  onClick={() => {
-                                    window.location.href = `/grading?missing=${encodeURIComponent(obs.id)}&student=${encodeURIComponent(obs.index)}&subject=${encodeURIComponent(obs.type)}&class=${encodeURIComponent(obs.class)}`;
-                                  }}
+                                  onClick={() => navigate(`/grading?missing=${encodeURIComponent(obs.id)}&student=${encodeURIComponent(obs.index)}&subject=${encodeURIComponent(obs.type)}&class=${encodeURIComponent(obs.class)}`)}
                                   className="p-1.5 bg-success/10 hover:bg-brand-dark border border-success/20 rounded-lg text-success hover:text-surface transition-all shadow-sm flex items-center justify-center group-hover:translate-x-0.5"
                                   title="Resolve observation entry"
                                 >

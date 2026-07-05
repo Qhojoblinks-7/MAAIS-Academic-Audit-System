@@ -36,7 +36,7 @@ export function StpErrorBanner({
           <button
             type="button"
             onClick={onClose}
-            className="text-rose-400 hover:text-rose-600 p-1 rounded-lg transition-colors outline-none focus:ring-1 focus:ring-rose-300"
+            className="text-rose-400 hover:text-rose-600 p-1 rounded-lg transition-colors outline-none focus:ring-1 focus:ring-rose-300 cursor-pointer"
             title="Dismiss Alert"
           >
             <X size={16} />

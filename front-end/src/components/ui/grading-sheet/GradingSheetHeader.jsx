@@ -48,12 +48,12 @@ export function GradingSheetHeader({
       <div className="flex items-center gap-3">
         <button 
           onClick={runSTPValidation} 
-          disabled={stpValidating}
+          disabled={stpValidating || isTermFinalized}
           className={cn(
             "px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors",
-            stpValidating
-              ? "bg-blue-100 text-blue-400 cursor-wait"
-              : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+            stpValidating || isTermFinalized
+              ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+              : "bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer"
           )}
         >
           {stpValidating ? <Loader2 size={15} className="animate-spin" /> : null}
@@ -66,8 +66,8 @@ export function GradingSheetHeader({
           className={cn(
             "px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors",
             missingCount > 0 || isTermFinalized
-              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-              : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+              ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+              : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 cursor-pointer"
           )}
         >
           <Download size={15} /> Export for WAEC
@@ -76,7 +76,7 @@ export function GradingSheetHeader({
         {!isSidebarOpen && (
           <button 
             onClick={() => setIsSidebarOpen(true)} 
-            className="px-4 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors flex items-center gap-2 text-xs font-semibold"
+            className="px-4 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors flex items-center gap-2 text-xs font-semibold cursor-pointer"
           >
             <ChevronLeft size={15} /> 
             {isCorrectionMode ? 'Show Feedback' : isMissingObsMode ? 'Show Rubric' : 'Show Observation'}
