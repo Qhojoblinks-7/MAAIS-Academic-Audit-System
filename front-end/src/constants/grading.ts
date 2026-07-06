@@ -5,8 +5,8 @@
 
 /** WAEC WASSCE Grade Scale — per SAD.txt §77 */
 export const GRADE_SCALE = {
-  'A1': { min: 75, max: 100, label: 'Excellent', points: 1 },
-  'B2': { min: 70, max: 74, label: 'Very Good', points: 2 },
+  'A1': { min: 80, max: 100, label: 'Excellent', points: 1 },
+  'B2': { min: 70, max: 79, label: 'Very Good', points: 2 },
   'B3': { min: 65, max: 69, label: 'Good', points: 3 },
   'C4': { min: 60, max: 64, label: 'Credit', points: 4 },
   'C5': { min: 55, max: 59, label: 'Credit', points: 5 },

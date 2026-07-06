@@ -2,28 +2,6 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useRole } from '../../context/RoleContext';
 
-async function fetchDepartmentForUser(userId) {
-  try {
-    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('accessToken');
-    if (!token) return null;
-    
-    const res = await fetch('/api/v1/departments', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-    });
-    
-    if (!res.ok) return null;
-    const data = await res.json();
-    const dept = data?.items?.find(d => d.hodId === userId);
-    return dept?.id || null;
-  } catch {
-    return null;
-  }
-}
-
 export function RequireRole({ allowedRoles = [], children, redirectTo = '/401' }) {
   const { user } = useRole();
   const location = useLocation();

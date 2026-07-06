@@ -82,6 +82,7 @@ export function GradingSheet(props) {
     fieldToUpdate,
     studentToUpdate,
     originalMark,
+    valueToUpdate,
     // Behavioural
     behavioralRatings,
     behavioralComment,
@@ -94,6 +95,7 @@ export function GradingSheet(props) {
     runSTPValidation,
     handleSaveDraft,
     handleSubmitToHOD,
+    handleSaveBehavioralRatings,
     handleExportWAEC,
     updateBehavioralRating,
     updateBehavioralComment,
@@ -244,7 +246,7 @@ export function GradingSheet(props) {
               } else if (isMissingObsMode) {
                 toast.error('Cannot save observation: grade entry not found for this student');
               } else {
-                toast.success('Behavioral ratings saved');
+                await handleSaveBehavioralRatings();
               }
             } catch (err) {
               console.error('Failed to save observation:', err);
@@ -254,6 +256,7 @@ export function GradingSheet(props) {
             }
           }}
           onFlagChange={updateFlagged}
+          isFlagged={flaggedStudents[selectedStudent?.id] || false}
           safetyChecked={labSafetyCompliance[selectedStudent?.id] || false}
           onSafetyCheckChange={updateLabSafety}
           disabled={isTermFinalized}
@@ -267,7 +270,7 @@ export function GradingSheet(props) {
         onClose={handleCloseJustificationPopup}
         justification={justification}
         originalMark={originalMark}
-        newValue={fieldToUpdate}
+        newValue={valueToUpdate}
         onJustificationChange={setJustification}
         onSave={handleJustificationSave}
       />

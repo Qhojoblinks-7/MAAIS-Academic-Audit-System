@@ -112,33 +112,38 @@ const academicYears = yearsList;
       return vaultSearchResults.map((record) => ({
         id: record.id,
         studentId: record.id,
-        name: record.name || `${record.firstName || ''} ${record.lastName || ''}`.trim(),
+        name: record.name || `${record.firstName || ''} ${record.lastName || ''}`.trim() || 'Unknown',
         index: record.indexNumber || '—',
         classId: record.currentClass?.id || null,
-        fromClass: record.currentClass?.level || record.fromClass || null,
-        toClass: record.toClass || null,
-        status: record.archivedAt ? 'GRADUATED' : record.status || 'Archived',
-        academicYear: record.academicYear?.label || null,
-        performedAt: record.archivedAt || record.performedAt || null,
+        fromClass: record.currentClass?.level || null,
+        toClass: null,
+        status: record.archivedAt ? 'GRADUATED' : 'ACTIVE',
+        academicYear: record.grades?.[0]?.term?.academicYear?.label || record.promotions?.[0]?.academicYear?.label || null,
+        performedAt: record.archivedAt || null,
         department: record.department?.name || '—',
-        consistencyScore: record.consistencyScore || 'N/A',
-        history: record.grades ? record.grades.slice(0, 6).map((g) => ({ 
-          finalGrade: Math.round(g.totalScore ?? g.averageScore ?? 0) 
-        })) : [{ finalGrade: null }],
+        consistencyScore: 'N/A',
+        history: record.grades && record.grades.length > 0
+          ? record.grades.slice(0, 6).map((g) => ({
+              finalGrade: Math.round(g.totalScore ?? g.averageScore ?? 0)
+            }))
+          : [{ finalGrade: null }],
       }));
     }
-    if (archiveStats?.recentPromotions) {
+    if (archiveStats?.recentPromotions && archiveStats.recentPromotions.length > 0) {
       return archiveStats.recentPromotions.map((p) => ({
-        id: p.studentId || p.id,
+        id: p.id,
+        studentId: p.studentId,
         name: p.studentName || 'Unknown',
         index: p.studentIndex || '—',
-        classId: p.classId || null,
+        classId: null,
         fromClass: p.fromClass,
         toClass: p.toClass,
         status: p.status,
         academicYear: p.academicYear,
         performedAt: p.performedAt,
-        history: p.status === 'GRADUATED' ? [{ finalGrade: 75 }] : [{ finalGrade: null }],
+        department: '—',
+        consistencyScore: 'N/A',
+        history: p.status === 'GRADUATED' ? [{ finalGrade: null }] : [{ finalGrade: null }],
       }));
     }
     return [];
@@ -247,8 +252,17 @@ const academicYears = yearsList;
     };
   }, [selectedStudent, studentProfileQuery.data, behaviorQuery.data, interventionsQuery.data]);
 
-const terms = ['SHS 1-T1', 'SHS 1-T2', 'SHS 1-T3', 'SHS 2-T1', 'SHS 2-T2', 'SHS 2-T3'];
-   const coreSubjects = ['Core Math', 'English', 'Int. Science', 'Social Studies'];
+  const terms = React.useMemo(() => {
+    if (activeYearData?.terms && activeYearData.terms.length > 0) {
+      return activeYearData.terms.map(t => {
+        const label = t.termNumber.replace('TERM_', 'Term ').replace('SEMESTER_', 'Semester ');
+        return `${activeYearData.label || ''} ${label}`.trim();
+      });
+    }
+    return ['Term 1', 'Term 2', 'Term 3'];
+  }, [activeYearData]);
+
+  const displaySubjects = ['Core Mathematics', 'English Language', 'Integrated Science', 'Social Studies'];
 
    const historyForChart = React.useMemo(() => {
      return terms.map((term, idx) => ({
@@ -339,7 +353,7 @@ onExecutePromotion={() => {
                     <div className="flex items-center gap-3">
                       <p className="text-xs font-black text-emerald-800 uppercase tracking-widest bg-emerald-100/50 px-2 py-0.5 rounded">Historical Archive v4.2</p>
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Last Synced: Today 04:12 AM</p>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Last Synced: {new Date().toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
@@ -462,7 +476,7 @@ onClick={() => {
                       {showCoreComparison ? (
                         <>
                           <TableHead className="px-4 py-4 text-center border-x border-gray-100/50 bg-emerald-50/50 text-emerald-900 rounded-t-xl">{selectedSubject}</TableHead>
-                          {coreSubjects.map(s => (
+                          {displaySubjects.map(s => (
                             <TableHead key={s} className="px-4 py-4 text-center border-x border-gray-100/50">{s}</TableHead>
                           ))}
                         </>
@@ -507,7 +521,7 @@ onClick={() => {
                                 </span>
                                 <div className="text-[8px] font-black text-emerald-600 uppercase mt-1">Target Subject</div>
                              </TableCell>
-                             {coreSubjects.map((s, idx) => {
+                              {displaySubjects.map((s, idx) => {
                                const baseScore = student.history[student.history.length-1]?.finalGrade ?? 0;
                                const simulatedScore = Math.max(0, Math.min(100, baseScore + (idx % 2 === 0 ? 5 : -10) + (Math.random() * 5)));
                                return (

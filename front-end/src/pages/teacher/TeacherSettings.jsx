@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -163,21 +162,21 @@ if (loading) {
          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                           <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Full Name</label>
-                          {profile.role === 'SET' ? (
-                            <Input
-                              name="name"
-                              value={profile.name}
-                              onChange={handleChange}
-                              className={cn(
-                                "font-black",
-                                errors.name && "border-destructive"
-                              )}
-                            />
-                          ) : (
-                            <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground">
-                              {profile.name || '—'}
-                            </p>
-                          )}
+                          {profile.role === 'TEACHER' ? (
+                             <Input
+                               name="name"
+                               value={profile.name}
+                               onChange={handleChange}
+                               className={cn(
+                                 "font-black",
+                                 errors.name && "border-destructive"
+                               )}
+                             />
+                           ) : (
+                             <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground">
+                               {profile.name || '—'}
+                             </p>
+                           )}
                           {errors.name && <p className="text-[9px] text-destructive mt-1">{errors.name}</p>}
                         </div>
                       <div>
@@ -188,61 +187,61 @@ if (loading) {
                       </div>
                         <div>
                           <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Department</label>
-                          {profile.role === 'SET' ? (
-                            <Input
-                              name="department"
-                              value={profile.department}
-                              onChange={handleChange}
-                              className={cn(
-                                "w-full font-black",
-                                errors.department && "border-destructive"
-                              )}
-                            />
-                          ) : (
-                            <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground">
-                              {profile.department || '—'}
-                            </p>
-                          )}
+                          {profile.role === 'TEACHER' ? (
+                             <Input
+                               name="department"
+                               value={profile.department}
+                               onChange={handleChange}
+                               className={cn(
+                                 "w-full font-black",
+                                 errors.department && "border-destructive"
+                               )}
+                             />
+                           ) : (
+                             <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground">
+                               {profile.department || '—'}
+                             </p>
+                           )}
                           {errors.department && <p className="text-[9px] text-destructive mt-1">{errors.department}</p>}
                         </div>
                       <div>
                         <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Email</label>
-                        {profile.role === 'SET' ? (
-                          <Input
-                            type="email"
-                            name="email"
-                            value={profile.email}
-                            onChange={handleChange}
-                            className={cn(
-                              "w-full font-black",
-                              errors.email && "border-destructive"
-                            )}
-                          />
-                        ) : (
-                          <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground">
-                            {profile.email || '—'}
-                          </p>
-                        )}
+                          {profile.role === 'TEACHER' ? (
+                             <Input
+                               type="email"
+                               name="email"
+                               value={profile.email}
+                               onChange={handleChange}
+                               className={cn(
+                                 "w-full font-black",
+                                 errors.email && "border-destructive"
+                               )}
+                             />
+                           ) : (
+                             <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground">
+                               {profile.email || '—'}
+                             </p>
+                           )}
                         {errors.email && <p className="text-[9px] text-destructive mt-1">{errors.email}</p>}
                       </div>
                       <div>
                         <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Phone</label>
-                        {profile.role === 'SET' ? (
-                          <Input
-                            type="tel"
-                            name="phone"
-                            value={profile.phone}
-                            onChange={handleChange}
-                            className={cn(
-                              "w-full font-black",
-                              errors.phone && "border-destructive"
-                            )}
-                          />
-                        ) : (
-                          <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground">
-                            {profile.phone || '—'}
-                          </p>
-                        )}
+                          {profile.role === 'TEACHER' ? (
+                             <Input
+                               type="tel"
+                               name="phone"
+                               value={profile.phone}
+                               onChange={handleChange}
+                               className={cn(
+                                 "w-full font-black",
+                                 errors.phone && "border-destructive"
+                               )}
+                             />
+                           ) : (
+                             <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground">
+                               {profile.phone || '—'}
+                             </p>
+                           )}
                         {errors.phone && <p className="text-[9px] text-destructive mt-1">{errors.phone}</p>}
                       </div>
                       <div>
@@ -280,9 +279,12 @@ if (loading) {
                         <p className="text-[9px] font-bold text-muted-foreground uppercase">{cls.className} • {cls.studentCount} students</p>
                       </div>
                     </div>
-                    <button className="text-[9px] font-black text-brand-primary uppercase tracking-widest hover:underline">
-                      Enter Marks
-                    </button>
+                     <button 
+                       className="text-[9px] font-black text-brand-primary uppercase tracking-widest hover:underline"
+                       onClick={() => navigate(`/grading?subject=${encodeURIComponent(cls.subject)}&class=${encodeURIComponent(cls.className)}`)}
+                     >
+                       Enter Marks
+                     </button>
                   </div>
                 ))}
               </div>

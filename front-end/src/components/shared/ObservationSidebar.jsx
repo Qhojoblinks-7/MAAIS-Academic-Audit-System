@@ -40,8 +40,8 @@ export function ObservationSidebar({
   };
 
   const toggleSafety = (checked) => {
-    if (onSafetyCheckChange) onSafetyCheckChange(!activeSafety);
-    else setLocalSafetyChecked(!localSafetyChecked);
+    if (onSafetyCheckChange) onSafetyCheckChange(checked);
+    else setLocalSafetyChecked(checked);
   };
 
   const ratingsList = [

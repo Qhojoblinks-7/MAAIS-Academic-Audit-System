@@ -92,6 +92,9 @@ export function HODSettings() {
     try {
       if (typeof saveSettings === 'function') {
         await saveSettings(settings);
+        if (typeof refreshSettings === 'function') {
+          await refreshSettings();
+        }
         setSaved(true);
         setTimeout(() => setSaved(false), 2500);
       }

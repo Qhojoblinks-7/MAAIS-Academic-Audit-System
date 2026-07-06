@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -16,14 +16,39 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
+import { studentService } from '../../services';
 
 export function StudentSidebar() {
   const location = useLocation();
   const { user } = useRole();
 
   const [showLogoutModal, setShowLogoutModal] = React.useState(false);
-  const [unsavedMarks] = React.useState(12);
+  const [unsavedMarks] = React.useState(0);
+  const [pendingStudentItems, setPendingStudentItems] = React.useState(0);
   const sidebarRef = useRef(null);
+
+  const fetchPendingStudentItems = useCallback(async () => {
+    const studentId = user?.profileId || user?.id;
+    if (!studentId) return;
+    try {
+      const portalData = await studentService.getPortalData(studentId);
+      const interventions = Array.isArray(portalData?.interventions)
+        ? portalData.interventions.filter(i => i.status === 'ACTIVE' || i.status === 'PENDING').length
+        : 0;
+      const unreadNotifications = Array.isArray(portalData?.notifications)
+        ? portalData.notifications.filter(n => !n.isRead).length
+        : 0;
+      setPendingStudentItems(interventions + unreadNotifications);
+    } catch {
+      setPendingStudentItems(0);
+    }
+  }, [user?.id, user?.profileId]);
+
+  React.useEffect(() => {
+    fetchPendingStudentItems();
+    const interval = setInterval(fetchPendingStudentItems, 30000);
+    return () => clearInterval(interval);
+  }, [fetchPendingStudentItems]);
 
   const navItems = [
     {
@@ -133,15 +158,15 @@ export function StudentSidebar() {
               <h3 className="text-xl font-semibold text-text-primary tracking-tight mb-2">Terminate Session?</h3>
               <p className="text-sm text-text-secondary leading-relaxed mb-6">Are you sure you want to log out?</p>
 
-              {unsavedMarks > 0 && (
+              {pendingStudentItems > 0 && (
                 <div className="bg-warning/10 border border-warning/20 rounded-2xl p-4 mb-6 flex gap-3.5">
                   <div className="text-warning shrink-0 mt-0.5">
                     <AlertCircle size={18} />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-text-primary">Unsaved Data Discovered</p>
+                    <p className="text-xs font-semibold text-text-primary">Pending Items Requiring Attention</p>
                     <p className="text-xs text-text-secondary mt-0.5">
-                      There are {unsavedMarks} data nodes currently sitting in your local cache.
+                      You have {pendingStudentItems} active intervention{pendingStudentItems !== 1 ? 's' : ''} and unread notification{pendingStudentItems !== 1 ? 's' : ''} awaiting your attention.
                     </p>
                   </div>
                 </div>

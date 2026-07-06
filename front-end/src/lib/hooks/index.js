@@ -71,6 +71,7 @@ export {
 
 export {
   useStudentCount,
+  useStudentBoarderStats,
   useStaffCount,
   useAllStaff,
   useCreateStaff,

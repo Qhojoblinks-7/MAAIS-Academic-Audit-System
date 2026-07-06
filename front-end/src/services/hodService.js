@@ -83,7 +83,7 @@ export async function exportWAECCSVDownload(termId, className, subjectName, rows
   const filename = `WAEC_${subjectName}_${className}.csv`;
   try {
     const res = await requestExport(
-      'POST',
+      'GET',
       `/hod/export-waec/${encodeURIComponent(termId)}?class=${encodeURIComponent(className)}&format=csv`,
     );
     if (res.headers.get('Content-Type')?.includes('csv') || res.headers.get('Content-Type')?.includes('text/')) {
@@ -127,6 +127,8 @@ function createRealService() {
     validateLock: (termId) => request('GET', `/hod/lock-matrix/${termId}/validate`).then(r => r?.data ?? r),
     lockDepartmentMatrix: (classId) => request('POST', `/hod/lock-class/${classId}`),
     unlockDepartmentMatrix: (classId) => request('POST', `/hod/unlock-class/${classId}`),
+    lockTerm: (termId) => request('POST', `/hod/lock-matrix/${termId}`),
+    unlockTerm: (termId) => request('POST', `/hod/unlock-matrix/${termId}`),
     exportWAECCSV: (termId, className) => exportWAECCSVDownload(termId, className, 'Subject', null),
     exportDepartmentWAECCSV: (termId) => requestExport('GET', `/hod/export-waec/${encodeURIComponent(termId)}/department`).then(res => downloadResponse(res, `WAEC_Department_${termId}.csv`)),
     exportWAECPDF: (termId, className) => requestExport('GET', `/hod/export-waec/${encodeURIComponent(termId)}/pdf?class=${encodeURIComponent(className)}`).then(res => downloadResponse(res, `WAEC_${className}_${termId}.pdf`)),

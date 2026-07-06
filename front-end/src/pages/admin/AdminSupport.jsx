@@ -17,8 +17,10 @@ import {
   ShieldCheck,
   Phone
 } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { cn } from '../../lib/utils';
-import { useHOD } from '../../context/HODContext';
+import { api } from '../../lib/api';
+import { useTickets, useUpdateTicketStatus, useCreateTicket } from '../../lib/hooks/api/admin';
 import { EmptyState, AlertSeverityChip, LoadingSpinner, HODCommentInput } from '../../components/molecules';
 import { SupportTicketKanban } from '../../components/organisms';
 
@@ -26,24 +28,10 @@ const PRIORITY_OPTIONS = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
 const CATEGORY_OPTIONS = ['SYSTEM', 'GRADES', 'REPORTS', 'ACCOUNT', 'OTHER'];
 
 export function AdminSupport() {
-  const {
-    supportTickets = [], 
-    ticketTabs, 
-    setTicketTabs,
-    ticketFilter,
-    setTicketFilter, 
-    createTicket, 
-    escalateTicketAction,
-    updateTicketAction,
-    refreshSupportTickets, 
-    refreshSystemHealth, 
-    systemHealth, 
-    refreshEscalatedIssues, 
-    escalatedIssues = [],
-    refreshContactChannels, 
-    contactChannels,
-    isLoading
-  } = useHOD();
+  const qc = useQueryClient();
+  const ticketsQuery = useTickets();
+  const updateTicketStatus = useUpdateTicketStatus();
+  const createTicketMutation = useCreateTicket();
 
   const [search, setSearch] = useState('');
   const [showCreateDrawer, setShowCreateDrawer] = useState(false);
@@ -51,16 +39,45 @@ export function AdminSupport() {
   const [escalateTicketId, setEscalateTicketId] = useState(null);
   const [escalateReason, setEscalateReason] = useState('');
   const [subTab, setSubTab] = useState('tickets');
+  const [ticketTabs, setTicketTabs] = useState('all');
+  const [ticketFilter, setTicketFilter] = useState('all');
   const [form, setForm] = useState({
     subject: '', category: 'SYSTEM', priority: 'MEDIUM', description: '', notes: ''
   });
+  const [supportTickets, setSupportTickets] = useState([]);
+  const [systemHealth, setSystemHealth] = useState(null);
+  const [escalatedIssues, setEscalatedIssues] = useState([]);
+  const [contactChannels, setContactChannels] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const tickets = ticketsQuery.data?.data ?? ticketsQuery.data ?? [];
+
+  const fetchAll = React.useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [ticketsRes, healthRes, escalationsRes, channelsRes] = await Promise.all([
+        api.get('/hod/support/tickets'),
+        api.get('/hod/system-health'),
+        api.get('/hod/escalations'),
+        api.get('/hod/contact-channels'),
+      ]);
+      setSupportTickets(Array.isArray(ticketsRes?.data ?? ticketsRes) ? (ticketsRes.data || ticketsRes) : []);
+      setSystemHealth(healthRes?.data ?? healthRes ?? null);
+      setEscalatedIssues(Array.isArray(escalationsRes?.data ?? escalationsRes) ? (escalationsRes.data || escalationsRes) : []);
+      setContactChannels(channelsRes?.data ?? channelsRes ?? null);
+    } catch {
+      setSupportTickets([]);
+      setSystemHealth(null);
+      setEscalatedIssues([]);
+      setContactChannels(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    refreshSupportTickets();
-    refreshSystemHealth();
-    refreshEscalatedIssues();
-    refreshContactChannels();
-  }, []);
+    fetchAll();
+  }, [fetchAll]);
 
   const filteredTickets = useMemo(() => {
     let list = supportTickets;
@@ -90,23 +107,41 @@ export function AdminSupport() {
   ];
 
   const handleCreateTicketSubmit = async (formData) => {
-    await createTicket({
-      subject: formData.subject,
+    await createTicketMutation.mutateAsync({
+      title: formData.subject,
       description: formData.description,
       category: formData.category,
       priority: formData.priority,
-      notes: formData.notes
     });
     setForm({ subject: '', category: 'SYSTEM', priority: 'MEDIUM', description: '', notes: '' });
     setShowCreateDrawer(false);
+    fetchAll();
   };
 
   const handleEscalateSubmit = async () => {
     if (!escalateTicketId || !escalateReason.trim()) return;
-    await escalateTicketAction(escalateTicketId, { reason: escalateReason });
-    setEscalateTicketId(null);
-    setEscalateReason('');
-    setShowEscalateDrawer(false);
+    try {
+      await api.post(`/hod/support/tickets/${escalateTicketId}/escalate`, {
+        reason: escalateReason,
+      });
+      setEscalateTicketId(null);
+      setEscalateReason('');
+      setShowEscalateDrawer(false);
+      fetchAll();
+    } catch {
+      // eslint-disable-next-line no-alert
+      alert('Escalation failed. Please try again.');
+    }
+  };
+
+  const handleUpdateStatus = async (ticketId, patch) => {
+    await updateTicketStatus.mutateAsync({ id: ticketId, dto: patch });
+    fetchAll();
+  };
+
+  const handleEscalate = (ticket) => {
+    setEscalateTicketId(ticket.id);
+    setShowEscalateDrawer(true);
   };
 
   const evaluateHealthStatus = (val) => {
@@ -119,15 +154,6 @@ export function AdminSupport() {
       return 'text-amber-600 bg-amber-50 border-amber-100';
     }
     return 'text-rose-600 bg-rose-50 border-rose-100';
-  };
-
-  const handleUpdateStatus = async (ticketId, patch) => {
-    await updateTicketAction(ticketId, patch);
-  };
-
-  const handleEscalate = (ticket) => {
-    setEscalateTicketId(ticket.id);
-    setShowEscalateDrawer(true);
   };
 
   return (
@@ -153,7 +179,7 @@ export function AdminSupport() {
             </div>
             <div className="flex items-center gap-2">
               <button 
-                onClick={() => { refreshSupportTickets(); refreshSystemHealth(); refreshEscalatedIssues(); }}
+                onClick={fetchAll}
                 className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 shadow-xs transition-colors"
               >
                 <RefreshCw size={14} /> Refresh Stream
@@ -351,7 +377,7 @@ export function AdminSupport() {
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-gray-900/40 backdrop-blur-xs flex items-center justify-end"
+            className="fixed inset-0 z-50 bg-gray-900/40 backdrop:blur-xs flex items-center justify-end"
             onClick={() => setShowCreateDrawer(false)}
           >
             <motion.div
@@ -449,7 +475,7 @@ export function AdminSupport() {
         {showEscalateDrawer && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-gray-900/40 backdrop-blur-xs flex items-center justify-end"
+            className="fixed inset-0 z-50 bg-gray-900/40 backdrop:blur-xs flex items-center justify-end"
             onClick={() => setShowEscalateDrawer(false)}
           >
             <motion.div

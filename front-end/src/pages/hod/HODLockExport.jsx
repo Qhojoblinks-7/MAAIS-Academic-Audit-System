@@ -24,6 +24,7 @@ import { ConfirmationDialog } from '@/components/molecules';
 import { auditTrail } from '@/services/auditTrailService';
 import { eventBus } from '@/services/eventBus';
 import { hodService } from '@/services/hodService';
+import { toast } from '../../components/ui/toast';
 import {
   useDepartmentProgress,
   useLockDepartmentMatrix,
@@ -76,9 +77,10 @@ function ClassProgressCard({ cls, onLock, onUnlock, onExport, locking, exporting
             ) : (
               <button
                 onClick={() => typeof onUnlock === 'function' && onUnlock(cls?.id)}
-                className="px-2.5 py-1.5 bg-gray-100 text-gray-600 text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-gray-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+                disabled={unlocking === cls?.id}
+                className="px-2.5 py-1.5 bg-gray-100 text-gray-600 text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-gray-200 flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-40"
               >
-                <Unlock size={11} />
+                {unlocking === cls?.id ? <LoadingSpinner size="sm" /> : <Unlock size={11} />}
                 Unlock
               </button>
             )}
@@ -141,15 +143,20 @@ export function HODLockExport() {
   const lockMutation = useLockDepartmentMatrix();
   const unlockMutation = useUnlockDepartmentMatrix();
   const exportMutation = useExportWAECCSV();
+  const lockTermMutation = useLockTerm();
+  const unlockTermMutation = useUnlockTerm();
 
   useEffect(() => {
     auditTrail.setUseHodApi(true);
   }, []);
 
   const [locking, setLocking] = useState(null);
+  const [unlocking, setUnlocking] = useState(null);
   const [exporting, setExporting] = useState(null);
   const [confirmLock, setConfirmLock] = useState(null);
   const [confirmUnlock, setConfirmUnlock] = useState(null);
+  const [confirmLockTerm, setConfirmLockTerm] = useState(false);
+  const [confirmUnlockTerm, setConfirmUnlockTerm] = useState(false);
   const [activeClassId, setActiveClassId] = useState(null);
   const [revisionModal, setRevisionModal] = useState(null);
   const [revisionText, setRevisionText] = useState('');
@@ -204,6 +211,67 @@ export function HODLockExport() {
     return sortedClasses.find((c) => c.id === activeClassId) || sortedClasses[0] || null;
   }, [sortedClasses, activeClassId]);
 
+  const activeTermId = useMemo(() => {
+    const term = sortedClasses.find((c) => c?.termId) || selectedClass;
+    return term?.termId || null;
+  }, [sortedClasses, selectedClass]);
+
+  const termLocked = useMemo(() => {
+    return Array.isArray(lockedTerms) && lockedTerms.some((t) => t.id === activeTermId);
+  }, [lockedTerms, activeTermId]);
+
+  const handleLockTerm = () => {
+    if (!activeTermId) return;
+    setConfirmLockTerm(true);
+  };
+
+  const handleUnlockTerm = () => {
+    if (!activeTermId) return;
+    setConfirmUnlockTerm(true);
+  };
+
+  const doLockTerm = async () => {
+    if (!activeTermId) return;
+    try {
+      const oldVal = typeof auditTrail?.captureSnapshot === 'function' ? auditTrail.captureSnapshot({ termLocked: false }) : {};
+      await lockTermMutation.mutateAsync(activeTermId);
+      const newVal = typeof auditTrail?.captureSnapshot === 'function' ? auditTrail.captureSnapshot({ termLocked: true }) : {};
+      if (auditTrail?.logChange) {
+        await auditTrail.logChange('term', activeTermId, oldVal, newVal, 'Term locked by HOD');
+      }
+      if (eventBus?.emit) {
+        eventBus.emit('term-locked', { termId: activeTermId });
+      }
+      toast.success('Term sealed successfully');
+    } catch (e) {
+      console.error('Term lock failed:', e);
+      toast.error(e.message || 'Failed to lock term');
+    } finally {
+      setConfirmLockTerm(false);
+    }
+  };
+
+  const doUnlockTerm = async () => {
+    if (!activeTermId) return;
+    try {
+      const oldVal = typeof auditTrail?.captureSnapshot === 'function' ? auditTrail.captureSnapshot({ termLocked: true }) : {};
+      await unlockTermMutation.mutateAsync(activeTermId);
+      const newVal = typeof auditTrail?.captureSnapshot === 'function' ? auditTrail.captureSnapshot({ termLocked: false }) : {};
+      if (auditTrail?.logChange) {
+        await auditTrail.logChange('term', activeTermId, oldVal, newVal, 'Term unlocked by HOD');
+      }
+      if (eventBus?.emit) {
+        eventBus.emit('term-unlocked', { termId: activeTermId });
+      }
+      toast.success('Term released successfully');
+    } catch (e) {
+      console.error('Term unlock failed:', e);
+      toast.error(e.message || 'Failed to unlock term');
+    } finally {
+      setConfirmUnlockTerm(false);
+    }
+  };
+
   const handleLock = async (clsId) => {
     if (!clsId) return;
     setConfirmLock({
@@ -235,7 +303,7 @@ export function HODLockExport() {
       await refetchLockedTerms();
     } catch (e) {
       console.error('Lock configuration stream error:', e);
-      alert(e.message || 'Failed to lock term');
+      toast.error(e.message || 'Failed to lock term');
     } finally {
       setLocking(null);
       setConfirmLock(null);
@@ -243,6 +311,10 @@ export function HODLockExport() {
   };
 
   const handleUnlock = (clsId) => {
+    if (!clsId) {
+      toast.error('Class not found in department progress.');
+      return;
+    }
     setConfirmUnlock({
       id: clsId,
       title: 'Release Locked Ledger Constraints?',
@@ -255,6 +327,7 @@ export function HODLockExport() {
 
     const cls = departmentProgress.find((c) => c.id === clsId);
 
+    setUnlocking(clsId);
     try {
       const oldVal = typeof auditTrail?.captureSnapshot === 'function' ? auditTrail.captureSnapshot({ status: 'LOCKED' }) : {};
       await unlockMutation.mutateAsync(clsId);
@@ -271,7 +344,9 @@ export function HODLockExport() {
       await refetchLockedTerms();
     } catch (e) {
       console.error('Unlock process matrix verification exception:', e);
+      toast.error(e.message || 'Failed to unlock class');
     } finally {
+      setUnlocking(null);
       setConfirmUnlock(null);
     }
   };
@@ -281,7 +356,7 @@ export function HODLockExport() {
 
     const cls = departmentProgress.find((c) => c.id === clsId);
     if (!cls) {
-      alert('Class not found in department progress.');
+      toast.error('Class not found in department progress.');
       return;
     }
 
@@ -289,7 +364,7 @@ export function HODLockExport() {
     const failCount = checks.length - checks.filter((c) => c.pass).length;
 
     if (failCount > 0) {
-      alert('Cannot export: Validation checks are failing. Please resolve issues before export.');
+      toast.error('Cannot export: Validation checks are failing. Please resolve issues before export.');
       return;
     }
 
@@ -302,6 +377,7 @@ export function HODLockExport() {
       }
     } catch (e) {
       console.error('Data download compilation failure:', e);
+      toast.error(e.message || 'Failed to export');
     } finally {
       setExporting(null);
     }
@@ -370,6 +446,24 @@ export function HODLockExport() {
             <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200/50 rounded-lg text-[10px] font-bold text-amber-700 uppercase tracking-wider">
               <Clock size={11} className="text-amber-500" /> {pendingCount} Awaiting Review
             </div>
+          )}
+
+          {activeTermId && (
+            termLocked ? (
+              <button
+                onClick={handleUnlockTerm}
+                className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200/50 rounded-lg text-[10px] font-bold text-amber-700 uppercase tracking-wider hover:bg-amber-100 transition-colors cursor-pointer shadow-3xs"
+              >
+                <Unlock size={11} className="text-amber-500" /> Release Term
+              </button>
+            ) : (
+              <button
+                onClick={handleLockTerm}
+                className="flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 border border-indigo-200/50 rounded-lg text-[10px] font-bold text-indigo-700 uppercase tracking-wider hover:bg-indigo-100 transition-colors cursor-pointer shadow-3xs"
+              >
+                <Lock size={11} className="text-indigo-500" /> Seal Term
+              </button>
+            )
           )}
         </div>
 
@@ -558,6 +652,25 @@ export function HODLockExport() {
           </div>
         </div>
       )}
+
+      <ConfirmationDialog
+        open={confirmLockTerm}
+        title="Seal Entire Term?"
+        message="This freezes all grade entries across every class in this term department-wide. Individual classes will also show as sealed. Proceed?"
+        confirmLabel="Confirm Seal Term"
+        onConfirm={doLockTerm}
+        onCancel={() => setConfirmLockTerm(false)}
+        variant="warning"
+      />
+      <ConfirmationDialog
+        open={confirmUnlockTerm}
+        title="Release Term Seal?"
+        message="This unlocks editing across all grade entries for this term. The system will keep capturing modification histories."
+        confirmLabel="Release Term Seal"
+        onConfirm={doUnlockTerm}
+        onCancel={() => setConfirmUnlockTerm(false)}
+        variant="primary"
+      />
     </div>
   );
 }

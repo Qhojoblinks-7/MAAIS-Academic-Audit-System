@@ -59,7 +59,7 @@ const TeacherRevisionsFeed = () => {
     const fetchRevisions = async () => {
       if (!user?.id) return;
       try {
-        const data = await teacherService.getGradeRevisions?.(user.id || user.profileId) || [];
+        const data = await teacherService.getGradeRevisions() || [];
         setRevisions(data);
         setRevisionCount(Array.isArray(data) ? data.filter(r => r.status !== 'RESOLVED' && r.status !== 'REJECTED').length : 0);
       } catch (e) {
@@ -73,7 +73,7 @@ const TeacherRevisionsFeed = () => {
     if (!user?.id && !user?.profileId) return;
     const interval = setInterval(async () => {
       try {
-        const data = await teacherService.getGradeRevisions?.(user.id || user.profileId) || [];
+        const data = await teacherService.getGradeRevisions() || [];
         setRevisions(data);
         setRevisionCount(Array.isArray(data) ? data.filter(r => r.status !== 'RESOLVED' && r.status !== 'REJECTED').length : 0);
       } catch (e) {
@@ -162,10 +162,8 @@ const TeacherRevisionsFeed = () => {
 
       const updatedRevision = {
         ...selected,
-        history: [...(selected.history || []), newMessage]
+        history: [...(Array.isArray(selected.history) ? selected.history : []), newMessage]
       };
-
-      await teacherService.updateGradeRevision?.(selected.id, updatedRevision);
 
       setRevisions(prev => prev.map(item => item.id === selected.id ? updatedRevision : item));
       setSelected(updatedRevision);

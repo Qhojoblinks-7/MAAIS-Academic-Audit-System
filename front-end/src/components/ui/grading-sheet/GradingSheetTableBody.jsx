@@ -140,28 +140,28 @@ return (
                       );
                     }
 
-                    // Generic Dynamic Score Entry Cell
-                    return (
-                      <TableCell key={fieldName} className="px-4 py-2 border-r border-slate-100 text-center bg-slate-50/30 w-24">
-                        <input 
-                          type="number" 
-                          value={student[fieldName] ?? ''} 
-                          disabled={isLocked}
-                          readOnly={isLocked}
-                          onBlur={(e) => {
-                            if (e.target.value === '' || e.target.value === null) {
-                              updateMark(student.id, fieldName, 0);
-                            }
-                          }}
-                          onChange={(e) => updateMark(student.id, fieldName, e.target.value)} 
-                          className={`w-16 px-1 py-1 text-center text-[11px] font-semibold rounded border transition-all ${
-                            isLocked
-                              ? 'bg-gray-200 text-gray-500 cursor-not-allowed border-gray-300'
-                              : 'bg-transparent text-text-primary border-transparent focus:border-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200'
-                          }`} 
-                        />
-                      </TableCell>
-                    );
+                     // Generic Dynamic Score Entry Cell
+                     return (
+                       <TableCell key={fieldName} className="px-4 py-2 border-r border-slate-100 text-center bg-slate-50/30 w-24">
+                         <input 
+                           type="number" 
+                           value={student[fieldName] ?? student.sba ?? ''} 
+                           disabled={isLocked}
+                           readOnly={isLocked}
+                           onBlur={(e) => {
+                             if (e.target.value === '' || e.target.value === null) {
+                               updateMark(student.id, fieldName, 0);
+                             }
+                           }}
+                           onChange={(e) => updateMark(student.id, fieldName, e.target.value)} 
+                           className={`w-16 px-1 py-1 text-center text-[11px] font-semibold rounded border transition-all ${
+                             isLocked
+                               ? 'bg-gray-200 text-gray-500 cursor-not-allowed border-gray-300'
+                               : 'bg-transparent text-text-primary border-transparent focus:border-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200'
+                           }`} 
+                         />
+                       </TableCell>
+                     );
                   })}
 
                   {/* Cumulative Section Component Raw Total Weight */}

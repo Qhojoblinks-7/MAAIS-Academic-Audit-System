@@ -17,7 +17,7 @@ import {
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
 import { useUI } from '../../context/UIContext';
-
+import { adminService } from '../../services';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 
@@ -27,7 +27,28 @@ export function AdminSidebar() {
   const { setSettingsModalOpen, setSupportModalOpen } = useUI();
   const [showLogoutModal, setShowLogoutModal] = React.useState(false);
   const [activeSubMenu, setActiveSubMenu] = React.useState(null);
+  const [pendingAdminItems, setPendingAdminItems] = React.useState(0);
   const sidebarRef = React.useRef(null);
+
+  const fetchPendingAdminItems = React.useCallback(async () => {
+    try {
+      const [ticketsRes, approvalsRes] = await Promise.all([
+        adminService.listTickets(),
+        adminService.getApprovals(),
+      ]);
+      const tickets = Array.isArray(ticketsRes?.data ?? ticketsRes) ? (ticketsRes.data || ticketsRes) : [];
+      const approvals = Array.isArray(approvalsRes?.data ?? approvalsRes) ? (approvalsRes.data || approvalsRes) : [];
+      setPendingAdminItems(tickets.length + approvals.length);
+    } catch {
+      setPendingAdminItems(0);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchPendingAdminItems();
+    const interval = setInterval(fetchPendingAdminItems, 30000);
+    return () => clearInterval(interval);
+  }, [fetchPendingAdminItems]);
 
   React.useEffect(() => {
     function handleClickOutside(event) {
@@ -251,6 +272,20 @@ export function AdminSidebar() {
                   <p className="text-sm text-text-secondary leading-relaxed mb-6">
                     Are you sure you want to log out? Your access tokens will be cleared from this browser session.
                   </p>
+
+                  {pendingAdminItems > 0 && (
+                    <div className="bg-warning/10 border border-warning/20 rounded-2xl p-4 mb-6 flex gap-3.5">
+                      <div className="text-warning shrink-0 mt-0.5">
+                        <AlertTriangle size={18} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-text-primary">Pending Administrative Tasks</p>
+                        <p className="text-xs text-text-secondary mt-0.5">
+                          You have {pendingAdminItems} open ticket{pendingAdminItems !== 1 ? 's' : ''} and pending approval{pendingAdminItems !== 1 ? 's' : ''} awaiting your action.
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex gap-3">
                     <Button

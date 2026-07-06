@@ -179,14 +179,17 @@ const selectedClass = classOptions.find((c) => c.id === selectedClassId) || clas
   }, [timetableEntries, selectedClassName]);
 
   const getSlotIdFromTime = (time) => {
+    if (!time) return null;
+    const normalized = String(time).slice(0, 5);
     const slot = TIME_SLOTS.find(
-      (s) => s.start === time || (!s.id.startsWith('break') && s.start === time),
+      (s) => s.start === normalized || (!s.id.startsWith('break') && s.start === normalized),
     );
-    return slot?.id;
+    return slot?.id || null;
   };
 
   const getEntryForSlot = (day, slotId) => {
-    const key = `${day}-${slotId}`;
+    const dayKey = DAY_MAP[day] || day;
+    const key = `${dayKey}-${slotId}`;
     return schedule[selectedClassName || '']?.[key] || null;
   };
 
@@ -215,20 +218,21 @@ const selectedClass = classOptions.find((c) => c.id === selectedClassId) || clas
     const [day, slotId] = slotKey.split('-');
     if (slotId.startsWith('break')) return;
 
-const slot = TIME_SLOTS.find((s) => s.id === slotId);
+    const dayKey = DAY_MAP[day] || day;
+    const slot = TIME_SLOTS.find((s) => s.id === slotId);
     if (!slot) return;
 
     const startTime = slot.start;
     const endTime = slot.end;
 
-    setSavingSlot(slotKey);
+    setSavingSlot(`${dayKey}-${slotId}`);
 
     try {
       const body = {
         classId: selectedClassId,
         subjectId: lesson.subjectId,
         teacherId: lesson.teacherId,
-        dayOfWeek: DAY_MAP[day] || day.toUpperCase(),
+        dayOfWeek: dayKey,
         startTime,
         endTime,
         track: activeTrack,
@@ -255,7 +259,7 @@ const slot = TIME_SLOTS.find((s) => s.id === slotId);
 
       setSchedule((prev) => {
         const classSchedule = { ...(prev[selectedClassName || ''] || {}) };
-        classSchedule[slotKey] = newEntry;
+        classSchedule[`${dayKey}-${slotId}`] = newEntry;
         return {
           ...prev,
           [selectedClassName || '']: classSchedule,
@@ -591,7 +595,7 @@ const conflicts = useMemo(() => {
                             {DAYS.map((day) => {
                               const slotKey = `${day}-${slot.id}`;
                               const lesson = getEntryForSlot(day, slot.id);
-                              const conflictLookupKey = `${selectedClassName}-${slotKey}`;
+                              const conflictLookupKey = `${selectedClassName}-${DAY_MAP[day] || day}-${slot.id}`;
                               const conflict = conflicts[conflictLookupKey];
 
                               if (isBreak) {

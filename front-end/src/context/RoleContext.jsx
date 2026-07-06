@@ -15,7 +15,9 @@ const BACKEND_TO_FRONTEND_ROLE = {
 };
 
 function normalizeRole(role) {
-  return BACKEND_TO_FRONTEND_ROLE[role] || role || null;
+  const mapped = BACKEND_TO_FRONTEND_ROLE[role];
+  if (mapped !== undefined) return mapped;
+  return null;
 }
 
 const parseUserProfile = (data, jwtPayload) => {

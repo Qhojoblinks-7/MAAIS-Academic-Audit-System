@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, BookOpen, Percent, GraduationCap, Clock, ChevronRight, Star, PenLine, ClipboardCheck, X, ArrowLeft } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -10,7 +10,7 @@ import { Card } from '../../components/ui/card';
 import { NotificationBell } from '../../components/shared/NotificationBell';
 import { useTeacherSubjectConfig, useActiveYear } from '../../lib/hooks';
 
-const SUBJECT_CONFIG = {
+export const SUBJECT_CONFIG = {
   'General Agriculture': {
     sections: ['Paper 1 (50)', 'Paper 2-Agri (90)', 'Paper 3-Pract (60)'],
     maxRaw: 200, sectionCount: 3, hasPractical: true, practicalMarks: 60,
@@ -80,6 +80,7 @@ export function TeacherGradingView() {
   const [gradingStudents, setGradingStudents] = useState([]);
   const [statusMeta, setStatusMeta] = useState({});
   const [filterOptions, setFilterOptions] = useState([]);
+  const [dynamicSubjectConfig, setDynamicSubjectConfig] = useState({});
 
   const activeYearQuery = useActiveYear();
   const activeTerm = activeYearQuery.data?.terms?.find(t => t.isActive);
@@ -102,10 +103,30 @@ export function TeacherGradingView() {
         const classes = await teacherService.getClasses(user.id || user.profileId);
         const meta = await teacherService.getGradingStatusMeta();
         const filters = await teacherService.getGradingFilterOptions();
+        const subjectConfig = await teacherService.getSubjectConfig().catch(() => []);
+        
+        const configMap = {};
+        if (Array.isArray(subjectConfig)) {
+          subjectConfig.forEach((s) => {
+            if (!configMap[s.name]) {
+              configMap[s.name] = {
+                sections: s.type === 'CORE' ? ['Sec A (40)', 'Sec B (60)'] : ['Practical (40)', 'Theory (60)'],
+                maxRaw: 100,
+                sectionCount: 2,
+                hasPractical: s.type === 'ELECTIVE',
+                practicalMarks: 0,
+                sbaLabel: 'SBA (30%)',
+                examLabel: 'Exam (70%)',
+              };
+            }
+          });
+        }
         
         setGradingClasses(classes || []);
         setStatusMeta(meta || {});
-        setFilterOptions(filters || []);
+        setFilterOptions(filters || {});
+        setDynamicSubjectConfig(configMap);
+        console.log('[TeacherGradingView] Dynamic subject configs loaded:', Object.keys(configMap).length, configMap);
       } catch (err) {
         setError('Failed to load grading data');
       } finally {
@@ -115,6 +136,8 @@ export function TeacherGradingView() {
 
     fetchClasses();
   }, [user?.id, user?.profileId]);
+
+  const subjectConfig = useMemo(() => ({ ...SUBJECT_CONFIG, ...dynamicSubjectConfig }), [dynamicSubjectConfig]);
 
   /* ── Filtered class list ── */
   const totalStudents = gradingClasses.reduce((sum, c) => sum + (c.studentCount || 0), 0);
@@ -199,9 +222,16 @@ export function TeacherGradingView() {
               <h1 className="text-3xl md:text-4xl font-black text-foreground tracking-tight leading-none">
                 Grading Summary
               </h1>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-2 flex items-center gap-1.5">
-                <ClipboardCheck size={10} className="text-muted-foreground" />
-                Score Entry · Progress Tracking · Submission Control
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-2 flex items-center gap-3">
+                <span className="flex items-center gap-1.5">
+                  <ClipboardCheck size={10} className="text-muted-foreground" />
+                  Score Entry · Progress Tracking · Submission Control
+                </span>
+                {Object.keys(dynamicSubjectConfig).length > 0 && (
+                  <span className="px-2 py-0.5 bg-success/10 text-success border border-success/20 rounded-md">
+                    {Object.keys(dynamicSubjectConfig).length} dynamic configs loaded
+                  </span>
+                )}
               </p>
             </div>
             <div className="flex items-center gap-4 text-[9px] font-black text-brand-primary uppercase tracking-widest">
@@ -371,7 +401,13 @@ export function TeacherGradingView() {
                 <BookOpen size={14} className="text-brand-primary" />
                 <div>
                   <p className="text-xs font-black text-foreground leading-none">{selectedClass.subject}</p>
-                  <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{selectedClass.className}</p>
+                  <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
+                    {selectedClass.className}
+                    <span className="mx-1.5 text-border">|</span>
+                    <span className="text-success">{selectedClass.department || 'GENERAL'}</span>
+                    <span className="mx-1.5 text-border">|</span>
+                    <span className="text-brand-secondary">{selectedClass.level || 'SHS 1'}</span>
+                  </p>
                 </div>
               </div>
             </div>
@@ -383,14 +419,14 @@ export function TeacherGradingView() {
                   id: selectedClass.id,
                   subject: selectedClass.subject,
                   className: selectedClass.className,
-                  programme: 'AGRICULTURE',
+                  programme: selectedClass.department || 'GENERAL',
                   studentCount: selectedClass.studentCount,
-                  form: 'SHS 1',
+                  form: selectedClass.level || 'SHS 1',
                   academicYear: '2025/2026',
                 }}
                 teacherId={user?.id || user?.staffId}
                 students={gradingStudents}
-                subjectConfig={SUBJECT_CONFIG}
+                subjectConfig={subjectConfig}
                 stpRules={[
                   { check: (s) => s.final > 100, message: 'Final score exceeds 100%' },
                   { check: (s) => s.sba > 30, message: 'SBA exceeds 30% limit' },

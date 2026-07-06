@@ -148,10 +148,22 @@ export function StaffRegistry() {
     }
   };
 
-  const filteredStaff = staff.filter(s => 
-    ((s.firstName || '') + ' ' + (s.lastName || '')).toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (s.staffId || '').toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredStaff = staff.filter(s => {
+    const name = `${s.firstName || ''} ${s.lastName || ''}`.toLowerCase();
+    const matchesSearch = name.includes(searchQuery.toLowerCase()) ||
+      (s.staffId || '').toLowerCase().includes(searchQuery.toLowerCase());
+
+    const deptName = s.department?.name || 'Unassigned';
+    const matchesDepartment = selectedDepartment === 'All' || deptName === selectedDepartment;
+
+    const role = s.user?.role || s.role || 'TEACHER';
+    const matchesRole = selectedRole === 'All' || role === selectedRole;
+
+    const status = s.user?.isActive ? 'Active' : 'Inactive';
+    const matchesStatus = selectedStatus === 'All' || status === selectedStatus;
+
+    return matchesSearch && matchesDepartment && matchesRole && matchesStatus;
+  });
 
   const displayStaff = filteredStaff.map((s) => ({
     id: s.id,

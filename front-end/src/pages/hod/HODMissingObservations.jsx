@@ -235,7 +235,7 @@ export function HODMissingObservations() {
                             {isMissing ? (
                                // NOTE: HODs resolving observations is debatable — this navigates to grading sheet
                                 <Button
-                                  onClick={() => navigate(`/grading?missing=${obs.id}&studentId=${obs.studentId}`)}
+                                   onClick={() => navigate(`/grading?missing=${obs.id}&studentId=${obs.studentId}&studentName=${encodeURIComponent(obs.student)}&index=${encodeURIComponent(obs.index)}&subject=${encodeURIComponent(obs.type)}&class=${encodeURIComponent(obs.class)}`)}
                                   variant="outline"
                                   size="sm"
                                   className="p-1.5 transition-transform group-hover:translate-x-0.5"

@@ -94,6 +94,7 @@ import {
   MobileTimetableView,
 } from "./pages/teacher";
 import { LoginPage } from "./pages/auth/LoginPage";
+import { SUBJECT_CONFIG } from "./pages/teacher/TeacherGradingView";
 import { gradingService } from "./services/gradingService";
 import { teacherService } from "./services/teacherService";
 import { TooltipProvider } from "./components/ui/tooltip";
@@ -150,17 +151,36 @@ function GradingRouteLoader() {
           classParam,
         );
         if (cancelled) return;
-        const [students] = await Promise.all([
+        const [students, subjectConfigResult] = await Promise.all([
           gradingService.getStudentsForGrading({
             subjectId: gradingIds?.subjectId,
             classId: gradingIds?.classId,
             termId: gradingIds?.termId,
           }),
+          teacherService.getSubjectConfig().catch(() => ({})),
         ]);
         if (cancelled) return;
+
+        const subjectConfigMap = { ...SUBJECT_CONFIG };
+        if (Array.isArray(subjectConfigResult)) {
+          subjectConfigResult.forEach((s) => {
+            if (!subjectConfigMap[s.name]) {
+              subjectConfigMap[s.name] = {
+                sections: s.type === 'CORE' ? ['Sec A (40)', 'Sec B (60)'] : ['Practical (40)', 'Theory (60)'],
+                maxRaw: 100,
+                sectionCount: 2,
+                hasPractical: s.type === 'ELECTIVE',
+                practicalMarks: 0,
+                sbaLabel: 'SBA (30%)',
+                examLabel: 'Exam (70%)',
+              };
+            }
+          });
+        }
+
         setGradingData({
           students: students || [],
-          subjectConfig: {},
+          subjectConfig: subjectConfigMap,
           subjectId: gradingIds?.subjectId,
           classId: gradingIds?.classId,
           termId: gradingIds?.termId,
@@ -297,9 +317,9 @@ function Modal({ isOpen, onClose, title, children }) {
 }
 
 // Router Switcher for Layout Consistency
-const RoleBasedArchiveView = () => {
+  const RoleBasedArchiveView = () => {
   const { user } = useRole();
-  if (user?.role === "SUPER_ADMIN" || user?.role === "HEADMASTER") return <ArchiveView />;
+  if (user?.role === "ADMIN") return <ArchiveView />;
   if (user?.role === "HOD") return <HODArchiveView />;
   if (user?.role === "TEACHER") return <TeacherArchiveView />;
   return <ArchiveView />;
@@ -387,7 +407,7 @@ function AppContent() {
     <div className="flex h-screen bg-background font-sans selection:bg-success/20 selection:text-success">
       {isSystemFrozen && user?.role !== "STUDENT" && (!freezeAck || isAckExpired) && (
         <>
-          {user?.role === "SUPER_ADMIN" || user?.role === "HEADMASTER" ? (
+                  {user?.role === "ADMIN" ? (
             <div className="fixed top-0 left-0 right-0 z-[300] bg-rose-600 text-white px-4 py-2.5 flex items-center justify-center gap-3 shadow-lg">
               <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
               <span className="text-[10px] font-black uppercase tracking-widest">Emergency System Freeze Active</span>
@@ -441,9 +461,9 @@ function AppContent() {
           <HODSidebar />
         ) : user?.role === "TEACHER" ? (
           <TeacherSidebar />
-        ) : (
+        ) : user?.role === "ADMIN" ? (
           <AdminSidebar />
-        )}
+        ) : null}
       </div>
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -492,8 +512,6 @@ function AppContent() {
                 <RequireRole allowedRoles={["TEACHER", "STUDENT", "ADMIN"]}>
                   {user?.role === "STUDENT" ? (
                     <StudentTimetable />
-                  ) : user?.role === "SUPER_ADMIN" || user?.role === "HEADMASTER" ? (
-                    <SchedulingView />
                   ) : user?.role === "TEACHER" ? (
                     <TeacherTimetableView />
                   ) : (
@@ -508,7 +526,7 @@ function AppContent() {
               path="/grading"
               element={
                 <RequireRole allowedRoles={["TEACHER", "ADMIN"]}>
-                  {user?.role === "SUPER_ADMIN" || user?.role === "HEADMASTER" ? (
+          {user?.role === "ADMIN" ? (
                     <GradingRulesView />
                   ) : (
                     <StandaloneGradingWrapper />
@@ -519,7 +537,7 @@ function AppContent() {
             <Route
               path="/student-profile"
               element={
-                <RequireRole allowedRoles={["TEACHER", "HOD", "HEADMASTER", "SUPER_ADMIN"]}>
+                <RequireRole allowedRoles={["TEACHER", "HOD", "ADMIN"]}>
                   <StudentProfile />
                 </RequireRole>
               }
@@ -527,7 +545,7 @@ function AppContent() {
             <Route
               path="/teacher-profile"
               element={
-                <RequireRole allowedRoles={["TEACHER", "HOD", "HEADMASTER", "SUPER_ADMIN"]}>
+                <RequireRole allowedRoles={["TEACHER", "HOD", "ADMIN"]}>
                   <TeacherProfile />
                 </RequireRole>
               }
@@ -816,7 +834,7 @@ function AppContent() {
                     <StudentSettings />
                   ) : user?.role === "HOD" ? (
                     <HODSettings />
-                  ) : user?.role === "SUPER_ADMIN" || user?.role === "HEADMASTER" ? (
+                  ) : user?.role === "TEACHER" ? (
                     <AdminSettings />
                   ) : (
                     <TeacherSettings />
@@ -834,7 +852,7 @@ function AppContent() {
                     <StudentSupport />
                   ) : user?.role === "HOD" ? (
                     <HODSupportPage />
-                  ) : user?.role === "SUPER_ADMIN" || user?.role === "HEADMASTER" ? (
+                  ) : user?.role === "TEACHER" ? (
                     <AdminSupport />
                   ) : (
                     <TeacherSupport />
@@ -852,7 +870,7 @@ function AppContent() {
                     <StudentSupport />
                   ) : user?.role === "HOD" ? (
                     <HODSupportPage />
-                  ) : user?.role === "SUPER_ADMIN" || user?.role === "HEADMASTER" ? (
+                  ) : user?.role === "TEACHER" ? (
                     <AdminSupport />
                   ) : (
                     <TeacherSupport />
@@ -922,7 +940,7 @@ function AppContent() {
           <StudentSettings />
         ) : user?.role === "HOD" ? (
           <HODSettings />
-        ) : user?.role === "SUPER_ADMIN" || user?.role === "HEADMASTER" ? (
+        ) : user?.role === "ADMIN" ? (
           <AdminSettings />
         ) : (
           <TeacherSettings />
@@ -938,7 +956,7 @@ function AppContent() {
           <StudentSupport />
         ) : user?.role === "HOD" ? (
           <HODSupportPage />
-        ) : user?.role === "SUPER_ADMIN" || user?.role === "HEADMASTER" ? (
+        ) : user?.role === "ADMIN" ? (
           <AdminSupport />
         ) : (
           <TeacherSupport />

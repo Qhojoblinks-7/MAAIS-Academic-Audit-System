@@ -7,6 +7,7 @@ export function StatusBadge({ status, children, className }) {
     SUBMITTED: { color: 'blue', icon: '📤' },
     VERIFIED: { color: 'emerald', icon: '✓' },
     LOCKED: { color: 'emerald', icon: '🔒' },
+    COMPLETE: { color: 'emerald', icon: '✓' },
     RESOLVED: { color: 'emerald', icon: '✓' },
     FLAGGED: { color: 'rose', icon: '⚠' },
     PENDING: { color: 'indigo', icon: '⏳' },

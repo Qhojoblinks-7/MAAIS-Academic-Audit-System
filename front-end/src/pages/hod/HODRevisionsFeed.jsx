@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { EmptyState } from '../../components/molecules';
@@ -61,6 +61,8 @@ const HODRevisionsFeed = () => {
   const [discussionExpanded, setDiscussionExpanded] = useState(false);
   const [discussionInput, setDiscussionInput] = useState('');
   const [isDiscussionLoading, setIsDiscussionLoading] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
 
   useEffect(() => {
     if (typeof refreshRevisions === 'function') {
@@ -95,30 +97,36 @@ const HODRevisionsFeed = () => {
     setBreadcrumb(crumbs);
   }, [activeTab, selected, setBreadcrumb]);
 
-  const filteredData = revisions.filter(item => {
-    const isResolved = (r) => (r.status || '').toUpperCase() === 'RESOLVED' || (r.status || '').toUpperCase() === 'REJECTED';
-    const matchesTab = activeTab === 'all' 
-      ? true 
-      : activeTab === 'pending' 
-        ? !isResolved(item)
-        : isResolved(item);
-        
-    const matchesSearch = 
-      (item.student || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.subject || '').toLowerCase().includes(searchQuery.toLowerCase());
+  const isResolved = (status) => {
+    const s = (status || '').toUpperCase();
+    return s === 'RESOLVED' || s === 'REJECTED';
+  };
 
-    return matchesTab && matchesSearch;
-  });
+  const filteredData = useMemo(() => {
+    return revisions.filter(item => {
+      const matchesTab = activeTab === 'all'
+        ? true
+        : activeTab === 'pending'
+          ? !isResolved(item.status)
+          : isResolved(item.status);
+
+      const matchesSearch =
+        (item.student || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.subject || '').toLowerCase().includes(searchQuery.toLowerCase());
+
+      return matchesTab && matchesSearch;
+    });
+  }, [revisions, activeTab, searchQuery]);
 
   const handleApprove = async () => {
-    if (!selected || !hodComment.trim()) return;
-    
+    if (!selected || !hodComment.trim() || isApproving) return;
+
+    setIsApproving(true);
     try {
       const oldVal = auditTrail?.captureSnapshot?.({ status: selected.status }) || {};
-      await hodService.updateHODComment(selected.id, hodComment);
-      const updated = await hodService.approveGradeRevision?.(selected.id, hodComment);
-      
+      await hodService.approveGradeRevision?.(selected.id, hodComment);
+
       if (auditTrail?.logChange) {
         await auditTrail.logChange('grade_revision', selected.id, oldVal, { status: 'RESOLVED', comment: hodComment }, hodComment);
       }
@@ -128,69 +136,92 @@ const HODRevisionsFeed = () => {
       if (notification?.notifyTeacherOfHODAction) {
         await notification.notifyTeacherOfHODAction(selected.teacherId || selected.teacher_id, 'GRADE_REVISION_APPROVED', selected.id, hodComment);
       }
-      
+
       refreshRevisions?.();
-      setSelected(updated || selected);
       setHodComment('');
       toast.success('Grade revision approved');
     } catch (e) {
       console.error('Approval failed:', e);
       toast.error('Approval failed: ' + (e.message || 'Unknown error'));
+    } finally {
+      setIsApproving(false);
     }
   };
 
   const handleReject = async () => {
-    if (!selected) return;
-    
+    if (!selected || isRejecting) return;
+
+    setIsRejecting(true);
     try {
       const oldVal = auditTrail?.captureSnapshot?.({ rejected: false }) || {};
-      const updated = await hodService.rejectGradeRevision(selected.id, hodComment || 'No reason provided');
-      
+      await hodService.rejectGradeRevision(selected.id, hodComment || 'No reason provided');
+
       if (auditTrail?.logChange) {
         await auditTrail.logChange('grade_revision', selected.id, oldVal, { rejected: true }, `HOD rejected revision: ${hodComment}`);
       }
       if (eventBus?.emit) {
         eventBus.emit('grade-revision-rejected', { recordId: selected.id, studentName: selected.student, reason: hodComment });
       }
-      
-       refreshRevisions?.();
-       setSelected(updated || selected);
-       setHodComment('');
-       toast.success('Grade revision rejected');
-      } catch (e) {
-        console.error('Rejection failed:', e);
-        toast.error('Rejection failed: ' + (e.message || 'Unknown error'));
-      }
-    };
- 
-const sendDiscussionMessage = async () => {
+
+      refreshRevisions?.();
+      setHodComment('');
+      toast.info('Grade correction sent');
+    } catch (e) {
+      console.error('Rejection failed:', e);
+      toast.error('Rejection failed: ' + (e.message || 'Unknown error'));
+    } finally {
+      setIsRejecting(false);
+    }
+  };
+
+  const sendDiscussionMessage = async () => {
     if (!discussionInput.trim() || !selected) return;
 
     try {
       setIsDiscussionLoading(true);
 
+      const message = discussionInput.trim();
+
+      await hodService.updateHODComment(selected.id, message);
+
       const newMessage = {
         id: Date.now(),
         role: 'HOD',
         user: 'HOD',
-        message: discussionInput,
-        time: 'Just now'
+        message,
+        time: new Date().toISOString()
       };
 
-      const updatedRevision = {
+      setSelected({
         ...selected,
         history: [...(Array.isArray(selected.history) ? selected.history : []), newMessage]
-      };
-
-      await hodService.updateHODComment(selected.id, discussionInput);
-      await notification.notifyTeacherOfHODAction(selected.teacherId || selected.teacher_id, 'DIRECT_MESSAGE', selected.id, discussionInput);
-
-      setSelected(updatedRevision);
+      });
       setDiscussionInput('');
+
+      await auditTrail?.logChange?.(
+        'grade_revision',
+        selected.id,
+        {},
+        { comment: message },
+        message
+      );
+      if (eventBus?.emit) {
+        eventBus.emit('grade-revision-comment', { recordId: selected.id, message });
+      }
+      if (notification?.notifyTeacherOfHODAction) {
+        await notification.notifyTeacherOfHODAction(
+          selected.teacherId || selected.teacher_id,
+          'HOD_COMMENT_ADDED',
+          selected.id,
+          message
+        );
+      }
+
       refreshRevisions?.();
+      toast.success('Message sent to teacher');
     } catch (err) {
       console.error('Failed to send discussion message:', err);
-      alert('Failed to send message');
+      toast.error('Failed to send message');
     } finally {
       setIsDiscussionLoading(false);
     }
@@ -471,50 +502,69 @@ const sendDiscussionMessage = async () => {
                </div>
                {/* End Grade Discussion Thread */}
  
-               {selected.status !== 'RESOLVED' && (
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">HOD Review Comment</label>
-                  <div className="relative">
-                    <textarea
-                      rows={4}
-                      value={hodComment}
-                      onChange={(e) => setHodComment(e.target.value)}
-                      placeholder="Add your approval or rejection reason..."
-                      className="w-full p-3 bg-slate-50/60 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/5 focus:border-slate-500 placeholder-slate-400 resize-none transition-all leading-relaxed"
-                    />
-                  </div>
-                </div>
-              )}
+                {!isResolved(selected.status) && (
+                 <div className="space-y-2">
+                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">HOD Review Comment</label>
+                   <div className="relative">
+                     <textarea
+                       rows={4}
+                       value={hodComment}
+                       onChange={(e) => setHodComment(e.target.value)}
+                       placeholder="Add your approval or rejection reason..."
+                       className="w-full p-3 bg-slate-50/60 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/5 focus:border-slate-500 placeholder-slate-400 resize-none transition-all leading-relaxed"
+                     />
+                   </div>
+                 </div>
+               )}
 
-            </div>
+             </div>
 
-            <div className="p-4 border-t border-slate-100 bg-slate-50/40 space-y-2 shrink-0">
-              
-              {selected.status !== 'RESOLVED' ? (
-                <>
-                  <button
-                    onClick={handleApprove}
-                    disabled={!hodComment.trim()}
-                    className={cn(
-                      "w-full py-2.5 rounded-xl text-xs font-semibold tracking-wide border transition-all flex items-center justify-center gap-1.5",
-                      hodComment.trim() 
-                        ? "bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700 cursor-pointer shadow-sm" 
-                        : "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60"
-                    )}
-                  >
-                    <ThumbsUp size={13} />
-                    Approve Revision
-                  </button>
+             <div className="p-4 border-t border-slate-100 bg-slate-50/40 space-y-2 shrink-0">
+               
+                {!isResolved(selected.status) ? (
+                 <>
+                   <button
+                     onClick={handleApprove}
+                     disabled={!hodComment.trim() || isApproving}
+                     className={cn(
+                       "w-full py-2.5 rounded-xl text-xs font-semibold tracking-wide border transition-all flex items-center justify-center gap-1.5",
+                       hodComment.trim() && !isApproving
+                         ? "bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700 cursor-pointer shadow-sm"
+                         : "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60"
+                     )}
+                   >
+                     {isApproving ? (
+                       <span className="flex items-center gap-1.5">
+                         <span className="animate-spin h-3 w-3 border-2 border-white/30 border-t-white rounded-full" />
+                         Approving...
+                       </span>
+                     ) : (
+                       <>
+                         <ThumbsUp size={13} />
+                         Approve Revision
+                       </>
+                     )}
+                   </button>
 
-                  <button
-                    onClick={handleReject}
-                    className="w-full py-2.5 bg-white text-slate-700 rounded-xl text-xs font-semibold tracking-wide border border-slate-200 hover:bg-slate-100 cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
-                  >
-                    <ThumbsDown size={13} />
-                    Reject Request
-                  </button>
-                </>
-              ) : (
+                   <button
+                     onClick={handleReject}
+                     disabled={isRejecting}
+                     className="w-full py-2.5 bg-white text-slate-700 rounded-xl text-xs font-semibold tracking-wide border border-slate-200 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
+                   >
+                     {isRejecting ? (
+                       <span className="flex items-center gap-1.5">
+                         <span className="animate-spin h-3 w-3 border-2 border-slate-300 border-t-slate-600 rounded-full" />
+                         Rejecting...
+                       </span>
+                     ) : (
+                       <>
+                         <ThumbsDown size={13} />
+                         Reject Request
+                       </>
+                     )}
+                   </button>
+                 </>
+               ) : (
                 <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-3 py-2 rounded-lg">
                   <ShieldCheck size={14} />
                   Revision Approved & Resolved

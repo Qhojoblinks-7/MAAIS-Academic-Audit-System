@@ -107,7 +107,6 @@ export function useGradingSheetLogic({
 
   // Pre-select when external target arrives
   useEffect(() => {
-    console.log('[useGradingSheetLogic] targetStudentIdProp changed:', targetStudentIdProp, 'students count:', students.length);
     if (targetStudentIdProp) {
       const found = students.find(s => s.id === targetStudentIdProp);
       if (found) {
@@ -125,10 +124,8 @@ export function useGradingSheetLogic({
           remark: '',
           gradeEntryId: null,
         };
-        console.log('[useGradingSheetLogic] creating synthetic student for sidebar:', syntheticStudent);
         setSelectedStudent(syntheticStudent);
       } else {
-        console.log('[useGradingSheetLogic] falling back to first student:', students[0] ? { id: students[0].id, name: students[0].name } : 'NO STUDENTS');
         setSelectedStudent(students[0]);
       }
     }
@@ -162,6 +159,35 @@ export function useGradingSheetLogic({
 
   // Track pending grade corrections with justifications for audit trail sync
   const pendingCorrections = useRef(new Map());
+
+  const manualExamOverrides = useRef(new Set());
+
+  useEffect(() => {
+    if (!classInfo?.id) return;
+    try {
+      const stored = localStorage.getItem(`maais_examOverrides_${classInfo.id}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          manualExamOverrides.current = new Set(parsed);
+        }
+      }
+    } catch {
+      // ignore corrupt storage
+    }
+  }, [classInfo?.id]);
+
+  useEffect(() => {
+    if (!classInfo?.id) return;
+    try {
+      localStorage.setItem(
+        `maais_examOverrides_${classInfo.id}`,
+        JSON.stringify(Array.from(manualExamOverrides.current)),
+      );
+    } catch {
+      // storage full or unavailable
+    }
+  }, [students, classInfo?.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -272,26 +298,30 @@ export function useGradingSheetLogic({
       if (result && Array.isArray(result)) {
         const entryMap = new Map(result.map((e) => [e.studentId, e.id]));
         const corrections = Array.from(pendingCorrections.current.entries());
-if (corrections.length > 0) {
-           await Promise.all(
-             corrections.map(([studentId, data]) => {
-               const gradeEntryId = entryMap.get(studentId);
-               if (!gradeEntryId) return null;
-               return gradingApi
-                 .correctGrade(
-                   {
-                     gradeEntryId,
-                     fieldChanged: data.field,
-                     newValue: data.newValue,
-                     reason: data.justification,
-                   },
-                 )
-                 .catch((err) => {
-                   console.error('[GradingSheet] correction sync failed:', err);
-                 });
-             }),
-           );
-          pendingCorrections.current.clear();
+        if (corrections.length > 0) {
+          const settled = await Promise.all(
+            corrections.map(([studentId, data]) => {
+              const gradeEntryId = entryMap.get(studentId);
+              if (!gradeEntryId) return Promise.resolve(false);
+              return gradingApi
+                .correctGrade(
+                  {
+                    gradeEntryId,
+                    fieldChanged: data.field,
+                    newValue: data.newValue,
+                    reason: data.justification,
+                  },
+                )
+                .then(() => true)
+                .catch((err) => {
+                  console.error('[GradingSheet] correction sync failed:', err);
+                  return false;
+                });
+            }),
+          );
+          if (settled.every(Boolean)) {
+            pendingCorrections.current.clear();
+          }
         }
       }
 
@@ -313,6 +343,10 @@ if (corrections.length > 0) {
       return;
     }
     if (!backendReady || !students?.length) return;
+    if (students.every(s => s.isLocked)) {
+      setAutosaveStatus('locked');
+      return;
+    }
 
     if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
 
@@ -326,7 +360,11 @@ if (corrections.length > 0) {
         setTimeout(() => setAutosaveStatus('idle'), 2000);
       } catch (e) {
         setAutosaveStatus('error');
-        toast.error('Auto-save failed: ' + (e.message || 'Unknown error'));
+        if (e?.status === 403 || /Grade entry is locked/i.test(e?.message || '')) {
+          toast.error('Grade entries are locked. Contact HOD to request an unlock.');
+        } else {
+          toast.error('Auto-save failed: ' + (e?.message || 'Unknown error'));
+        }
       }
     }, 1000);
 
@@ -346,7 +384,11 @@ if (corrections.length > 0) {
         await persistGradesToBackend(students);
         toast.success('Bulk draft submitted');
       } catch (e) {
-        console.error('Bulk draft submission failed:', e);
+        if (e?.status === 403 || /Grade entry is locked/i.test(e?.message || '')) {
+          toast.error('Bulk sync skipped: grade entries are locked. Contact HOD to unlock.');
+        } else {
+          console.error('Bulk draft submission failed:', e);
+        }
       }
     }, 300000);
 
@@ -362,22 +404,27 @@ if (corrections.length > 0) {
   );
   const isSubmissionLocked = missingCount > 0 || isTermFinalized;
 
-  // ── Score calculator ───────────────────────────────────────────────────────
-  const calculateScores = useCallback((studentObj, fieldBeingUpdated) => {
-    const s = { ...studentObj };
-    const cfg = DISPLAY_CLASS_INFO?.subjectConfig || DEFAULT_SUBJECT_CONFIG;
-    const secFields = DISPLAY_CLASS_INFO?.sectionFieldNames || ['secA', 'secB', 'secC'];
+   // ── Score calculator ───────────────────────────────────────────────────────
+   const calculateScores = useCallback((studentObj, fieldBeingUpdated) => {
+     const s = { ...studentObj };
+     const cfg = DISPLAY_CLASS_INFO?.subjectConfig || DEFAULT_SUBJECT_CONFIG;
+     const secFields = DISPLAY_CLASS_INFO?.sectionFieldNames || ['secA', 'secB', 'secC'];
 
-    if (secFields.includes(fieldBeingUpdated) && !isTermFinalized) {
-      const totalRaw = secFields.reduce((sum, f) => sum + (parseFloat(s[f]) || 0), 0);
-      const maxMarks = cfg.maxRaw || 100;
-      s.exam = parseFloat(((totalRaw / maxMarks) * 70).toFixed(1));
-    }
+     if (secFields.includes(fieldBeingUpdated) && !isTermFinalized) {
+       const hasManualExam = manualExamOverrides.current.has(s.id);
+       if (!hasManualExam) {
+         const totalRaw = secFields.reduce((sum, f) => sum + (parseFloat(s[f]) || 0), 0);
+         const maxMarks = cfg.maxRaw || 100;
+         s.exam = Math.min(parseFloat(((totalRaw / maxMarks) * 70).toFixed(1)), 70);
+       }
+     }
 
-    const final = parseFloat(((parseFloat(s.sba) || 0) + (parseFloat(s.exam) || 0)).toFixed(1));
+    const sba = Math.min(parseFloat(s.sba) || 0, 30);
+    const exam = Math.min(parseFloat(s.exam) || 0, 70);
+    const final = Math.round(sba + exam);
 
     let grade = 'F9';
-    if (final >= 75) grade = 'A1';
+    if (final >= 80) grade = 'A1';
     else if (final >= 70) grade = 'B2';
     else if (final >= 65) grade = 'B3';
     else if (final >= 60) grade = 'C4';
@@ -386,6 +433,8 @@ if (corrections.length > 0) {
     else if (final >= 45) grade = 'D7';
     else if (final >= 40) grade = 'E8';
 
+    s.sba = sba;
+    s.exam = exam;
     s.final = final;
     s.grade = grade;
     s.remark = GRADE_SCALE[grade]?.label || '';
@@ -412,10 +461,19 @@ if (corrections.length > 0) {
     }
 
     const numValue = value === '' ? '' : (parseFloat(value) || 0);
+
+    if (field === 'exam') {
+      if (numValue !== '') {
+        manualExamOverrides.current.add(studentId);
+      } else {
+        manualExamOverrides.current.delete(studentId);
+      }
+    }
+
     setStudents(prev =>
       prev.map(s => s.id === studentId ? calculateScores({ ...s, [field]: numValue }, field) : s)
     );
-    if (field === 'secB') setTempMark('');
+    if (secFields.includes(field)) setTempMark('');
   }, [isTermFinalized, students, showJustificationPopup, calculateScores]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
@@ -425,6 +483,14 @@ if (corrections.length > 0) {
     if (!justification.trim()) return;
     const numValue = valueToUpdate === '' ? '' : (parseFloat(valueToUpdate) || 0);
     const backendField = fieldMap[fieldToUpdate] || fieldToUpdate;
+
+    if (fieldToUpdate === 'exam') {
+      if (numValue !== '') {
+        manualExamOverrides.current.add(studentToUpdate);
+      } else {
+        manualExamOverrides.current.delete(studentToUpdate);
+      }
+    }
 
     setStudents(prev =>
       prev.map(s =>
@@ -588,7 +654,7 @@ runCheck();
     }
   }, [selectedStudent, revisionText, teacherId, classInfo, notification, toast]);
 
-  const handleSaveBehavioralRatings = useCallback(() => {
+  const handleSaveBehavioralRatings = useCallback(async () => {
     if (isTermFinalized) return;
     const sid = selectedStudent?.id;
     if (!sid || !backendReady) return;
@@ -604,14 +670,13 @@ runCheck();
       remarks: comment,
     };
 
-    teacherService.createBehavior(sid, behaviorData)
-      .then(() => {
-        toast.success('Behavioral ratings saved');
-      })
-      .catch(err => {
-        console.error('[WAEC STP §7] Failed to save behavioral ratings:', err);
-        toast.error('Failed to save behavioral ratings');
-      });
+    try {
+      await teacherService.createBehavior(sid, behaviorData);
+      toast.success('Behavioral ratings saved');
+    } catch (err) {
+      console.error('[WAEC STP §7] Failed to save behavioral ratings:', err);
+      toast.error('Failed to save behavioral ratings');
+    }
   }, [isTermFinalized, selectedStudent, behavioralRatings, behavioralComment, backendReady, teacherService, toast]);
 
   const handleExportWAEC = useCallback(() => {
@@ -723,6 +788,7 @@ runCheck();
     fieldToUpdate,
     studentToUpdate,
     originalMark,
+    valueToUpdate, setValueToUpdate,
     // Behavioural maps
     behavioralRatings, setBehavioralRatings,
     behavioralComment,

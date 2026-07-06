@@ -19,6 +19,14 @@ export function useStudentCount() {
   });
 }
 
+export function useStudentBoarderStats() {
+  return useQuery({
+    queryKey: ['admin', 'students', 'boarder-stats'],
+    queryFn: adminApi.getStudentBoarderStats,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
 export function useStaffCount() {
   return useQuery({
     queryKey: ['admin', 'staff', 'count'],
@@ -395,6 +403,14 @@ export function useUpdateTicketStatus() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, dto }) => adminApi.updateTicketStatus(id, dto),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'comms', 'tickets'] }),
+  });
+}
+
+export function useCreateTicket() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (dto) => adminApi.createTicket(dto),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'comms', 'tickets'] }),
   });
 }

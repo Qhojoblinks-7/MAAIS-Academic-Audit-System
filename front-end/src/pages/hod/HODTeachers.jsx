@@ -70,8 +70,8 @@ function TeacherProfileDetails({ teacher, onClose, onImpersonate, onResetPasswor
         <div className="space-y-3">
           {[
             { icon: Mail, title: 'Mail Record Address', value: teacher.email || 'No record mapped' },
-            { icon: BookOpen, title: 'Instructional Core Assignment', value: teacher.subject || 'Not Configured' },
-            { icon: Users, title: 'Active Track Streams', value: teacher.classes ? `${teacher.classes.length} Core Rooms Assigned` : '0 Classes Assigned' }
+            { icon: BookOpen, title: 'Instructional Core Assignment', value: teacher.subjects?.[0] || teacher.subject || 'Not Configured' },
+            { icon: Users, title: 'Active Track Streams', value: Array.isArray(teacher.classes) ? `${teacher.classes.length} Core Rooms Assigned` : '0 Classes Assigned' }
           ].map((field, idx) => (
             <div key={idx} className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-3.5 flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-slate-400 border border-slate-200/60 shadow-3xs">
@@ -311,7 +311,7 @@ export function HODTeachers() {
               >
                 <div className="absolute top-4 right-4">
                   <span className="text-[10px] font-mono font-bold px-2 py-0.5 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-md shadow-3xs">
-                    ★ {teacher.rating || '4.8'}
+                     ★ {teacher.rating || '—'}
                   </span>
                 </div>
 
@@ -323,7 +323,7 @@ export function HODTeachers() {
                   <p className="text-[10px] text-slate-400 font-mono mt-0.5">ID: {teacher.id || 'No ID mapped'}</p>
                   
                   <span className="mt-3.5 inline-block px-2.5 py-1 bg-slate-50 border border-slate-100 text-slate-600 font-semibold uppercase tracking-wider text-[9px] rounded-md">
-                    {teacher.subject || 'General Studies'}
+                     {teacher.subjects?.[0] || 'General Studies'}
                   </span>
                 </div>
 

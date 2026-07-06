@@ -219,6 +219,30 @@ export function useUnlockDepartmentMatrix() {
   });
 }
 
+export function useLockTerm() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (termId) => hodApi.lockTerm(termId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['hod', 'department-progress'] });
+      qc.invalidateQueries({ queryKey: ['hod', 'locked-terms'] });
+      qc.invalidateQueries({ queryKey: ['hod', 'lock-validation'] });
+    },
+  });
+}
+
+export function useUnlockTerm() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (termId) => hodApi.unlockTerm(termId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['hod', 'department-progress'] });
+      qc.invalidateQueries({ queryKey: ['hod', 'locked-terms'] });
+      qc.invalidateQueries({ queryKey: ['hod', 'lock-validation'] });
+    },
+  });
+}
+
 export function useExportWAECCSV() {
   return useMutation({
     mutationFn: ({ termId, className }) => hodApi.exportWAECCSV(termId, className),

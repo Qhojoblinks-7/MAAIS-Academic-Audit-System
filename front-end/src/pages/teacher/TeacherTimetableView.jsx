@@ -207,7 +207,7 @@ export function TeacherTimetableView() {
                  setIsResourceModalOpen(true);
                }}
                disabled={timetable.length === 0}
-               className={cn("w-full gap-2 inline-flex items-center justify-center rounded-lg border border-transparent bg-primary text-primary-foreground hover:bg-primary/80 h-8 px-2.5 text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50", "w-full gap-2")}
+               className="w-full gap-2 inline-flex items-center justify-center rounded-lg border border-transparent bg-primary text-primary-foreground hover:bg-primary/80 h-8 px-2.5 text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
              >
                <FilePlus size={14} />
                Attach Lesson Materials

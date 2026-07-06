@@ -94,21 +94,21 @@ export function AdminSettings() {
               </div>
               <div>
                 <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Executive ID</label>
-                <div className="px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-[14px] font-black text-gray-300 tracking-tight">
+                <div className="px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-[14px] font-black text-gray-900 tracking-tight">
                   {user?.profileId || '—'}
                 </div>
               </div>
               <div>
                 <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Primary Focus</label>
                 <div className="px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-[14px] font-black text-gray-900 tracking-tight">
-                  Global Infrastructure & Security Node
+                  {user?.role === 'ADMIN' ? 'System Administrator' : 'Institutional Operations'}
                 </div>
               </div>
               <div>
                 <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Assigned Role</label>
                 <div className="px-5 py-3.5 bg-purple-50 border border-purple-100 rounded-2xl text-[11px] font-black text-purple-700 uppercase tracking-widest flex items-center gap-2">
                   <Shield size={14} />
-                  {user?.role}
+                  {user?.role || '—'}
                 </div>
               </div>
             </div>

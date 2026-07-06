@@ -23,7 +23,7 @@ import { teacherService } from '../../services';
 export function TeacherSidebar() {
   const location = useLocation();
   const { user } = useRole();
-  const { setSettingsModalOpen, setSupportModalOpen, revisionCount, missingObservationCount, setMissingObservationCount } = useUI();
+  const { setSettingsModalOpen, setSupportModalOpen, revisionCount, missingObservationCount, setMissingObservationCount, setRevisionCount } = useUI();
   const [showLogoutModal, setShowLogoutModal] = React.useState(false);
   const [activeSubMenu, setActiveSubMenu] = React.useState(null);
   const [unsavedMarks, setUnsavedMarks] = React.useState(0);
@@ -45,11 +45,12 @@ export function TeacherSidebar() {
 
       setUnsavedMarks(pendingRevisions + missingCount);
       setMissingObservationCount(missingCount);
+      setRevisionCount(pendingRevisions);
     } catch (err) {
       setUnsavedMarks(0);
       setMissingObservationCount(0);
     }
-  }, [setMissingObservationCount]);
+  }, [setMissingObservationCount, setRevisionCount]);
 
   useEffect(() => {
     fetchPendingData();

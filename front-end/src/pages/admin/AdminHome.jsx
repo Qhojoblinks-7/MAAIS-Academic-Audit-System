@@ -12,7 +12,7 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
-import { useTickets, useUnreadNotifications, useAnalyticsPulse as useAdminAnalyticsPulse, useArchiveStats as useAdminArchiveStats, useAllStudents, useStudentCount, useStaffCount, useAllStaff, useApprovals, useResolveApproval, useSystemFreeze, useToggleSystemFreeze, useAllDepartments, useAllSubjects, useAcademicYear, useAcademicYears } from '../../lib/hooks';
+import { useTickets, useUnreadNotifications, useAnalyticsPulse as useAdminAnalyticsPulse, useArchiveStats as useAdminArchiveStats, useAllStudents, useStudentCount, useStudentBoarderStats, useStaffCount, useAllStaff, useApprovals, useResolveApproval, useSystemFreeze, useToggleSystemFreeze, useAllDepartments, useAllSubjects, useAcademicYear, useAcademicYears } from '../../lib/hooks';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
@@ -168,8 +168,10 @@ export function AdminHome() {
   
   const totalStudents = typeof studentCountQuery.data === 'number' ? studentCountQuery.data : 0;
   const staffCount = typeof staffCountQuery.data === 'number' ? staffCountQuery.data : 0;
-  const boarderCount = Math.round(totalStudents * 0.73);
-  const dayCount = totalStudents - boarderCount;
+
+  const boarderStatsQuery = useStudentBoarderStats();
+  const boarderCount = typeof boarderStatsQuery.data?.boarders === 'number' ? boarderStatsQuery.data.boarders : 0;
+  const dayCount = typeof boarderStatsQuery.data?.dayStudents === 'number' ? boarderStatsQuery.data.dayStudents : 0;
 
   const avgScore = analytics?.subjectPerformance?.length
     ? analytics.subjectPerformance.reduce((sum, s) => sum + parseFloat(s.averageScore), 0) / analytics.subjectPerformance.length
@@ -184,7 +186,7 @@ export function AdminHome() {
   }, [analytics?.recentActivity]);
 
   const vitalSigns = [
-    { label: 'Student Census', value: totalStudents, trend: '#10b981', bg: 'bg-success/10', color: 'text-success', sub: `${boarderCount.toLocaleString()} Boarders / ${dayCount.toLocaleString()} Day` },
+    { label: 'Student Census', value: totalStudents, trend: '#10b981', bg: 'bg-success/10', color: 'text-success', sub: `${boarderCount.toLocaleString()} Boarders / ${dayCount.toLocaleString()} Day Students` },
     { label: 'Faculty Engagement', value: staffCount, trend: '#3b82f6', bg: 'bg-brand-primary/5', color: 'text-brand-primary', sub: '8 Teachers currently offline' },
     { label: 'Grading Progress', value: gradingProgress, trend: '#f59e0b', progress: gradingProgressBar, bg: 'bg-warning/10', color: 'text-warning', sub: avgScore ? 'Institutional grade average' : 'Awaiting data...' },
     { label: 'Flagged Activities', value: unreadCount || '0', trend: '#ef4444', progress: unreadCount ? Math.min((unreadCount / 10) * 100, 100) : 0, bg: 'bg-destructive/10', color: 'text-destructive', sub: 'Integrity issues detected' },
@@ -423,10 +425,10 @@ export function AdminHome() {
             <Radio size={100} />
           </div>
           
-          <div className="relative">
-            <h1 className="text-xl font-black text-text-primary tracking-tight italic font-display">
-              Good morning, Admin
-            </h1>
+            <div className="relative">
+              <h1 className="text-xl font-black text-text-primary tracking-tight italic font-display">
+                Good morning, {user?.name || 'Admin'}
+              </h1>
             <div className="flex items-center gap-2 mt-1">
               <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">{formatDate(currentTime)}</p>
               <div className="w-1 h-1 rounded-full bg-border" />
