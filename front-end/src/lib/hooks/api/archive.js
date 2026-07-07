@@ -19,10 +19,10 @@ export function useAcademicYears() {
   });
 }
 
-export function useArchiveStats() {
+export function useArchiveStats({ academicYearId, termId, level } = {}) {
   return useQuery({
-    queryKey: ['archive', 'stats'],
-    queryFn: archiveApi.getArchiveStats,
+    queryKey: ['archive', 'stats', academicYearId, termId, level],
+    queryFn: () => archiveApi.getArchiveStats({ academicYearId, termId, level }),
     staleTime: 1000 * 60 * 10,
   });
 }

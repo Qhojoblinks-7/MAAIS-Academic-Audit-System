@@ -45,8 +45,17 @@ export class APIClient {
     });
 
     if (!res.ok) {
-      const err = new Error(`Request failed: ${res.status} ${method} ${path}`);
+      let errorBody;
+      try {
+        errorBody = await res.clone().json();
+      } catch {
+        errorBody = await res.text();
+      }
+      const freezeReason = errorBody?.freezeReason;
+      const baseMessage = errorBody?.message || errorBody?.error || `Request failed: ${res.status} ${method} ${path}`;
+      const err = new Error(freezeReason ? `${baseMessage} — ${freezeReason}` : baseMessage);
       err.status = res.status;
+      err.response = errorBody;
       throw err;
     }
 

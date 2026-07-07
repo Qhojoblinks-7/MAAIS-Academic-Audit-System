@@ -19,12 +19,15 @@ async function request(method, path, body) {
   if (!res.ok) {
     let errorMessage = `Request failed: ${res.status} ${method} ${path}`;
     try {
+      const errorBody = await res.clone().json();
+      const freezeReason = errorBody?.freezeReason;
+      const baseMessage = errorBody?.message || errorBody?.error || errorMessage;
+      errorMessage = freezeReason ? `${baseMessage} — ${freezeReason}` : baseMessage;
+    } catch {
       const errorText = await res.text();
       if (errorText.includes('<!doctype') || errorText.includes('<html')) {
         errorMessage = `API endpoint not found (${res.status})`;
       }
-    } catch {
-      // Ignore text parsing errors
     }
     const err = new Error(errorMessage);
     err.status = res.status;

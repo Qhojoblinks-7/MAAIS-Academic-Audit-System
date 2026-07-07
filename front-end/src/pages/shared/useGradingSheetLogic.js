@@ -14,6 +14,7 @@ import { notification } from '../../services/notificationService';
 import { toast } from '../../components/ui/toast';
 import { teacherService } from '../../services/teacherService';
 import { gradingApi } from '../../lib/api/grading';
+import { useSystemFreeze } from '../../lib/hooks';
 
 /**
  * useGradingSheetLogic — single custom hook owning all GradingSheet state.
@@ -44,6 +45,13 @@ export function useGradingSheetLogic({
   teacherId: teacherIdProp = null,
 }) {
   const { isTermFinalized: ctxTermFinalized } = useUI();
+  const systemFreezeQuery = useSystemFreeze();
+
+  const triggerFreezeRefetch = useCallback(() => {
+    if (typeof systemFreezeQuery?.refetch === 'function') {
+      systemFreezeQuery.refetch();
+    }
+  }, [systemFreezeQuery]);
 
   // ── Resolved inputs ────────────────────────────────────────────────────────
   const isTermFinalized = isTermFinalizedProp ?? ctxTermFinalized ?? false;
@@ -365,6 +373,7 @@ export function useGradingSheetLogic({
         } else {
           toast.error('Auto-save failed: ' + (e?.message || 'Unknown error'));
         }
+        triggerFreezeRefetch();
       }
     }, 1000);
 
@@ -389,6 +398,7 @@ export function useGradingSheetLogic({
         } else {
           console.error('Bulk draft submission failed:', e);
         }
+        triggerFreezeRefetch();
       }
     }, 300000);
 
@@ -446,13 +456,16 @@ export function useGradingSheetLogic({
     if (isTermFinalized) return;
 
     const originalStudent = students.find(s => s.id === studentId);
-    const isEdit =
-      originalStudent &&
-      originalStudent[field] !== undefined &&
-      originalStudent[field] !== null;
 
-    if (isEdit && !showJustificationPopup) {
-      setOriginalMark(originalStudent[field]);
+    // FR3: justification only required when correcting an ALREADY SUBMITTED/LOCKED grade.
+    // Normal draft editing (even of existing values) must stay free-flowing.
+    const requiresJustification =
+      originalStudent?.isLocked === true ||
+      submissionStatus === 'SUBMITTED' ||
+      originalStudent?.auditStatus === 'COMPLETE';
+
+    if (requiresJustification && !showJustificationPopup) {
+      setOriginalMark(originalStudent?.[field] ?? '');
       setFieldToUpdate(field);
       setStudentToUpdate(studentId);
       setValueToUpdate(value);
@@ -474,7 +487,7 @@ export function useGradingSheetLogic({
       prev.map(s => s.id === studentId ? calculateScores({ ...s, [field]: numValue }, field) : s)
     );
     if (secFields.includes(field)) setTempMark('');
-  }, [isTermFinalized, students, showJustificationPopup, calculateScores]);
+  }, [isTermFinalized, students, showJustificationPopup, submissionStatus, calculateScores]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   const fieldMap = { sba: 'classScore', exam: 'examScore', remark: 'remark' };
@@ -539,6 +552,7 @@ export function useGradingSheetLogic({
       } catch (e) {
         setStpErrors([]);
         toast.error('STP validation failed: ' + (e.message || 'Unknown error'));
+        triggerFreezeRefetch();
       } finally {
         setStpValidating(false);
       }
@@ -563,8 +577,9 @@ runCheck();
         console.error('[GradingSheet] draft persistence failed:', err);
         setSubmissionStatus('ERROR');
         toast.error('Failed to save draft');
+        triggerFreezeRefetch();
       });
-  }, [isTermFinalized, teacherId, classInfo, students, backendReady, idResolutionError, persistGradesToBackend, notification]);
+  }, [isTermFinalized, teacherId, classInfo, students, backendReady, idResolutionError, persistGradesToBackend, notification, toast, triggerFreezeRefetch]);
 
   const handleSubmitToHOD = useCallback(() => {
     if (isTermFinalized || missingCount > 0) return;
@@ -609,8 +624,9 @@ runCheck();
         console.error('[GradingSheet] submission persistence failed:', err);
         setSubmissionStatus('ERROR');
         toast.error('Failed to submit to HOD');
+        triggerFreezeRefetch();
       });
-  }, [isTermFinalized, missingCount, teacherId, classInfo, students, backendReady, persistGradesToBackend, notification, toast]);
+  }, [isTermFinalized, missingCount, teacherId, classInfo, students, backendReady, persistGradesToBackend, notification, toast, triggerFreezeRefetch]);
 
   const handleRequestRevision = useCallback(() => {
     if (isTermFinalized) return;

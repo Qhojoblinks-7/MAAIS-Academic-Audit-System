@@ -10,8 +10,14 @@ export const commsApi = {
 
   markNotificationRead: async (id) => api.patch(`/comms/notifications/${id}/read`),
 
-  getAnalyticsPulse: async (academicYearId) =>
-    api.get(`/comms/analytics/pulse?academicYearId=${academicYearId || ''}`),
+  getAnalyticsPulse: async ({ academicYearId, termId, level } = {}) => {
+    const params = new URLSearchParams();
+    if (academicYearId) params.set('academicYearId', academicYearId);
+    if (termId) params.set('termId', termId);
+    if (level) params.set('level', level);
+    const qs = params.toString();
+    return api.get(`/comms/analytics/pulse${qs ? `?${qs}` : ''}`);
+  },
 };
 
 export default commsApi;

@@ -73,8 +73,6 @@ export function AdminHome() {
 
   const ticketsQuery = useTickets();
   const notificationsQuery = useUnreadNotifications();
-  const analyticsQuery = useAdminAnalyticsPulse();
-  const archiveStatsQuery = useAdminArchiveStats();
   const studentsQuery = useAllStudents();
   const studentCountQuery = useStudentCount();
   const staffQuery = useAllStaff();
@@ -107,8 +105,8 @@ export function AdminHome() {
   const [showConfigModal, setShowConfigModal] = React.useState(false);
   const [configForm, setConfigForm] = React.useState({
     level: 'SHS 3',
-    academicYear: '2025/2026',
-    term: 'Term 1'
+    academicYear: '',
+    term: ''
   });
   const [selectedTicket, setSelectedTicket] = React.useState(null);
   const [showQueueManager, setShowQueueManager] = React.useState(false);
@@ -120,13 +118,48 @@ export function AdminHome() {
   const [removedTicketIds, setRemovedTicketIds] = React.useState(new Set());
   const [bulkActionLoading, setBulkActionLoading] = React.useState(false);
 
-  const isFreezeActive = systemFreezeQuery.data?.systemFrozen ?? false;
-
   const activeYear = activeYearQuery.data;
   const academicYears = academicYearsQuery.data || [];
   const fallbackYear = academicYears[0];
   const resolvedYear = activeYear || fallbackYear;
   const activeTerm = resolvedYear?.terms?.find(t => t.isActive) || resolvedYear?.terms?.[0];
+
+  React.useEffect(() => {
+    if (!configForm.academicYear && resolvedYear?.label) {
+      setConfigForm(prev => ({ ...prev, academicYear: resolvedYear.label }));
+    }
+    if (!configForm.term && activeTerm?.termNumber) {
+      setConfigForm(prev => ({ ...prev, term: formatTermLabel(activeTerm.termNumber) }));
+    }
+  }, [resolvedYear?.label, activeTerm?.termNumber, configForm.academicYear, configForm.term]);
+
+  const selectedAcademicYearId = React.useMemo(() => {
+    if (!configForm.academicYear || !academicYears.length) return resolvedYear?.id || null;
+    const match = academicYears.find(y => y.label === configForm.academicYear);
+    return match?.id || resolvedYear?.id || null;
+  }, [configForm.academicYear, academicYears, resolvedYear]);
+
+  const selectedTermId = React.useMemo(() => {
+    if (!configForm.term || !resolvedYear?.terms?.length) return activeTerm?.id || null;
+    const formatted = configForm.term.replace('T', 'TERM_');
+    const match = resolvedYear.terms.find(t => `T${t.termNumber.replace('TERM_', '')}` === configForm.term);
+    return match?.id || activeTerm?.id || null;
+  }, [configForm.term, resolvedYear, activeTerm]);
+
+  const selectedLevel = configForm.level;
+
+  const analyticsQuery = useAdminAnalyticsPulse({
+    academicYearId: selectedAcademicYearId,
+    termId: selectedTermId,
+    level: selectedLevel,
+  });
+  const archiveStatsQuery = useAdminArchiveStats({
+    academicYearId: selectedAcademicYearId,
+    termId: selectedTermId,
+    level: selectedLevel,
+  });
+
+  const isFreezeActive = systemFreezeQuery.data?.systemFrozen ?? false;
 
   const formatYearLabel = (label) => {
     if (!label) return '';
@@ -165,9 +198,11 @@ export function AdminHome() {
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
   const [activities, setActivities] = React.useState([]);
-  
-  const totalStudents = typeof studentCountQuery.data === 'number' ? studentCountQuery.data : 0;
-  const staffCount = typeof staffCountQuery.data === 'number' ? staffCountQuery.data : 0;
+  const [liveStudentCount, setLiveStudentCount] = React.useState(0);
+  const [liveStaffCount, setLiveStaffCount] = React.useState(0);
+
+  const totalStudents = liveStudentCount;
+  const staffCount = liveStaffCount;
 
   const boarderStatsQuery = useStudentBoarderStats();
   const boarderCount = typeof boarderStatsQuery.data?.boarders === 'number' ? boarderStatsQuery.data.boarders : 0;
@@ -180,16 +215,72 @@ export function AdminHome() {
   const gradingProgressBar = avgScore ? Math.round(avgScore) : 0;
 
   React.useEffect(() => {
+    console.log('[AdminHome KPI Values]', {
+      totalStudents,
+      staffCount,
+      boarderCount,
+      dayCount,
+      unreadCount,
+      avgScore,
+      gradingProgress,
+    });
+  }, [totalStudents, staffCount, boarderCount, dayCount, unreadCount, avgScore, gradingProgress]);
+
+  React.useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    const base = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+    const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+    let cancelled = false;
+    (async () => {
+      try {
+        const [studentsRes, staffRes, boardersRes] = await Promise.all([
+          fetch(`${base}/users/students/count`, { headers }),
+          fetch(`${base}/users/staff/count`, { headers }),
+          fetch(`${base}/users/students/boarder-stats`, { headers }),
+        ]);
+
+        const studentsText = await studentsRes.text();
+        const staffText = await staffRes.text();
+        const boardersText = await boardersRes.text();
+
+        if (!cancelled) {
+          if (studentsRes.ok) {
+            const parsed = parseInt(studentsText, 10);
+            if (!isNaN(parsed)) setLiveStudentCount(parsed);
+          }
+          if (staffRes.ok) {
+            const parsed = parseInt(staffText, 10);
+            if (!isNaN(parsed)) setLiveStaffCount(parsed);
+          }
+        }
+      } catch (e) {
+        console.error('[AdminHome KPI fetch error]', e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedAcademicYearId, selectedTermId, selectedLevel]);
+
+  React.useEffect(() => {
+    console.log('[AdminHome] config changed ->', {
+      selectedAcademicYearId,
+      selectedTermId,
+      selectedLevel,
+      analyticsQuery: analyticsQuery.data,
+      archiveStatsQuery: archiveStatsQuery.data,
+    });
+  }, [selectedAcademicYearId, selectedTermId, selectedLevel]);
+
+  React.useEffect(() => {
     if (analytics?.recentActivity) {
       setActivities(analytics.recentActivity);
     }
   }, [analytics?.recentActivity]);
 
   const vitalSigns = [
-    { label: 'Student Census', value: totalStudents, trend: '#10b981', bg: 'bg-success/10', color: 'text-success', sub: `${boarderCount.toLocaleString()} Boarders / ${dayCount.toLocaleString()} Day Students` },
-    { label: 'Faculty Engagement', value: staffCount, trend: '#3b82f6', bg: 'bg-brand-primary/5', color: 'text-brand-primary', sub: '8 Teachers currently offline' },
-    { label: 'Grading Progress', value: gradingProgress, trend: '#f59e0b', progress: gradingProgressBar, bg: 'bg-warning/10', color: 'text-warning', sub: avgScore ? 'Institutional grade average' : 'Awaiting data...' },
-    { label: 'Flagged Activities', value: unreadCount || '0', trend: '#ef4444', progress: unreadCount ? Math.min((unreadCount / 10) * 100, 100) : 0, bg: 'bg-destructive/10', color: 'text-destructive', sub: 'Integrity issues detected' },
+    { label: 'Student Census', value: totalStudents, trend: '#10b981', bg: 'bg-success/10', color: 'text-success', subtext: `${boarderCount.toLocaleString()} Boarders / ${dayCount.toLocaleString()} Day Students` },
+    { label: 'Faculty Engagement', value: staffCount, trend: '#3b82f6', bg: 'bg-brand-primary/5', color: 'text-brand-primary', subtext: '8 Teachers currently offline' },
+    { label: 'Grading Progress', value: gradingProgress, trend: '#f59e0b', progress: gradingProgressBar, bg: 'bg-warning/10', color: 'text-warning', subtext: avgScore ? 'Institutional grade average' : 'Awaiting data...' },
+    { label: 'Flagged Activities', value: unreadCount || '0', trend: '#ef4444', progress: unreadCount ? Math.min((unreadCount / 10) * 100, 100) : 0, bg: 'bg-destructive/10', color: 'text-destructivent', subtext: 'Integrity issues detected' },
   ];
 
   const chartDatasets = React.useMemo(() => {
@@ -508,7 +599,7 @@ export function AdminHome() {
                             )}
                            </div>
                          </div>
-                         <p className="text-5xl font-bold text-text-primary tracking-tighter leading-none ml-auto">{displayValue}</p>
+                          <p className={cn("tracking-tighter leading-none ml-auto", card.label === 'Flagged Activities' && isFreezeActive ? "text-xl font-black uppercase" : "text-5xl font-bold")}>{displayValue}</p>
                        </div>
                     </motion.div>
                   );
@@ -1030,11 +1121,10 @@ export function AdminHome() {
                      onChange={(e) => setConfigForm({ ...configForm, level: e.target.value })}
                      className="w-full px-3 py-2.5 bg-surface border border-border rounded-xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-brand-primary/10"
                    >
-                     <option>SHS 1</option>
-                     <option>SHS 2</option>
-                     <option>SHS 3</option>
-                     <option>SHS 4</option>
-                   </select>
+                      <option>SHS 1</option>
+                      <option>SHS 2</option>
+                      <option>SHS 3</option>
+                    </select>
                  </div>
 
                   <div>
@@ -1072,9 +1162,9 @@ export function AdminHome() {
                           ))
                         : (
                           <>
-                            <option>Term 1</option>
-                            <option>Term 2</option>
-                            <option>Term 3</option>
+                            <option value="T1">T1</option>
+                            <option value="T2">T2</option>
+                            <option value="T3">T3</option>
                           </>
                         )
                       }

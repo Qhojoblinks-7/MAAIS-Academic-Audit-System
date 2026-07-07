@@ -11,10 +11,10 @@ export function useStudentNotifications(studentId, unreadOnly) {
   });
 }
 
-export function useAnalyticsPulse(academicYearId) {
+export function useAnalyticsPulse({ academicYearId, termId, level } = {}) {
   return useQuery({
-    queryKey: ['comms', 'analytics', 'pulse', academicYearId],
-    queryFn: () => commsApi.getAnalyticsPulse(academicYearId),
+    queryKey: ['comms', 'analytics', 'pulse', academicYearId, termId, level],
+    queryFn: () => commsApi.getAnalyticsPulse({ academicYearId, termId, level }),
     staleTime: 1000 * 60 * 5,
   });
 }

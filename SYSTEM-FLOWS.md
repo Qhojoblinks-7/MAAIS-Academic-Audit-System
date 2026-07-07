@@ -225,11 +225,136 @@ GradingSheet
       └─ Normal editing + auto-save enabled
 ```
 
----
+## 3. Term Expiry Auto-Freeze
 
-## 3. Interaction: System Freeze + HOD Locks
+### 3.1 Overview
+When a term's `endDate` passes, the system automatically activates the global freeze without any manual admin intervention. This is a safety mechanism to prevent grade modifications after a term concludes.
 
-### 3.1 Layering Model
+### 3.2 Trigger Mechanism
+
+**File:** `maais-backend/src/common/guards/system-freeze.guard.ts:63-80`
+
+```
+SystemFreezeGuard.canActivate()
+  └─ On EVERY grading write request
+      ├─ Load adminSettings
+      ├─ Check: has admin override in last 24h?
+      │   └─ YES → skip auto-freeze check
+      ├─ Check: !settings.systemFrozen && !hasAdminOverride
+      │   └─ YES → proceed with auto-freeze check
+      ├─ Load active term (isActive: true)
+      │   └─ If term.endDate < new Date()
+      │       ├─ Set adminSettings.systemFrozen = true
+      │       ├─ Set adminSettings.systemFreezeReason = "Term ended — grade entry automatically frozen"
+      │       └─ Clear lastManualUnfreeze (implicitly, because update doesn't set it)
+      └─ Continue with normal freeze evaluation
+```
+
+**Key characteristics:**
+- **Lazy evaluation** — No Cron job. Checks happen on-demand when teachers/HODs attempt to write grades.
+- **One-time activation** — Once `systemFrozen` is set to `true`, subsequent requests see it as already frozen and don't re-trigger.
+- **Admin override applies** — If an admin manually unfreezes within 24 hours of term expiry, the auto-freeze is suppressed for that window.
+- **Does NOT set `term.isLocked`** — Only sets `adminSettings.systemFrozen`. The `term.isLocked` flag remains independent.
+- **Does NOT cascade to grade entries** — Grade entries are not individually locked. Only the global system freeze blocks writes.
+
+### 3.3 Frontend Experience
+
+```
+Teacher opens grading sheet after term expiry
+  └─ 30s poll detects systemFrozen = true
+      └─ App.jsx shows freeze modal (non-admin)
+          ├─ Icon: Lock (rose-600)
+          ├─ Title: "Emergency System Freeze Active"
+          ├─ Message: "Immediate administrative intervention activated..."
+          ├─ Reason badge: "Term ended — grade entry automatically frozen"
+          └─ "Understood" button → sessionStorage freezeAck (24h)
+```
+
+**For admins:** Top banner shows instead of modal (dismissible).
+
+### 3.4 Recovery / Lift Flow
+
+```
+Admin lifts freeze
+  └─ POST /api/v1/admin/settings/freeze { enabled: false }
+      ├─ Sets systemFrozen = false
+      ├─ Clears systemFreezeReason
+      ├─ Sets lastManualUnfreeze = now
+      └─ Returns success
+
+Admin override window (24 hours)
+  ├─ SystemFreezeGuard skips auto-freeze check
+  ├─ Term expiry does NOT re-trigger systemFrozen
+  ├─ Department freeze still applies independently
+  └─ Teachers can resume grade entry
+
+After 24 hours
+  └─ Auto-freeze checks resume
+      └─ If active term.endDate still in the past
+          → systemFrozen = true (re-freezes)
+```
+
+### 3.5 Interaction with HOD Locks
+
+| Term Expired (auto-freeze) | Term Manually Locked (HOD) | Both | Effect |
+|----------------------------|---------------------------|------|--------|
+| No | No | No | Writes allowed |
+| Yes | No | No | 403 SYSTEM_FROZEN ("Term ended...") |
+| No | Yes | No | 403 "Term is locked" (from GradingService) |
+| Yes | Yes | No | 403 SYSTEM_FROZEN (freeze guard fires first) |
+
+**Important distinction:**
+- **Auto-freeze** (`systemFrozen`) is global — blocks ALL grading writes across all departments
+- **HOD term lock** (`term.isLocked`) is also global for that term, but enforced at the GradingService layer
+- If both are active, the SystemFreezeGuard's 403 is returned first (it runs as a global NestJS guard before the controller)
+
+### 3.6 Data Flow Diagram
+
+```
+Term Creation (Academic Architect)
+  └─ term.endDate = "2026-07-06"
+      term.isActive = true
+
+Time passes...
+  └─ endDate < now (detected on first grading write after expiry)
+
+SystemFreezeGuard
+  ├─ Reads adminSettings.systemFrozen = false
+  ├─ Reads term.endDate < now → TRUE
+  ├─ Updates adminSettings:
+  │   ├─ systemFrozen = true
+  │   └─ systemFreezeReason = "Term ended — grade entry automatically frozen"
+  └─ Throws ForbiddenException { code: 'SYSTEM_FROZEN' }
+
+Frontend (next poll)
+  └─ useSystemFreeze() returns systemFrozen: true
+      └─ Non-admin users see freeze modal
+          └─ Stored in sessionStorage freezeAck (24h)
+
+Grading Service
+  └─ Never reached (guard blocks first)
+
+Admin Intervention
+  └─ Manual unfreeze → 24h override window
+      └─ Guard skips endDate check
+          └─ Grading writes allowed again
+              └─ (But department freeze still enforced if active)
+```
+
+### 3.7 Manual Testing Checklist
+
+| Test | Steps | Expected Result |
+|------|-------|----------------|
+| Term expiry triggers freeze | Set term endDate to past. Click Save in GradingSheet. | 403 error. Admin sees `systemFrozen = true` in DB. `systemFreezeReason` = "Term ended — grade entry automatically frozen" |
+| Freeze modal appears | After expiry, reload app as teacher. | Freeze modal with "Term ended — grade entry automatically frozen" badge |
+| Admin override works | Admin unfreezes manually within 24h of expiry. | Teachers can save grades again |
+| Override expires | Wait 24h after admin unfreeze, try to save. | 403 auto-freeze re-triggers (if term still expired) |
+| Department freeze stacks | Term expired + department frozen. | 403 with department freeze reason (department checked after auto-freeze) |
+
+
+## 4. Interaction: System Freeze + HOD Locks
+
+### 4.1 Layering Model
 
 ```
 System Freeze (Global)     ← Highest priority
@@ -239,7 +364,7 @@ Term Lock (HOD)            ← Mid priority
 Grade Entry Lock (HOD)     ← Lowest priority
 ```
 
-### 3.2 Decision Matrix
+### 4.2 Decision Matrix
 
 | System Frozen | Term Locked | Grade Entry Locked | Write Allowed? | Blocking Message |
 |---------------|-------------|-------------------|----------------|------------------|
@@ -250,7 +375,7 @@ Grade Entry Lock (HOD)     ← Lowest priority
 | **true** | **any** | **any** | ❌ No | "Grade entry is suspended." (with freezeReason) |
 | **true** + admin override (24h) | **any** | **any** | ✅ Yes | Override bypasses freeze guard |
 
-### 3.3 Auto-Freeze Suppression
+### 4.3 Admin Override & Auto-Freeze Suppression
 
 ```
 Admin manually unfreezes
@@ -264,7 +389,7 @@ Admin manually unfreezes
               └─ If active term is expired → systemFrozen = true
 ```
 
-### 3.4 End-to-End Write Block Flow
+### 4.4 End-to-End Write Block Flow
 
 ```
 Teacher clicks "Save" in GradingSheet
@@ -290,7 +415,7 @@ Teacher clicks "Save" in GradingSheet
           └─ Proceed with upsert + audit log
 ```
 
-### 3.5 Sequence Diagram: HOD Locks Term → Teacher Tries to Edit
+### 4.5 Sequence Diagram: HOD Locks Term → Teacher Tries to Edit
 
 ```
 Teacher          Frontend          Backend Guard        GradingService        Database
@@ -305,7 +430,7 @@ Teacher          Frontend          Backend Guard        GradingService        Da
   |-- Toast error -->|                  |                     |                   |
 ```
 
-### 3.6 Sequence Diagram: System Freeze → All Writes Blocked
+### 4.6 Sequence Diagram: System Freeze → All Writes Blocked
 
 ```
 Admin             Frontend           Backend Guard        Any Write Service    Database
@@ -328,7 +453,7 @@ Teacher            Frontend           Backend Guard        GradingService       
   |<-- Toast error --|                  |                     |                   |
 ```
 
-### 3.7 Frontend Polling & State Sync
+### 4.7 Frontend Polling & State Sync
 
 | Component | Poll Interval | Data Source | Effect on Freeze/Lock State |
 |-----------|--------------|-------------|----------------------------|
@@ -341,7 +466,7 @@ Teacher            Frontend           Backend Guard        GradingService       
 
 ---
 
-## 4. Key Files
+## 5. Key Files
 
 ### Backend
 | File | Responsibility |

@@ -31,6 +31,8 @@ import {
   useUnlockDepartmentMatrix,
   useExportWAECCSV,
   useLockedTerms,
+  useLockTerm,
+  useUnlockTerm,
 } from '@/lib/hooks/api/hod';
 
 function ClassProgressCard({ cls, onLock, onUnlock, onExport, locking, exporting, isActive, onSelect }) {
@@ -77,10 +79,10 @@ function ClassProgressCard({ cls, onLock, onUnlock, onExport, locking, exporting
             ) : (
               <button
                 onClick={() => typeof onUnlock === 'function' && onUnlock(cls?.id)}
-                disabled={unlocking === cls?.id}
+                disabled={locking === cls?.id}
                 className="px-2.5 py-1.5 bg-gray-100 text-gray-600 text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-gray-200 flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-40"
               >
-                {unlocking === cls?.id ? <LoadingSpinner size="sm" /> : <Unlock size={11} />}
+                {locking === cls?.id ? <LoadingSpinner size="sm" /> : <Unlock size={11} />}
                 Unlock
               </button>
             )}

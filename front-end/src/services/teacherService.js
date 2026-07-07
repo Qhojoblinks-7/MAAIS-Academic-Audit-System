@@ -193,7 +193,9 @@ async function request(method, path, body) {
     } catch {
       errorBody = await res.text();
     }
-    const err = new Error(`Request failed: ${res.status} ${method} ${path}`);
+    const freezeReason = errorBody?.freezeReason;
+    const baseMessage = errorBody?.message || errorBody?.error || `Request failed: ${res.status} ${method} ${path}`;
+    const err = new Error(freezeReason ? `${baseMessage} — ${freezeReason}` : baseMessage);
     err.status = res.status;
     err.response = errorBody;
     console.error(`[TeacherService] ${method} ${path} failed:`, JSON.stringify(errorBody, null, 2));

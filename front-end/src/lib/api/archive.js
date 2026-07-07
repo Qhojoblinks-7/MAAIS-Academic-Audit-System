@@ -13,7 +13,14 @@ export const archiveApi = {
 
   getAcademicYears: async () => api.get('/academic/years'),
 
-  getArchiveStats: async () => api.get('/archive/stats'),
+  getArchiveStats: async ({ academicYearId, termId, level } = {}) => {
+    const params = new URLSearchParams();
+    if (academicYearId) params.set('academicYearId', academicYearId);
+    if (termId) params.set('termId', termId);
+    if (level) params.set('level', level);
+    const qs = params.toString();
+    return api.get(`/archive/stats${qs ? `?${qs}` : ''}`);
+  },
 
   searchVault: async (query = {}) => {
     const params = new URLSearchParams();

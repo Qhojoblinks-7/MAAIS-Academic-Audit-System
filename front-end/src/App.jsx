@@ -107,7 +107,7 @@ import { X, Lock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { ConnectivityBanner } from "./pages/shared/ConnectivityBanner";
-import { useSystemFreeze } from "./lib/hooks";
+import { useSystemFreeze, useActiveYear } from "./lib/hooks";
 import { Button } from "./components/ui/button";
 import { cn } from "./lib/utils";
 
@@ -137,6 +137,17 @@ function GradingRouteLoader() {
   const [gradingData, setGradingData] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
+
+  const activeYearQuery = useActiveYear();
+  const activeTerm = activeYearQuery.data?.terms?.find(t => t.isActive);
+  const isTermFinalized = activeTerm?.isLocked ?? false;
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      activeYearQuery.refetch();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [activeYearQuery]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -263,7 +274,7 @@ function GradingRouteLoader() {
       students={students}
       subjectConfig={subjectConfig}
       stpRules={STP_RULES}
-      isTermFinalized={false}
+      isTermFinalized={isTermFinalized}
       missingObsId={getMissingObsId}
       targetStudentId={targetStudentId}
       targetStudentName={getTargetStudentName}
@@ -339,6 +350,16 @@ function AppContent() {
   } = useUI();
   const systemFreezeQuery = useSystemFreeze();
   const isSystemFrozen = systemFreezeQuery.data?.systemFrozen ?? false;
+  const prevSystemFrozen = React.useRef(isSystemFrozen);
+
+  React.useEffect(() => {
+    if (isSystemFrozen && !prevSystemFrozen.current) {
+      sessionStorage.removeItem('freezeAck');
+      setFreezeAck(null);
+    }
+    prevSystemFrozen.current = isSystemFrozen;
+  }, [isSystemFrozen]);
+
   const [freezeAck, setFreezeAck] = React.useState(() => {
     const saved = sessionStorage.getItem('freezeAck');
     return saved && saved !== '' ? new Date(saved) : null;
@@ -407,7 +428,7 @@ function AppContent() {
     <div className="flex h-screen bg-background font-sans selection:bg-success/20 selection:text-success">
       {isSystemFrozen && user?.role !== "STUDENT" && (!freezeAck || isAckExpired) && (
         <>
-                  {user?.role === "ADMIN" ? (
+          {user?.role === "ADMIN" ? (
             <div className="fixed top-0 left-0 right-0 z-[300] bg-rose-600 text-white px-4 py-2.5 flex items-center justify-center gap-3 shadow-lg">
               <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
               <span className="text-[10px] font-black uppercase tracking-widest">Emergency System Freeze Active</span>
@@ -416,6 +437,17 @@ function AppContent() {
                   {systemFreezeQuery.data.systemFreezeReason}
                 </span>
               )}
+              <button
+                onClick={() => {
+                  const now = new Date();
+                  sessionStorage.setItem('freezeAck', now.toISOString());
+                  setFreezeAck(now);
+                }}
+                className="ml-2 p-1 hover:bg-white/20 rounded-md transition-colors"
+                aria-label="Dismiss freeze banner"
+              >
+                <X size={14} />
+              </button>
             </div>
           ) : (
             <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
