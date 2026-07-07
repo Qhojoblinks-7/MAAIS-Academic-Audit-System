@@ -801,7 +801,7 @@ export function usePromoteLevel() {
 export function useArchiveYear() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (yearId) => adminApi.archiveYear(yearId),
+    mutationFn: ({ yearId, level }) => adminApi.archiveYear(yearId, level),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin', 'archive'] });
       qc.invalidateQueries({ queryKey: ['admin', 'students'] });

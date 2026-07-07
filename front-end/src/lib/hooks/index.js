@@ -92,6 +92,7 @@ export {
   useCreateDepartment,
   useCreateSubject,
   useCreateClass,
+  useUpdateClass,
   useAssignHOD,
   useDeleteDepartment,
   useTransferTeacher,

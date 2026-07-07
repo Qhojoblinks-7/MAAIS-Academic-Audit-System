@@ -30,6 +30,9 @@ export function AcademicArchitect() {
   const allStudents = studentsQuery.data || [];
   const classesWithStudents = classesWithStudentsQuery.data || [];
 
+  const activeYearId = (years.find(y => y.isActive) || years[0])?.id;
+  const groupYearId = activeYearId || null;
+
 
   const studentAvatarsByClass = useMemo(() => {
     const map = {};
@@ -82,7 +85,7 @@ export function AcademicArchitect() {
         programsMap[progName].push(c);
       });
       return {
-        id: `SHS-${idx}`,
+        id: groupYearId || `SHS-${idx}`,
         name: levelName,
         programs: Object.entries(programsMap).map(([name, cls]) => ({
           id: cls[0].id,
@@ -118,7 +121,7 @@ export function AcademicArchitect() {
         programsMap[progName].push(c);
       });
       return {
-        id: `SHS-${idx}`,
+        id: groupYearId || `SHS-${idx}`,
         name: levelName,
         programs: Object.entries(programsMap).map(([name, cls]) => ({
           id: cls[0].id,
@@ -135,8 +138,6 @@ export function AcademicArchitect() {
       };
     });
   })();
-
-  const activeYearId = (years.find(y => y.isActive) || years[0])?.id;
 
   const displaySubjects = subjects.length > 0 ? subjects.map((s, idx) => ({
     id: s.id || `S${idx}`,

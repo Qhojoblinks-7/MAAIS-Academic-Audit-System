@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../../lib/utils';
-import { School, Layers, Users, AlertTriangle, ChevronRight, ChevronDown, MoreVertical, Plus, X, TrendingUp, Settings2, Archive, UserPlus, Ruler, Home, Trash2, Loader2 } from 'lucide-react';
+import { School, Layers, Users, AlertTriangle, ChevronRight, ChevronDown, MoreVertical, Plus, X, TrendingUp, Settings2, Archive, UserPlus, Ruler, Home, Trash2, Loader2, Check } from 'lucide-react';
 import { toast } from '../../../components/ui/toast.tsx';
-import { usePromoteLevel, useArchiveYear, useTransferStudents, useUpdateClassCapacity, useRebalanceHouses, useDissolveClass, useUpdateClass } from '../../../lib/hooks';
+import { usePromoteLevel, useArchiveYear, useTransferStudents, useUpdateClassCapacity, useRebalanceHouses, useDissolveClass, useUpdateClass, useAllStudents } from '../../../lib/hooks';
 import { ConfirmationDialog } from '../../../components/molecules/ConfirmationDialog';
 
 const HOUSES = ['Guggisberg', 'Aggrey', 'Nkrumah'];
@@ -30,6 +30,13 @@ export function BlueprintTreeView({
 
   const [restructureYearId, setRestructureYearId] = useState(null);
   const [restructureData, setRestructureData] = useState(null);
+
+  const [transferClassroom, setTransferClassroom] = useState(null);
+  const [transferTargetId, setTransferTargetId] = useState('');
+  const [selectedStudentIds, setSelectedStudentIds] = useState(() => new Set());
+
+  const [capacityClassroom, setCapacityClassroom] = useState(null);
+  const [capacityValue, setCapacityValue] = useState('');
 
   const [confirmDialog, setConfirmDialog] = useState({ open: false, title: '', message: '', action: null, variant: 'danger' });
 
@@ -58,6 +65,9 @@ export function BlueprintTreeView({
     const map = { '1': 'FORM_1', '2': 'FORM_2', '3': 'FORM_3' };
     return map[num] || null;
   };
+
+  const isSyntheticYearId = (id) =>
+    !id || id.startsWith('SHS-') || /^Y\d+$/.test(id);
 
   const openRestructureModal = (year) => {
     const programs = (year.programs || []).map((p, i) => ({
@@ -157,12 +167,111 @@ export function BlueprintTreeView({
     }
   };
 
+  const allStudents = useAllStudents().data || [];
+
+  const openTransferModal = (classroom) => {
+    setTransferClassroom(classroom);
+    setTransferTargetId('');
+    setSelectedStudentIds(new Set());
+  };
+
+  const closeTransferModal = () => {
+    setTransferClassroom(null);
+    setTransferTargetId('');
+    setSelectedStudentIds(new Set());
+  };
+
+  const openCapacityModal = (classroom) => {
+    setCapacityClassroom(classroom);
+    setCapacityValue(String(classroom.capacity || 45));
+  };
+
+  const closeCapacityModal = () => {
+    setCapacityClassroom(null);
+    setCapacityValue('');
+  };
+
+  const handleApplyCapacity = async () => {
+    if (!capacityClassroom) return;
+    const parsed = parseInt(capacityValue, 10);
+    if (isNaN(parsed) || parsed < 1) {
+      toast.error('Capacity must be a positive number');
+      return;
+    }
+    try {
+      await updateClassCapacityMutation.mutateAsync({ classId: capacityClassroom.id, capacity: parsed });
+      qc.invalidateQueries({ queryKey: ['admin', 'academic'] });
+      toast.success(`Capacity updated to ${parsed}`);
+      closeCapacityModal();
+    } catch (err) {
+      toast.error(`Update failed: ${err.message || 'Unknown error'}`);
+    }
+  };
+
+  const toggleTransferStudent = (id) => {
+    setSelectedStudentIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const sourceStudents = React.useMemo(() => {
+    if (!transferClassroom) return [];
+    return allStudents.filter((s) => s.currentClass?.id === transferClassroom.id);
+  }, [allStudents, transferClassroom]);
+
+  const transferTargets = React.useMemo(() => {
+    if (!transferClassroom) return [];
+    const list = [];
+    (displayYears || []).forEach((y) =>
+      (y.programs || []).forEach((p) =>
+        (p.classrooms || []).forEach((c) => {
+          if (c.id !== transferClassroom.id) list.push({ id: c.id, name: c.name });
+        })
+      )
+    );
+    return list;
+  }, [displayYears, transferClassroom]);
+
+  const handleApplyTransfer = async () => {
+    if (!transferClassroom) return;
+    if (!transferTargetId) {
+      toast.error('Select a destination classroom');
+      return;
+    }
+    if (selectedStudentIds.size === 0) {
+      toast.error('Select at least one student');
+      return;
+    }
+    try {
+      await transferStudentsMutation.mutateAsync({
+        sourceClassId: transferClassroom.id,
+        targetClassId: transferTargetId,
+        studentIds: Array.from(selectedStudentIds),
+      });
+      qc.invalidateQueries({ queryKey: ['admin', 'academic'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'classes', 'with-students'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'students'] });
+      const targetName = transferTargets.find((t) => t.id === transferTargetId)?.name || 'destination';
+      toast.success(`Transferred ${selectedStudentIds.size} student(s) to ${targetName}`);
+      closeTransferModal();
+    } catch (err) {
+      toast.error(`Transfer failed: ${err?.message || 'Unknown error'}`);
+    }
+  };
+
   const handleYearKebabAction = async (year, action) => {
     setOpenKebabYearId(null);
     const yearId = year.id;
     const yearName = year.name;
     switch (action) {
       case 'promotion': {
+        if (isSyntheticYearId(yearId)) {
+          toast.error('Create or select a real academic year before promotion');
+          return;
+        }
         const classLevel = inferClassLevel(yearName);
         if (!classLevel) {
           toast.error('Cannot determine level for promotion');
@@ -184,6 +293,15 @@ export function BlueprintTreeView({
         break;
       }
       case 'archive': {
+        if (isSyntheticYearId(yearId)) {
+          toast.error('Create or select a real academic year before archiving');
+          return;
+        }
+        const archiveLevel = inferClassLevel(yearName);
+        if (!archiveLevel) {
+          toast.error('Cannot determine level for archiving');
+          return;
+        }
         setConfirmDialog({
           open: true,
           title: 'Archive Year Group',
@@ -191,7 +309,10 @@ export function BlueprintTreeView({
           variant: 'warning',
           action: async () => {
             try {
-              await archiveYearMutation.mutateAsync(yearId);
+              await archiveYearMutation.mutateAsync({
+                yearId,
+                level: archiveLevel,
+              });
               toast.success('Year group archived successfully');
             } catch (err) {
               toast.error(`Archive failed: ${err.message || 'Unknown error'}`);
@@ -210,23 +331,11 @@ export function BlueprintTreeView({
     setOpenKebabClassroomId(null);
     switch (action) {
       case 'transfers': {
-        toast.info('Student transfer portal coming soon');
+        openTransferModal(classroom);
         break;
       }
       case 'capacity': {
-        const newCapacity = prompt(`Update capacity for ${classroom.name} (current: ${classroom.capacity}):`, String(classroom.capacity));
-        if (newCapacity === null) return;
-        const parsed = parseInt(newCapacity, 10);
-        if (isNaN(parsed) || parsed < 1) {
-          toast.error('Capacity must be a positive number');
-          return;
-        }
-        try {
-          await updateClassCapacityMutation.mutateAsync({ classId: classroomId, capacity: parsed });
-          toast.success(`Capacity updated to ${parsed}`);
-        } catch (err) {
-          toast.error(`Update failed: ${err.message || 'Unknown error'}`);
-        }
+        openCapacityModal(classroom);
         break;
       }
       case 'rebalance': {
@@ -807,7 +916,187 @@ export function BlueprintTreeView({
           </div>
         )}
       </AnimatePresence>
-      
+
+      <AnimatePresence>
+        {transferClassroom && (
+          <div className="fixed inset-0 z-[600] flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeTransferModal}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[85vh] flex flex-col"
+            >
+              <div className="p-8 border-b border-slate-100">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+                      <UserPlus size={20} />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black italic font-display text-slate-900">Student Transfers</h3>
+                      <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">{transferClassroom.name} • Move learners to another unit</p>
+                    </div>
+                  </div>
+                  <button onClick={closeTransferModal} className="p-2 text-slate-300 hover:text-slate-900 transition-all">
+                    <X size={24} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-8 overflow-y-auto space-y-5 flex-1">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-600 mb-2 uppercase tracking-wider">Destination Classroom Unit</label>
+                  <select
+                    value={transferTargetId}
+                    onChange={(e) => setTransferTargetId(e.target.value)}
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-slate-900 outline-none transition-all bg-white"
+                  >
+                    <option value="">Select destination…</option>
+                    {transferTargets.map((t) => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider">Select Students</label>
+                    {sourceStudents.length > 0 && (
+                      <button
+                        onClick={() => setSelectedStudentIds(new Set(sourceStudents.map((s) => s.id)))}
+                        className="text-[9px] font-black uppercase tracking-wider text-indigo-600 hover:text-indigo-700"
+                      >
+                        Select All
+                      </button>
+                    )}
+                  </div>
+                  {sourceStudents.length === 0 ? (
+                    <p className="text-[10px] text-slate-300 italic py-3">No active students enrolled in this unit.</p>
+                  ) : (
+                    <div className="space-y-1.5 max-h-64 overflow-y-auto scrollbar-hide custom-scrollbar border border-slate-100 rounded-xl p-1.5">
+                      {sourceStudents.map((s) => {
+                        const checked = selectedStudentIds.has(s.id);
+                        return (
+                          <button
+                            key={s.id}
+                            onClick={() => toggleTransferStudent(s.id)}
+                            className={cn("w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-left", checked ? "bg-indigo-50" : "hover:bg-slate-50")}
+                          >
+                            <div className={cn("w-4 h-4 rounded border flex items-center justify-center shrink-0", checked ? "bg-indigo-600 border-indigo-600" : "border-slate-300")}>
+                              {checked && <Check size={12} className="text-white" />}
+                            </div>
+                            <span className="text-[12px] font-bold text-slate-700 truncate">{s.firstName} {s.lastName}</span>
+                            {s.indexNumber && <span className="text-[9px] font-semibold text-slate-400 ml-auto">{s.indexNumber}</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-slate-100 flex gap-3">
+                <button
+                  type="button"
+                  onClick={closeTransferModal}
+                  className="flex-1 px-5 py-3 bg-slate-50 text-slate-900 font-black rounded-xl border border-slate-200 hover:bg-slate-100 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleApplyTransfer}
+                  disabled={transferStudentsMutation.isPending}
+                  className="flex-1 px-5 py-3 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {transferStudentsMutation.isPending ? (
+                    <><Loader2 size={14} className="animate-spin" /> Transferring...</>
+                  ) : (
+                    <><UserPlus size={14} /> Transfer {selectedStudentIds.size > 0 ? `(${selectedStudentIds.size})` : ''}</>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {capacityClassroom && (
+          <div className="fixed inset-0 z-[600] flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeCapacityModal}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+            >
+              <div className="p-8">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                      <Ruler size={20} />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black italic font-display text-slate-900">Capacity Override</h3>
+                      <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">{capacityClassroom.name}</p>
+                    </div>
+                  </div>
+                  <button onClick={closeCapacityModal} className="p-2 text-slate-300 hover:text-slate-900 transition-all">
+                    <X size={24} />
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider">Capacity Load</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={capacityValue}
+                    onChange={(e) => setCapacityValue(e.target.value)}
+                    autoFocus
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 outline-none transition-all"
+                  />
+                </div>
+                <div className="flex gap-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={closeCapacityModal}
+                    className="flex-1 px-5 py-3 bg-slate-50 text-slate-900 font-black rounded-xl border border-slate-200 hover:bg-slate-100 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleApplyCapacity}
+                    disabled={updateClassCapacityMutation.isPending}
+                    className="flex-1 px-5 py-3 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-60 flex items-center justify-center gap-2"
+                  >
+                    {updateClassCapacityMutation.isPending ? (
+                      <><Loader2 size={14} className="animate-spin" /> Updating...</>
+                    ) : (
+                      'Apply Override'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <ConfirmationDialog
         open={confirmDialog.open}
         title={confirmDialog.title}

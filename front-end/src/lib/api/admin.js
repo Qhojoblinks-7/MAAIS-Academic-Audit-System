@@ -65,7 +65,7 @@ export const adminApi = {
    lockTerm: (id) => api.patch(`/archive/terms/${id}/lock`),
    getDatabaseHealth: () => api.get('/archive/health'),
 
-   archiveYear: (yearId) => api.post(`/archive/years/${yearId}/archive`),
+   archiveYear: (yearId, level) => api.post(`/archive/years/${yearId}/archive`, { level }),
    transferStudents: ({ sourceClassId, targetClassId, studentIds }) =>
      api.post('/archive/classes/transfer', { sourceClassId, targetClassId, studentIds }),
    updateClassCapacity: (classId, capacity) =>

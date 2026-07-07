@@ -154,15 +154,22 @@ export function CurriculumMatrixView({ displaySubjects: initialSubjects, display
     const subject = subjectStates[subjectId];
     if (!subject || isCore(subject)) return;
     const next = !(subject.assignments?.[classId] ?? false);
+    const subjectName = subject?.name || 'Subject';
+    const className = classes.find((c) => c.id === classId)?.name || 'class';
     toggleSubjectAssignment(subjectId, classId);
     try {
       await persistAssignment(subjectId, classId, next);
       matrixQuery.refetch?.();
+      toast.success(
+        next
+          ? `${subjectName} mapped to ${className}`
+          : `${subjectName} unlinked from ${className}`,
+      );
     } catch (err) {
       toggleSubjectAssignment(subjectId, classId);
-      toast.error('Failed to update mapping');
+      toast.error(`Failed to update mapping: ${err?.message || 'Unknown error'}`);
     }
-  }, [subjectStates, toggleSubjectAssignment, persistAssignment, matrixQuery]);
+  }, [subjectStates, classes, toggleSubjectAssignment, persistAssignment, matrixQuery]);
 
   const autoSyncCore = useCallback(() => {
     setSubjectStates(prev => {
