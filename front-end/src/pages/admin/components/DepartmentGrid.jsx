@@ -238,14 +238,14 @@ export function DepartmentGrid({ departments, viewType, setViewType, setSelected
                   { name: 'Medical Path', depts: ['Science', 'Languages'], color: 'text-rose-600', bg: 'bg-rose-50' },
                   { name: 'Global Commerce', depts: ['Business', 'Math', 'Languages'], color: 'text-amber-600', bg: 'bg-amber-50' },
                 ].map((mapping, i) => (
-                  <div key={i} className="p-4 border border-slate-100 rounded-2xl group hover:border-slate-300 transition-all">
+                  <div key={i} className={cn("p-4 border border-slate-100 rounded-2xl group hover:border-slate-300 transition-all", mapping.bg)}>
                     <div className="flex items-center gap-3 mb-2.5">
                       <div className={cn("w-2 h-2 rounded-full", mapping.color.replace('text-', 'bg-'))} />
                       <p className="text-xs font-black text-slate-900 tracking-tight">{mapping.name}</p>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {mapping.depts.map((d, di) => (
-                        <span key={di} className="text-[8px] font-black uppercase tracking-widest px-2 py-1 bg-slate-50 text-slate-500 rounded-lg group-hover:bg-slate-900 group-hover:text-white transition-all">
+                        <span key={di} className="text-[8px] font-black uppercase tracking-widest px-2 py-1 bg-white/60 text-slate-500 rounded-lg group-hover:bg-slate-900 group-hover:text-white transition-all">
                           {d}
                         </span>
                       ))}

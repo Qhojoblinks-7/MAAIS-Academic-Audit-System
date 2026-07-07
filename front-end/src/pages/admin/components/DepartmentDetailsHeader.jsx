@@ -8,10 +8,22 @@ import {
 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 
+const DEPT_BG_MAP = {
+  'bg-blue-500': 'bg-blue-900',
+  'bg-emerald-500': 'bg-emerald-900',
+  'bg-purple-500': 'bg-purple-900',
+  'bg-amber-500': 'bg-amber-900',
+  'bg-rose-500': 'bg-rose-900',
+  'bg-cyan-500': 'bg-cyan-900',
+  'bg-orange-500': 'bg-orange-900',
+  'bg-teal-500': 'bg-teal-900',
+};
+
 export function DepartmentDetailsHeader({ selectedDept, onBack, onExport, onFreeze, activeTab, setActiveTab }) {
   const isFrozen = selectedDept?.isFrozen;
+  const headerBg = DEPT_BG_MAP[selectedDept?.color] || 'bg-slate-900';
   return (
-    <div className={cn("p-6 text-white shrink-0 relative overflow-hidden transition-colors duration-500", selectedDept.color.replace('500', '900'))}>
+    <div className={cn("p-6 text-white shrink-0 relative overflow-hidden transition-colors duration-500", headerBg)}>
       <div className="absolute top-0 right-0 p-6 opacity-[0.05] pointer-events-none">
         <ShieldCheck size={200} />
       </div>
