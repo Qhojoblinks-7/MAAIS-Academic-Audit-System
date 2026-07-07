@@ -849,3 +849,84 @@ To put everything we have built into perspective, here is where your system now 
 | **Level 3: Bleeding Edge** | SQLite WASM, WebRTC Mesh, Binary CRDT Sync | Zero-latency local computing, cross-device synchronization without hosting dependencies. | Completely independent of internet infrastructure. |
 
 This is the absolute limit of modern full-stack engineering for this stack. You can start with Level 1 and 2, and if your application scale demands it, introduce Level 3 modules to make the system practically indestructible.
+
+---
+
+# IMPLEMENTED FRONTEND OPTIMIZATIONS (MAAIS)
+
+The following optimizations from this guide have been implemented in `front-end/`.
+All changes were validated with `npm run build` (Vite 6 + esbuild).
+
+## 1. API Client Resilience — `src/lib/api/client.js`
+- **30s request timeout** via `AbortController` (`fetchWithTimeout`).
+- **Exponential-backoff retry** (3 attempts) on network errors, timeouts, and
+  transient 5xx/429 status codes (`RETRYABLE_STATUS`).
+- **GET request deduplication** — concurrent identical GETs share one in-flight
+  promise (`pendingRequests` map), preventing redundant fetches under flaky links.
+- 401 handling preserved: single token-refresh attempt, then session reset.
+
+## 2. Persistent IndexedDB Cache — `src/services/cacheLayer.js`
+- Two-tier cache: in-memory `Map` (sync, current session) backed by
+  **IndexedDB** (`idb-keyval`) so cached data survives reloads / works offline.
+- `init()` hydrates memory from IndexedDB at app bootstrap (called in `main.jsx`).
+- Public `get`/`set`/`has`/`delete` API unchanged — `HODDataRefresh.js`
+  (department-progress cache) benefits automatically.
+
+## 3. Offline-First React Query — `src/main.jsx`
+- `QueryClient` configured with `networkMode: 'offlineFirst'`, `retry: 3`,
+  `staleTime: 5min`, `gcTime: 24h`, `refetchOnWindowFocus/Mount: false`.
+- Wrapped in `PersistQueryClientProvider` with an **IndexedDB persister**
+  (`idb-keyval`, `@tanstack/react-query-persist-client`), `maxAge: 7 days`.
+- Service worker registered in production only.
+
+## 4. Offline Service Worker (PWA) — `public/sw.js`, `public/manifest.webmanifest`
+- Hand-rolled SW (no `vite-plugin-pwa`) because the workbox dependency chain
+  was broken by an interrupted `npm install` (`es-abstract` missing). The
+  hand-rolled SW achieves the same goal with zero extra deps.
+- Strategy: network-first for app shell navigations and `/api/v1/*` (falls back
+  to cached response when offline); stale-while-revalidate for static assets.
+- `index.html` links the manifest + SVG icon; registered in `main.jsx`.
+
+## 5. Adaptive Realtime Reconnect — `src/services/dataSyncLayer.js`
+- WebSocket reconnect uses exponential backoff capped at 60s (`MAX_RECONNECT_DELAY`).
+- Polling interval slows to 120s when `navigator.onLine === false` (30s online).
+
+## 6. Persistent Offline Mutation Queue — `src/context/HODState.js`
+- The HOD pending-changes queue now persists to **IndexedDB** (`idb-keyval`)
+  and rehydrates on mount, so queued HOD comments / revision approvals survive
+  reloads and sync once connectivity returns.
+
+## 7. Code Splitting (vendor) — `vite.config.js`
+- `manualChunks` isolates heavy libs: `charts` (recharts), `export-utils`
+  (html2canvas/jspdf), `animations` (motion), `state-engine`
+  (zustand/@tanstack), `utils` (date-fns/clsx/tailwind-merge).
+- Brotli + Gzip pre-compression already in place.
+
+## 8. Route-Level Lazy Loading — `src/router/lazyPages.js`, `src/App.jsx`
+- Every page component is now `React.lazy()` with a per-file dynamic import,
+  so each route is its own chunk fetched on navigation.
+- All four roles covered: Admin (21 pages), HOD (17), Teacher (11), Student (5),
+  plus shared pages and `NotificationsPage`.
+- `Dashboard` (landing), `LoginPage`, and error pages stay eager (first paint).
+- Each `<Routes>` and the settings/support modals are wrapped in `<Suspense>`
+  with a `PageLoader` fallback (modals use `fallback={null}` to avoid layout shift).
+- `SUBJECT_CONFIG` extracted from `TeacherGradingView.jsx` →
+  `src/constants/subjectConfig.js` so lazy-loading that page no longer drags the
+  constant (and the whole grading page) into the initial bundle.
+
+### Build impact
+| Chunk | Before | After |
+| --- | --- | --- |
+| Main app (`index`) | ~1,327 KB (285 KB gz) | **~363 KB (81 KB gz)** |
+| Per-route pages | bundled in main | individual chunks (1–75 KB each) |
+
+Residual advisory warnings: `AdminHome` + `TeacherDashboard` are statically
+imported by `Dashboard.jsx`, and 4 HOD pages are statically re-exported by
+`pages/hod/index.js`, so they share a small shared chunk rather than fully
+isolated files. They still load per-route, not in the initial bundle.
+
+### Next (optional, larger refactor)
+- Fully isolate the 4 HOD pages by splitting context exports out of
+  `pages/hod/index.js`.
+- Lazy-load `AdminHome`/`TeacherDashboard` inside `Dashboard.jsx`.
+- WebRTC peer-to-peer sync and SQLite-WASM (Level 3) remain future work.

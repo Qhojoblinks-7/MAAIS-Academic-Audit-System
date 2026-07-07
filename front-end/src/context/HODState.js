@@ -1,5 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { hodService } from '../services/hodService';
+import { get, set } from 'idb-keyval';
+
+const PENDING_CHANGES_KEY = 'maais-pending-changes';
 
 export default function useHODState() {
   // ── State ──────────────────────────────────────────────────────────────────
@@ -51,6 +54,31 @@ export default function useHODState() {
   const [departmentProgressPage, setDepartmentProgressPage] = useState(1);
   const [departmentProgressLimit, setDepartmentProgressLimit] = useState(50);
   const [departmentProgressTotal, setDepartmentProgressTotal] = useState(0);
+
+  // ── Offline queue hydration (IndexedDB persistence) ─────────────────────────
+  const hydratedRef = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const stored = await get(PENDING_CHANGES_KEY);
+        if (!cancelled && Array.isArray(stored) && stored.length > 0) {
+          setPendingChanges(stored);
+        }
+      } catch {
+        // IndexedDB unavailable — keep in-memory queue
+      } finally {
+        hydratedRef.current = true;
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [setPendingChanges]);
+
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+    set(PENDING_CHANGES_KEY, pendingChanges).catch(() => {});
+  }, [pendingChanges]);
 
   // ── Offline/Draft State Handlers ─────────────────────────────────────────────
   const isEffectivelyOffline = (isOnline, isDraftMode) => !isOnline || isDraftMode;

@@ -1,11 +1,14 @@
 const WS_RECONNECT_DELAY = 5000;
-const POLLING_INTERVAL = 30000;
+const POLLING_INTERVAL_ONLINE = 30000;
+const POLLING_INTERVAL_OFFLINE = 120000;
+const MAX_RECONNECT_DELAY = 60000;
 
 class DataSyncLayer {
   constructor() {
     this.ws = null;
     this.pollingTimer = null;
     this.reconnectTimer = null;
+    this.reconnectAttempts = 0;
     this.listeners = new Set();
     this.isConnected = false;
     this.url = import.meta.env.VITE_WS_URL || '';
@@ -23,15 +26,20 @@ class DataSyncLayer {
       this.ws = new WebSocket(this.url);
       this.ws.onopen = () => {
         this.isConnected = true;
+        this.reconnectAttempts = 0;
         this.fallbackPolling = false;
         this.notify({ type: 'connection', status: 'connected' });
       };
       this.ws.onmessage = (event) => {
-        this.notify({ type: 'data', payload: JSON.parse(event.data) });
+        try {
+          this.notify({ type: 'data', payload: JSON.parse(event.data) });
+        } catch {
+          // Ignore malformed messages
+        }
       };
       this.ws.onclose = () => {
         this.isConnected = false;
-        this.reconnectTimer = setTimeout(() => this.connect(), WS_RECONNECT_DELAY);
+        this.scheduleReconnect();
       };
       this.ws.onerror = () => {
         this.ws?.close();
@@ -42,6 +50,15 @@ class DataSyncLayer {
     }
   }
 
+  scheduleReconnect() {
+    const delay = Math.min(
+      WS_RECONNECT_DELAY * 2 ** this.reconnectAttempts,
+      MAX_RECONNECT_DELAY,
+    );
+    this.reconnectAttempts += 1;
+    this.reconnectTimer = setTimeout(() => this.connect(), delay);
+  }
+
   disconnect() {
     if (this.ws) {
       this.ws.close();
@@ -50,13 +67,15 @@ class DataSyncLayer {
     this.stopPolling();
     clearTimeout(this.reconnectTimer);
     this.isConnected = false;
+    this.reconnectAttempts = 0;
   }
 
   startPolling() {
     if (this.pollingTimer) return;
+    const interval = navigator.onLine ? POLLING_INTERVAL_ONLINE : POLLING_INTERVAL_OFFLINE;
     this.pollingTimer = setInterval(() => {
       this.fetchUpdates().catch(() => {});
-    }, POLLING_INTERVAL);
+    }, interval);
   }
 
   stopPolling() {

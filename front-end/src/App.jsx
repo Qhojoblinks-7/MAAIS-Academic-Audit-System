@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -21,80 +21,30 @@ import {
 } from "./components/shared";
 import {
   Dashboard,
-  GradingSheet,
-  HOD_JourneyHistoryAudit,
-  SettingsView,
-} from "./pages/shared";
+} from "./pages/shared/Dashboard";
 import {
-  AuditLogsView,
-  ArchiveView,
-  AdminHome,
-  AdminManagement,
-  StaffRegistry,
-  DepartmentManagement,
-  StudentRegistry,
-  ParentRegistry,
-  ExtendedLogsView,
-  AdminSettings,
-  AdminSupport,
-  SchedulingView,
-  CommsView,
-  MasterTimetable,
-  EventCalendarView,
-  AcademicArchitect,
-  AcademicArchitectErrorBoundary,
-  ReportGeneratorView,
-  GradingRulesView,
-  ApprovalsView,
-  ApprovalInspectView,
-  NewApprovalRequestView,
-  SupportTicketDetailView,
-} from "./pages/admin";
+  AcademicArchitect, AcademicArchitectErrorBoundary, AdminHome, AdminManagement,
+  AdminSettings, AdminSupport, ArchiveView, AuditLogsView, CommsView,
+  DepartmentManagement, EventCalendarView, ExtendedLogsView, GradingRulesView,
+  MasterTimetable, ParentRegistry, ReportGeneratorView, SchedulingView,
+  StaffRegistry, StudentRegistry, NewApprovalRequestView, ApprovalInspectView,
+  ApprovalsView, SupportTicketDetailView,
+  HODDashboard, HODAudit, HODInterventions, HODReview, HODLockExport, HODSettings,
+  HODSettingsPage, HODSupportPage, HODTeachers, HODAnalytics, HODArchiveView,
+  HODArchiveDetailView, HODMissingObservations, Unauthorized, BroadsheetGenerator,
+  HODCertification, HODRevisionsFeed,
+  TeacherDashboard, TeacherTimetableView, TeacherSettings, TeacherSupport,
+  TeacherArchiveView, TeacherArchiveDetailView, TeacherGradingView,
+  TeacherAnalyticsView, TeacherMissingObservations, TeacherRevisionsFeed,
+  MobileTimetableView,
+  StudentPortal, StudentSettings, StudentSupport, StudentTimetable, StudentProfile,
+  GradingSheet, HOD_JourneyHistoryAudit, TeacherProfile, NotificationsPage,
+} from "./router/lazyPages";
 import { Error401View } from "./pages/errors/Error401View";
 import { Error403View } from "./pages/errors/Error403View";
 import { Error500View } from "./pages/errors/Error500View";
-import {
-  HODDashboard,
-  HODAudit,
-  HODInterventions,
-  HODReview,
-  HODLockExport,
-  HODSettings,
-  HODSettingsPage,
-  HODSupportPage,
-  HODTeachers,
-  HODAnalytics,
-  HODArchiveView,
-  HODArchiveDetailView,
-  Unauthorized,
-  BroadsheetGenerator,
-  HODCertification,
-  HODRevisionsFeed,
-  HODMissingObservations,
-} from "./pages/hod";
-import {
-  StudentTimetable,
-  StudentSettings,
-  StudentSupport,
-  StudentPortal,
-  StudentProfile,
-} from "./pages/student";
-import { TeacherProfile } from "./pages/shared/TeacherProfile";
-import {
-  TeacherTimetableView,
-  TeacherDashboard,
-  TeacherGradingView,
-  TeacherAnalyticsView,
-  TeacherArchiveView,
-  TeacherArchiveDetailView,
-  TeacherSettings,
-  TeacherSupport,
-  TeacherRevisionsFeed,
-  TeacherMissingObservations,
-  MobileTimetableView,
-} from "./pages/teacher";
 import { LoginPage } from "./pages/auth/LoginPage";
-import { SUBJECT_CONFIG } from "./pages/teacher/TeacherGradingView";
+import { SUBJECT_CONFIG } from "./constants/subjectConfig";
 import { gradingService } from "./services/gradingService";
 import { teacherService } from "./services/teacherService";
 import { TooltipProvider } from "./components/ui/tooltip";
@@ -105,7 +55,6 @@ import { BreadcrumbProvider } from "./context/BreadcrumbContext";
 import { RequireRole } from "./components/auth/RequireRole";
 import { X, Lock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { NotificationsPage } from "./pages/NotificationsPage";
 import { ConnectivityBanner } from "./pages/shared/ConnectivityBanner";
 import { useSystemFreeze, useActiveYear } from "./lib/hooks";
 import { Button } from "./components/ui/button";
@@ -336,6 +285,18 @@ function Modal({ isOpen, onClose, title, children }) {
   return <ArchiveView />;
 };
 
+// Route-level loading fallback (shown while a lazily-loaded page chunk downloads)
+function PageLoader() {
+  return (
+    <div className="flex-1 flex items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-8 w-8 rounded-full border-2 border-success/30 border-t-success animate-spin" />
+        <p className="text-sm font-medium text-muted-foreground">Loading…</p>
+      </div>
+    </div>
+  );
+}
+
 function AppContent() {
   const location = useLocation();
   const { user } = useRole();
@@ -404,10 +365,12 @@ function AppContent() {
     console.log('[App] Rendering login page container');
     return (
       <div className="w-full min-h-screen bg-background font-sans antialiased">
+        <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
+        </Suspense>
       </div>
     );
   }
@@ -415,11 +378,13 @@ function AppContent() {
   if (isErrorPage) {
     return (
       <div className="w-full min-h-screen bg-background font-sans antialiased">
+        <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/401" element={<Error401View />} />
           <Route path="/403" element={<Error403View />} />
           <Route path="/500" element={<Error500View />} />
         </Routes>
+        </Suspense>
       </div>
     );
   }
@@ -504,6 +469,7 @@ function AppContent() {
         <Topbar />
 
         <main className="flex-1 flex overflow-hidden relative">
+          <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Base Routes */}
             <Route path="/" element={<Dashboard />} />
@@ -948,6 +914,7 @@ function AppContent() {
             {/* Catch-All Safe Fallback Route */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </Suspense>
 
           {isDashboard &&
             user?.role &&
@@ -963,6 +930,7 @@ function AppContent() {
       {/* Drawers and Modals */}
       {user?.role === "STUDENT" ? <StudentMobileDrawer /> : <MobileDrawer />}
 
+      <Suspense fallback={null}>
       <Modal
         isOpen={settingsModalOpen}
         onClose={() => setSettingsModalOpen(false)}
@@ -994,6 +962,7 @@ function AppContent() {
           <TeacherSupport />
         )}
       </Modal>
+      </Suspense>
     </div>
   );
 }

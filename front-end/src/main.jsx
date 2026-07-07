@@ -1,11 +1,14 @@
 import { StrictMode, useState, Component } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { get, set, del } from 'idb-keyval';
 import App from './App.jsx';
 import './index.css';
 import 'sonner/dist/styles.css';
 import { RoleProvider } from './context/RoleContext';
 import { SplashScreen } from './components/SplashScreen';
+import { cacheLayer } from './services/cacheLayer';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -42,12 +45,33 @@ class ErrorBoundary extends Component {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
+      retry: 3,
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30000),
       refetchOnWindowFocus: false,
-      staleTime: 1000 * 60,
+      refetchOnMount: false,
+      staleTime: 1000 * 60 * 5, // 5 minutes before revalidation
+      gcTime: 1000 * 60 * 60 * 24, // 24 hours cache retention
+      networkMode: 'offlineFirst', // Serve cache immediately; sync in background
+    },
+    mutations: {
+      retry: 2,
+      networkMode: 'offlineFirst',
     },
   },
 });
+
+// IndexedDB persister so the React Query cache survives reloads (offline-first)
+const idbPersister = {
+  persistClient: async (client) => {
+    await set('maais-query-cache', client);
+  },
+  restoreClient: async () => {
+    return await get('maais-query-cache');
+  },
+  removeClient: async () => {
+    await del('maais-query-cache');
+  },
+};
 
 function Root() {
   const [showSplash, setShowSplash] = useState(() => {
@@ -55,7 +79,10 @@ function Root() {
   });
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ persister: idbPersister, maxAge: 1000 * 60 * 60 * 24 * 7 }}
+    >
       <RoleProvider>
         {showSplash ? (
           <SplashScreen onComplete={() => {
@@ -66,8 +93,18 @@ function Root() {
           <App />
         )}
       </RoleProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
+}
+
+// Hydrate the persistent cache from IndexedDB before the app mounts.
+cacheLayer.init().catch(() => {});
+
+// Register the offline-first service worker (production only).
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
 }
 
 createRoot(document.getElementById('root')).render(

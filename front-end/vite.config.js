@@ -50,12 +50,17 @@ export default defineConfig(({ mode }) => {
         output: {
           // 3. Isolated Chunking Strategy for the "Reactive Store Hydration" pattern
           manualChunks(id) {
-            if (id.includes('node_modules')) {
-              if (id.includes('zustand') || id.includes('@tanstack') || id.includes('localforage')) {
-                return 'state-engine';
-              }
-              return 'vendor-utils';
+            if (!id.includes('node_modules')) return;
+            if (id.includes('recharts') || id.includes('d3')) return 'charts';
+            if (id.includes('html2canvas') || id.includes('jspdf')) return 'export-utils';
+            if (id.includes('motion') || id.includes('framer-motion')) return 'animations';
+            if (id.includes('zustand') || id.includes('@tanstack') || id.includes('localforage')) {
+              return 'state-engine';
             }
+            if (id.includes('date-fns') || id.includes('clsx') || id.includes('tailwind-merge') || id.includes('class-variance')) {
+              return 'utils';
+            }
+            return 'vendor-utils';
           },
           // Cache busting optimization: gives predictable hashing for long-term browser caching
           chunkFileNames: 'assets/js/[name]-[hash].js',
