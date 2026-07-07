@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../../lib/utils';
-import { School, Layers, Users, AlertTriangle, ChevronRight, ChevronDown, MoreVertical, Plus, X, TrendingUp, Settings2, Archive, UserPlus, Ruler, Home, Trash2 } from 'lucide-react';
+import { School, Layers, Users, AlertTriangle, ChevronRight, ChevronDown, MoreVertical, Plus, X, TrendingUp, Settings2, Archive, UserPlus, Ruler, Home, Trash2, Loader2 } from 'lucide-react';
 import { toast } from '../../../components/ui/toast.tsx';
-import { usePromoteLevel, useArchiveYear, useTransferStudents, useUpdateClassCapacity, useRebalanceHouses, useDissolveClass } from '../../../lib/hooks';
+import { usePromoteLevel, useArchiveYear, useTransferStudents, useUpdateClassCapacity, useRebalanceHouses, useDissolveClass, useUpdateClass } from '../../../lib/hooks';
 import { ConfirmationDialog } from '../../../components/molecules/ConfirmationDialog';
 
 const HOUSES = ['Guggisberg', 'Aggrey', 'Nkrumah'];
@@ -27,14 +28,19 @@ export function BlueprintTreeView({
   const [openKebabYearId, setOpenKebabYearId] = useState(null);
   const [openKebabClassroomId, setOpenKebabClassroomId] = useState(null);
 
+  const [restructureYearId, setRestructureYearId] = useState(null);
+  const [restructureData, setRestructureData] = useState(null);
+
   const [confirmDialog, setConfirmDialog] = useState({ open: false, title: '', message: '', action: null, variant: 'danger' });
 
+  const qc = useQueryClient();
   const promoteLevelMutation = usePromoteLevel();
   const archiveYearMutation = useArchiveYear();
   const transferStudentsMutation = useTransferStudents();
   const updateClassCapacityMutation = useUpdateClassCapacity();
   const rebalanceHousesMutation = useRebalanceHouses();
   const dissolveClassMutation = useDissolveClass();
+  const updateClassMutation = useUpdateClass();
 
   useEffect(() => {
     const closeMenus = () => {
@@ -53,8 +59,108 @@ export function BlueprintTreeView({
     return map[num] || null;
   };
 
-  const handleYearKebabAction = async (yearId, yearName, action) => {
+  const openRestructureModal = (year) => {
+    const programs = (year.programs || []).map((p, i) => ({
+      key: `prog-${i}`,
+      name: p.name,
+      classrooms: (p.classrooms || []).map((c) => {
+        const name = c.name || '';
+        const level = name.split(' ')[0];
+        const originalProgram = name.split(' ').slice(1).join(' ');
+        return { id: c.id, name, level, originalProgram };
+      }),
+    }));
+    setRestructureData({ yearName: year.name, programs });
+    setRestructureYearId(year.id);
+  };
+
+  const moveClassroom = (classroomId, fromKey, toKey) => {
+    setRestructureData((prev) => {
+      if (!prev) return prev;
+      const programs = prev.programs.map((p) => ({ ...p, classrooms: [...p.classrooms] }));
+      const from = programs.find((p) => p.key === fromKey);
+      const to = programs.find((p) => p.key === toKey);
+      if (!from || !to || from === to) return prev;
+      const idx = from.classrooms.findIndex((c) => c.id === classroomId);
+      if (idx === -1) return prev;
+      const [cls] = from.classrooms.splice(idx, 1);
+      to.classrooms.push(cls);
+      return { ...prev, programs };
+    });
+  };
+
+  const renameProgram = (key, name) => {
+    setRestructureData((prev) =>
+      prev
+        ? { ...prev, programs: prev.programs.map((p) => (p.key === key ? { ...p, name } : p)) }
+        : prev
+    );
+  };
+
+  const addProgram = () => {
+    setRestructureData((prev) =>
+      prev
+        ? {
+            ...prev,
+            programs: [
+              ...prev.programs,
+              { key: `prog-${Date.now()}`, name: 'New Program', classrooms: [] },
+            ],
+          }
+        : prev
+    );
+  };
+
+  const removeProgram = (key) => {
+    setRestructureData((prev) => {
+      if (!prev || prev.programs.length <= 1) return prev;
+      const target = prev.programs.find((p) => p.key === key);
+      if (target && target.classrooms.length > 0) return prev;
+      return { ...prev, programs: prev.programs.filter((p) => p.key !== key) };
+    });
+  };
+
+  const closeRestructureModal = () => {
+    setRestructureYearId(null);
+    setRestructureData(null);
+  };
+
+  const handleApplyRestructure = async () => {
+    if (!restructureData) return;
+    const updates = [];
+    restructureData.programs.forEach((p) => {
+      p.classrooms.forEach((c) => {
+        if (p.name !== c.originalProgram) {
+          updates.push(
+            updateClassMutation.mutateAsync({
+              id: c.id,
+              dto: { name: `${c.level} ${p.name}`.trim() },
+            })
+          );
+        }
+      });
+    });
+
+    if (updates.length === 0) {
+      toast.info('No structural changes detected');
+      closeRestructureModal();
+      return;
+    }
+
+    try {
+      await Promise.all(updates);
+      qc.invalidateQueries({ queryKey: ['admin', 'academic'] });
+      toast.success('Program structure restructured successfully');
+      closeRestructureModal();
+    } catch (err) {
+      toast.error(`Restructure failed: ${err?.message || 'Unknown error'}`);
+    }
+  };
+
+  const handleYearKebabAction = async (year, action) => {
     setOpenKebabYearId(null);
+    const yearId = year.id;
+    const yearName = year.name;
     switch (action) {
       case 'promotion': {
         const classLevel = inferClassLevel(yearName);
@@ -74,7 +180,7 @@ export function BlueprintTreeView({
         break;
       }
       case 'restructure': {
-        toast.info('Program restructuring panel coming soon');
+        openRestructureModal(year);
         break;
       }
       case 'archive': {
@@ -269,10 +375,10 @@ export function BlueprintTreeView({
                     </button>
                     {openKebabYearId === year.id && (
                       <div className="absolute right-0 top-12 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1">
-                        <button onClick={() => handleYearKebabAction(year.id, year.name, 'promotion')} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><TrendingUp size={12} className="text-emerald-600" /> Level Promotion / Rollover</button>
-                        <button onClick={() => handleYearKebabAction(year.id, year.name, 'restructure')} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Settings2 size={12} className="text-blue-600" /> Program Restructuring</button>
+                        <button onClick={() => handleYearKebabAction(year, 'promotion')} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><TrendingUp size={12} className="text-emerald-600" /> Level Promotion / Rollover</button>
+                        <button onClick={() => handleYearKebabAction(year, 'restructure')} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Settings2 size={12} className="text-blue-600" /> Program Restructuring</button>
                         <div className="h-px bg-slate-100 my-1" />
-                        <button onClick={() => handleYearKebabAction(year.id, year.name, 'archive')} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Archive size={12} className="text-amber-600" /> Archive / Deactivate Level</button>
+                        <button onClick={() => handleYearKebabAction(year, 'archive')} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Archive size={12} className="text-amber-600" /> Archive / Deactivate Level</button>
                       </div>
                     )}
                   </div>
@@ -588,6 +694,114 @@ export function BlueprintTreeView({
                     </button>
                   </div>
                 </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {restructureYearId && restructureData && (
+          <div className="fixed inset-0 z-[600] flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeRestructureModal}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[85vh] flex flex-col"
+            >
+              <div className="p-8 border-b border-slate-100">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                      <Settings2 size={20} />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black italic font-display text-slate-900">Program Restructuring</h3>
+                      <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">{restructureData.yearName} • Reassign classroom units to programs</p>
+                    </div>
+                  </div>
+                  <button onClick={closeRestructureModal} className="p-2 text-slate-300 hover:text-slate-900 transition-all">
+                    <X size={24} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-8 overflow-y-auto space-y-4 flex-1">
+                {restructureData.programs.map((p) => (
+                  <div key={p.key} className="rounded-2xl border border-slate-200 p-4">
+                    <div className="flex items-center justify-between mb-3 gap-3">
+                      <input
+                        value={p.name}
+                        onChange={(e) => renameProgram(p.key, e.target.value)}
+                        className="text-[13px] font-black uppercase tracking-widest text-slate-900 outline-none bg-transparent border-b border-transparent focus:border-slate-300 px-1 py-0.5 min-w-0 flex-1"
+                      />
+                      <button
+                        onClick={() => removeProgram(p.key)}
+                        disabled={p.classrooms.length > 0}
+                        className="text-[9px] font-black uppercase tracking-wider text-rose-500 disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 shrink-0"
+                      >
+                        <Trash2 size={12} /> Remove
+                      </button>
+                    </div>
+                    {p.classrooms.length === 0 ? (
+                      <p className="text-[10px] text-slate-300 italic py-2">No classroom units assigned</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {p.classrooms.map((c) => (
+                          <div key={c.id} className="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2 gap-3">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Layers size={14} className="text-slate-300 shrink-0" />
+                              <span className="text-[12px] font-black italic font-display text-slate-700 truncate">{c.name}</span>
+                              {c.originalProgram !== p.name && (
+                                <span className="text-[8px] font-black uppercase text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded shrink-0">Moved</span>
+                              )}
+                            </div>
+                            <select
+                              value={p.key}
+                              onChange={(e) => moveClassroom(c.id, p.key, e.target.value)}
+                              className="text-[10px] font-bold text-slate-700 border border-slate-200 rounded-lg px-2 py-1 bg-white outline-none shrink-0"
+                            >
+                              {restructureData.programs.map((opt) => (
+                                <option key={opt.key} value={opt.key}>{opt.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                <button
+                  onClick={addProgram}
+                  className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center gap-2 text-slate-300 hover:text-slate-500 hover:bg-slate-50 transition-all text-[10px] font-black uppercase tracking-[0.2em]"
+                >
+                  <Plus size={14} /> Add Program
+                </button>
+              </div>
+
+              <div className="p-6 border-t border-slate-100 flex gap-3">
+                <button
+                  type="button"
+                  onClick={closeRestructureModal}
+                  className="flex-1 px-5 py-3 bg-slate-50 text-slate-900 font-black rounded-xl border border-slate-200 hover:bg-slate-100 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleApplyRestructure}
+                  disabled={updateClassMutation.isPending}
+                  className="flex-1 px-5 py-3 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {updateClassMutation.isPending ? (<><Loader2 size={14} className="animate-spin" /> Applying...</>) : 'Apply Restructure'}
+                </button>
               </div>
             </motion.div>
           </div>
