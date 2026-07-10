@@ -41,12 +41,14 @@ export function NotificationsPage() {
     const unsubscribe2 = eventBus.on('grade-revision-rejected', handleNotification);
     const unsubscribe3 = eventBus.on('grade-revision-requested', handleNotification);
     const unsubscribe4 = eventBus.on('grade-revision-approved', handleNotification);
+    const unsubscribe5 = eventBus.on('grade-revision-response', handleNotification);
 
     return () => {
       unsubscribe1();
       unsubscribe2();
       unsubscribe3();
       unsubscribe4();
+      unsubscribe5();
     };
   }, [navigate]);
 
@@ -163,7 +165,7 @@ export function NotificationsPage() {
                   {notifications.map(notif => (
                     <div key={notif.id} className={cn(
                       "border rounded-lg p-4",
-                      notif.read ? "bg-white border-gray-200" : "bg-indigo-50 border-indigo-200"
+                      notif.isRead ? "bg-white border-gray-200" : "bg-indigo-50 border-indigo-200"
                     )}>
                       <div className="flex items-start gap-4">
                         <div className="flex-shrink-0">
@@ -175,23 +177,23 @@ export function NotificationsPage() {
                           <div className="flex justify-between items-start">
                             <h3 className={cn(
                               "text-lg font-medium",
-                  notif.read ? "text-gray-900" : "text-indigo-800"
+                  notif.isRead ? "text-gray-900" : "text-indigo-800"
                             )}>{notif.title}</h3>
                             <time className="text-xs text-gray-400">
-                              {new Date(notif.timestamp).toLocaleDateString()} 
-                              {new Date(notif.timestamp).toLocaleTimeString()}
+                              {new Date(notif.createdAt).toLocaleDateString()} 
+                              {new Date(notif.createdAt).toLocaleTimeString()}
                             </time>
                           </div>
-                          <p className="text-sm text-gray-600">{notif.message}</p>
+                          <p className="text-sm text-gray-600">{notif.body || notif.message || ''}</p>
                           <div className="flex items-center gap-3">
                             <button 
                               onClick={() => markAsRead(notif.id)}
                               className={cn(
                                 "px-2.5 py-1 text-xs font-medium rounded",
-                  notif.read ? "bg-gray-200 text-gray-600 hover:bg-gray-300" : 
+                  notif.isRead ? "bg-gray-200 text-gray-600 hover:bg-gray-300" : 
                                 "bg-indigo-100 text-indigo-600 hover:bg-indigo-200"
                             )}>
-                              {notif.read ? 'Read' : 'Mark as read'}
+                              {notif.isRead ? 'Read' : 'Mark as read'}
                             </button>
                           </div>
                         </div>

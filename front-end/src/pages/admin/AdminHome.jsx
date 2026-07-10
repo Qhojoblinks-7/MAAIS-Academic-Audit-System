@@ -192,7 +192,7 @@ export function AdminHome() {
   const approvals = (approvalsQuery.data || []).map(approval => ({
     ...approval,
     teacher: approval.teacherName || 'Unknown Teacher',
-    time: approval.createdAt ? new Date(approval.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '—',
+    time: new Date(approval.requestedAt || approval.createdAt || Date.now()).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
     detail: approval.detail || 'No details provided'
   }));
 
@@ -574,33 +574,35 @@ export function AdminHome() {
                        transition={{ delay: i * 0.05 }}
                        className="bg-surface p-4 rounded-2xl border border-border/50 shadow-sm hover:shadow-md transition-all relative group"
                      >
-                       <div className="flex items-center gap-4">
-                         <div className="flex items-center gap-3">
-                           <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105", isFreezeActive ? "bg-destructive/10 text-destructive" : card.bg, isFreezeActive ? "text-destructive" : card.color)}>
-                             <CardIcon size={22} />
-                           </div>
-                           <div>
-                            <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1">{card.label}</p>
-                            {card.progress !== undefined ? (
-                              <div className="space-y-1">
-                                <div className="h-1.5 w-32 bg-border rounded-full overflow-hidden">
-                                  <motion.div 
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${card.progress}%` }}
-                                    className={cn("h-full rounded-full", card.progress < 40 ? "bg-destructive" : card.progress < 75 ? "bg-warning" : "bg-success")}
-                                  />
-                                </div>
-                                <p className="text-[9px] font-semibold text-text-secondary">
-                                  <span>{card.progress.toFixed(1)}% Complete</span>
-                                </p>
-                              </div>
-                            ) : (
-                              <p className="text-[11px] font-medium text-text-secondary leading-tight">{card.subtext}</p>
-                            )}
-                           </div>
-                         </div>
-                          <p className={cn("tracking-tighter leading-none ml-auto", card.label === 'Flagged Activities' && isFreezeActive ? "text-xl font-black uppercase" : "text-5xl font-bold")}>{displayValue}</p>
-                       </div>
+                        <div className="flex items-center justify-between h-full">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shrink-0", isFreezeActive ? "bg-destructive/10 text-destructive" : card.bg, isFreezeActive ? "text-destructive" : card.color)}>
+                              <CardIcon size={22} />
+                            </div>
+                            <div className="min-w-0">
+                             <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1">{card.label}</p>
+                             {card.progress !== undefined ? (
+                               <div className="space-y-1">
+                                 <div className="h-1.5 w-32 bg-border rounded-full overflow-hidden">
+                                   <motion.div 
+                                     initial={{ width: 0 }}
+                                     animate={{ width: `${card.progress}%` }}
+                                     className={cn("h-full rounded-full", card.progress < 40 ? "bg-destructive" : card.progress < 75 ? "bg-warning" : "bg-success")}
+                                   />
+                                 </div>
+                                 <p className="text-[9px] font-semibold text-text-secondary">
+                                   <span>{card.progress.toFixed(1)}% Complete</span>
+                                 </p>
+                               </div>
+                             ) : (
+                               <p className="text-[11px] font-medium text-text-secondary leading-tight">{card.subtext}</p>
+                             )}
+                            </div>
+                          </div>
+                           <div className="text-right pl-4 shrink-0">
+                            <p className={cn("tracking-tighter leading-none", card.label === 'Flagged Activities' && isFreezeActive ? "text-xl font-black uppercase" : "text-5xl font-bold")}>{displayValue}</p>
+                          </div>
+                        </div>
                     </motion.div>
                   );
                })}

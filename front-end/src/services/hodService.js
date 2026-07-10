@@ -221,6 +221,10 @@ function createRealService() {
 
     requestGradeRevision: (revisionData) =>
        request('POST', '/teacher/grade-revisions', revisionData).then(r => r?.data ?? r),
+    requestHODGradeRevision: (revisionData) =>
+       request('POST', '/hod/grade-revisions', revisionData).then(r => r?.data ?? r),
+    approveGradeEntry: (gradeEntryId, comment) =>
+       request('POST', `/hod/grades/${gradeEntryId}/approve`, { comment }),
   };
 }
 

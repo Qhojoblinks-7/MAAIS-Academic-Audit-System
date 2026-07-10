@@ -106,6 +106,20 @@ export function useGradingSheetLogic({
   useEffect(() => {
     if (studentsProp === undefined) return;
     setStudents(studentsProp);
+    setFlaggedStudents(prev => {
+      const next = { ...prev };
+      studentsProp.forEach(s => {
+        if (s.flaggedForReview !== undefined) next[s.id] = s.flaggedForReview;
+      });
+      return next;
+    });
+    setLabSafetyCompliance(prev => {
+      const next = { ...prev };
+      studentsProp.forEach(s => {
+        if (s.labSafetyCompliance !== undefined) next[s.id] = s.labSafetyCompliance;
+      });
+      return next;
+    });
     setSelectedStudent(prev => {
       if (!prev) return studentsProp[0] || null;
       const still = studentsProp.find(s => s.id === prev.id);
@@ -331,11 +345,42 @@ export function useGradingSheetLogic({
             pendingCorrections.current.clear();
           }
         }
+
+        const resultMap = new Map(result.map(e => [e.studentId, e]));
+        setStudents(prev => prev.map(s => {
+          const backendEntry = resultMap.get(s.id);
+          if (!backendEntry) return s;
+          return {
+            ...s,
+            sba: backendEntry.classScore ?? s.sba,
+            exam: backendEntry.examScore ?? s.exam,
+            final: backendEntry.totalScore ?? s.final,
+            grade: backendEntry.grade ?? s.grade,
+            remark: backendEntry.remark ?? s.remark,
+            auditStatus: backendEntry.hasObservation ? 'COMPLETE' : 'MISSING',
+            labSafetyCompliance: backendEntry.labSafetyCompliance ?? s.labSafetyCompliance,
+            flaggedForReview: backendEntry.flaggedForReview ?? s.flaggedForReview,
+          };
+        }));
+        setLabSafetyCompliance(prev => {
+          const next = { ...prev };
+          result.forEach(e => {
+            if (e.labSafetyCompliance !== undefined) next[e.studentId] = e.labSafetyCompliance;
+          });
+          return next;
+        });
+        setFlaggedStudents(prev => {
+          const next = { ...prev };
+          result.forEach(e => {
+            if (e.flaggedForReview !== undefined) next[e.studentId] = e.flaggedForReview;
+          });
+          return next;
+        });
       }
 
       return result;
     },
-    [backendReady, backendIds, teacherService, gradingApi, teacherId],
+    [backendReady, backendIds, teacherService, gradingApi, teacherId, setStudents, setLabSafetyCompliance, setFlaggedStudents],
   );
 
   // ── Autosave effect ────────────────────────────────────────────────────────
@@ -364,7 +409,7 @@ export function useGradingSheetLogic({
         await persistGradesToBackend(students);
         setAutosaveStatus('saved');
         setLastSavedAt(new Date());
-        toast.success('Saved');
+        toast.success('Auto-saved');
         setTimeout(() => setAutosaveStatus('idle'), 2000);
       } catch (e) {
         setAutosaveStatus('error');
@@ -391,7 +436,7 @@ export function useGradingSheetLogic({
     bulkIntervalRef.current = setInterval(async () => {
       try {
         await persistGradesToBackend(students);
-        toast.success('Bulk draft submitted');
+        toast.success('Bulk draft synced');
       } catch (e) {
         if (e?.status === 403 || /Grade entry is locked/i.test(e?.message || '')) {
           toast.error('Bulk sync skipped: grade entries are locked. Contact HOD to unlock.');
@@ -486,7 +531,7 @@ export function useGradingSheetLogic({
     setStudents(prev =>
       prev.map(s => s.id === studentId ? calculateScores({ ...s, [field]: numValue }, field) : s)
     );
-    if (secFields.includes(field)) setTempMark('');
+    if ((DISPLAY_CLASS_INFO?.sectionFieldNames || ['secA', 'secB', 'secC']).includes(field)) setTempMark('');
   }, [isTermFinalized, students, showJustificationPopup, submissionStatus, calculateScores]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
@@ -604,7 +649,7 @@ runCheck();
     }
     persistGradesToBackend(students)
       .then(() => {
-        toast.success('Bulk draft submitted');
+        toast.success('Submitted to HOD');
         if (teacherId) {
           notification.sendHODAlert(
             teacherId,
@@ -688,12 +733,33 @@ runCheck();
 
     try {
       await teacherService.createBehavior(sid, behaviorData);
+      const gradeEntryId = students.find(s => s.id === sid)?.gradeEntryId;
+      const labSafety = labSafetyCompliance[sid] || false;
+      const flagged = flaggedStudents[sid] || false;
+      if (gradeEntryId) {
+        try {
+          await teacherService.createObservation({
+            gradeEntryId,
+            comment,
+            observationText: comment,
+            labSafety,
+            flagged,
+          });
+          setStudents(prev => prev.map(s =>
+            s.id === sid ? { ...s, auditStatus: 'COMPLETE' } : s
+          ));
+          setLabSafetyCompliance(prev => ({ ...prev, [sid]: labSafety }));
+          setFlaggedStudents(prev => ({ ...prev, [sid]: flagged }));
+        } catch (obsErr) {
+          console.error('[GradingSheet] observation sync failed after behavior save:', obsErr);
+        }
+      }
       toast.success('Behavioral ratings saved');
     } catch (err) {
       console.error('[WAEC STP §7] Failed to save behavioral ratings:', err);
       toast.error('Failed to save behavioral ratings');
     }
-  }, [isTermFinalized, selectedStudent, behavioralRatings, behavioralComment, backendReady, teacherService, toast]);
+  }, [isTermFinalized, selectedStudent, behavioralRatings, behavioralComment, backendReady, teacherService, toast, students, setStudents, labSafetyCompliance, flaggedStudents]);
 
   const handleExportWAEC = useCallback(() => {
     if (isTermFinalized || missingCount > 0 || isSubmissionLocked) return;

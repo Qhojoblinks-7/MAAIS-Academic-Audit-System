@@ -43,7 +43,6 @@ export const HODDashboard = l(() => import('../pages/hod/HODDashboard'), 'HODDas
 export const HODAudit = l(() => import('../pages/hod/HODAudit'), 'HODAudit');
 export const HODInterventions = l(() => import('../pages/hod/HODInterventions'), 'HODInterventions');
 export const HODReview = l(() => import('../pages/hod/HODReview'), 'HODReview');
-export const HODLockExport = l(() => import('../pages/hod/HODLockExport'), 'HODLockExport');
 export const HODSettings = l(() => import('../pages/hod/HODSettings'), 'HODSettings');
 export const HODSettingsPage = l(() => import('../pages/hod/HODSettingsPage'), 'HODSettingsPage');
 export const HODSupportPage = l(() => import('../pages/hod/HODSupportPage'), 'HODSupportPage');
@@ -55,7 +54,6 @@ export const HODMissingObservations = l(() => import('../pages/hod/HODMissingObs
 export const Unauthorized = l(() => import('../pages/hod/Unauthorized'), 'Unauthorized');
 export const BroadsheetGenerator = l(() => import('../pages/hod/BroadsheetGenerator'), 'BroadsheetGenerator');
 export const HODCertification = l(() => import('../pages/hod/HODCertification'), 'HODCertification');
-export const HODRevisionsFeed = l(() => import('../pages/hod/HODRevisionsFeed'), 'HODRevisionsFeed');
 
 // ── Teacher ─────────────────────────────────────────────────────────────────
 export const TeacherDashboard = l(() => import('../pages/teacher/TeacherDashboard'), 'TeacherDashboard');

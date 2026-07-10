@@ -19,33 +19,31 @@ export function NotificationBell() {
 
     const fetchNotifications = async () => {
       try {
+        console.debug(`[NotificationBell] Fetching notifications for userId=${userId} role=${role}`);
         let unread;
         if (role === 'STUDENT' && userProfileId) {
           unread = await notification.getUnreadForStudent(userProfileId);
         } else {
           unread = await notification.getUnread();
         }
+        console.debug(`[NotificationBell] Fetched ${unread?.length || 0} notifications`);
         setNotifications(unread || []);
         setUnreadCount(unread ? unread.length : 0);
       } catch (err) {
-        console.error('Failed to fetch notifications:', err);
+        console.error('[NotificationBell] Failed to fetch notifications:', err);
       }
     };
 
     fetchNotifications();
 
-    // Subscribe to real-time notifications
+    const interval = setInterval(fetchNotifications, 30000);
+
     const realTimeUnsubscribe = notification.subscribeRealTime((notificationData) => {
-      // Add new notification to the list
       setNotifications(prev => {
-        // Avoid duplicates
         const exists = prev.some(n => n.id === notificationData.id);
         if (exists) return prev;
-        
         return [notificationData, ...prev];
       });
-      
-      // Increment unread count if notification is unread
       if (!notificationData.read) {
         setUnreadCount(prev => prev + 1);
       }
@@ -59,13 +57,16 @@ export function NotificationBell() {
     const unsubscribe2 = eventBus.on('grade-revision-rejected', handleNotification);
     const unsubscribe3 = eventBus.on('grade-revision-requested', handleNotification);
     const unsubscribe4 = eventBus.on('grade-revision-approved', handleNotification);
+    const unsubscribe5 = eventBus.on('grade-revision-response', handleNotification);
 
     return () => {
       unsubscribe1();
       unsubscribe2();
       unsubscribe3();
       unsubscribe4();
+      unsubscribe5();
       realTimeUnsubscribe();
+      clearInterval(interval);
     };
   }, [userId, role, userProfileId]);
 
@@ -107,26 +108,27 @@ export function NotificationBell() {
               <p className="text-sm text-gray-500">No new notifications</p>
             ) : (
               <>
-                {notifications.slice(0, 5).map(notif => (
-                  <div key={notif.id} className="flex items-start gap-3">
-                    <div className="flex-shrink-0">
-                      <div className="h-3 w-3 rounded-full 
-                        {notif.read ? 'bg-gray-300' : 'bg-indigo-500'}">
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">{notif.title}</p>
-                      <p className="text-xs text-gray-500 truncate">{notif.message}</p>
-                      <time className="text-xs text-gray-400">{new Date(notif.timestamp || notif.createdAt).toLocaleTimeString()}</time>
-                      <button
-                        onClick={() => markAsRead(notif.id)}
-                        className="ml-2 text-xs text-blue-500 hover:underline"
-                      >
-                        {notif.read ? 'Read' : 'Mark as read'}
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                 {notifications.slice(0, 5).map(notif => (
+                   <div key={notif.id} className="flex items-start gap-3">
+                     <div className="flex-shrink-0">
+                       <div className={cn(
+                         "h-3 w-3 rounded-full",
+                         notif.isRead ? 'bg-gray-300' : 'bg-indigo-500'
+                       )} />
+                     </div>
+                     <div className="flex-1">
+                       <p className="text-sm font-medium text-gray-900">{notif.title}</p>
+                       <p className="text-xs text-gray-500 truncate">{notif.body || notif.message || ''}</p>
+                       <time className="text-xs text-gray-400">{new Date(notif.createdAt || notif.timestamp).toLocaleTimeString()}</time>
+                       <button
+                         onClick={() => markAsRead(notif.id)}
+                         className="ml-2 text-xs text-blue-500 hover:underline"
+                       >
+                         {notif.isRead ? 'Read' : 'Mark as read'}
+                       </button>
+                     </div>
+                   </div>
+                 ))}
                 {notifications.length > 5 && (
                   <div className="text-center pt-2">
                     <a href="/notifications" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">

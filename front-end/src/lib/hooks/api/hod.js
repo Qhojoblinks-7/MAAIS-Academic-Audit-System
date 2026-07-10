@@ -50,6 +50,7 @@ export function useGradeRevisions() {
     queryKey: ['hod', 'grade-revisions'],
     queryFn: () => hodApi.getGradeRevisions().then(r => r?.data ?? r),
     staleTime: 1000 * 60 * 2,
+    refetchInterval: 1000 * 30,
   });
 }
 

@@ -77,43 +77,6 @@ export function HODSidebar() {
       path: '/hod/analytics',
     },
     {
-      icon: AlertCircle,
-      label: 'Revision Approvals',
-      id: 'hod-revisions',
-      path: '/revisions',
-      badge: pendingRevisionsCount > 0 ? pendingRevisionsCount : undefined,
-    },
-    {
-      icon: FileText,
-      label: 'Audit Log',
-      id: 'hod-audit',
-      path: '/hod/audit'
-    },
-    {
-      icon: Users,
-      label: 'Teachers',
-      id: 'hod-teachers',
-      path: '/hod/teachers'
-    },
-    {
-      icon: BookOpen,
-      label: 'Interventions',
-      id: 'hod-interventions',
-      path: '/hod/interventions'
-    },
-    {
-      icon: Activity,
-      label: 'Grade Review',
-      id: 'hod-review',
-      path: '/hod/review'
-    },
-    {
-      icon: Database,
-      label: 'Lock & Export',
-      id: 'hod-lock-export',
-      path: '/hod/lock-export'
-    },
-    {
       icon: FolderOpen,
       label: 'Broadsheet',
       id: 'hod-broadsheet',

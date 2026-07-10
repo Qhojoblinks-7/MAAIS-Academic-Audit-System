@@ -87,7 +87,9 @@ class DataSyncLayer {
 
   async fetchUpdates() {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/sync/updates`);
+      const base = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+      const url = base ? `${base}/sync/updates` : '/sync/updates';
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         this.notify({ type: 'data', payload: data });

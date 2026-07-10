@@ -56,6 +56,7 @@ export function GradingSheet(props) {
   const {
     // Data
     students,
+    setStudents,
     selectedStudent,
     setSelectedStudent,
     // Config
@@ -228,33 +229,44 @@ export function GradingSheet(props) {
           onRatingChange={updateBehavioralRating}
           comment={behavioralComment[selectedStudent?.id] || ''}
           onCommentChange={updateBehavioralComment}
-          onSave={async () => {
-            if (isTermFinalized || sidebarSaving) return;
-            const sid = selectedStudent?.id;
-            if (!sid) return;
-            const comment = behavioralComment[sid] || '';
+           onSave={async () => {
+             if (isTermFinalized || sidebarSaving) return;
+             const sid = selectedStudent?.id;
+             if (!sid) return;
+             const comment = behavioralComment[sid] || '';
+             const labSafety = labSafetyCompliance[sid] || false;
+             const flagged = flaggedStudents[sid] || false;
 
-            setSidebarSaving(true);
-            try {
-              if (isMissingObsMode && selectedStudent?.gradeEntryId) {
-                await teacherService.createObservation({
-                  gradeEntryId: selectedStudent.gradeEntryId,
-                  comment,
-                  observationText: comment,
-                });
-                toast.success('Observation saved successfully');
-              } else if (isMissingObsMode) {
-                toast.error('Cannot save observation: grade entry not found for this student');
-              } else {
-                await handleSaveBehavioralRatings();
-              }
-            } catch (err) {
-              console.error('Failed to save observation:', err);
-              toast.error(err?.message || 'Failed to save observation');
-            } finally {
-              setSidebarSaving(false);
-            }
-          }}
+             setSidebarSaving(true);
+             try {
+                if (isMissingObsMode && selectedStudent?.gradeEntryId) {
+                  await teacherService.createObservation({
+                    gradeEntryId: selectedStudent.gradeEntryId,
+                    comment,
+                    observationText: comment,
+                    labSafety,
+                    flagged,
+                  });
+                   toast.success('Observation saved successfully');
+                   setStudents(prev => prev.map(s =>
+                     s.id === selectedStudent.id
+                       ? { ...s, auditStatus: 'COMPLETE' }
+                       : s
+                   ));
+                   updateFlagged(flagged);
+                   updateLabSafety(labSafety);
+                 } else if (isMissingObsMode) {
+                 toast.error('Cannot save observation: grade entry not found for this student');
+               } else {
+                 await handleSaveBehavioralRatings();
+               }
+             } catch (err) {
+               console.error('Failed to save observation:', err);
+               toast.error(err?.message || 'Failed to save observation');
+             } finally {
+               setSidebarSaving(false);
+             }
+           }}
           onFlagChange={updateFlagged}
           isFlagged={flaggedStudents[selectedStudent?.id] || false}
           safetyChecked={labSafetyCompliance[selectedStudent?.id] || false}

@@ -14,7 +14,6 @@ export function HODDashboard() {
     departmentProgress = [],
     teacherSubmissions = [],
     interventionAlerts = [],
-    baselineDeltas = {},
     refreshDepartmentProgress,
     refreshTeacherSubmissions,
     refreshSubmissionTrends,
@@ -77,12 +76,6 @@ export function HODDashboard() {
     ? Math.round(teacherSubmissions.reduce((sum, s) => sum + (s.progress || 0), 0) / teacherSubmissions.length)
     : 0;
 
-  function fmtDelta(d) {
-    if (d === null || d === undefined) return '—';
-    if (d === 0) return '0%';
-    return `${d >= 0 ? '+' : ''}${d}%`;
-  }
-
   return (
     <div className="flex-1 overflow-y-auto bg-[#F4F4F9] p-6 md:p-8 select-none scrollbar-hide no-scrollbar">
       <motion.div
@@ -116,80 +109,74 @@ export function HODDashboard() {
          
           <div className="lg:col-span-2 space-y-8">
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              
-              <div className="bg-blue-600 text-white rounded-3xl p-5 shadow-xs flex flex-col justify-between h-[130px]">
-                <div className="flex justify-between items-start">
-                  <div className="p-2 bg-white/10 rounded-xl">
-                    <BookOpen size={18} className="text-white" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-surface p-4 rounded-2xl border border-border/50 shadow-sm hover:shadow-md transition-all relative group">
+                <div className="flex items-center justify-between h-full">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shrink-0 bg-blue-600/10 text-blue-600">
+                      <BookOpen size={22} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1">Department Classes</p>
+                      <p className="text-[11px] font-medium text-text-secondary leading-tight">active tracks</p>
+                    </div>
                   </div>
-                  <span className="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full">
-                    {fmtDelta(baselineDeltas.departmentClassCount)}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-[11px] font-medium text-blue-100 uppercase tracking-wider">Department Classes</p>
-                  <div className="flex items-baseline gap-1.5 mt-0.5">
-                    <span className="text-2xl font-black tracking-tight">{totalClasses}</span>
-                    <span className="text-[10px] text-blue-200 font-medium">active tracks</span>
+                  <div className="text-right pl-4 shrink-0">
+                    <p className="text-5xl font-bold tracking-tighter leading-none">{totalClasses}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white text-gray-900 rounded-3xl p-5 shadow-xs border border-gray-100 flex flex-col justify-between h-[130px]">
-                <div className="flex justify-between items-start">
-                  <div className="p-2 bg-gray-50 rounded-xl border border-gray-100">
-                    <Percent size={18} className="text-gray-600" />
+              <div className="bg-surface p-4 rounded-2xl border border-border/50 shadow-sm hover:shadow-md transition-all relative group">
+                <div className="flex items-center justify-between h-full">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shrink-0 bg-emerald-500/10 text-emerald-600">
+                      <Percent size={22} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1">Average Progress</p>
+                      <p className="text-[11px] font-medium text-text-secondary leading-tight">grading velocity</p>
+                    </div>
                   </div>
-                  <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
-                    {fmtDelta(baselineDeltas.avgProgressPct)}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Average Progress</p>
-                  <div className="flex items-baseline gap-1.5 mt-0.5">
-                    <span className="text-2xl font-black tracking-tight">{avgProgress}%</span>
-                    <span className="text-[10px] text-gray-500 font-medium">grading velocity</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white text-gray-900 rounded-3xl p-5 shadow-xs border border-gray-100 flex flex-col justify-between h-[130px]">
-                <div className="flex justify-between items-start">
-                  <div className="p-2 bg-gray-50 rounded-xl border border-gray-100">
-                    <AlertTriangle size={18} className="text-red-500" />
-                  </div>
-                  <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
-                    {fmtDelta(baselineDeltas.atRiskStudentCount)}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">At-Risk Students</p>
-                  <div className="flex items-baseline gap-1.5 mt-0.5">
-                    <span className="text-2xl font-black tracking-tight">{atRiskStudents}</span>
-                    <span className="text-[10px] text-gray-500 font-medium">unresolved alerts</span>
+                  <div className="text-right pl-4 shrink-0">
+                    <p className="text-5xl font-bold tracking-tighter leading-none">{avgProgress}%</p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white text-gray-900 rounded-3xl p-5 shadow-xs border border-gray-100 flex flex-col justify-between h-[130px]">
-                <div className="flex justify-between items-start">
-                  <div className="p-2 bg-gray-50 rounded-xl border border-gray-100">
-                    <Users size={18} className="text-gray-600" />
+              <div className="bg-surface p-4 rounded-2xl border border-border/50 shadow-sm hover:shadow-md transition-all relative group">
+                <div className="flex items-center justify-between h-full">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shrink-0 bg-red-500/10 text-red-600">
+                      <AlertTriangle size={22} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1">At-Risk Students</p>
+                      <p className="text-[11px] font-medium text-text-secondary leading-tight">unresolved alerts</p>
+                    </div>
                   </div>
-                  <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
-                    {fmtDelta(baselineDeltas.teacherCompletionPct)}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Teacher Completion</p>
-                  <div className="flex items-baseline gap-1.5 mt-0.5">
-                    <span className="text-2xl font-black tracking-tight">{teacherCompletion}%</span>
-                    <span className="text-[10px] text-gray-500 font-medium">submission rate</span>
+                  <div className="text-right pl-4 shrink-0">
+                    <p className="text-5xl font-bold tracking-tighter leading-none">{atRiskStudents}</p>
                   </div>
                 </div>
               </div>
 
+              <div className="bg-surface p-4 rounded-2xl border border-border/50 shadow-sm hover:shadow-md transition-all relative group">
+                <div className="flex items-center justify-between h-full">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shrink-0 bg-blue-500/10 text-blue-600">
+                      <Users size={22} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1">Teacher Completion</p>
+                      <p className="text-[11px] font-medium text-text-secondary leading-tight">submission rate</p>
+                    </div>
+                  </div>
+                  <div className="text-right pl-4 shrink-0">
+                    <p className="text-5xl font-bold tracking-tighter leading-none">{teacherCompletion}%</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div>
@@ -274,7 +261,7 @@ export function HODDashboard() {
             <div className="flex flex-col gap-4">
               <Link
                 to="/hod/teachers"
-                className="bg-white p-5 rounded-2xl border border-gray-200/60 shadow-xs hover:shadow-md transition-all flex items-center gap-4"
+                className="bg-white p-4 rounded-2xl border border-gray-200/60 shadow-xs hover:shadow-md transition-all flex items-center gap-4"
               >
                 <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-gray-700 border border-gray-100 shrink-0">
                   <Users size={20} />
@@ -287,7 +274,7 @@ export function HODDashboard() {
 
               <Link
                 to="/hod/review"
-                className="bg-white p-5 rounded-2xl border border-gray-200/60 shadow-xs hover:shadow-md transition-all flex items-center gap-4"
+                className="bg-white p-4 rounded-2xl border border-gray-200/60 shadow-xs hover:shadow-md transition-all flex items-center gap-4"
               >
                 <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-gray-700 border border-gray-100 shrink-0">
                   <ShieldCheck size={20} />
@@ -295,19 +282,6 @@ export function HODDashboard() {
                 <div>
                   <p className="text-sm font-bold text-gray-900">Grade Review</p>
                   <p className="text-[10px] text-gray-500">Verify submitted grades</p>
-                </div>
-              </Link>
-
-              <Link
-                to="/hod/lock-export"
-                className="bg-white p-5 rounded-2xl border border-gray-200/60 shadow-xs hover:shadow-md transition-all flex items-center gap-4"
-              >
-                <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-gray-700 border border-gray-100 shrink-0">
-                  <BookOpen size={20} />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-900">Lock & Export</p>
-                  <p className="text-[10px] text-gray-500">Finalize term data</p>
                 </div>
               </Link>
             </div>

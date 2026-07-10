@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, MapPin, ShieldAlert, BookOpen, FilePlus, FileText, Link as LinkIcon, Calendar } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -14,13 +13,14 @@ export function DailyTimetableView({ timetable, selectedDay, setSelectedDay, set
     <div className="h-full flex flex-col p-8 overflow-y-auto">
       <div className="max-w-3xl mx-auto w-full">
         <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
-          {DAYS.map(day => (
+          {DAYS.map((day, i) => (
             <button
               key={day}
               onClick={() => setSelectedDay(day)}
+              style={{ animationDelay: `${i * 40}ms` }}
               className={cn(
-                "px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap",
-                selectedDay === day ? "bg-success text-surface shadow-lg" : "bg-surface text-text-secondary hover:bg-muted"
+                "px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap animate-in fade-in",
+                selectedDay === day ? "bg-success text-surface shadow-lg" : "bg-surface text-secondary hover:bg-muted"
               )}
               title={`View ${day} schedule`}
             >
@@ -29,7 +29,7 @@ export function DailyTimetableView({ timetable, selectedDay, setSelectedDay, set
           ))}
         </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 animate-in fade-in">
             {timetable.filter(e => e.day === selectedDay).sort((a, b) => a.startTime.localeCompare(b.startTime)).map(entry => (
               <DailyClassCard
                 key={entry.id}
@@ -45,10 +45,10 @@ export function DailyTimetableView({ timetable, selectedDay, setSelectedDay, set
             ))}
             
             {timetable.filter(e => e.day === selectedDay).length === 0 && (
-              <div className="text-center py-20 bg-surface rounded-3xl border-2 border-dashed border-border">
-                <Calendar className="mx-auto text-text-secondary mb-4" size={48} />
-                <h3 className="text-lg font-black text-text-primary">No Classes Scheduled</h3>
-                <p className="text-sm font-bold text-text-secondary">Enjoy your free period!</p>
+              <div className="text-center py-20 bg-surface rounded-3xl border-2 border-dashed border-border animate-in fade-in">
+                <Calendar className="mx-auto text-secondary mb-4" size={48} />
+                <h3 className="text-lg font-black text-primary">No Classes Scheduled</h3>
+                <p className="text-sm font-bold text-secondary">Enjoy your free period!</p>
               </div>
             )}
           </div>

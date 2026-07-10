@@ -29,10 +29,10 @@ import {
   MasterTimetable, ParentRegistry, ReportGeneratorView, SchedulingView,
   StaffRegistry, StudentRegistry, NewApprovalRequestView, ApprovalInspectView,
   ApprovalsView, SupportTicketDetailView,
-  HODDashboard, HODAudit, HODInterventions, HODReview, HODLockExport, HODSettings,
+  HODDashboard, HODAudit, HODInterventions, HODReview, HODSettings,
   HODSettingsPage, HODSupportPage, HODTeachers, HODAnalytics, HODArchiveView,
   HODArchiveDetailView, HODMissingObservations, Unauthorized, BroadsheetGenerator,
-  HODCertification, HODRevisionsFeed,
+  HODCertification,
   TeacherDashboard, TeacherTimetableView, TeacherSettings, TeacherSupport,
   TeacherArchiveView, TeacherArchiveDetailView, TeacherGradingView,
   TeacherAnalyticsView, TeacherMissingObservations, TeacherRevisionsFeed,
@@ -553,7 +553,7 @@ function AppContent() {
               element={
                 <RequireRole allowedRoles={["TEACHER", "HOD"]}>
                   {user?.role === "HOD" ? (
-                    <HODRevisionsFeed />
+                    <Navigate to="/hod/review?view=revisions" replace />
                   ) : (
                     <TeacherRevisionsFeed />
                   )}
@@ -640,7 +640,7 @@ function AppContent() {
               path="/hod/lock-export"
               element={
                 <RequireRole allowedRoles={["HOD"]}>
-                  <HODLockExport />
+                  <Navigate to="/hod/review?view=lock" replace />
                 </RequireRole>
               }
             />

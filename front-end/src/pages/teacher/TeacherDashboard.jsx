@@ -1,6 +1,5 @@
 import React from 'react';
 import { ClassCard } from '../../components/shared/ClassCard';
-import { motion } from 'framer-motion';
 import { useRole } from '../../context/RoleContext';
 import { useUI } from '../../context/UIContext';
 import { useNavigate } from 'react-router-dom';
@@ -88,23 +87,15 @@ export function TeacherDashboard() {
 
   return (
     <div className="flex-1 overflow-y-auto bg-background p-6 md:p-8 select-none no-scrollbar">
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-7xl mx-auto"
-      >
+      <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
 
         {rolloverBannerVisible && (
-          <motion.div
-            initial={{ y: -12, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="mb-8 rounded-2xl bg-warning/10 border border-warning/30 px-6 py-4 flex flex-col sm:flex-row sm:items-start gap-4"
-          >
+          <div className="mb-8 rounded-2xl bg-warning/10 border border-warning/30 px-6 py-4 flex flex-col sm:flex-row sm:items-start gap-4 animate-in fade-in slide-in-from-top-3 duration-300">
             <div className="shrink-0 w-10 h-10 bg-warning/20 rounded-xl flex items-center justify-center">
               <Clock size={20} className="text-warning" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-black text-text-primary">
+              <h3 className="text-sm font-black text-primary">
                 Your subject rollover is pending approval
               </h3>
               <p className="text-xs font-medium text-warning mt-1">
@@ -112,11 +103,11 @@ export function TeacherDashboard() {
               </p>
               <ul className="mt-2 space-y-0.5">
                 {rolloverChanges.map((ch, i) => (
-                  <li key={i} className="flex items-center gap-2 text-[11px] font-bold text-warning">
+                  <li key={i} className="flex items-center gap-2 text-xs font-bold text-warning">
                     {ch.action === 'added' ? (
                       <CheckCircle2 size={12} className="text-success" />
                     ) : (
-                      <RefreshCw size={12} className="text-text-secondary" />
+                      <RefreshCw size={12} className="text-secondary" />
                     )}
                     <span className="capitalize">{ch.action}</span> — {ch.subject}
                   </li>
@@ -132,16 +123,16 @@ export function TeacherDashboard() {
             >
               <AlertTriangle size={16} />
             </Button>
-          </motion.div>
+          </div>
         )}
 
         <header className="mb-8 border-b border-border pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-black text-text-primary tracking-tight leading-none">
+            <h1 className="text-2xl font-black text-primary tracking-tight leading-none">
               Welcome back, <span className="text-success">{user?.name?.split(' ')[0] || 'Teacher'}</span>!
             </h1>
-            <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mt-2 flex items-center gap-1.5">
-              <Layers size={10} className="text-text-secondary" />
+            <p className="text-xs font-black text-secondary uppercase tracking-widest mt-2 flex items-center gap-1.5">
+              <Layers size={10} className="text-secondary" />
               Academic Workspace & Assessment Matrix
             </p>
           </div>
@@ -151,14 +142,14 @@ export function TeacherDashboard() {
           
           <Card className="p-5 rounded-2xl shadow-sm flex flex-col gap-3 ring-0">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center text-text-primary border border-border shrink-0">
+              <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center text-primary border border-border shrink-0">
                 <BookOpen size={20} />
               </div>
               <div>
-                <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest leading-none">Assigned Classes</p>
+                <p className="text-xs font-black text-secondary uppercase tracking-widest leading-none">Assigned Classes</p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-text-primary leading-none">{teacherClasses.length}</span>
-                  <span className="text-[11px] font-bold text-text-secondary">active tracks</span>
+                  <span className="text-2xl font-black text-primary leading-none">{teacherClasses.length}</span>
+                  <span className="text-xs font-bold text-secondary">active tracks</span>
                 </div>
               </div>
             </div>
@@ -170,10 +161,10 @@ export function TeacherDashboard() {
                 <Percent size={20} />
               </div>
               <div>
-                <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest leading-none">Grading Operations</p>
+                <p className="text-xs font-black text-secondary uppercase tracking-widest leading-none">Grading Operations</p>
                 <div className="flex items-baseline gap-1">
                   <span className="text-2xl font-black text-success leading-none">{avgProgress}%</span>
-                  <span className="text-[11px] font-bold text-success/70">total complete</span>
+                  <span className="text-xs font-bold text-success/70">total complete</span>
                 </div>
               </div>
             </div>
@@ -181,14 +172,14 @@ export function TeacherDashboard() {
 
           <Card className="p-5 rounded-2xl shadow-sm flex flex-col gap-3 ring-0 sm:col-span-2 lg:col-span-1">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center text-text-primary border border-border shrink-0">
+              <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center text-primary border border-border shrink-0">
                 <GraduationCap size={20} />
               </div>
               <div>
-                <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest leading-none">Student Scope</p>
+                <p className="text-xs font-black text-secondary uppercase tracking-widest leading-none">Student Scope</p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-text-primary leading-none">{totalStudents}</span>
-                  <span className="text-[11px] font-bold text-text-secondary">total roster count</span>
+                  <span className="text-2xl font-black text-primary leading-none">{totalStudents}</span>
+                  <span className="text-xs font-bold text-secondary">total roster count</span>
                 </div>
               </div>
             </div>
@@ -198,20 +189,18 @@ export function TeacherDashboard() {
 
         <div className={`grid grid-cols-1 md:grid-cols-2 ${rightPanelVisible ? 'lg:grid-cols-2' : 'lg:grid-cols-3'} gap-6`}>
           {teacherClasses.map((cls, idx) => (
-            <motion.div
+            <div
               key={cls.id}
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: idx * 0.04, duration: 0.2 }}
+              style={{ animationDelay: `${idx * 40}ms` }}
               onClick={() => handleEnterMarks(cls)}
-              className="h-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-success/20 rounded-2xl"
+              className="h-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-success/20 rounded-2xl animate-in fade-in zoom-in-97 duration-200"
             >
               <ClassCard {...cls} />
-            </motion.div>
+            </div>
           ))}
         </div>
 
-      </motion.div>
+      </div>
     </div>
   );
 }

@@ -14,14 +14,22 @@ function getHeaders() {
 
 async function request(method, path, body) {
   try {
-    const res = await fetch(`${BASE_URL}${path}`, {
+    const url = `${BASE_URL}${path}`;
+    const headers = getHeaders();
+    console.debug(`[NotificationService] ${method} ${url}`, { headers: { ...headers, Authorization: headers.Authorization ? 'Bearer ***' : undefined } });
+    const res = await fetch(url, {
       method,
-      headers: getHeaders(),
+      headers,
       credentials: 'include',
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
     });
 
+    console.debug(`[NotificationService] ${method} ${url} -> ${res.status}`);
+
     if (!res.ok) {
+      let errorText = '';
+      try { errorText = await res.text(); } catch {}
+      console.error(`[NotificationService] ${method} ${url} failed: ${res.status}`, errorText);
       throw new Error(`Notification request failed: ${res.status}`);
     }
     return res.status === 204 ? undefined : res.json();

@@ -1,6 +1,24 @@
 class EventBus {
   constructor() {
     this.events = {};
+    this.bc = null;
+    try {
+      this.bc = new BroadcastChannel('maais_event_bus');
+      this.bc.onmessage = (ev) => {
+        const { event, payload } = ev.data || {};
+        if (event && this.events[event]) {
+          this.events[event].forEach((callback) => {
+            try {
+              callback(payload);
+            } catch {
+              // Silently catch listener errors
+            }
+          });
+        }
+      };
+    } catch {
+      // BroadcastChannel not supported
+    }
   }
 
   on(event, callback) {
@@ -26,6 +44,11 @@ class EventBus {
         // Silently catch listener errors
       }
     });
+    try {
+      this.bc?.postMessage({ event, payload });
+    } catch {
+      // BroadcastChannel post failed
+    }
   }
 
   once(event, callback) {
