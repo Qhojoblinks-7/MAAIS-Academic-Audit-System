@@ -82,6 +82,7 @@ function GradingRouteLoader() {
   const getTargetStudentId = searchParams.get("studentId");
   const getTargetStudentName = searchParams.get("studentName");
   const getTargetStudentIndex = searchParams.get("index");
+  const isAtRisk = searchParams.get("atRisk") === "true";
 
   const [gradingData, setGradingData] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
@@ -229,6 +230,7 @@ function GradingRouteLoader() {
       targetStudentName={getTargetStudentName}
       targetStudentIndex={getTargetStudentIndex}
       noAssignmentWarning={!students.length && !!getTargetStudentId}
+      isAtRisk={isAtRisk}
     />
   );
 }

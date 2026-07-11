@@ -27,7 +27,7 @@ export function DateRangeFilter({ value, onChange, className }) {
     <div className={cn("relative", className)}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+        className="px-3 py-1.5 bg-surface border-border rounded-lg text-xs font-medium text-foreground hover:bg-muted flex items-center gap-2"
       >
         <Calendar size={12} />
         {presets.find(p => p.value === value?.preset)?.label || 'Date Range'}
@@ -35,12 +35,12 @@ export function DateRangeFilter({ value, onChange, className }) {
       </button>
 
       {isOpen && (
-        <div className="absolute top-full mt-2 w-48 bg-white rounded-xl border border-gray-100 shadow-lg p-2 z-50">
+        <div className="absolute top-full mt-2 w-48 bg-surface rounded-xl border border-border shadow-lg p-2 z-50">
           {presets.map((preset) => (
             <button
               key={preset.value}
               onClick={() => handlePresetSelect(preset.value)}
-              className="w-full px-3 py-2 text-left text-xs hover:bg-gray-50 rounded-lg"
+              className="w-full px-3 py-2 text-left text-xs hover:bg-muted rounded-lg"
             >
               {preset.label}
             </button>

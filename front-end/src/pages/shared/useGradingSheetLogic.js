@@ -37,6 +37,7 @@ export function useGradingSheetLogic({
   isTermFinalized: isTermFinalizedProp,
   isCorrectionMode: isCorrectionModeProp = false,
   isMissingObsMode: isMissingObsModeProp = false,
+  isAtRisk: isAtRiskProp = false,
   revisionId: revisionIdProp,
   targetStudentId: targetStudentIdProp,
   targetStudentName: targetStudentNameProp,
@@ -82,7 +83,7 @@ export function useGradingSheetLogic({
   const [students, setStudents] = useState(() => studentsProp || []);
   const [selectedStudent, setSelectedStudent] = useState(() => {
     if (targetStudentIdProp && studentsProp?.length) {
-      return studentsProp.find(s => s.id === targetStudentIdProp) || studentsProp[0] || null;
+      return studentsProp.find(s => s.id === targetStudentIdProp || s.index === targetStudentIdProp || s.name === targetStudentIdProp) || studentsProp[0] || null;
     }
     return studentsProp?.[0] || null;
   });
@@ -129,29 +130,15 @@ export function useGradingSheetLogic({
 
   // Pre-select when external target arrives
   useEffect(() => {
-    if (targetStudentIdProp) {
-      const found = students.find(s => s.id === targetStudentIdProp);
+    if (targetStudentIdProp && students.length > 0) {
+      const found = students.find(s => s.id === targetStudentIdProp || s.index === targetStudentIdProp || s.name === targetStudentIdProp);
       if (found) {
         setSelectedStudent(found);
-      } else if (students.length === 0) {
-        const syntheticStudent = {
-          id: targetStudentIdProp,
-          name: targetStudentNameProp || 'Selected Student',
-          index: targetStudentIndexProp || '',
-          auditStatus: 'MISSING',
-          sba: 0,
-          exam: 0,
-          final: 0,
-          grade: '',
-          remark: '',
-          gradeEntryId: null,
-        };
-        setSelectedStudent(syntheticStudent);
       } else {
         setSelectedStudent(students[0]);
       }
     }
-  }, [targetStudentIdProp, students, targetStudentNameProp]);
+  }, [targetStudentIdProp, students]);
 
   // ── UI state ────────────────────────────────────────────────────────────────
   const [submissionStatus, setSubmissionStatus] = useState('DRAFT');

@@ -22,12 +22,12 @@ export function TimetableHeader({ currentPeriod, nextPeriod, formatTime, view, s
             <Timer size={20} />
           </div>
           <div className="min-w-0">
-            <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mb-0.5">Live Period</p>
+            <p className="text-xs font-black text-text-secondary uppercase tracking-widest mb-0.5">Live Period</p>
             <h3 className="text-base font-black text-text-primary leading-tight truncate">
               {isActive ? `${currentPeriod.subjectName} — ${currentPeriod.className}` : 'No Active Session'}
             </h3>
             {isActive && (
-              <p className="text-[10px] font-bold text-success mt-1 uppercase tracking-wider flex items-center gap-1">
+              <p className="text-xs font-bold text-success mt-1 uppercase tracking-wider flex items-center gap-1">
                 <MapPin size={10} className="shrink-0" /> {currentPeriod.venue}
               </p>
             )}
@@ -36,7 +36,7 @@ export function TimetableHeader({ currentPeriod, nextPeriod, formatTime, view, s
         {isActive && (
           <button
             onClick={() => navigate('/grading')}
-            className="px-4 py-2 bg-success hover:bg-success/80 text-surface rounded-xl font-black text-[10px] uppercase tracking-wider transition-all shadow-lg shadow-brand-dark/10 flex items-center gap-2 shrink-0"
+            className="px-4 py-2 bg-success hover:bg-success/80 text-surface rounded-xl font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-brand-dark/10 flex items-center gap-2 shrink-0"
             title="Open grading sheet for this period"
           >
             Open Sheet
@@ -57,12 +57,12 @@ export function TimetableHeader({ currentPeriod, nextPeriod, formatTime, view, s
             <Clock size={20} />
           </div>
           <div className="min-w-0">
-            <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mb-0.5">Coming Up Next</p>
+            <p className="text-xs font-black text-text-secondary uppercase tracking-widest mb-0.5">Coming Up Next</p>
             <h3 className="text-base font-black text-text-primary leading-tight truncate">
               {hasNext ? `${nextPeriod.subjectName} — ${nextPeriod.className}` : 'End of Day'}
             </h3>
             {hasNext && (
-              <p className="text-[10px] font-bold text-text-secondary mt-1 uppercase tracking-wider">
+              <p className="text-xs font-bold text-text-secondary mt-1 uppercase tracking-wider">
                 Starts at {nextPeriod.startTime}
               </p>
             )}
@@ -72,7 +72,7 @@ export function TimetableHeader({ currentPeriod, nextPeriod, formatTime, view, s
         <div className="text-right shrink-0 pl-4 border-l border-border">
           <div className="flex items-center gap-1 justify-end text-danger mb-0.5">
             <ShieldAlert size={12} />
-            <p className="text-[9px] font-black uppercase tracking-widest">PostgreSQL Lock</p>
+            <p className="text-xs font-black uppercase tracking-widest">PostgreSQL Lock</p>
           </div>
           <p className="text-xs font-black text-danger bg-danger/10 px-2 py-0.5 rounded-md inline-block">
             4 Days Remaining
@@ -93,7 +93,7 @@ export function TimetableHeader({ currentPeriod, nextPeriod, formatTime, view, s
             <h1 className="text-2xl font-black text-text-primary tracking-tight">Academic Schedule</h1>
             <div className="flex items-center gap-2 mt-0.5">
               <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-              <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest">System Sync Active</p>
+              <p className="text-xs font-black text-text-secondary uppercase tracking-widest">System Sync Active</p>
             </div>
           </div>
         </div>

@@ -49,6 +49,7 @@ export function GradingSheet(props) {
   const logic = useGradingSheetLogic({
     ...props,
     teacherId: props.teacherId,
+    isAtRisk: props.isAtRisk,
   });
 
   const [sidebarSaving, setSidebarSaving] = React.useState(false);
@@ -63,6 +64,7 @@ export function GradingSheet(props) {
     DISPLAY_CLASS_INFO,
     isCorrectionMode,
     isMissingObsMode,
+    isAtRisk,
     isTermFinalized,
     isSubmissionLocked,
     missingCount,
@@ -180,13 +182,14 @@ export function GradingSheet(props) {
                  setIsExamExpanded={setIsExamExpanded}
                  isTermFinalized={isTermFinalized}
                />
-               <GradingSheetTableBody
-                 students={students}
-                 selectedStudent={selectedStudent}
-                 isCorrectionMode={isCorrectionMode}
-                 isMissingObsMode={isMissingObsMode}
-                 isTermFinalized={isTermFinalized}
-                 targetStudentId={props.targetStudentId}
+                <GradingSheetTableBody
+                  students={students}
+                  selectedStudent={selectedStudent}
+                  isCorrectionMode={isCorrectionMode}
+                  isMissingObsMode={isMissingObsMode}
+                  isAtRisk={isAtRisk}
+                  isTermFinalized={isTermFinalized}
+                  targetStudentId={props.targetStudentId}
                  tempMark={tempMark}
                  setTempMark={setTempMark}
                  originalMark={originalMark}

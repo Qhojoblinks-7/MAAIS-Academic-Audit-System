@@ -3,10 +3,10 @@ import { cn } from '../../lib/utils';
 
 export function ActionButtonGroup({ actions, className }) {
   const variants = {
-    primary: 'bg-emerald-600 hover:bg-emerald-700 text-white',
-    secondary: 'bg-gray-100 hover:bg-gray-200 text-gray-700',
-    danger: 'bg-rose-600 hover:bg-rose-700 text-white',
-    ghost: 'bg-transparent hover:bg-gray-100 text-gray-600',
+    primary: 'bg-success hover:bg-success/90 text-background',
+    secondary: 'bg-muted hover:bg-muted text-foreground',
+    danger: 'bg-destructive hover:bg-destructive/90 text-background',
+    ghost: 'bg-transparent hover:bg-muted text-text-secondary',
   };
 
   return (

@@ -25,8 +25,8 @@ export function ClassCard({ subject, className, status, progress, studentCount, 
           {subject}
         </h3>
         <p className={cn(
-          "text-[10px] font-black mt-1 uppercase tracking-widest text-left truncate opacity-90", 
-          isComplete ? "text-success-foreground/80" : "text-muted-foreground"
+          "text-xs font-black mt-1 uppercase tracking-widest text-left truncate opacity-90", 
+          isComplete ? "text-background" : "text-muted-foreground"
         )}>
           {className} • Grading Sheet
         </p>
@@ -40,14 +40,14 @@ export function ClassCard({ subject, className, status, progress, studentCount, 
           <div>
             <p className={cn(
               "text-xs font-black uppercase tracking-wider mb-2 truncate text-left", 
-              isComplete ? "text-success-foreground" : "text-success"
+              isComplete ? "text-background" : "text-success"
             )}>
               {status}
             </p>
 
             <div className="flex items-center gap-1.5 mb-4 text-left">
-              <Users size={12} className={isComplete ? "text-success-foreground" : "text-muted-foreground"} />
-              <span className={cn("text-xs font-bold tracking-tight", isComplete ? "text-success-foreground" : "text-foreground")}>
+              <Users size={12} className={isComplete ? "text-background" : "text-muted-foreground"} />
+              <span className={cn("text-xs font-bold tracking-tight", isComplete ? "text-background" : "text-foreground")}>
                 {studentCount} Enrolled Students
               </span>
             </div>
@@ -93,8 +93,8 @@ export function ClassCard({ subject, className, status, progress, studentCount, 
               {progress}%
             </span>
             <span className={cn(
-              "text-[7px] font-black uppercase tracking-widest leading-none mt-0.5 scale-90",
-              isComplete ? "text-success-foreground" : "text-muted-foreground"
+              "text-xs font-black uppercase tracking-widest leading-none mt-0.5 scale-90",
+              isComplete ? "text-background" : "text-muted-foreground"
             )}>
               Done
             </span>

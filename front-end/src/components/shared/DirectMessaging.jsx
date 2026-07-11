@@ -137,66 +137,66 @@ export function DirectMessaging({ userId, userRole, counterpartRole = 'HOD' }) {
   }, [inputValue, currentUserId, isTeacher, isHOD, counterpartRole]);
 
   return (
-    <div className="border rounded-lg p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-lg font-medium text-gray-900">
-          Direct Messages {counterpartRole === 'HOD' ? '(to HODs)' : '(to Teachers)'}
-        </h3>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500">
-            {unreadCount > 0 ? `(${unreadCount} unread)` : ''}
-          </span>
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="p-1 hover:bg-gray-100 rounded hover:text-gray-700 transition-colors"
-          >
-            {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </button>
+      <div className="border rounded-lg p-4 bg-card border-border">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-medium text-foreground">
+            Direct Messages {counterpartRole === 'HOD' ? '(to HODs)' : '(to Teachers)'}
+          </h3>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              {unreadCount > 0 ? `(${unreadCount} unread)` : ''}
+            </span>
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="p-1 hover:bg-muted rounded hover:text-foreground transition-colors"
+            >
+              {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
+          </div>
         </div>
-      </div>
 
-      {expanded && (
-        <div className="space-y-3">
-          {messages.length === 0 ? (
-            <p className="text-center py-4 text-gray-500 italic">
-              No messages yet. Start the conversation!
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {messages.map(msg => (
-                <div key={msg.id} className={cn(
-                  "flex gap-3",
-                  msg.senderId === currentUserId ? 'flex-row-reverse' : 'flex-row'
-                )}>
-                  <div className="w-8 h-8 flex items-center justify-center rounded-full 
-                    {msg.senderId === currentUserId ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'}">
-                    {msg.senderId === currentUserId ? 'T' : 'H'}
-                  </div>
-                  <div className="flex-1 max-w-[80%]">
+        {expanded && (
+          <div className="space-y-3">
+            {messages.length === 0 ? (
+              <p className="text-center py-4 text-muted-foreground">
+                No messages yet. Start the conversation!
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {messages.map(msg => (
+                  <div key={msg.id} className={cn(
+                    "flex gap-3",
+                    msg.senderId === currentUserId ? 'flex-row-reverse' : 'flex-row'
+                  )}>
                     <div className={cn(
-                      "px-3 py-2 rounded-xl",
-                      msg.senderId === currentUserId ? 'bg-blue-50 text-gray-800 rounded-tl-none' : 
-                        'bg-emerald-50 text-gray-800 rounded-tr-none'
+                      "w-8 h-8 flex items-center justify-center rounded-full shrink-0",
+                      msg.senderId === currentUserId ? 'bg-brand-primary/10 text-brand-primary' : 'bg-success/10 text-success'
                     )}>
-                      <p className="text-xs font-medium text-gray-500 mb-0.5">
-                        {msg.senderId === currentUserId ? 'You' : (msg.senderId.includes('hod') ? 'HOD' : 'Teacher')}
-                      </p>
-                      <p className="text-sm text-gray-800 whitespace-pre-wrap break-words">
-                        {msg.content}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {new Date(msg.timestamp).toLocaleTimeString()}
-                      </p>
+                      {msg.senderId === currentUserId ? 'T' : 'H'}
+                    </div>
+                    <div className="flex-1 max-w-[80%]">
+                      <div className={cn(
+                        "px-3 py-2 rounded-xl",
+                        msg.senderId === currentUserId ? 'bg-brand-primary/5 text-foreground rounded-tl-none' : 
+                          'bg-success/5 text-foreground rounded-tr-none'
+                      )}>
+                        <p className="text-xs font-medium text-muted-foreground mb-0.5">
+                          {msg.senderId === currentUserId ? 'You' : (msg.senderId?.includes('hod') ? 'HOD' : 'Teacher')}
+                        </p>
+                        <p className="text-sm text-foreground whitespace-pre-wrap break-words">
+                          {msg.content}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(msg.timestamp).toLocaleTimeString()}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+                ))}
+              </div>
+            )}
 
-      <div className="mt-3 pt-2 border-t border-gray-200">
+      <div className="mt-3 pt-2 border-t border-border">
         <div className="flex items-center gap-2">
           <div className="flex-1">
             <textarea
@@ -204,14 +204,14 @@ export function DirectMessaging({ userId, userRole, counterpartRole = 'HOD' }) {
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="Type your message..."
               rows={2}
-              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              className="w-full p-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-primary/20 text-foreground placeholder:text-muted-foreground bg-surface"
               disabled={isLoading}
             />
           </div>
           <button
             onClick={sendMessage}
             disabled={isLoading || !inputValue.trim()}
-            className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-50"
+            className="px-3 py-2 bg-brand-primary text-background rounded-md hover:bg-brand-primary/90 transition-colors disabled:opacity-50"
           >
             {isLoading ? 'Sending...' : 'Send'}
           </button>

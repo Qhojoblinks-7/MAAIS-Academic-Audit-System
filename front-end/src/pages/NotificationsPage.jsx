@@ -78,13 +78,13 @@ export function NotificationsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen bg-[#F9F9F7] font-sans">
+      <div className="flex h-screen bg-background font-sans">
         <div className="flex-1 flex flex-col min-w-0">
           <div className="hidden lg:block"></div>
           <main className="flex-1 flex overflow-hidden relative">
             <div className="flex-1 overflow-y-auto p-8">
               <div className="flex items-center justify-center py-24">
-                <p className="text-sm font-medium text-gray-400">Loading notifications…</p>
+                <p className="text-sm font-medium text-muted-foreground">Loading notifications…</p>
               </div>
             </div>
           </main>
@@ -94,36 +94,36 @@ export function NotificationsPage() {
   }
 
   return (
-    <div className="flex h-screen bg-[#F9F9F7] font-sans">
+    <div className="flex h-screen bg-background font-sans">
       {/* Sidebar */}
-      <div className="hidden lg:block w-64 bg-white border-r border-gray-200">
-        <div className="flex-shrink-0 flex items-center px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Notifications</h2>
+      <div className="hidden lg:block w-64 bg-surface border-r border-border">
+        <div className="flex-shrink-0 flex items-center px-6 py-4 border-b border-border">
+          <h2 className="text-xl font-bold text-foreground">Notifications</h2>
         </div>
         <nav className="mt-10 space-y-1 px-6">
           <a 
             href="/teacher-dashboard" 
-            className="flex items-center w-full px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="flex items-center w-full px-3 py-2 rounded-md text-sm font-medium text-foreground hover:bg-muted"
           >
-            <svg className="h-5 w-5 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-5 w-5 text-muted-foreground mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 011-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 00-1-1h-3a1 1 0 00-1 1v4a1 1 0 001 1h3z" />
             </svg>
             Dashboard
           </a>
           <a 
             href="/teacher/grading" 
-            className="flex items-center w-full px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="flex items-center w-full px-3 py-2 rounded-md text-sm font-medium text-foreground hover:bg-muted"
           >
-            <svg className="h-5 w-5 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-5 w-5 text-muted-foreground mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
             Grading
           </a>
           <a 
             href="/notifications" 
-            className="flex items-center w-full px-3 py-2 rounded-md text-sm font-medium text-indigo-600 bg-indigo-50"
+            className="flex items-center w-full px-3 py-2 rounded-md text-sm font-medium text-brand-primary bg-brand-primary/5"
           >
-            <Bell className="h-5 w-5 text-indigo-500 mr-3" />
+            <Bell className="h-5 w-5 text-brand-primary mr-3" />
             Notifications
           </a>
         </nav>
@@ -139,17 +139,17 @@ export function NotificationsPage() {
               <div className="flex items-center gap-3">
                 <button 
                   onClick={() => navigate('/teacher-dashboard')}
-                  className="p-2 hover:bg-gray-200 rounded-md"
+                  className="p-2 hover:bg-muted rounded-md"
                 >
-                  <ChevronLeft size={20} className="text-gray-500 hover:text-gray-700" />
+                  <ChevronLeft size={20} className="text-muted-foreground hover:text-foreground" />
                 </button>
-                <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
+                <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
               </div>
               <div className="flex items-center gap-3">
                 <button 
                   onClick={markAllAsRead}
                   disabled={notifications.every(n => n.read)}
-                  className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900"
+                  className="px-3 py-1.5 text-sm font-medium text-text-secondary hover:text-foreground"
                 >
                   Mark all as read
                 </button>
@@ -165,11 +165,11 @@ export function NotificationsPage() {
                   {notifications.map(notif => (
                     <div key={notif.id} className={cn(
                       "border rounded-lg p-4",
-                      notif.isRead ? "bg-white border-gray-200" : "bg-indigo-50 border-indigo-200"
+                      notif.isRead ? "bg-surface border-border" : "bg-brand-primary/5 border-brand-primary/20"
                     )}>
                       <div className="flex items-start gap-4">
                         <div className="flex-shrink-0">
-                          <div className="h-8 w-8 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-500">
+                          <div className="h-8 w-8 flex items-center justify-center rounded-full bg-brand-primary/10 text-brand-primary">
                             <Bell size={16} />
                           </div>
                         </div>
@@ -177,21 +177,21 @@ export function NotificationsPage() {
                           <div className="flex justify-between items-start">
                             <h3 className={cn(
                               "text-lg font-medium",
-                  notif.isRead ? "text-gray-900" : "text-indigo-800"
+                  notif.isRead ? "text-foreground" : "text-brand-primary"
                             )}>{notif.title}</h3>
-                            <time className="text-xs text-gray-400">
+                            <time className="text-xs text-muted-foreground">
                               {new Date(notif.createdAt).toLocaleDateString()} 
                               {new Date(notif.createdAt).toLocaleTimeString()}
                             </time>
                           </div>
-                          <p className="text-sm text-gray-600">{notif.body || notif.message || ''}</p>
+                          <p className="text-sm text-text-secondary">{notif.body || notif.message || ''}</p>
                           <div className="flex items-center gap-3">
                             <button 
                               onClick={() => markAsRead(notif.id)}
                               className={cn(
                                 "px-2.5 py-1 text-xs font-medium rounded",
-                  notif.isRead ? "bg-gray-200 text-gray-600 hover:bg-gray-300" : 
-                                "bg-indigo-100 text-indigo-600 hover:bg-indigo-200"
+                  notif.isRead ? "bg-muted text-text-secondary hover:bg-muted" : 
+                                "bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20"
                             )}>
                               {notif.isRead ? 'Read' : 'Mark as read'}
                             </button>

@@ -30,16 +30,16 @@ export function GradingSheetHeader({
         )}
         
         {isMissingObsMode && (
-          <div className="shrink-0 px-2.5 py-1 bg-amber-600 text-white text-[10px] font-bold uppercase tracking-wider rounded animate-pulse">
+          <div className="shrink-0 px-2.5 py-1 bg-warning text-background text-xs font-bold uppercase tracking-wider rounded animate-pulse">
             Compliance Mode
           </div>
         )}
         
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-xl font-bold text-foreground tracking-tight">
             {DISPLAY_CLASS_INFO?.subject} - {DISPLAY_CLASS_INFO?.className}
           </h1>
-          <p className="text-slate-500 text-xs mt-0.5 font-medium">
+          <p className="text-muted-foreground text-xs mt-0.5 font-medium">
             Form {DISPLAY_CLASS_INFO?.form} • {DISPLAY_CLASS_INFO?.programme} Programme • {DISPLAY_CLASS_INFO?.studentCount} Students
           </p>
         </div>
@@ -52,8 +52,8 @@ export function GradingSheetHeader({
           className={cn(
             "px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors",
             stpValidating || isTermFinalized
-              ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-              : "bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer"
+              ? "bg-muted text-muted-foreground cursor-not-allowed"
+              : "bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20 cursor-pointer"
           )}
         >
           {stpValidating ? <Loader2 size={15} className="animate-spin" /> : null}
@@ -66,8 +66,8 @@ export function GradingSheetHeader({
           className={cn(
             "px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors",
             missingCount > 0 || isTermFinalized
-              ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-              : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 cursor-pointer"
+              ? "bg-muted text-muted-foreground cursor-not-allowed"
+              : "bg-success/10 text-success hover:bg-success/20 cursor-pointer"
           )}
         >
           <Download size={15} /> Export for WAEC
@@ -76,7 +76,7 @@ export function GradingSheetHeader({
         {!isSidebarOpen && (
           <button 
             onClick={() => setIsSidebarOpen(true)} 
-            className="px-4 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors flex items-center gap-2 text-xs font-semibold cursor-pointer"
+            className="px-4 py-2.5 bg-success text-background rounded-xl hover:bg-success/90 transition-colors flex items-center gap-2 text-xs font-semibold cursor-pointer"
           >
             <ChevronLeft size={15} /> 
             {isCorrectionMode ? 'Show Feedback' : isMissingObsMode ? 'Show Rubric' : 'Show Observation'}

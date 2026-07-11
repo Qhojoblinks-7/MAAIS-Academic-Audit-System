@@ -29,16 +29,16 @@ export function ConfirmationDialog({
 
   const variantStyles = {
     danger: {
-      button: 'bg-rose-600 hover:bg-rose-700 text-white',
-      iconBg: 'bg-rose-100 text-rose-600',
+      button: 'bg-destructive hover:bg-destructive/90 text-background',
+      iconBg: 'bg-destructive/10 text-destructive',
     },
     primary: {
-      button: 'bg-emerald-600 hover:bg-emerald-700 text-white',
-      iconBg: 'bg-emerald-100 text-emerald-600',
+      button: 'bg-success hover:bg-success/90 text-background',
+      iconBg: 'bg-success/10 text-success',
     },
     warning: {
-      button: 'bg-amber-500 hover:bg-amber-600 text-white',
-      iconBg: 'bg-amber-100 text-amber-600',
+      button: 'bg-warning hover:bg-warning/90 text-background',
+      iconBg: 'bg-warning/10 text-warning',
     },
   };
 
@@ -58,7 +58,7 @@ export function ConfirmationDialog({
         onClick={() => !isLoading && onCancel?.()}
       />
 
-      <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4 animate-in fade-in zoom-in duration-200">
+      <div className="relative w-full max-w-sm bg-surface rounded-2xl shadow-xl p-6 space-y-4 animate-in fade-in zoom-in duration-200">
         <div className="flex items-start gap-3">
           <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', v.iconBg)}>
             <AlertTriangle size={20} />
@@ -67,13 +67,13 @@ export function ConfirmationDialog({
           <div className="flex-1 min-w-0">
             <h2
               id="confirmation-dialog-title"
-              className="text-sm font-bold text-gray-900"
+              className="text-sm font-bold text-foreground"
             >
               {title}
             </h2>
             <p
               id="confirmation-dialog-message"
-              className="text-xs text-gray-500 mt-1 leading-relaxed"
+              className="text-xs text-muted-foreground mt-1 leading-relaxed"
             >
               {message}
             </p>
@@ -85,7 +85,7 @@ export function ConfirmationDialog({
             type="button"
             onClick={onCancel}
             disabled={isLoading}
-            className="px-4 py-2 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all disabled:opacity-50"
+            className="px-4 py-2 text-xs font-medium text-text-secondary bg-muted rounded-lg hover:bg-muted transition-all disabled:opacity-50"
           >
             {cancelLabel}
           </button>

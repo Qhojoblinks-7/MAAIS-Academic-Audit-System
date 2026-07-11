@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { 
   FileText, 
   Printer, 
@@ -436,7 +435,7 @@ const handleExportTranscript = async () => {
               <ArrowLeft size={18} />
             </button>
             <div>
-              <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] bg-slate-100 px-2 py-1 rounded inline-flex items-center gap-1">
+              <span className="text-xs font-black text-slate-600 uppercase tracking-[0.2em] bg-slate-100 px-2 py-1 rounded inline-flex items-center gap-1">
                 <Lock size={10} /> Faculty Archive Ledger (Frozen)
               </span>
               <h2 className="text-xl font-bold text-slate-900 tracking-tight mt-1 flex items-center gap-2 font-sans">
@@ -477,10 +476,10 @@ const handleExportTranscript = async () => {
 
             <div className="text-center md:text-left">
               <div className="flex items-center justify-center md:justify-start gap-3">
-                <span className="px-2.5 py-0.5 bg-slate-100 rounded-lg text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">{student.index}</span>
-                <span className="px-2.5 py-0.5 bg-slate-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest">Class of {student.graduationYear}</span>
+                <span className="px-2.5 py-0.5 bg-slate-100 rounded-lg text-xs font-black text-slate-500 uppercase tracking-widest font-mono">{student.index}</span>
+                <span className="px-2.5 py-0.5 bg-slate-900 text-white rounded-lg text-xs font-black uppercase tracking-widest">Class of {student.graduationYear}</span>
               </div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tighter mt-2">{student.name}</h1>
+              <h1 className="text-2xl font-black text-slate-900 tracking-tighter mt-2">{student.name}</h1>
               <p className="text-slate-400 font-bold text-xs mt-1 uppercase tracking-wider font-sans">
                 Stream: {student.currentClass} • Performance Rank: <span className="text-slate-900 font-extrabold">{student.consistencyScore}</span>
               </p>
@@ -495,12 +494,12 @@ const handleExportTranscript = async () => {
               { label: 'Vault Security', val: 'SEALED & LOCKED', note: 'Tamper-proof status', accent: true }
             ].map((stat, i) => (
               <div key={i} className="bg-slate-50/80 border border-slate-100 rounded-2xl px-5 py-4 min-w-[130px] flex flex-col justify-between shadow-sm">
-                <p className="text-[9px] font-black text-slate-405 uppercase tracking-widest">{stat.label}</p>
+                <p className="text-xs font-black text-slate-405 uppercase tracking-widest">{stat.label}</p>
                 <p className={cn(
                   "text-xl font-black tracking-tight mt-1 text-slate-900",
                   stat.accent && "text-emerald-700 bg-none font-black text-xs"
                 )}>{stat.val}</p>
-                <p className="text-[9px] font-semibold text-slate-400 mt-1 leading-none">{stat.note}</p>
+                <p className="text-xs font-semibold text-slate-400 mt-1 leading-none">{stat.note}</p>
               </div>
             ))}
           </div>
@@ -515,10 +514,10 @@ const handleExportTranscript = async () => {
               </div>
               <div>
                 <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest font-sans">1. Completed Longitudinal Grade Progression</h3>
-                <p className="text-[10px] font-bold text-slate-400 uppercase">3-Year High School Grade Mapping</p>
+                <p className="text-xs font-bold text-slate-400 uppercase">3-Year High School Grade Mapping</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg text-[9px] font-black text-slate-600 uppercase tracking-wider">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg text-xs font-black text-slate-600 uppercase tracking-wider">
               <Bot size={13} className="text-slate-900" />
               Historic Grade Ledger Map
             </div>
@@ -528,7 +527,7 @@ const handleExportTranscript = async () => {
             <div className="flex flex-col items-center justify-center py-20 bg-slate-50/50 border border-slate-200/50 rounded-3xl text-center">
               <History size={36} className="text-slate-300 mb-2" />
               <p className="text-xs font-black text-slate-800 uppercase tracking-widest">No Past Terms Archived Yet</p>
-              <p className="text-[10px] text-slate-450 uppercase font-black tracking-wider mt-1">This student is currently in SHS 1. Archives compile starting in Form 2.</p>
+              <p className="text-xs text-slate-450 uppercase font-black tracking-wider mt-1">This student is currently in SHS 1. Archives compile starting in Form 2.</p>
             </div>
           ) : (
             <div className="h-[300px] w-full pt-4">
@@ -588,7 +587,7 @@ const handleExportTranscript = async () => {
             </div>
             <div>
               <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest font-sans">2. Terminal Assessment Sheets Archive (General Agric Scope)</h3>
-              <p className="text-[10px] font-bold text-slate-400 uppercase">Scoped instructor ledger: Displaying performance data specific to General Agric streams</p>
+              <p className="text-xs font-bold text-slate-400 uppercase">Scoped instructor ledger: Displaying performance data specific to General Agric streams</p>
             </div>
           </header>
 
@@ -596,7 +595,7 @@ const handleExportTranscript = async () => {
             <div className="flex flex-col items-center justify-center py-16 bg-white border border-slate-200/60 rounded-[2.5rem] shadow-sm text-center w-full">
               <FileText size={32} className="text-slate-300 mb-2 font-sans" />
               <p className="text-xs font-black text-slate-800 uppercase tracking-widest">No Terminal Assessment Dossiers</p>
-              <p className="text-[10px] text-slate-450 uppercase font-bold mt-1">Student dossier is active, but first-year high school quarters have not yet completed for archival storage.</p>
+              <p className="text-xs text-slate-450 uppercase font-bold mt-1">Student dossier is active, but first-year high school quarters have not yet completed for archival storage.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -610,11 +609,11 @@ const handleExportTranscript = async () => {
                         {tIdx + 1}
                       </div>
                       <div>
-                        <h4 className="text-[12px] font-black text-slate-900 uppercase tracking-wider">{term.term} Journal</h4>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase">Phase verified</p>
+                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">{term.term} Journal</h4>
+                        <p className="text-xs font-bold text-slate-400 uppercase">Phase verified</p>
                       </div>
                     </div>
-                    <span className="text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border bg-emerald-50 text-emerald-800 border-emerald-100">
+                    <span className="text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded-full border bg-emerald-50 text-emerald-800 border-emerald-100">
                       Sealed Record
                     </span>
                   </div>
@@ -623,7 +622,7 @@ const handleExportTranscript = async () => {
                   <div className="p-4 overflow-x-auto no-scrollbar">
                     <table className="w-full text-left min-w-[280px]">
                       <thead>
-                        <tr className="text-[8px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                        <tr className="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
                           <th className="pb-3 pl-2">Subject</th>
                           <th className="pb-3 text-center">Class (30)</th>
                           <th className="pb-3 text-center">Exam (70)</th>
@@ -640,7 +639,7 @@ const handleExportTranscript = async () => {
                           const calculatedGrade = getWAECGrade(totalScore);
 
                           return (
-                            <tr key={subj} className="hover:bg-slate-50/50 transition-all text-[11px] font-medium text-slate-600">
+                            <tr key={subj} className="hover:bg-slate-50/50 transition-all text-xs font-medium text-slate-600">
                               <td className="py-3 pl-2 font-semibold text-slate-800 leading-tight">
                                 {subj}
                               </td>
@@ -652,7 +651,7 @@ const handleExportTranscript = async () => {
                               </td>
                               <td className="py-3 text-center">
                                 <span className={cn(
-                                  "px-2 py-0.5 text-[9px] rounded-md border",
+                                  "px-2 py-0.5 text-xs rounded-md border",
                                   calculatedGrade.color
                                 )}>
                                   {calculatedGrade.grade}
@@ -671,7 +670,7 @@ const handleExportTranscript = async () => {
                   {/* Term Aggregate Summary Footer */}
                   <div className="bg-slate-50/30 border-t border-slate-100 p-4.5 flex items-center justify-between text-slate-500 text-xs mt-auto">
                     <div>
-                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Behavior Rating:</span>
+                      <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Behavior Rating:</span>
                       <span className="ml-1 text-slate-800 font-extrabold">
                         {Array.from({ length: 5 }).map((_, idx) => (
                           <span 
@@ -687,7 +686,7 @@ const handleExportTranscript = async () => {
                       </span>
                     </div>
                     <div className="text-right">
-                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block leading-none">Journal Average</span>
+                      <span className="text-xs font-black text-slate-400 uppercase tracking-widest block leading-none">Journal Average</span>
                       <span className="text-sm font-black text-slate-900 italic font-mono mt-0.5 block">{term.finalGrade}%</span>
                     </div>
                   </div>
@@ -711,11 +710,11 @@ const handleExportTranscript = async () => {
                   </div>
                   <div>
                     <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest font-sans">3. Student Observation Journal</h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">Qualitative Teacher Diaries</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase">Qualitative Teacher Diaries</p>
                   </div>
                 </div>
                 
-                <span className="px-3 py-1 bg-slate-100 text-slate-500 font-extrabold text-[9px] rounded-lg tracking-wider border border-slate-200 uppercase">
+                <span className="px-3 py-1 bg-slate-100 text-slate-500 font-extrabold text-xs rounded-lg tracking-wider border border-slate-200 uppercase">
                   Locked Vault Link
                 </span>
               </header>
@@ -725,11 +724,11 @@ const handleExportTranscript = async () => {
                   student.observations.map((obs) => (
                     <div key={obs.id} className="p-5 bg-slate-50/60 border-l-4 border-slate-900 border-y border-r border-slate-150 rounded-r-2xl">
                       <div className="flex justify-between items-center mb-1.5">
-                        <span className="text-[8px] font-black text-slate-800 bg-slate-200 px-2 py-0.5 rounded uppercase">{obs.type}</span>
-                        <span className="text-[8px] font-bold text-slate-400 font-mono">{obs.date}</span>
+                        <span className="text-xs font-black text-slate-800 bg-slate-200 px-2 py-0.5 rounded uppercase">{obs.type}</span>
+                        <span className="text-xs font-bold text-slate-400 font-mono">{obs.date}</span>
                       </div>
                       <p className="text-xs font-semibold leading-relaxed text-slate-700 italic">"{obs.comment}"</p>
-                      <p className="text-[8px] font-black text-slate-450 mt-2 uppercase tracking-wide">— Signed: Instructor {obs.teacherName}</p>
+                      <p className="text-xs font-black text-slate-450 mt-2 uppercase tracking-wide">— Signed: Instructor {obs.teacherName}</p>
                     </div>
                   ))
                 ) : (
@@ -740,7 +739,7 @@ const handleExportTranscript = async () => {
 
             <div className="mt-8 bg-slate-50/50 p-4 border border-slate-100 rounded-2xl flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-slate-900 shrink-0 animate-pulse" />
-              <p className="text-[10px] font-extrabold text-slate-400 uppercase leading-normal">Compliance Guard: Archives are read-only and sealed for record security under MAAIS Protocol.</p>
+              <p className="text-xs font-extrabold text-slate-400 uppercase leading-normal">Compliance Guard: Archives are read-only and sealed for record security under MAAIS Protocol.</p>
             </div>
           </section>
 
@@ -754,11 +753,11 @@ const handleExportTranscript = async () => {
                   </div>
                   <div>
                     <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest font-sans">4. Remedial Coaching & Interventions</h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">Interactive counseling and training logs</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase">Interactive counseling and training logs</p>
                   </div>
                 </div>
 
-                <span className="px-3 py-1 bg-slate-100 text-slate-500 font-extrabold text-[9px] rounded-lg tracking-wider border border-slate-200 uppercase">
+                <span className="px-3 py-1 bg-slate-100 text-slate-500 font-extrabold text-xs rounded-lg tracking-wider border border-slate-200 uppercase">
                   Archived State
                 </span>
               </header>
@@ -769,16 +768,16 @@ const handleExportTranscript = async () => {
                     <div key={int.id} className="bg-slate-50/60 border border-slate-205 p-6 rounded-2xl flex flex-col justify-between hover:border-slate-300 transition-all">
                       <div>
                         <div className="flex items-center justify-between mb-3">
-                          <span className="text-[8px] font-black text-slate-700 bg-slate-200 px-2.5 py-1 rounded">REMEDIAL REGISTRY FILE</span>
-                          <span className="text-[8px] font-bold text-slate-450 uppercase">{int.term}</span>
+                          <span className="text-xs font-black text-slate-700 bg-slate-200 px-2.5 py-1 rounded">REMEDIAL REGISTRY FILE</span>
+                          <span className="text-xs font-bold text-slate-450 uppercase">{int.term}</span>
                         </div>
                         <p className="text-xs font-bold text-slate-800 tracking-tight leading-snug">Trigger Issue: <span className="font-medium text-slate-550 italic">{int.reason}</span></p>
                         <p className="text-xs font-bold text-slate-800 mt-1 tracking-tight leading-snug">Action Strategy: <span className="font-medium text-slate-550 italic">{int.action}</span></p>
                       </div>
                       {int.outcome && (
                         <div className="mt-4 pt-4 border-t border-slate-150 bg-slate-100/50 p-3 rounded-xl border border-slate-200/50">
-                          <span className="text-[8px] font-black text-slate-800 uppercase tracking-widest block mb-0.5">Tracked Progress Response</span>
-                          <p className="text-[11px] font-bold text-slate-705 italic">"{int.outcome}"</p>
+                          <span className="text-xs font-black text-slate-800 uppercase tracking-widest block mb-0.5">Tracked Progress Response</span>
+                          <p className="text-xs font-bold text-slate-705 italic">"{int.outcome}"</p>
                         </div>
                       )}
                     </div>
@@ -790,7 +789,7 @@ const handleExportTranscript = async () => {
             </div>
 
             <div className="mt-6 flex justify-end">
-              <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1">
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-1">
                 <ShieldCheck size={11} className="text-slate-900" /> Historic transcript validated successfully
               </span>
             </div>
@@ -810,12 +809,12 @@ const handleExportTranscript = async () => {
                 </div>
                 <div>
                   <h4 className="text-sm font-black text-white uppercase tracking-widest font-sans">Departmental Audit Clearances</h4>
-                  <p className="text-[10px] font-bold text-slate-300 uppercase">HOD Comments and Level 4 Seal Authentication Details</p>
+                  <p className="text-xs font-bold text-slate-300 uppercase">HOD Comments and Level 4 Seal Authentication Details</p>
                 </div>
               </header>
 
               <div className="bg-slate-800/40 p-6 rounded-2xl border border-slate-700/40">
-                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-2">HOD Comments Endorsement</span>
+                <span className="text-xs font-black text-slate-400 uppercase tracking-widest block mb-2">HOD Comments Endorsement</span>
                 <p className="text-sm font-semibold italic text-slate-100 leading-relaxed">
                   "{student.hodComment}"
                 </p>
@@ -823,11 +822,11 @@ const handleExportTranscript = async () => {
 
               <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-slate-800/80 [border-top-style:dashed]">
                 <div>
-                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Clearance Anchor Hash</span>
-                  <span className="text-[11px] font-mono font-black text-slate-300">MAAIS-RECON-{student.id}-TRACE</span>
+                  <span className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-1">Clearance Anchor Hash</span>
+                  <span className="text-xs font-mono font-black text-slate-300">MAAIS-RECON-{student.id}-TRACE</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Authenticated Signature</span>
+                  <span className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-1">Authenticated Signature</span>
                   <span className="text-sm font-display italic font-medium text-slate-300">Head of Department, General & Applied Sciences</span>
                 </div>
               </div>

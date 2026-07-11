@@ -33,7 +33,7 @@ export function WeeklyTimetableView({
             <div className="absolute inset-0 flex flex-col pointer-events-none">
               {HOURS.map(hour => (
                 <div key={hour} className="flex-1 border-t border-border relative">
-                  <span className="absolute -left-16 -top-2.5 text-[10px] font-black text-text-secondary">
+                  <span className="absolute -left-16 -top-2.5 text-xs font-black text-text-secondary">
                     {hour.toString().padStart(2, '0')}:00
                   </span>
                 </div>
@@ -46,7 +46,7 @@ export function WeeklyTimetableView({
                 style={{ top: `${getTimePosition(formatTime(currentTime))}%` }}
               >
                 <div className="w-2 h-2 bg-danger rounded-full -ml-1" />
-                <div className="px-2 py-0.5 bg-danger text-surface text-[8px] font-black rounded-full ml-2">
+                <div className="px-2 py-0.5 bg-danger text-surface text-xs font-black rounded-full ml-2">
                   {formatTime(currentTime)}
                 </div>
               </div>

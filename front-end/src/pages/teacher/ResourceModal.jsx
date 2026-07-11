@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, Plus, Link as LinkIcon, FileText, ExternalLink, Trash2, Youtube, HardDrive } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../../components/ui/button';
@@ -32,20 +31,13 @@ export function ResourceModal({ isOpen, onClose, selectedEntry, user, newMateria
   if (!isOpen || !selectedEntry) return null;
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div
           onClick={onClose}
-          className="absolute inset-0 bg-foreground/60 backdrop-blur-sm"
+          className="absolute inset-0 bg-foreground/60 backdrop-blur-sm animate-in fade-in"
         />
-        <motion.div 
-          initial={{ scale: 0.9, opacity: 0, y: 20 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.9, opacity: 0, y: 20 }}
-          className="relative w-full max-w-2xl bg-card rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        <div
+          className="relative w-full max-w-2xl bg-card rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 slide-in-from-bottom-4"
         >
           <div className="px-8 py-6 bg-card border-b border-border flex justify-between items-center shrink-0">
             <div className="flex items-center gap-4">
@@ -54,7 +46,7 @@ export function ResourceModal({ isOpen, onClose, selectedEntry, user, newMateria
               </div>
               <div>
                 <h3 className="text-lg font-black text-foreground tracking-tight">Learning Materials</h3>
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{selectedEntry.subjectName} — {selectedEntry.className}</p>
+                <p className="text-xs font-black text-muted-foreground uppercase tracking-widest">{selectedEntry.subjectName} — {selectedEntry.className}</p>
               </div>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-muted rounded-xl transition-all text-muted-foreground">
@@ -64,7 +56,7 @@ export function ResourceModal({ isOpen, onClose, selectedEntry, user, newMateria
 
           <div className="flex-1 overflow-y-auto p-8 space-y-8">
             <div>
-              <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-4">Linked Resources</h4>
+              <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-4">Linked Resources</h4>
               <div className="space-y-3">
                 {selectedEntry.materials?.length ? selectedEntry.materials.map(material => (
                   <Card key={material.id} className="p-4 group hover:border-brand-primary/20 transition-all">
@@ -79,8 +71,8 @@ export function ResourceModal({ isOpen, onClose, selectedEntry, user, newMateria
                         {getResourceIcon(material.type)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[14px] font-black text-foreground leading-none mb-1">{material.title}</p>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">Added on {material.addedAt}</p>
+                        <p className="text-sm font-black text-foreground leading-none mb-1">{material.title}</p>
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none">Added on {material.addedAt}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 mt-3 opacity-0 group-hover:opacity-100 transition-all justify-end">
@@ -103,11 +95,11 @@ export function ResourceModal({ isOpen, onClose, selectedEntry, user, newMateria
 
             {user?.role !== 'STUDENT' && (
               <div className="pt-8 border-t border-border">
-                <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-4">Attach New Material</h4>
+                <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-4">Attach New Material</h4>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-1">Resource Title</label>
+                      <label className="text-xs font-black text-muted-foreground uppercase tracking-widest ml-1">Resource Title</label>
                       <Input 
                         type="text" 
                         placeholder="e.g., Week 4 Practical Guide"
@@ -117,14 +109,14 @@ export function ResourceModal({ isOpen, onClose, selectedEntry, user, newMateria
                       />
                     </div>
                       <div className="space-y-1.5">
-                        <label className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-1">Resource Type</label>
+                        <label className="text-xs font-black text-muted-foreground uppercase tracking-widest ml-1">Resource Type</label>
                         <div className="flex p-1 bg-muted rounded-xl">
                           {['LINK', 'PDF', 'GOOGLE_DRIVE', 'YOUTUBE'].map(t => (
                             <button
                               key={t}
                               onClick={() => setNewMaterial(prev => ({ ...prev, type: t }))}
                               className={cn(
-                                "flex-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
+                                "flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
                                 newMaterial.type === t ? "bg-card text-brand-primary shadow-sm" : "text-muted-foreground"
                               )}
                             >
@@ -135,7 +127,7 @@ export function ResourceModal({ isOpen, onClose, selectedEntry, user, newMateria
                       </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-1">Resource URL (shared link or storage path)</label>
+                    <label className="text-xs font-black text-muted-foreground uppercase tracking-widest ml-1">Resource URL (shared link or storage path)</label>
                     <div className="relative">
                       <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-border" size={16} />
                       <Input 
@@ -155,8 +147,7 @@ export function ResourceModal({ isOpen, onClose, selectedEntry, user, newMateria
               </div>
             )}
           </div>
-        </motion.div>
+        </div>
       </div>
-    </AnimatePresence>
   );
 }

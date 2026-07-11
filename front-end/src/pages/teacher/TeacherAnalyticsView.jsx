@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid,
   LineChart, Line, PieChart, Pie, Cell,
@@ -179,36 +178,34 @@ export function TeacherAnalyticsView() {
   return (
     <TooltipProvider delayDuration={200}>
       <div className="flex-1 overflow-y-auto bg-background p-6 md:p-8 lg:p-10 select-none">
-        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
 
           <header className="mb-8 border-b border-border pb-6">
-            <h1 className="text-3xl md:text-4xl font-black text-text-primary tracking-tight leading-none">
+            <h1 className="text-2xl font-black text-primary tracking-tight leading-none">
               Performance Analytics
             </h1>
-            <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mt-2 flex items-center gap-1.5">
-              <Eye size={10} className="text-text-secondary" />
+            <p className="text-xs font-black text-secondary uppercase tracking-widest mt-2 flex items-center gap-1.5">
+              <Eye size={10} className="text-secondary" />
               Grade Insights · Observation Trends · At-Risk Flags
             </p>
           </header>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {statCards.map((s, i) => (
-              <motion.div
+              <div
                 key={s.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="bg-surface p-5 rounded-2xl border border-border shadow-sm flex items-center gap-4"
+                style={{ animationDelay: `${i * 50}ms` }}
+                className="bg-surface p-5 rounded-2xl border border-border shadow-sm flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-200"
               >
                 <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border", s.color)}>
                   <s.icon size={20} />
                 </div>
                 <div>
-                  <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest leading-none mb-1">{s.label}</p>
-                  <p className="text-2xl font-black text-text-primary leading-none">{s.value}</p>
-                  <p className="text-[9px] font-bold text-text-secondary mt-1">{s.delta}</p>
+                  <p className="text-xs font-black text-secondary uppercase tracking-widest leading-none mb-1">{s.label}</p>
+                  <p className="text-2xl font-black text-primary leading-none">{s.value}</p>
+                  <p className="text-xs font-bold text-secondary mt-1">{s.delta}</p>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
 
@@ -223,10 +220,10 @@ export function TeacherAnalyticsView() {
                       setObsFilter('All');
                     }}
                     className={cn(
-                      "flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                      "flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
                       activeTab === t.id
                         ? 'bg-brand-primary text-surface shadow-md shadow-brand-dark/10'
-                        : 'text-text-secondary hover:text-text-primary hover:bg-muted'
+                        : 'text-secondary hover:text-primary hover:bg-muted'
                     )}
                   >
                     <t.icon size={13} />
@@ -238,20 +235,11 @@ export function TeacherAnalyticsView() {
             ))}
           </div>
 
-          <AnimatePresence mode="wait">
-
             {activeTab === 'overview' && (
-              <motion.div
-                key="overview"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-6"
-              >
+              <div className="space-y-6 animate-in fade-in">
                 <div className="bg-surface rounded-[2rem] border border-border shadow-sm p-6 lg:p-8">
-                  <h3 className="text-[11px] font-black text-text-primary uppercase tracking-widest mb-5 flex items-center gap-2">
-                    <TrendingUp size={14} className="text-text-secondary" />
+                  <h3 className="text-xs font-black text-primary uppercase tracking-widest mb-5 flex items-center gap-2">
+                    <TrendingUp size={14} className="text-secondary" />
                     Term Score Trend · Class Average
                   </h3>
                   <div className="h-64 w-full">
@@ -273,8 +261,8 @@ export function TeacherAnalyticsView() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="bg-surface rounded-[2rem] border border-border shadow-sm p-6 lg:p-8">
-                    <h3 className="text-[11px] font-black text-text-primary uppercase tracking-widest mb-4 flex items-center gap-2">
-                      <GraduationCap size={14} className="text-text-secondary" />
+                    <h3 className="text-xs font-black text-primary uppercase tracking-widest mb-4 flex items-center gap-2">
+                      <GraduationCap size={14} className="text-secondary" />
                       Grade Distribution
                     </h3>
                      <div className="h-64 w-full">
@@ -298,8 +286,8 @@ export function TeacherAnalyticsView() {
                   </div>
 
                   <div className="bg-surface rounded-[2rem] border border-border shadow-sm p-6 lg:p-8">
-                    <h3 className="text-[11px] font-black text-text-primary uppercase tracking-widest mb-4 flex items-center gap-2">
-                      <Star size={14} className="text-text-secondary" />
+                    <h3 className="text-xs font-black text-primary uppercase tracking-widest mb-4 flex items-center gap-2">
+                      <Star size={14} className="text-secondary" />
                       Observation Breakdown
                     </h3>
                      <div className="h-64 w-full">
@@ -331,8 +319,8 @@ export function TeacherAnalyticsView() {
                 </div>
 
                 <div className="bg-surface rounded-[2rem] border border-border shadow-sm p-6 lg:p-8">
-                  <h3 className="text-[11px] font-black text-text-primary uppercase tracking-widest mb-5 flex items-center gap-2">
-                    <BarChart3 size={14} className="text-text-secondary" />
+                  <h3 className="text-xs font-black text-primary uppercase tracking-widest mb-5 flex items-center gap-2">
+                    <BarChart3 size={14} className="text-secondary" />
                     Class Completion Rate
                   </h3>
                    <div className="h-64 w-full">
@@ -352,27 +340,22 @@ export function TeacherAnalyticsView() {
                     </ResponsiveContainer>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {activeTab === 'observations' && (
-              <motion.div
-                key="observations"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-4"
+              <div
+                className="space-y-4 animate-in fade-in"
               >
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="relative flex-1">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={15} />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary" size={15} />
                     <input
                       type="text"
                       placeholder="Search observations…"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-surface border border-border rounded-xl text-[12px] font-medium text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-brand-primary/10 shadow-sm"
+                      className="w-full pl-10 pr-4 py-3 bg-surface border border-border rounded-xl text-sm font-medium text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-brand-primary/10 shadow-sm"
                     />
                   </div>
                   <div className="flex gap-1.5 flex-wrap">
@@ -381,8 +364,8 @@ export function TeacherAnalyticsView() {
                         key={f}
                         onClick={() => setObsFilter(f)}
                         className={cn(
-                          "px-3.5 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border",
-                          obsFilter === f ? 'bg-brand-primary text-surface border-brand-primary shadow-sm' : 'bg-surface text-text-secondary border-border hover:border-text-secondary'
+                          "px-3.5 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all border",
+                          obsFilter === f ? 'bg-brand-primary text-surface border-brand-primary shadow-sm' : 'bg-surface text-secondary border-border hover:border-text-secondary'
                         )}
                       >
                         {f}
@@ -393,63 +376,58 @@ export function TeacherAnalyticsView() {
 
                 <div className="bg-surface rounded-[2rem] border border-border shadow-sm overflow-hidden">
                   <div className="px-6 py-4 border-b border-border bg-muted/30 flex items-center gap-3">
-                    <Activity size={14} className="text-text-secondary" />
-                    <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">
+                    <Activity size={14} className="text-secondary" />
+                    <span className="text-xs font-black text-secondary uppercase tracking-widest">
                       Observations · {filteredObs.length} record{filteredObs.length !== 1 ? 's' : ''}
                     </span>
                   </div>
 
                   <div className="divide-y divide-border">
-                    <AnimatePresence>
                       {filteredObs.map((o, i) => {
                         const typeIdx = OBS_TYPES_MODULE.indexOf(o.type);
                         const typeColor = OBS_COLORS_MODULE[typeIdx] || '#1D4D4F';
                         return (
-                          <motion.div
+                          <div
                             key={o.id}
-                            initial={{ opacity: 0, y: 6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ delay: i * 0.03 }}
-                            className="px-6 py-4 grid grid-cols-12 gap-3 items-center hover:bg-muted/40 transition-all"
+                            style={{ animationDelay: `${i * 30}ms` }}
+                            className="px-6 py-4 grid grid-cols-12 gap-3 items-center hover:bg-muted/40 transition-all animate-in fade-in slide-in-from-bottom-2"
                           >
-                            <div className="col-span-2 font-black text-sm text-text-primary truncate">{o.student}</div>
+                            <div className="col-span-2 font-black text-sm text-primary truncate">{o.student}</div>
 
                             <div className="col-span-2">
-                              <span className="inline-flex px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest text-surface" style={{ backgroundColor: typeColor }}>{o.type}</span>
+                              <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-widest text-surface" style={{ backgroundColor: typeColor }}>{o.type}</span>
                             </div>
 
                             <div className="col-span-2">
-                              <p className="text-xs font-bold text-text-primary truncate">{o.class}</p>
-                              <p className="text-[9px] font-black text-text-secondary">Idx. {o.index}</p>
+                              <p className="text-xs font-bold text-primary truncate">{o.class}</p>
+                              <p className="text-xs font-black text-secondary">Idx. {o.index}</p>
                             </div>
 
-                            <div className="col-span-3 text-[11px] font-medium text-text-secondary italic truncate">"{o.comment}"</div>
+                            <div className="col-span-3 text-xs font-medium text-secondary italic truncate">"{o.comment}"</div>
 
-                            <div className="col-span-1 text-right text-[10px] font-bold text-text-secondary whitespace-nowrap">{o.date}</div>
+                            <div className="col-span-1 text-right text-xs font-bold text-secondary whitespace-nowrap">{o.date}</div>
 
                             <div className="col-span-1 text-center">
                               {o.status === 'Active'
-                                ? <span className="inline-flex items-center gap-1 text-[8px] font-black px-2.5 py-1 rounded-xl bg-success/10 text-success border border-success/20 uppercase tracking-widest">
+                                ? <span className="inline-flex items-center gap-1 text-xs font-black px-2.5 py-1 rounded-xl bg-success/10 text-success border border-success/20 uppercase tracking-widest">
                                     <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" /> Active
                                   </span>
-                                : <span className="inline-flex text-[8px] font-black px-2.5 py-1 rounded-xl bg-muted text-text-secondary border border-border uppercase tracking-widest">Resolved</span>}
+                                : <span className="inline-flex text-xs font-black px-2.5 py-1 rounded-xl bg-muted text-secondary border border-border uppercase tracking-widest">Resolved</span>}
                             </div>
 
                             <div className="col-span-1 flex items-center justify-end gap-1">
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <button onClick={() => navigate(`/grading?subject=${o.type}&class=${encodeURIComponent(o.class)}`)} className="p-1.5 hover:bg-brand-primary/10 rounded-lg transition-all text-text-secondary hover:text-brand-primary">
+                                  <button onClick={() => navigate(`/grading?subject=${o.type}&class=${encodeURIComponent(o.class)}`)} className="p-1.5 hover:bg-brand-primary/10 rounded-lg transition-all text-secondary hover:text-brand-primary">
                                     <Eye size={14} />
                                   </button>
                                 </TooltipTrigger>
                                 <TooltipContent side="top" sideOffset={8}>View class grading sheet</TooltipContent>
                               </Tooltip>
                             </div>
-                          </motion.div>
+                          </div>
                         );
                       })}
-                    </AnimatePresence>
 
                     {filteredObs.length === 0 && (
                       <div className="py-16 text-center text-muted-foreground text-sm font-medium uppercase tracking-tight">
@@ -458,57 +436,52 @@ export function TeacherAnalyticsView() {
                     )}
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {activeTab === 'students' && (
-              <motion.div
-                key="students"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-4"
+              <div
+                className="space-y-4 animate-in fade-in"
               >
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="bg-surface p-4 rounded-2xl border border-border shadow-sm">
-                    <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest leading-none mb-1">Total Students</p>
-                    <p className="text-xl font-black text-text-primary">{studentScores.length}</p>
+                    <p className="text-xs font-black text-secondary uppercase tracking-widest leading-none mb-1">Total Students</p>
+                    <p className="text-xl font-black text-primary">{studentScores.length}</p>
                   </div>
                   <div className="bg-success/10 p-4 rounded-2xl border border-success/20 shadow-sm">
-                    <p className="text-[9px] font-black text-success uppercase tracking-widest leading-none mb-1">Mean Score</p>
+                    <p className="text-xs font-black text-success uppercase tracking-widest leading-none mb-1">Mean Score</p>
                     <p className="text-xl font-black text-success">{meanScore}</p>
                   </div>
                   <div className="bg-warning/10 p-4 rounded-2xl border border-warning/20 shadow-sm">
-                    <p className="text-[9px] font-black text-warning uppercase tracking-widest leading-none mb-1">At Risk (&lt;60)</p>
+                    <p className="text-xs font-black text-warning uppercase tracking-widest leading-none mb-1">At Risk (&lt;60)</p>
                     <p className="text-xl font-black text-warning">{atRiskCount}</p>
                   </div>
                   <div className="bg-success/10 p-4 rounded-2xl border border-success/20 shadow-sm">
-                    <p className="text-[9px] font-black text-success uppercase tracking-widest leading-none mb-1">Top Performers (≥80)</p>
+                    <p className="text-xs font-black text-success uppercase tracking-widest leading-none mb-1">Top Performers (≥80)</p>
                     <p className="text-xl font-black text-success">{topPerformerCount}</p>
                   </div>
                 </div>
 
                 <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={15} />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary" size={15} />
                   <input
                     type="text"
                     placeholder="Search by student name…"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-surface border border-border rounded-xl text-[12px] font-medium text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-brand-primary/10 shadow-sm"
+                    className="w-full pl-10 pr-4 py-3 bg-surface border border-border rounded-xl text-sm font-medium text-primary placeholder:text-secondary focus:outline-none focus:ring-2 focus:ring-brand-primary/10 shadow-sm"
                   />
                 </div>
 
                 <div className="bg-surface rounded-[2rem] border border-border shadow-sm overflow-hidden">
                   <div className="px-6 py-4 border-b border-border bg-muted/30 flex items-center gap-3">
-                    <Users size={14} className="text-text-secondary" />
-                    <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">
+                    <Users size={14} className="text-secondary" />
+                    <span className="text-xs font-black text-secondary uppercase tracking-widest">
                       Student Performance · {filteredStudents.length} entries
                     </span>
                   </div>
 
-                  <div className="px-6 py-2.5 border-b border-border bg-muted grid grid-cols-5 gap-3 text-[9px] font-black text-text-secondary uppercase tracking-widest">
+                  <div className="px-6 py-2.5 border-b border-border bg-muted grid grid-cols-5 gap-3 text-xs font-black text-secondary uppercase tracking-widest">
                     <span className="col-span-2">Student</span>
                     <span className="text-center">Score</span>
                     <span className="text-center">Grade</span>
@@ -521,27 +494,25 @@ export function TeacherAnalyticsView() {
                       const gradeDef = gradeConfig.find(g => g.label === grade);
                       const isAtRisk = s.score < 60;
                       const isTop = s.score >= 80;
-                      const scoreColor = isAtRisk ? 'text-danger' : isTop ? 'text-success' : 'text-text-primary';
-                      const trendColor = s.trendUp ? 'text-success' : s.trend === '–' ? 'text-text-secondary' : 'text-danger';
+                      const scoreColor = isAtRisk ? 'text-danger' : isTop ? 'text-success' : 'text-primary';
+                      const trendColor = s.trendUp ? 'text-success' : s.trend === '–' ? 'text-secondary' : 'text-danger';
 
                       return (
-                        <motion.div
+                        <div
                           key={s.student}
-                          initial={{ opacity: 0, y: 5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.02 }}
-                          className="px-6 py-3.5 grid grid-cols-5 gap-3 items-center hover:bg-muted/40 transition-all"
+                          style={{ animationDelay: `${i * 20}ms` }}
+                          className="px-6 py-3.5 grid grid-cols-5 gap-3 items-center hover:bg-muted/40 transition-all animate-in fade-in slide-in-from-bottom-2"
                         >
                           <div className="col-span-2 flex items-center gap-3 min-w-0">
                             <div className={cn(
-                              "w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black shrink-0 border",
-                              isAtRisk ? 'bg-danger/10 text-danger border-danger/20' : isTop ? 'bg-success/10 text-success border-success/20' : 'bg-muted text-text-primary border-border'
+                              "w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 border",
+                              isAtRisk ? 'bg-danger/10 text-danger border-danger/20' : isTop ? 'bg-success/10 text-success border-success/20' : 'bg-muted text-primary border-border'
                             )}>
                               {isAtRisk ? '!' : isTop ? '★' : s.student.charAt(0)}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-xs font-black text-text-primary truncate">{s.student}</p>
-                              <p className="text-[9px] font-bold text-text-secondary">{isAtRisk ? '⚠ Needs intervention' : 'On track'}</p>
+                              <p className="text-xs font-black text-primary truncate">{s.student}</p>
+                              <p className="text-xs font-bold text-secondary">{isAtRisk ? '⚠ Needs intervention' : 'On track'}</p>
                             </div>
                           </div>
 
@@ -551,7 +522,7 @@ export function TeacherAnalyticsView() {
 
                           <div className="text-center">
                             <span
-                              className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest text-surface"
+                              className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-widest text-surface"
                               style={{ backgroundColor: gradeDef?.color || '#64748b' }}
                             >
                               {grade}
@@ -559,9 +530,9 @@ export function TeacherAnalyticsView() {
                           </div>
 
                           <div className="text-right">
-                            <span className={cn("text-[10px] font-black", trendColor)}>{s.trendUp ? '↑' : s.trend === '–' ? '–' : '↓'} {s.trend}</span>
+                            <span className={cn("text-xs font-black", trendColor)}>{s.trendUp ? '↑' : s.trend === '–' ? '–' : '↓'} {s.trend}</span>
                           </div>
-                        </motion.div>
+                        </div>
                       );
                     })}
                   </div>
@@ -579,11 +550,9 @@ export function TeacherAnalyticsView() {
                     </p>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )}
-
-          </AnimatePresence>
-        </motion.div>
+        </div>
       </div>
     </TooltipProvider>
   );

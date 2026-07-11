@@ -51,13 +51,13 @@ export function HODVaultView({
       className="p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto"
     >
       {hasSealedTerms && (
-        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-rose-100 rounded-xl flex items-center justify-center shrink-0">
-            <ShieldAlert size={20} className="text-rose-600" />
+        <div className="bg-destructive/10 border border-destructive/20 rounded-2xl p-4 flex items-center gap-3">
+          <div className="w-10 h-10 bg-destructive/10 rounded-xl flex items-center justify-center shrink-0">
+            <ShieldAlert size={20} className="text-destructive" />
           </div>
           <div>
-            <p className="text-xs font-black text-rose-900 uppercase tracking-wider">Seals Frozen — Archive Secured</p>
-            <p className="text-[10px] font-bold text-rose-700 mt-0.5">All student dockets in The Vault are locked with tamper-evident SECURE status. Grade entry is suspended.</p>
+            <p className="text-xs font-black text-destructive uppercase tracking-wider">Seals Frozen — Archive Secured</p>
+            <p className="text-xs font-bold text-destructive mt-0.5">All student dockets in The Vault are locked with tamper-evident SECURE status. Grade entry is suspended.</p>
           </div>
         </div>
       )}
@@ -69,24 +69,28 @@ export function HODVaultView({
           val={totalAlumniCount} 
           note="Current & Graduated profiles" 
           icon={Users} 
+          color="blue"
         />
         <HODArchiveKPICard 
           title="Historic WASSCE Mean" 
           val={`${departmentAverage}%`} 
           note="Department-wide GPA" 
           icon={TrendingUp} 
+          color="emerald"
         />
         <HODArchiveKPICard 
           title="HOD Verified Seals" 
           val={verifiedSealsCount} 
           note="Permanently validated" 
           icon={ShieldCheck} 
+          color="amber"
         />
         <HODArchiveKPICard 
           title="Retention & Pass Key" 
           val="100.0%" 
           note="Zero compliance leakage" 
           icon={Award} 
+          color="slate"
         />
       </div>
 
@@ -103,30 +107,30 @@ export function HODVaultView({
       />
 
       {/* Student Registry Container Frame */}
-      <div className="bg-white border border-slate-200 rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-sm">
-        <header className="px-4 sm:px-8 py-4 sm:py-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
+      <div className="bg-surface border border-border rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-sm">
+        <header className="px-4 sm:px-8 py-4 sm:py-5 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/30">
           <div className="min-w-0">
-            <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest leading-none">
+            <h4 className="text-xs font-black text-foreground uppercase tracking-widest leading-none">
               Archives Dossiers
             </h4>
-            <p className="text-[10px] text-slate-400 font-bold uppercase mt-1.5 hidden sm:block">
+            <p className="text-xs text-muted-foreground font-bold uppercase mt-1.5 hidden sm:block">
               Select an active or alumni dossier to analyze longitudinal performance and view historical credentials
             </p>
-            <p className="text-[10px] text-slate-400 font-bold uppercase mt-1.5 sm:hidden">
+            <p className="text-xs text-muted-foreground font-bold uppercase mt-1.5 sm:hidden">
               View student records &amp; credentials
             </p>
           </div>
-          <span className="text-[10px] font-bold text-slate-500 bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-center whitespace-nowrap self-start sm:self-center">
-            Displaying <span className="text-slate-900 font-black">{filteredStudents.length}</span> records
+          <span className="text-xs font-bold text-text-secondary bg-surface border border-border rounded-lg px-2.5 py-1 text-center whitespace-nowrap self-start sm:self-center">
+            Displaying <span className="text-foreground font-black">{filteredStudents.length}</span> records
           </span>
         </header>
 
         {/* Scroll Containment Outer Viewport */}
         <div className="w-full overflow-x-auto">
-          <div className="min-w-[600px] sm:min-w-full divide-y divide-slate-100">
+            <div className="min-w-[600px] sm:min-w-full divide-y divide-border">
             
             {/* Pure Grid Table Header */}
-            <div className={`px-6 sm:px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/20 border-b border-slate-100 ${rowGridStructure}`}>
+            <div className={`px-6 sm:px-8 py-4 text-xs font-black text-muted-foreground uppercase tracking-wider bg-muted/20 border-b border-border ${rowGridStructure}`}>
               <div>Student Identity</div>
               <div className="hidden sm:block">Stream / Batch</div>
               <div className="text-center sm:text-left">Grade</div>
@@ -136,7 +140,7 @@ export function HODVaultView({
             </div>
 
             {/* Pure Grid Rows Container */}
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-border">
               {filteredStudents.length === 0 ? (
                 <div className="px-8 py-16">
                   <EmptyState context="students" variant="compact" />

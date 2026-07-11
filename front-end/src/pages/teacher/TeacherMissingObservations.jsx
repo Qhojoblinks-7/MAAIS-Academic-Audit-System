@@ -1,5 +1,4 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight, AlertTriangle, CheckCircle2, Search,
   Clock, Calendar, Sparkles, SlidersHorizontal, Inbox,
@@ -21,22 +20,16 @@ const OBS_COLORS = ['#1D4D4F', '#f59e0b', '#ef4444', '#3b82f6', '#a855f7'];
 
 function ConfirmModal({ isOpen, onConfirm, onCancel, title, message }) {
   return (
-    <AnimatePresence>
+    <React.Fragment>
       {isOpen && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-destructive/60 backdrop-blur-sm"
-            onClick={onCancel}
-          />
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            className="w-full max-w-sm z-10"
-          >
+          <div
+            className="absolute inset-0 bg-destructive/60 backdrop-blur-sm animate-in fade-in"
+          onClick={onCancel}
+        />
+        <div
+          className="w-full max-w-sm z-10 animate-in fade-in zoom-in-95"
+        >
             <Card className="relative p-8 shadow-2xl">
               <div className="w-12 h-12 bg-destructive/10 rounded-2xl flex items-center justify-center text-destructive mb-5">
                 <Trash2 size={22} />
@@ -48,10 +41,11 @@ function ConfirmModal({ isOpen, onConfirm, onCancel, title, message }) {
                 <Button onClick={onConfirm} className="flex-1 bg-destructive hover:bg-destructive/90 text-white">Delete</Button>
               </div>
             </Card>
-          </motion.div>
+          </div>
         </div>
       )}
-    </AnimatePresence>
+
+    </React.Fragment>
   );
 }
 
@@ -82,22 +76,16 @@ function CreateObsModal({ isOpen, onClose, onSave, editingObs, disabled = false 
   const canSave = student.trim() && comment.trim();
 
   return (
-    <AnimatePresence>
+    <React.Fragment>
       {isOpen && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-muted/60 backdrop-blur-sm"
-            onClick={onClose}
-          />
-          <motion.div
-            initial={{ scale: 0.97, opacity: 0, y: 15 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.97, opacity: 0, y: 15 }}
-            className="relative w-full max-w-lg bg-card rounded-3xl shadow-2xl overflow-hidden z-10"
-          >
+          <div
+            className="absolute inset-0 bg-muted/60 backdrop-blur-sm animate-in fade-in"
+          onClick={onClose}
+        />
+        <div
+          className="relative w-full max-w-lg bg-card rounded-3xl shadow-2xl overflow-hidden z-10 animate-in fade-in zoom-in-97 slide-in-from-bottom-4"
+        >
             <div className="px-8 py-6 border-b border-border flex justify-between items-center">
               <h3 className="text-lg font-black text-foreground">{editingObs ? 'Edit Observation' : 'New Observation'}</h3>
               <Button variant="ghost" size="icon" onClick={onClose}><X size={20} /></Button>
@@ -105,7 +93,7 @@ function CreateObsModal({ isOpen, onClose, onSave, editingObs, disabled = false 
              <div className="p-8 space-y-5">
                {formFields.map((field) => (
                  <div key={field.label}>
-                   <label className="block text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-2">{field.label}</label>
+                   <label className="block text-xs font-black text-muted-foreground uppercase tracking-widest mb-2">{field.label}</label>
                    {field.type === 'select' ? (
                      <select value={field.value} onChange={(e) => field.onChange(e.target.value)}
                        className="w-full px-5 py-3.5 bg-muted border border-border rounded-xl text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/10">
@@ -118,7 +106,7 @@ function CreateObsModal({ isOpen, onClose, onSave, editingObs, disabled = false 
                  </div>
                ))}
                <div>
-                <label className="block text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-2">Comment</label>
+                <label className="block text-xs font-black text-muted-foreground uppercase tracking-widest mb-2">Comment</label>
                 <Textarea
                   placeholder="Describe the observation in detail…"
                   rows={4}
@@ -139,10 +127,11 @@ function CreateObsModal({ isOpen, onClose, onSave, editingObs, disabled = false 
                 <PenLine size={14} /> {editingObs ? 'Save Changes' : 'Save Observation'}
               </Button>
             </div>
-          </motion.div>
+          </div>
         </div>
       )}
-    </AnimatePresence>
+
+    </React.Fragment>
   );
 }
 
@@ -348,8 +337,8 @@ export function TeacherMissingObservations() {
               <AlertTriangle size={20} className="text-surface" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-text-primary tracking-tight">Teacher Observation Hub</h1>
-              <p className="text-xs font-medium text-text-secondary mt-0.5">Audit data sheets and enforce term entry verification guidelines</p>
+              <h1 className="text-xl font-bold text-primary tracking-tight">Teacher Observation Hub</h1>
+              <p className="text-xs font-medium text-secondary mt-0.5">Audit data sheets and enforce term entry verification guidelines</p>
             </div>
           </div>
           <div className="flex items-center gap-2 self-start md:self-center">
@@ -382,7 +371,7 @@ export function TeacherMissingObservations() {
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
                     "px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer",
-                    activeTab === tab.id ? "bg-surface text-warning shadow-sm font-bold" : "text-text-secondary hover:text-text-primary"
+                    activeTab === tab.id ? "bg-surface text-warning shadow-sm font-bold" : "text-secondary hover:text-primary"
                   )}
                 >
                   {tab.label}
@@ -391,11 +380,11 @@ export function TeacherMissingObservations() {
             </div>
 
             <div className="relative min-w-[180px]">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary pointer-events-none" />
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary pointer-events-none" />
               <select
                 value={obsTypeFilter}
                 onChange={(e) => setObsTypeFilter(e.target.value)}
-                className="w-full appearance-none pl-9 pr-5 py-2 bg-surface border border-border rounded-xl text-xs font-semibold tracking-widest text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/10"
+                className="w-full appearance-none pl-9 pr-5 py-2 bg-surface border border-border rounded-xl text-xs font-semibold tracking-widest text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/10"
               >
                 {['All', ...OBS_TYPES].map((type) => (
                   <option key={type} value={type}>{type}</option>
@@ -405,13 +394,13 @@ export function TeacherMissingObservations() {
           </div>
 
           <div className="relative w-full sm:w-72 sm:ml-auto">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-secondary" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-secondary" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search student, class..."
-              className="w-full pl-9 pr-4 py-1.5 bg-surface border border-border rounded-xl text-xs font-medium focus:bg-card focus:outline-none focus:ring-2 focus:ring-brand-primary/10 transition-all placeholder:text-text-secondary"
+              className="w-full pl-9 pr-4 py-1.5 bg-surface border border-border rounded-xl text-xs font-medium focus:bg-card focus:outline-none focus:ring-2 focus:ring-brand-primary/10 transition-all placeholder:text-secondary"
             />
           </div>
         </div>
@@ -420,53 +409,46 @@ export function TeacherMissingObservations() {
       <main className="flex-1 overflow-y-auto p-6 lg:p-8 min-h-0">
         <div className="max-w-6xl mx-auto">
           {isLoading && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-center py-16 px-4 text-center bg-surface rounded-2xl border border-border">
-              <p className="text-xs font-medium text-text-secondary">Syncing observation records from MAAIS backend…</p>
-            </motion.div>
+             <div className="flex items-center justify-center py-16 px-4 text-center bg-surface rounded-2xl border border-border animate-in fade-in">
+              <p className="text-xs font-medium text-secondary">Syncing observation records from MAAIS backend…</p>
+            </div>
           )}
 
           {error && !isLoading && (
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-4 rounded-2xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-xs font-medium text-destructive">
+             <div className="mb-4 rounded-2xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-xs font-medium text-destructive animate-in fade-in slide-in-from-bottom-2">
               {error}
-            </motion.div>
+            </div>
           )}
 
           {!isLoading && (
             <div className="bg-surface rounded-2xl border border-border shadow-sm overflow-hidden flex flex-col">
               <div className="px-5 py-4 border-b border-border bg-muted/30 flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-2 text-xs font-bold text-text-secondary uppercase tracking-wider font-mono">
+                <div className="flex items-center gap-2 text-xs font-bold text-secondary uppercase tracking-wider font-mono">
                   <SlidersHorizontal size={13} /> Observation Logs
                 </div>
-                <span className="text-[11px] font-medium text-text-secondary">
+                <span className="text-xs font-medium text-secondary">
                   Showing {filteredObservations.length} of {sourceObservations.length} {activeTab === 'missing' ? 'missing' : activeTab === 'logged' ? 'logged' : 'total'} observations
                 </span>
               </div>
 
-              <div className="divide-y divide-border min-h-0">
-                <AnimatePresence mode="wait">
-                  {filteredObservations.length === 0 ? (
-                    <motion.div
-                      key="empty-state"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="flex flex-col items-center justify-center py-16 px-4 text-center bg-surface"
-                    >
+               <div className="divide-y divide-border min-h-0">
+                   {filteredObservations.length === 0 ? (
+                     <div
+                       key="empty-state"
+                       className="flex flex-col items-center justify-center py-16 px-4 text-center bg-surface animate-in fade-in"
+                     >
                       <EmptyState context="comments" variant="compact" />
-                    </motion.div>
+                    </div>
                   ) : (
                     filteredObservations.map((obs, idx) => {
                       const isMissing = obs.status === 'Missing';
                       const tc = obsTypeColor(obs.type);
                       return (
-                        <motion.div
-                          key={obs.id}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.15, delay: idx * 0.02 }}
-                          className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-muted/40 transition-colors group"
-                        >
+                         <div
+                           key={obs.id}
+                           style={{ animationDelay: `${idx * 20}ms` }}
+                           className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-muted/40 transition-colors group animate-in fade-in slide-in-from-bottom-2"
+                         >
                           <div className="flex items-start gap-3.5 min-w-0">
                             <div className={cn(
                               "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border mt-0.5 shadow-sm",
@@ -476,22 +458,22 @@ export function TeacherMissingObservations() {
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
-                                <p className="text-sm font-bold text-text-primary truncate tracking-tight">{obs.student}</p>
-                                <span className="text-[10px] font-medium font-mono text-text-secondary bg-muted px-1.5 py-0.5 rounded border border-border shrink-0">
+                                <p className="text-sm font-bold text-primary truncate tracking-tight">{obs.student}</p>
+                                <span className="text-xs font-medium font-mono text-secondary bg-muted px-1.5 py-0.5 rounded border border-border shrink-0">
                                   {obs.index}
                                 </span>
                               </div>
-                              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-text-secondary mt-1">
-                                <span className="font-semibold text-text-primary">{obs.class}</span>
+                              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-secondary mt-1">
+                                <span className="font-semibold text-primary">{obs.class}</span>
                                 <span className="text-border">•</span>
                                 <span>Instructed by {obs.teacher}</span>
                                 <span className="text-border">•</span>
-                                <span className="text-text-primary font-semibold">HOD: {obs.hod}</span>
+                                <span className="text-primary font-semibold">HOD: {obs.hod}</span>
                                 <span className="text-border hidden md:inline">•</span>
-                                <span className="inline-flex px-2 py-0.5 rounded border text-[9px] font-black uppercase tracking-widest text-text-primary" style={{color: tc }}>{obs.type}</span>
+                                <span className="inline-flex px-2 py-0.5 rounded border text-xs font-black uppercase tracking-widest text-primary" style={{color: tc }}>{obs.type}</span>
                               </div>
                               {obs.comment && (
-                                <p className="text-[11px] font-medium text-muted-foreground italic mt-1.5 truncate max-w-md">
+                                <p className="text-xs font-medium text-muted-foreground italic mt-1.5 truncate max-w-md">
                                   "{obs.comment}"
                                 </p>
                               )}
@@ -501,12 +483,12 @@ export function TeacherMissingObservations() {
                           <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-3 sm:pt-0 border-border shrink-0">
                             <div className="flex items-center gap-3">
                               <span className={cn(
-                                "text-[10px] font-bold px-2 py-0.5 rounded border tracking-wide",
+                                "text-xs font-bold px-2 py-0.5 rounded border tracking-wide",
                                 isMissing ? "bg-warning/10 text-warning border-warning/20" : "bg-success/10 text-success border-success/20"
                               )}>
                                 {obs.status}
                               </span>
-                              <div className="flex items-center gap-1.5 text-text-secondary text-xs font-mono">
+                              <div className="flex items-center gap-1.5 text-secondary text-xs font-mono">
                                 <Calendar size={12} />
                                 <span>{obs.date}</span>
                               </div>
@@ -536,7 +518,7 @@ export function TeacherMissingObservations() {
                                   <button
                                     onClick={() => setEditingObs({ ...obs })}
                                     disabled={isSaving}
-                                    className="p-1.5 hover:bg-brand-primary/10 disabled:opacity-50 rounded-lg transition-all text-text-secondary hover:text-brand-primary"
+                                    className="p-1.5 hover:bg-brand-primary/10 disabled:opacity-50 rounded-lg transition-all text-secondary hover:text-brand-primary"
                                     title="Edit observation"
                                   >
                                     <PenLine size={14} />
@@ -544,7 +526,7 @@ export function TeacherMissingObservations() {
                                   <button
                                     onClick={() => { setDeleteTarget(obs); setShowConfirm(true); }}
                                     disabled={isSaving}
-                                    className="p-1.5 hover:bg-destructive/10 disabled:opacity-50 rounded-lg transition-all text-text-secondary hover:text-destructive"
+                                    className="p-1.5 hover:bg-destructive/10 disabled:opacity-50 rounded-lg transition-all text-secondary hover:text-destructive"
                                     title="Delete observation"
                                   >
                                     <Trash2 size={14} />
@@ -553,12 +535,11 @@ export function TeacherMissingObservations() {
                               )}
                             </div>
                           </div>
-                        </motion.div>
+                        </div>
                       );
                     })
-                  )}
-                </AnimatePresence>
-              </div>
+                   )}
+               </div>
             </div>
           )}
         </div>

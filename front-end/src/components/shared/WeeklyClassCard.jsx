@@ -32,7 +32,7 @@ return (
       {/* 1. BADGE ROW */}
       <div className="flex justify-between items-center w-full mb-1 shrink-0">
         <span className={cn(
-          "text-[6px] md:text-[7px] font-black uppercase tracking-wider px-1 py-0.5 rounded leading-none shrink-0",
+          "text-xs font-black uppercase tracking-wider px-1 py-0.5 rounded leading-none shrink-0",
           entry.type === 'LAB' && "bg-success/20 text-success",
           entry.type === 'SUBSTITUTION' && "bg-brand-secondary/20 text-brand-secondary",
           entry.type !== 'LAB' && entry.type !== 'SUBSTITUTION' && "bg-muted text-muted-foreground"
@@ -53,13 +53,13 @@ return (
       <div className={cn("w-full min-h-0 text-left", !isHovered ? "block" : "flex-1 flex flex-col justify-start")}>
         <h4 className={cn(
           "font-black text-foreground leading-tight tracking-tight text-left break-words block",
-          isHovered ? "text-[11px] whitespace-normal" : "text-[8px] md:text-[9px] line-clamp-2"
+          isHovered ? "text-xs whitespace-normal" : "text-xs line-clamp-2"
         )}>
           {entry.subjectName}
         </h4>
         
         {isHovered && (
-          <p className="font-bold text-muted-foreground text-[8px] whitespace-normal leading-none mt-1 text-left">
+          <p className="font-bold text-muted-foreground text-xs whitespace-normal leading-none mt-1 text-left">
             {entry.className}
           </p>
         )}
@@ -75,7 +75,7 @@ return (
             className="w-full flex flex-col gap-2 mt-2 pt-2 border-t border-border text-left"
           >
             {/* Venue */}
-            <div className="flex items-center gap-0.5 text-muted-foreground uppercase font-black text-[7px] shrink-0 text-left">
+            <div className="flex items-center gap-0.5 text-muted-foreground uppercase font-black text-xs shrink-0 text-left">
               <MapPin size={7} className="shrink-0" /> 
               <span className="truncate">{entry.venue}</span>
             </div>
@@ -86,7 +86,7 @@ return (
                 {entry.tasks.slice(0, 2).map((task, i) => (
                   <div key={i} className="flex items-center gap-1">
                     <div className="w-1 h-1 bg-success rounded-full shrink-0" />
-                    <span className="text-[8px] font-bold text-muted-foreground">{task}</span>
+                    <span className="text-xs font-bold text-muted-foreground">{task}</span>
                   </div>
                 ))}
               </div>
@@ -102,7 +102,7 @@ return (
                       e.stopPropagation();
                       navigate('/grading');
                     }}
-                    className="flex items-center gap-1 px-2 py-1 bg-brand-primary text-primary-foreground text-[7px] font-black rounded-lg hover:bg-brand-primary/90 transition-all cursor-pointer"
+                     className="flex items-center gap-1 px-2 py-1 bg-brand-primary text-primary-foreground text-xs font-black rounded-lg hover:bg-brand-primary/90 transition-all cursor-pointer"
                   >
                     <BookOpen size={8} />
                     {action}
@@ -115,7 +115,7 @@ return (
             {entry.materials?.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {entry.materials.slice(0, 2).map((mat, i) => (
-                  <span key={i} className="flex items-center gap-1 px-2 py-0.5 bg-muted text-muted-foreground text-[7px] font-bold rounded-full max-w-full truncate">
+                   <span key={i} className="flex items-center gap-1 px-2 py-0.5 bg-muted text-muted-foreground text-xs font-bold rounded-full max-w-full truncate">
                     {mat.type === 'PDF' ? <FileText size={8} className="shrink-0" /> : <LinkIcon size={8} className="shrink-0" />}
                     <span className="truncate">{mat.title}</span>
                   </span>

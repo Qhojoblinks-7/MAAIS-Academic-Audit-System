@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, BookOpen, Percent, GraduationCap, Clock, ChevronRight, Star, PenLine, ClipboardCheck, X, ArrowLeft } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
@@ -152,22 +151,21 @@ export function TeacherGradingView() {
   return (
     <div className="flex-1 flex overflow-hidden bg-background">
       {/* ── LEFT PANEL: Class list ── */}
-      <motion.div
-        layout
-        className={cn(
-          "flex-1 overflow-y-auto p-6 md:p-8 lg:p-10 select-none transition-all duration-300",
-          selectedClass ? "hidden lg:block lg:flex-[0_0_420px] lg:overflow-y-auto" : ""
-        )}
-      >
+       <div
+         className={cn(
+           "flex-1 overflow-y-auto p-6 md:p-8 lg:p-10 select-none transition-all duration-300",
+           selectedClass ? "hidden lg:block lg:flex-[0_0_420px] lg:overflow-y-auto" : ""
+         )}
+       >
         <div className="max-w-7xl mx-auto">
 
           {/* Header */}
           <header className="mb-8 border-b border-border pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl md:text-4xl font-black text-foreground tracking-tight leading-none">
+              <h1 className="text-2xl font-black text-foreground tracking-tight leading-none">
                 Grading Summary
               </h1>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-2 flex items-center gap-3">
+              <p className="text-xs font-black text-muted-foreground uppercase tracking-widest mt-2 flex items-center gap-3">
                 <span className="flex items-center gap-1.5">
                   <ClipboardCheck size={10} className="text-muted-foreground" />
                   Score Entry · Progress Tracking · Submission Control
@@ -179,7 +177,7 @@ export function TeacherGradingView() {
                 )}
               </p>
             </div>
-            <div className="flex items-center gap-4 text-[9px] font-black text-brand-primary uppercase tracking-widest">
+            <div className="flex items-center gap-4 text-xs font-black text-brand-primary uppercase tracking-widest">
               <NotificationBell />
             </div>
           </header>
@@ -187,21 +185,19 @@ export function TeacherGradingView() {
           {/* Stat cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {statCards.map((s, i) => (
-              <motion.div
-                key={s.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.04 }}
-                className="bg-card p-5 rounded-2xl border border-border/60 shadow-sm flex items-center gap-4"
-              >
+               <div
+                 key={s.label}
+                 style={{ animationDelay: `${i * 40}ms` }}
+                 className="bg-card p-5 rounded-2xl border border-border/60 shadow-sm flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2"
+               >
                 <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border", s.color)}>
                   <s.icon size={20} />
                 </div>
                 <div>
-                  <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">{s.label}</p>
+                  <p className="text-xs font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">{s.label}</p>
                   <p className="text-2xl font-black text-foreground leading-none">{s.value}</p>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
 
@@ -213,10 +209,10 @@ export function TeacherGradingView() {
               </div>
               <div>
                 <p className="text-xs font-black text-foreground uppercase tracking-widest">Enter Marks</p>
-                <p className="text-[10px] font-medium text-muted-foreground mt-0.5">Select a class sheet below</p>
+                <p className="text-xs font-medium text-muted-foreground mt-0.5">Select a class sheet below</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-[9px] font-black text-brand-primary uppercase tracking-widest">
+            <div className="flex items-center gap-2 text-xs font-black text-brand-primary uppercase tracking-widest">
               <Star size={11} /> {completedCount} complete · {pendingCount} pending
             </div>
           </div>
@@ -230,7 +226,7 @@ export function TeacherGradingView() {
                 placeholder="Search by subject or class..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl text-[12px] font-medium text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/10 shadow-sm"
+                className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl text-sm font-medium text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/10 shadow-sm"
               />
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -240,7 +236,7 @@ export function TeacherGradingView() {
                   variant={activeFilter === f ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setActiveFilter(f)}
-                  className="text-[9px] font-black uppercase tracking-widest"
+                  className="text-xs font-black uppercase tracking-widest"
                 >
                   {f}
                 </Button>
@@ -252,91 +248,78 @@ export function TeacherGradingView() {
           <Card className="rounded-[2rem] border border-border shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-border bg-muted/30 flex items-center gap-3">
               <Filter size={14} className="text-muted-foreground" />
-              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+              <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">
                 Assigned Class Sheets · {filtered.length} result{filtered.length !== 1 ? 's' : ''}
               </span>
             </div>
 
-            <div className="divide-y divide-border">
-              <AnimatePresence>
-                {filtered.map((cls, i) => {
-                  const sm = statusMeta[cls.status] || statusMeta['Not Started'] || {};
-                  return (
-                    <motion.div
-                      key={cls.id}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ delay: i * 0.03 }}
-                      onClick={() => handleSelectClass(cls)}
-                      className={cn(
-                        "p-5 flex flex-col sm:flex-row sm:items-center gap-4 cursor-pointer transition-all",
-                        "hover:bg-brand-primary/5 active:bg-brand-primary/10",
-                        selectedClass?.id === cls.id && "bg-brand-primary/10 border-l-4 border-brand-primary"
-                      )}
-                    >
+             <div className="divide-y divide-border">
+                 {filtered.map((cls, i) => {
+                   const sm = statusMeta[cls.status] || statusMeta['Not Started'] || {};
+                   return (
+                     <div
+                       key={cls.id}
+                       style={{ animationDelay: `${i * 30}ms` }}
+                       onClick={() => handleSelectClass(cls)}
+                       className={cn(
+                         "p-5 flex flex-col sm:flex-row sm:items-center gap-4 cursor-pointer transition-all animate-in fade-in slide-in-from-bottom-2",
+                         "hover:bg-brand-primary/5 active:bg-brand-primary/10",
+                         selectedClass?.id === cls.id && "bg-brand-primary/10 border-l-4 border-brand-primary"
+                       )}
+                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-black text-foreground truncate">{cls.subject}</p>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">{cls.className}</p>
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-0.5">{cls.className}</p>
                       </div>
 
                       {/* Progress bar */}
                       <div className="flex flex-col items-center min-w-0 w-full sm:w-32">
                         <div className="flex items-center gap-2 mb-1 w-full">
                           <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${cls.progress}%` }}
-                              transition={{ delay: i * 0.04 + 0.2, duration: 0.6 }}
-                              className={cn("h-full rounded-full", cls.progress === 100 ? 'bg-success' : 'bg-brand-primary')}
-                            />
+                           <div
+                             style={{ width: `${cls.progress}%` }}
+                             className={cn("h-full rounded-full transition-all duration-700", cls.progress === 100 ? 'bg-success' : 'bg-brand-primary')}
+                           />
                           </div>
-                          <span className="text-[9px] font-black text-muted-foreground w-8 text-right">{cls.progress}%</span>
+                          <span className="text-xs font-black text-muted-foreground w-8 text-right">{cls.progress}%</span>
                         </div>
                       </div>
 
                       {/* Students + Status */}
                       <div className="flex items-center gap-3 min-w-0">
-                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest shrink-0">{cls.studentCount} students</span>
-                        <span className={cn("text-[8px] font-black px-2.5 py-1 uppercase tracking-widest rounded-lg border shrink-0 flex items-center gap-1.5", sm.badge)}>
+                        <span className="text-xs font-black text-muted-foreground uppercase tracking-widest shrink-0">{cls.studentCount} students</span>
+                        <span className={cn("text-xs font-black px-2.5 py-1 uppercase tracking-widest rounded-lg border shrink-0 flex items-center gap-1.5", sm.badge)}>
                           <span className={cn("w-2 h-2 rounded-full shrink-0", sm.dot)} />
                           {cls.status}
                         </span>
                         <ChevronRight size={16} className={cn("shrink-0 transition-transform", selectedClass?.id === cls.id && "rotate-90 text-brand-primary")} />
                       </div>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
+                    </div>
+                   );
+                 })}
 
-              {filtered.length === 0 && (
+               {filtered.length === 0 && (
                 <div className="py-16 text-center text-muted-foreground text-sm font-medium uppercase tracking-tight">
                   No class sheets match your search.
-                </div>
-              )}
-            </div>
+           </div>
+         )}
+     </div>
           </Card>
         </div>
-      </motion.div>
+      </div>
 
       {/* ── RIGHT PANEL: Embedded GradingSheet ── */}
-      <AnimatePresence>
-        {selectedClass && (
-          <motion.div
-            key={selectedClass.id}
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 40 }}
-            transition={{ duration: 0.25 }}
-            className="flex-1 flex flex-col overflow-hidden border-l border-border bg-muted"
-          >
+         {selectedClass && (
+           <div
+             className="flex-1 flex flex-col overflow-hidden border-l border-border bg-muted animate-in fade-in slide-in-from-right-4"
+           >
             {/* Panel header with back button */}
             <div className="h-14 bg-card border-b border-border flex items-center px-4 gap-3 shrink-0">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleCloseSheet}
-                className="flex items-center gap-2 text-[11px] font-black text-muted-foreground hover:text-foreground uppercase tracking-widest"
+                className="flex items-center gap-2 text-xs font-black text-muted-foreground hover:text-foreground uppercase tracking-widest"
               >
                 <ArrowLeft size={14} />
                 Back to List
@@ -346,7 +329,7 @@ export function TeacherGradingView() {
                 <BookOpen size={14} className="text-brand-primary" />
                 <div>
                   <p className="text-xs font-black text-foreground leading-none">{selectedClass.subject}</p>
-                  <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
                     {selectedClass.className}
                     <span className="mx-1.5 text-border">|</span>
                     <span className="text-success">{selectedClass.department || 'GENERAL'}</span>
@@ -381,9 +364,8 @@ export function TeacherGradingView() {
                 isTermFinalized={isTermFinalized}
               />
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+         )}
     </div>
   );
 }

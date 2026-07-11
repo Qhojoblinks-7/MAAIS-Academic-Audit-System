@@ -55,9 +55,9 @@ export function ObservationSidebar({
     (score) => score > 0 && score < 3
   );
 
-  const headerColor = isCorrection ? "bg-red-100/50 text-red-900" :
-                      isCompliance ? "bg-amber-100/50 text-amber-900" :
-                      "bg-[#D1E9E0] text-gray-800";
+  const headerColor = isCorrection ? "bg-destructive/10 text-destructive" :
+                      isCompliance ? "bg-warning/10 text-warning" :
+                      "bg-success/10 text-foreground";
 
   return (
     <motion.aside
@@ -65,10 +65,10 @@ export function ObservationSidebar({
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: 340, opacity: 0 }}
       transition={{ type: "tween", duration: 0.2, ease: "easeOut" }}
-      className="w-[300px] fixed top-20 right-4 bottom-4 flex flex-col rounded-[1.5rem] border border-gray-100 shadow-2xl bg-white z-30 overflow-hidden"
+      className="w-[300px] fixed top-20 right-4 bottom-4 flex flex-col rounded-[1.5rem] border border-border shadow-2xl bg-surface z-30 overflow-hidden"
     >
       {/* Sticky Sidebar Header */}
-      <div className={cn("px-5 py-4 font-black flex items-center justify-between shrink-0 border-b border-gray-100/20", headerColor)}>
+      <div className={cn("px-5 py-4 font-black flex items-center justify-between shrink-0 border-b border-border/20", headerColor)}>
         <span className="text-base tracking-tight">
           {isCorrection ? 'Correction Bridge' :
            isCompliance ? 'Guided Observation' :
@@ -77,7 +77,7 @@ export function ObservationSidebar({
         <button 
           type="button"
           onClick={onClose} 
-          className="opacity-50 hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-black/5 cursor-pointer"
+          className="opacity-50 hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-muted cursor-pointer"
           aria-label="Close sidebar"
         >
           <ChevronRight size={18} />
@@ -92,15 +92,15 @@ export function ObservationSidebar({
             <img
               src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(safeStudent.name || 'default')}`}
               alt={`Avatar of ${safeStudent.name}`}
-              className="w-12 h-12 rounded-full bg-emerald-100 border-2 border-white shadow-md shadow-gray-200 object-cover"
+              className="w-12 h-12 rounded-full bg-success/10 border-2 border-background shadow-md shadow-muted object-cover"
             />
             <div>
-              <h3 className="text-lg font-black text-gray-900 leading-tight">{safeStudent.name || 'Select Student'}</h3>
-              <p className="text-xs font-bold text-gray-500">Index No. {safeStudent.index || safeStudent.id?.slice(0, 8) || 'N/A'}</p>
+              <h3 className="text-lg font-black text-foreground leading-tight">{safeStudent.name || 'Select Student'}</h3>
+              <p className="text-xs font-bold text-muted-foreground">Index No. {safeStudent.index || safeStudent.id?.slice(0, 8) || 'N/A'}</p>
             </div>
           </div>
 
-          <div className="h-px bg-gray-100 -mx-5" />
+          <div className="h-px bg-border -mx-5" />
 
           {/* Dynamic Mode Forms */}
           {isCorrection ? (
@@ -118,10 +118,10 @@ export function ObservationSidebar({
               {/* Standard Rating Matrix */}
               <div className="space-y-4">
                 {ratingsList.map((rating) => (
-                  <div key={rating.id} className="pb-3 border-b border-gray-100 last:border-0">
+                  <div key={rating.id} className="pb-3 border-b border-border last:border-0">
                     <div className="flex items-center justify-between mb-2 gap-2">
-                      <span className="text-xs font-black text-gray-800 tracking-tight whitespace-nowrap">{rating.label}</span>
-                      <span className="text-[9px] font-medium text-gray-500 text-right line-clamp-1">{rating.description}</span>
+                      <span className="text-xs font-black text-foreground tracking-tight whitespace-nowrap">{rating.label}</span>
+                      <span className="text-xs font-medium text-muted-foreground text-right line-clamp-1">{rating.description}</span>
                     </div>
                     <div className="flex gap-1 justify-between">
                       {[1, 2, 3, 4, 5].map((num) => (
@@ -130,10 +130,10 @@ export function ObservationSidebar({
                           type="button"
                           onClick={() => onRatingChange?.(rating.id, num)}
                           className={cn(
-                            "w-7 h-7 rounded-full border-2 flex items-center justify-center text-[10px] font-black transition-all cursor-pointer",
+                            "w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-black transition-all cursor-pointer",
                             ratings[rating.id] === num
-                              ? "bg-[#015D34] border-[#015D34] text-white shadow-md scale-105"
-                              : "border-gray-200 text-gray-600 hover:border-[#015D34] hover:text-[#015D34] hover:bg-emerald-50"
+                              ? "bg-success border-success text-background shadow-md scale-105"
+                              : "border-border text-text-secondary hover:border-success hover:text-success hover:bg-success/10"
                           )}
                         >
                           {num}
@@ -145,12 +145,12 @@ export function ObservationSidebar({
               </div>
 
               {/* Safety Guidelines Form Control */}
-              <div className="pt-3 border-t border-gray-100">
-                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Safety & Status</h4>
+              <div className="pt-3 border-t border-border">
+                <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-3">Safety & Status</h4>
                 <div className="flex flex-col gap-3">
                   <label 
                        className="flex items-center gap-3 cursor-pointer select-none group"
-                     >
+                    >
                        <input
                          type="checkbox"
                          checked={activeSafety}
@@ -158,27 +158,27 @@ export function ObservationSidebar({
                          className="sr-only"
                        />
                        <div className={cn(
-                         "w-6 h-6 border-2 border-emerald-600 rounded flex items-center justify-center transition-all shrink-0 group-hover:scale-105",
-                         activeSafety ? "bg-emerald-600" : "bg-white"
+                         "w-6 h-6 border-2 border-success rounded flex items-center justify-center transition-all shrink-0 group-hover:scale-105",
+                         activeSafety ? "bg-success" : "bg-surface"
                        )}>
-                         {activeSafety && <ShieldCheck size={16} className="text-white" />}
+                          {activeSafety && <ShieldCheck size={16} className="text-background" />}
                        </div>
-                       <span className="text-xs font-bold text-gray-700">Followed Lab Safety Guidelines</span>
+                       <span className="text-xs font-bold text-foreground">Followed Lab Safety Guidelines</span>
                      </label>
 
                   {/* Flag Switch Mechanism */}
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-                      {activeFlagged && <AlertTriangle size={14} className="text-red-500" />}
-                      Flag Student for Review
-                    </span>
-                    <button
-                      type="button"
-                      onClick={toggleFlag}
-                      className={cn(
-                        "w-12 h-6 rounded-full transition-all relative p-1 shadow-inner shrink-0 cursor-pointer",
-                        activeFlagged ? "bg-red-500" : "bg-gray-200"
-                      )}
+                   <div className="flex items-center justify-between pt-1">
+                     <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                       {activeFlagged && <AlertTriangle size={14} className="text-destructive" />}
+                       Flag Student for Review
+                     </span>
+                     <button
+                       type="button"
+                       onClick={toggleFlag}
+                       className={cn(
+                         "w-12 h-6 rounded-full transition-all relative p-1 shadow-inner shrink-0 cursor-pointer",
+                         activeFlagged ? "bg-destructive" : "bg-muted"
+                       )}
                       aria-label="Flag student for review"
                     >
                       <motion.div
@@ -193,19 +193,19 @@ export function ObservationSidebar({
 
               {/* Audit Justification Field */}
               {hasLowRating && (
-                <div className="space-y-2 pt-2 border-t border-gray-100">
+                <div className="space-y-2 pt-2 border-t border-border">
                   <div className="flex justify-between items-center">
-                    <label htmlFor="audit-justification" className="text-xs font-bold text-gray-800">
+                    <label htmlFor="audit-justification" className="text-xs font-bold text-foreground">
                       Audit Justification
                     </label>
-                    <span className="text-[9px] font-black text-red-500 uppercase animate-pulse">Required</span>
+                    <span className="text-xs font-black text-destructive uppercase animate-pulse">Required</span>
                   </div>
                   <textarea
                     id="audit-justification"
                     value={comment}
                     onChange={(e) => onCommentChange?.(e.target.value)}
                     placeholder="Please provide context for lower ratings..."
-                    className="w-full h-20 bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs focus:outline-none focus:ring-2 focus:ring-red-500/20 resize-none"
+                    className="w-full h-20 bg-muted border border-border rounded-xl p-3 text-xs focus:outline-none focus:ring-2 focus:ring-destructive/20 resize-none"
                   />
                 </div>
               )}
@@ -215,7 +215,7 @@ export function ObservationSidebar({
       </div>
 
       {/* Sticky Action Buttons Footer */}
-      <div className="px-5 py-3 border-t border-gray-100 bg-white shrink-0">
+      <div className="px-5 py-3 border-t border-border bg-surface shrink-0">
         <div className="flex gap-2">
           <button
             type="button"
@@ -224,8 +224,8 @@ export function ObservationSidebar({
             className={cn(
               "flex-1 py-2.5 font-black rounded-full text-xs transition-all shadow-md",
               disabled || saving
-                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                : "bg-[#015D34] text-white hover:bg-emerald-900 shadow-emerald-900/10 cursor-pointer"
+                ? "bg-muted text-muted-foreground cursor-not-allowed"
+                : "bg-success text-background hover:bg-success/90 shadow-success/20 cursor-pointer"
             )}
           >
             {saving ? 'Saving...' : 'Save'}
@@ -237,8 +237,8 @@ export function ObservationSidebar({
             className={cn(
               "flex-1 py-2.5 font-black rounded-full text-xs transition-all",
               disabled
-                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer"
+                ? "bg-muted text-muted-foreground cursor-not-allowed"
+                : "bg-muted text-foreground hover:bg-muted cursor-pointer"
             )}
           >
             Close

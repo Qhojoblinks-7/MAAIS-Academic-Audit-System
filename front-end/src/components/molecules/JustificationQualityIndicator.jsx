@@ -8,10 +8,10 @@ export function JustificationQualityIndicator({ text, className }) {
 
   return (
     <span className={cn(
-      "inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded",
+      "inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium rounded",
       isShort
-        ? "bg-rose-50 text-rose-700 border border-rose-200/60"
-        : "bg-emerald-50 text-emerald-700 border border-emerald-200/60",
+        ? "bg-destructive/10 text-destructive border border-destructive/20"
+        : "bg-success/10 text-success border border-success/20",
       className
     )}>
       {isShort ? 'HOD-AR-2.2 Short' : 'Sufficient'}

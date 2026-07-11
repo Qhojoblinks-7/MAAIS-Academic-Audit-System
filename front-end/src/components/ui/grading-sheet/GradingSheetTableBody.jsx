@@ -9,6 +9,7 @@ export function GradingSheetTableBody({
    selectedStudent = {},
    isCorrectionMode,
    isMissingObsMode,
+   isAtRisk,
    isTermFinalized,
    targetStudentId,
    tempMark,
@@ -26,32 +27,42 @@ export function GradingSheetTableBody({
    const sectionFieldNames = (DISPLAY_CLASS_INFO?.sectionFieldNames || ['secA', 'secB', 'secC']).slice(0, sectionCount);
    const isLocked = isTermFinalized || submissionStatus === 'SUBMITTED' || students.some(s => s.isLocked);
 
-   const isInteractive = (student) => {
-     if (isCorrectionMode || isMissingObsMode) {
-       return student.id === targetStudentId || student.index === targetStudentId || student.name === targetStudentId;
-     }
-     if (isLocked) return false;
-     return true;
-   };
-
-   const getCursorClass = (student) => {
+    const isInteractive = (student) => {
       if (isCorrectionMode || isMissingObsMode) {
-        return (student.id === targetStudentId || student.index === targetStudentId || student.name === targetStudentId)
-          ? "cursor-pointer"
-          : "";
+        return student.id === targetStudentId || student.index === targetStudentId || student.name === targetStudentId;
       }
-      if (isLocked) return "cursor-not-allowed";
-      return "cursor-pointer";
+      if (isLocked) return false;
+      if (targetStudentId) {
+        return student.id === targetStudentId || student.index === targetStudentId || student.name === targetStudentId;
+      }
+      return true;
     };
 
+    const getCursorClass = (student) => {
+       if (isCorrectionMode || isMissingObsMode) {
+         return (student.id === targetStudentId || student.index === targetStudentId || student.name === targetStudentId)
+           ? "cursor-pointer"
+           : "";
+       }
+       if (targetStudentId && !isLocked) {
+         return (student.id === targetStudentId || student.index === targetStudentId || student.name === targetStudentId)
+           ? "cursor-pointer"
+           : "";
+       }
+       if (isLocked) return "cursor-not-allowed";
+       return "cursor-pointer";
+     };
+
+    const hasTarget = !!targetStudentId;
+
 return (
-      <TableBody className="divide-y divide-slate-100 bg-surface">
+      <TableBody className="divide-y divide-border bg-surface">
         {students.map((student, idx) => {
           const isSelected = selectedStudent?.id === student.id;
-          const isTarget =
-            (isCorrectionMode || isMissingObsMode) &&
-            (student.id === targetStudentId || student.index === targetStudentId || student.name === targetStudentId);
-          const isGhosted = (isCorrectionMode || isMissingObsMode) && !isTarget;
+    const isTarget =
+      (isCorrectionMode || isMissingObsMode || hasTarget) &&
+      (student.id === targetStudentId || student.index === targetStudentId || student.name === targetStudentId);
+    const isGhosted = (isCorrectionMode || isMissingObsMode || hasTarget) && !isTarget;
           const isAuditMissing = showSTPOverlay && student.auditStatus === 'MISSING';
           const canInteract = isInteractive(student);
 
@@ -62,11 +73,11 @@ return (
             <TableRow
               key={student.id || idx}
               className={cn(
-                "transition-colors group content-baseline",
-                isSelected ? "bg-slate-50" : "hover:bg-slate-50/60",
+                "transition-colors group content-baseline border-l-4",
+                isSelected && isAtRisk ? "bg-destructive/5 border-l-destructive" : isSelected ? "bg-success/5 border-l-success" : "border-l-transparent",
                 isGhosted && "opacity-40 pointer-events-none filter saturate-50",
                 isAuditMissing && "bg-danger/5 hover:bg-danger/10",
-                isLocked && "bg-gray-100",
+                 isLocked && "bg-muted",
                 getCursorClass(student)
               )}
               onClick={() => {
@@ -77,7 +88,7 @@ return (
               }}
             >
               {/* Student ID / Index Column */}
-              <TableCell className="px-4 py-3.5 text-[10px] font-semibold text-text-secondary border-r border-slate-100">
+              <TableCell className="px-4 py-3.5 text-xs font-semibold text-text-secondary border-r border-border">
                 <div className="flex items-center gap-2">
                   {isAuditMissing && (
                     <span className="w-1.5 h-1.5 bg-danger rounded-full animate-pulse" aria-hidden="true" />
@@ -87,13 +98,13 @@ return (
               </TableCell>
 
               {/* Student Name Column */}
-              <TableCell className="px-4 py-3.5 text-[11px] font-medium text-text-primary border-r border-slate-100">
+              <TableCell className="px-4 py-3.5 text-xs font-medium text-text-primary border-r border-border">
                 {student.name}
               </TableCell>
               
               {/* Standard Compressed SBA Display Column */}
               {!isExamExpanded && (
-                <TableCell className="px-4 py-2 border-r border-slate-100 text-center w-28">
+                <TableCell className="px-4 py-2 border-r border-border text-center w-28">
                   <input 
                     type="number" 
                     value={student.sba ?? ''} 
@@ -105,11 +116,11 @@ return (
                       }
                     }}
                     onChange={(e) => updateMark(student.id, 'sba', e.target.value)} 
-                    className={`w-16 px-1 py-1 text-center text-[11px] font-medium rounded border transition-all ${
-                      isLocked
-                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed border-gray-300'
-                        : 'bg-transparent text-text-primary border-transparent focus:border-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200'
-                    }`} 
+                     className={`w-16 px-1 py-1 text-center text-xs font-medium rounded border transition-all ${
+                       isLocked
+                         ? 'bg-muted text-muted-foreground cursor-not-allowed border-border'
+                         : 'bg-transparent text-text-primary border-transparent focus:border-border focus:bg-surface focus:outline-none focus:ring-2 focus:ring-muted'
+                     }`}
                   />
                 </TableCell>
               )}
@@ -124,8 +135,8 @@ return (
                         <TableCell 
                           key={fieldName}
                           className={cn(
-                            "px-4 py-2 border-r border-slate-100 text-center transition-all w-24", 
-                            isTarget ? "bg-danger/5 ring-2 ring-danger ring-inset" : "bg-slate-50/30"
+                            "px-4 py-2 border-r border-border text-center transition-all w-24", 
+                             isTarget ? "bg-danger/5 ring-2 ring-danger ring-inset" : "bg-muted/30"
                           )}
                         >
                           <CorrectionMarkInput
@@ -142,7 +153,7 @@ return (
 
                      // Generic Dynamic Score Entry Cell
                      return (
-                       <TableCell key={fieldName} className="px-4 py-2 border-r border-slate-100 text-center bg-slate-50/30 w-24">
+                        <TableCell key={fieldName} className="px-4 py-2 border-r border-border text-center bg-muted/30 w-24">
                          <input 
                            type="number" 
                            value={student[fieldName] ?? student.sba ?? ''} 
@@ -154,25 +165,25 @@ return (
                              }
                            }}
                            onChange={(e) => updateMark(student.id, fieldName, e.target.value)} 
-                           className={`w-16 px-1 py-1 text-center text-[11px] font-semibold rounded border transition-all ${
-                             isLocked
-                               ? 'bg-gray-200 text-gray-500 cursor-not-allowed border-gray-300'
-                               : 'bg-transparent text-text-primary border-transparent focus:border-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200'
-                           }`} 
+                            className={`w-16 px-1 py-1 text-center text-xs font-semibold rounded border transition-all ${
+                              isLocked
+                                ? 'bg-muted text-muted-foreground cursor-not-allowed border-border'
+                                : 'bg-transparent text-text-primary border-transparent focus:border-border focus:bg-surface focus:outline-none focus:ring-2 focus:ring-muted'
+                            }`}
                          />
                        </TableCell>
                      );
                   })}
 
                   {/* Cumulative Section Component Raw Total Weight */}
-                  <TableCell className="px-4 py-3.5 text-[11px] font-bold text-text-primary border-r border-slate-100 text-center bg-slate-100/40 w-24">
+                  <TableCell className="px-4 py-3.5 text-xs font-bold text-text-primary border-r border-border text-center bg-muted/40 w-24">
                     {rowTotal}
                   </TableCell>
                 </>
               )}
 
               {/* Aggregated Final Base Exam Summary Input */}
-              <TableCell className="px-4 py-2 border-r border-slate-100 text-center w-36">
+               <TableCell className="px-4 py-2 border-r border-border text-center w-36">
                 <input 
                   type="number" 
                   value={student.exam ?? ''} 
@@ -184,20 +195,20 @@ return (
                     }
                   }}
                   onChange={(e) => updateMark(student.id, 'exam', e.target.value)} 
-                  className={`w-16 px-1 py-1 text-center text-[11px] font-bold rounded border transition-all ${
-                    isLocked
-                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed border-gray-300'
-                      : 'bg-transparent text-text-primary border-transparent focus:border-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200'
-                  }`} 
+                   className={`w-16 px-1 py-1 text-center text-xs font-bold rounded border transition-all ${
+                     isLocked
+                       ? 'bg-muted text-muted-foreground cursor-not-allowed border-border'
+                       : 'bg-transparent text-text-primary border-transparent focus:border-border focus:bg-surface focus:outline-none focus:ring-2 focus:ring-muted'
+                   }`}
                 />
               </TableCell>
 
               {/* Calculated Structural Metrics Outlets */}
-              <TableCell className="px-4 py-3.5 text-[11px] font-bold text-text-primary border-r border-slate-100 text-center w-20 bg-slate-50/20">
+              <TableCell className="px-4 py-3.5 text-xs font-bold text-text-primary border-r border-border text-center w-20 bg-muted/20">
                 {student.final}
               </TableCell>
               
-              <TableCell className="px-4 py-3.5 text-[11px] font-bold text-success border-r border-slate-100 text-center w-20 bg-success/10">
+              <TableCell className="px-4 py-3.5 text-xs font-bold text-success border-r border-border text-center w-20 bg-success/10">
                 {student.grade}
               </TableCell>
 
@@ -208,7 +219,7 @@ return (
                     size={13} 
                     className="text-warning shrink-0 opacity-0 group-hover/remark:opacity-100 transition-opacity duration-200" 
                   />
-                  <p className="text-[11px] font-semibold text-text-secondary italic tracking-wide uppercase leading-tight max-w-xs truncate">
+                  <p className="text-xs font-semibold text-text-secondary italic tracking-wide uppercase leading-tight max-w-xs truncate">
                     {student.remark || getSmartRemark?.(student.grade) || 'No Remark'}
                   </p>
                 </div>

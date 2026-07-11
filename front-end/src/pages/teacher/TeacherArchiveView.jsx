@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { EmptyState } from '../../components/molecules';
 import { 
   Database, 
@@ -219,7 +218,7 @@ export function TeacherArchiveView() {
         <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-xs z-50 flex items-center justify-center">
           <div className="text-center space-y-3 bg-white p-6 rounded-2xl border shadow-sm">
             <div className="w-6 h-6 border-2 border-slate-900 border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-[10px] font-bold tracking-widest text-slate-800 uppercase">Syncing Archive Vault...</p>
+            <p className="text-xs font-bold tracking-widest text-slate-800 uppercase">Syncing Archive Vault...</p>
           </div>
         </div>
       )}
@@ -232,7 +231,7 @@ export function TeacherArchiveView() {
           </div>
           <div>
             <h1 className="text-xs font-black uppercase tracking-wider text-slate-900">Instructor Archives</h1>
-            <p className="text-[10px] font-semibold text-slate-400 uppercase mt-0.5">Applied Sciences / Alumni Ledger Matrix</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase mt-0.5">Applied Sciences / Alumni Ledger Matrix</p>
           </div>
         </div>
 
@@ -250,7 +249,7 @@ export function TeacherArchiveView() {
                 setSelectedStudent(null);
               }}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all whitespace-nowrap",
+                "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all whitespace-nowrap",
                 activeSubTab === tab.id 
                   ? "bg-white text-slate-900 shadow-xs border border-slate-200/40" 
                   : "text-slate-500 hover:text-slate-900"
@@ -265,31 +264,22 @@ export function TeacherArchiveView() {
 
       {/* Main Dynamic Workspace Frame */}
       <div className="flex-1 overflow-hidden flex flex-col relative z-10 w-full">
-        <AnimatePresence mode="wait">
           {selectedStudent ? (
-            <motion.div 
-              key="detail_view"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="flex-1 h-full w-full overflow-hidden"
-            >
+             <div
+               className="flex-1 h-full w-full overflow-hidden animate-in fade-in"
+             >
               <TeacherArchiveDetailView 
                 student={selectedStudent}
                 onBack={() => setSelectedStudent(null)}
               />
-            </motion.div>
+            </div>
           ) : (
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
               
               {activeSubTab === 'REGISTRY' && (
-                <motion.div 
-                  key="registry"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="space-y-6"
-                >
+                 <div
+                   className="space-y-6 animate-in fade-in"
+                 >
                   {/* Analytic Display Segment */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {[
@@ -303,10 +293,10 @@ export function TeacherArchiveView() {
                           <card.icon size={18} className={card.color} />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none">{card.title}</p>
+                          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider leading-none">{card.title}</p>
                           <div className="flex items-baseline gap-1.5 mt-1.5">
                             <span className="text-xl font-black text-slate-900 tracking-tight">{card.val}</span>
-                            <span className="text-[10px] font-medium text-slate-400 truncate">{card.note}</span>
+                            <span className="text-xs font-medium text-slate-400 truncate">{card.note}</span>
                           </div>
                         </div>
                       </Card>
@@ -318,9 +308,9 @@ export function TeacherArchiveView() {
                     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
                       <div className="flex items-center gap-2">
                         <Filter size={14} className="text-slate-400" />
-                        <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Filter Matrix Engine</h3>
+                        <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Filter Matrix Engine</h3>
                       </div>
-                      <span className="text-[10px] font-semibold text-slate-400 uppercase">Frozen Records Directory</span>
+                      <span className="text-xs font-semibold text-slate-400 uppercase">Frozen Records Directory</span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -338,7 +328,7 @@ export function TeacherArchiveView() {
 
                       {/* Filter Class Option Map */}
                       <div className="flex items-center h-10 bg-slate-50 border border-slate-200 rounded-xl px-3">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase mr-2 shrink-0">Stream:</span>
+                        <span className="text-xs font-bold text-slate-400 uppercase mr-2 shrink-0">Stream:</span>
                         <select 
                           value={selectedClass}
                           onChange={(e) => setSelectedClass(e.target.value)}
@@ -353,7 +343,7 @@ export function TeacherArchiveView() {
 
                       {/* Filter Grad Term Year Select */}
                       <div className="flex items-center h-10 bg-slate-50 border border-slate-200 rounded-xl px-3">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase mr-2 shrink-0">Cohort:</span>
+                        <span className="text-xs font-bold text-slate-400 uppercase mr-2 shrink-0">Cohort:</span>
                         <select 
                           value={selectedCohortYear}
                           onChange={(e) => setSelectedCohortYear(e.target.value)}
@@ -373,9 +363,9 @@ export function TeacherArchiveView() {
                     <header className="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
                       <div>
                         <h4 className="text-xs font-black text-slate-900 uppercase tracking-wide">Cohort Dossiers Vault</h4>
-                        <p className="text-[10px] text-slate-400 font-medium mt-0.5">Read-Only qualitative diaries and finalized transcripts.</p>
+                        <p className="text-xs text-slate-400 font-medium mt-0.5">Read-Only qualitative diaries and finalized transcripts.</p>
                       </div>
-                      <div className="text-[10px] font-bold text-slate-600 bg-white border border-slate-200 rounded-lg px-2.5 py-1 shadow-2xs">
+                      <div className="text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-lg px-2.5 py-1 shadow-2xs">
                         Records matching: <span className="text-slate-900 font-black">{filteredStudents.length}</span>
                       </div>
                     </header>
@@ -384,7 +374,7 @@ export function TeacherArchiveView() {
                       <div className="min-w-[750px] divide-y divide-slate-100">
                         
                         {/* Table Structured Grid Column Headers */}
-                        <div className={cn("px-6 py-3 text-[9px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/70 border-b border-slate-100", rowGridStructure)}>
+                        <div className={cn("px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50/70 border-b border-slate-100", rowGridStructure)}>
                           <div>Student Profile</div>
                           <div>Stream Group</div>
                           <div>Cumulative Avg</div>
@@ -423,7 +413,7 @@ export function TeacherArchiveView() {
                                     />
                                     <div className="min-w-0 truncate">
                                       <p className="text-xs font-bold text-slate-900 truncate leading-tight">{student.name}</p>
-                                      <p className="text-[9px] font-mono font-medium text-slate-400 uppercase mt-0.5 tracking-tight">{student.index}</p>
+                                      <p className="text-xs font-mono font-medium text-slate-400 uppercase mt-0.5 tracking-tight">{student.index}</p>
                                     </div>
                                   </div>
 
@@ -434,7 +424,7 @@ export function TeacherArchiveView() {
 
                                   {/* Metric Badge */}
                                   <div>
-                                    <span className="px-2 py-0.5 rounded-md text-[11px] font-mono font-bold bg-slate-100 border border-slate-200 text-slate-700">
+                                    <span className="px-2 py-0.5 rounded-md text-xs font-mono font-bold bg-slate-100 border border-slate-200 text-slate-700">
                                       {avgGrade}
                                     </span>
                                   </div>
@@ -442,7 +432,7 @@ export function TeacherArchiveView() {
                                   {/* External Exam Tracking Component */}
                                   <div className="text-center">
                                     <span className={cn(
-                                      "px-2 py-0.5 font-mono text-[10px] font-bold rounded-md text-white whitespace-nowrap",
+                                      "px-2 py-0.5 font-mono text-xs font-bold rounded-md text-white whitespace-nowrap",
                                       student.finalWassce === 'Pending' ? "bg-slate-400" : "bg-slate-900"
                                     )}>
                                       WAEC: {student.finalWassce.split(' ')[0]}
@@ -452,7 +442,7 @@ export function TeacherArchiveView() {
                                   {/* Status Validation Sealed Verification Element */}
                                   <div>
                                     <span className={cn(
-                                      "px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-full border inline-flex items-center gap-1.5 whitespace-nowrap",
+                                      "px-2 py-0.5 text-xs font-bold uppercase tracking-wider rounded-full border inline-flex items-center gap-1.5 whitespace-nowrap",
                                       student.status === 'Archive Sealed' && "bg-emerald-50 text-emerald-700 border-emerald-200/50",
                                       student.status === 'Archive Inbound' && "bg-blue-50 text-blue-700 border-blue-200/50",
                                       student.status === 'Empty Archive' && "bg-amber-50 text-amber-700 border-amber-200/50"
@@ -481,21 +471,17 @@ export function TeacherArchiveView() {
                       </div>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               )}
 
               {/* Interventions Segment Log Section */}
               {activeSubTab === 'INTERVENTIONS' && (
-                <motion.div 
-                  key="interventions"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-6"
-                >
+                 <div
+                   className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-6 animate-in fade-in"
+                 >
                   <div>
                     <h4 className="text-xs font-black text-slate-900 uppercase tracking-wide">Historical Remedial Actions</h4>
-                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Audit trail of supportive localized tutoring interventions finalized in past terms.</p>
+                    <p className="text-xs text-slate-400 font-medium mt-0.5">Audit trail of supportive localized tutoring interventions finalized in past terms.</p>
                   </div>
 
                   <div className="grid grid-cols-1 gap-3">
@@ -506,7 +492,7 @@ export function TeacherArchiveView() {
                         <div key={idx} className="p-4 bg-slate-50/60 border border-slate-200 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                           <div className="space-y-1.5 flex-1 min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-[8px] font-bold text-slate-600 bg-slate-200/70 px-1.5 py-0.5 rounded tracking-wide uppercase">COACHING FILE</span>
+                              <span className="text-xs font-bold text-slate-600 bg-slate-200/70 px-1.5 py-0.5 rounded tracking-wide uppercase">COACHING FILE</span>
                               <p className="text-xs font-bold text-slate-900 truncate">{item.studentName} <span className="text-slate-400 font-normal">({item.class})</span></p>
                             </div>
                             <p className="text-xs text-slate-600 font-medium">
@@ -519,27 +505,23 @@ export function TeacherArchiveView() {
 
                           <div className="text-left md:text-right shrink-0 border-l-2 md:border-l-0 md:border-r-2 border-slate-900 pl-3 md:pl-0 pr-0 md:pr-3">
                             <p className="text-xs font-bold text-slate-800 italic">{item.outcome}</p>
-                            <span className="text-[9px] font-mono text-slate-400 block mt-0.5">Term: {item.term}</span>
+                            <span className="text-xs font-mono text-slate-400 block mt-0.5">Term: {item.term}</span>
                           </div>
                         </div>
                       ))
                     )}
                   </div>
-                </motion.div>
+                </div>
               )}
 
               {/* Past Qualitative Observations Summary Frame Section */}
               {activeSubTab === 'OBS_SUMMARY' && (
-                <motion.div 
-                  key="observations"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-6"
-                >
+                 <div
+                   className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-6 animate-in fade-in"
+                 >
                   <div>
                     <h3 className="text-xs font-black text-slate-900 uppercase tracking-wide">Historical Qualitative Observations</h3>
-                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Registry of developmental progress reports and performance logs locked in previous years.</p>
+                    <p className="text-xs text-slate-400 font-medium mt-0.5">Registry of developmental progress reports and performance logs locked in previous years.</p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -552,9 +534,9 @@ export function TeacherArchiveView() {
                             <div className="flex justify-between items-center bg-white border border-slate-200/60 px-3 py-1.5 rounded-lg gap-2">
                               <div className="min-w-0">
                                 <p className="text-xs font-bold text-slate-900 truncate leading-tight">{entry.studentName}</p>
-                                <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">{entry.class}</p>
+                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mt-0.5">{entry.class}</p>
                               </div>
-                              <span className="text-[9px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-md uppercase shrink-0">{entry.type}</span>
+                              <span className="text-xs font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-md uppercase shrink-0">{entry.type}</span>
                             </div>
                             
                             <p className="text-xs font-medium italic text-slate-600 leading-relaxed px-1">
@@ -562,20 +544,19 @@ export function TeacherArchiveView() {
                             </p>
                           </div>
                           
-                          <div className="flex justify-between items-center text-[9px] font-bold uppercase text-slate-400 pt-2 border-t border-slate-200/60 px-1 gap-2">
+                          <div className="flex justify-between items-center text-xs font-bold uppercase text-slate-400 pt-2 border-t border-slate-200/60 px-1 gap-2">
                             <span className="truncate">By: {entry.teacherName}</span>
-                            <span className="font-mono text-[10px] tracking-tight shrink-0">{entry.date}</span>
+                            <span className="font-mono text-xs tracking-tight shrink-0">{entry.date}</span>
                           </div>
                         </div>
                       ))
                     )}
                   </div>
-                </motion.div>
+                </div>
               )}
 
             </div>
           )}
-        </AnimatePresence>
       </div>
 
     </div>

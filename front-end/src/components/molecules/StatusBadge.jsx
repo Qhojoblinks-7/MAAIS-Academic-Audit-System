@@ -3,27 +3,34 @@ import { cn } from '../../lib/utils';
 
 export function StatusBadge({ status, children, className }) {
   const statusConfig = {
-    DRAFT: { color: 'gray', icon: '📝' },
-    SUBMITTED: { color: 'blue', icon: '📤' },
-    VERIFIED: { color: 'emerald', icon: '✓' },
-    LOCKED: { color: 'emerald', icon: '🔒' },
-    COMPLETE: { color: 'emerald', icon: '✓' },
-    RESOLVED: { color: 'emerald', icon: '✓' },
-    FLAGGED: { color: 'rose', icon: '⚠' },
-    PENDING: { color: 'indigo', icon: '⏳' },
-    UNLOCKED: { color: 'amber', icon: '🔓' },
+    DRAFT: 'muted',
+    SUBMITTED: 'brand',
+    VERIFIED: 'success',
+    LOCKED: 'success',
+    COMPLETE: 'success',
+    RESOLVED: 'success',
+    FLAGGED: 'destructive',
+    PENDING: 'brand',
+    UNLOCKED: 'warning',
   };
 
-  const config = statusConfig[status] || statusConfig.DRAFT;
+  const colorMap = {
+    muted: 'bg-muted text-text-secondary border border-border',
+    brand: 'bg-brand-primary/10 text-brand-primary border border-brand-primary/20',
+    success: 'bg-success/10 text-success border border-success/20',
+    destructive: 'bg-destructive/10 text-destructive border border-destructive/20',
+    warning: 'bg-warning/10 text-warning border border-warning/20',
+  };
+
+  const config = statusConfig[status] || 'muted';
 
   return (
     <span className={cn(
-      "inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-wider",
-      `bg-${config.color}-50 text-${config.color}-700 border border-${config.color}-200/60`,
+      "inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold rounded-full uppercase tracking-wider",
+      colorMap[config],
       className
     )}>
-      <span>{config.icon}</span>
-      {children || status}
+      <span>{children || status}</span>
     </span>
   );
 }

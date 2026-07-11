@@ -20,12 +20,12 @@ export function HODCommentInput({ onSubmit, placeholder = "Add HOD comment...", 
         placeholder={placeholder}
         maxLength={maxLength}
         rows={3}
-        className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-none"
+        className="w-full px-3 py-2 text-xs border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-success/20 focus:border-success resize-none"
       />
       <div className="flex items-center justify-between">
         <span className={cn(
-          "text-[10px]",
-          value.length < 10 ? "text-rose-600" : "text-gray-400"
+          "text-xs",
+          value.length < 10 ? "text-destructive" : "text-muted-foreground"
         )}>
           {value.length} / {maxLength} characters
           {value.length > 0 && value.length < 10 && " (Minimum 10 required)"}
@@ -33,7 +33,7 @@ export function HODCommentInput({ onSubmit, placeholder = "Add HOD comment...", 
         <button
           onClick={handleSubmit}
           disabled={!value.trim() || value.length < 10}
-          className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+          className="px-3 py-1.5 bg-success text-background text-xs font-medium rounded-lg hover:bg-success/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
         >
           <Send size={12} />
           Submit

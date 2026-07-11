@@ -1,5 +1,4 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { QrCode, CheckCircle2, Clock, ArrowRight, Star, Edit, Lock, AlertCircle, Users } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -10,7 +9,6 @@ import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
 
 export function TeacherSupport() {
-  const navigate = useNavigate();
   const [title, setTitle] = React.useState('');
   const [message, setMessage] = React.useState('');
   const [category, setCategory] = React.useState('General');
@@ -109,8 +107,8 @@ return (
     <div className="flex-1 overflow-y-auto bg-background p-6 md:p-8 lg:p-12">
       <div className="max-w-4xl mx-auto">
         <header className="mb-10">
-          <h1 className="text-3xl font-black text-foreground tracking-tighter font-display italic mb-2">Teacher ICT Support</h1>
-          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Grade issues · observation flags · technical help</p>
+          <h1 className="text-2xl font-black text-foreground tracking-tighter mb-2">Teacher ICT Support</h1>
+          <p className="text-xs font-black text-muted-foreground uppercase tracking-widest">Grade issues · observation flags · technical help</p>
         </header>
 
         {successMessage && (
@@ -130,7 +128,7 @@ return (
         <section className="bg-card rounded-[2rem] border border-border p-8 shadow-sm mb-8">
           <div className="p-6 border-b border-border bg-muted/30 flex items-center gap-3 mb-6">
             <Star className="text-foreground" size={20} />
-            <h2 className="text-[11px] font-black text-foreground uppercase tracking-widest">My Observations</h2>
+            <h2 className="text-xs font-black text-foreground uppercase tracking-widest">My Observations</h2>
           </div>
           <div className="space-y-4">
             {supportObservations.map((obs, i) => (
@@ -142,17 +140,17 @@ return (
                 className="p-5 bg-muted border-l-4 border-success rounded-2xl border-t border-r border-b"
               >
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="text-[10px] font-black text-success bg-success/10 px-2.5 py-1 rounded uppercase tracking-widest">
+                  <span className="text-xs font-black text-success bg-success/10 px-2.5 py-1 rounded uppercase tracking-widest">
                     {obs.type}
                   </span>
-                  <span className="text-[9px] font-black text-muted-foreground italic">
+                  <span className="text-xs font-black text-muted-foreground ">
                     {obs.date}
                   </span>
                 </div>
-                <p className="text-sm font-medium text-foreground italic leading-relaxed">
+                <p className="text-sm font-medium text-foreground  leading-relaxed">
                   "{obs.comment}"
                 </p>
-                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-2">
+                <p className="text-xs font-black text-muted-foreground uppercase tracking-widest mt-2">
                   Re: {obs.student} &middot; Obs. by {obs.teacher}
                 </p>
               </motion.div>
@@ -163,18 +161,18 @@ return (
         <section className="bg-card rounded-[2rem] border border-border p-8 shadow-sm mb-8">
           <div className="p-6 border-b border-border bg-muted/30 flex items-center gap-3 mb-6">
             <AlertCircle className="text-foreground" size={20} />
-            <h2 className="text-[11px] font-black text-foreground uppercase tracking-widest">Grade Issue Flags</h2>
+            <h2 className="text-xs font-black text-foreground uppercase tracking-widest">Grade Issue Flags</h2>
           </div>
           <div className="space-y-3">
             {gradeIssues.map((issue) => (
               <Card key={issue.id} className="p-4">
                 <div>
                   <p className="text-sm font-black text-foreground mb-0.5">{issue.issue}</p>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
                     {issue.subject} &middot; {issue.className} &middot; {issue.date}
                   </p>
                 </div>
-                <span className={cn("text-[9px] font-black px-2 py-1 rounded uppercase tracking-widest")}>
+                <span className={cn("text-xs font-black px-2 py-1 rounded uppercase tracking-widest")}>
                   {issue.status}
                 </span>
               </Card>
@@ -185,7 +183,7 @@ return (
         <section className="bg-card rounded-[2rem] border border-border p-8 shadow-sm mb-8">
           <div className="p-6 border-b border-border bg-muted/30 flex items-center gap-3 mb-6">
             <Users className="text-foreground" size={20} />
-            <h2 className="text-[11px] font-black text-foreground uppercase tracking-widest">Behavior Observations</h2>
+            <h2 className="text-xs font-black text-foreground uppercase tracking-widest">Behavior Observations</h2>
           </div>
           <div className="space-y-3">
             {behaviorLogs.length === 0 ? (
@@ -200,19 +198,19 @@ return (
                   className="p-4 bg-muted border-l-4 border-brand-primary rounded-2xl border-t border-r border-b"
                 >
                   <div className="flex items-center gap-3 mb-2">
-                    <span className="text-[10px] font-black text-brand-primary bg-brand-primary/10 px-2.5 py-1 rounded uppercase tracking-widest">
+                    <span className="text-xs font-black text-brand-primary bg-brand-primary/10 px-2.5 py-1 rounded uppercase tracking-widest">
                       {log.remarks ? 'Recorded' : 'No Remarks'}
                     </span>
-                    <span className="text-[9px] font-black text-muted-foreground italic">
+                    <span className="text-xs font-black text-muted-foreground ">
                       {log.createdAt ? new Date(log.createdAt).toLocaleDateString() : 'N/A'}
                     </span>
                   </div>
                   {log.remarks && (
-                    <p className="text-xs font-medium text-foreground italic leading-relaxed">
+                    <p className="text-xs font-medium text-foreground  leading-relaxed">
                       "{log.remarks}"
                     </p>
                   )}
-                  <div className="flex gap-4 mt-2 text-[9px] font-black text-muted-foreground uppercase tracking-wider">
+                  <div className="flex gap-4 mt-2 text-xs font-black text-muted-foreground uppercase tracking-wider">
                     {log.punctuality && <span>Punctuality: {log.punctuality}/5</span>}
                     {log.attendance && <span>Attendance: {log.attendance}/5</span>}
                     {log.attitude && <span>Attitude: {log.attitude}/5</span>}
@@ -227,7 +225,7 @@ return (
         <section className="bg-card rounded-[2rem] border border-border p-8 shadow-sm mb-8">
           <div className="p-6 border-b border-border bg-muted/30 flex items-center gap-3 mb-6">
             <QrCode className="text-foreground" size={20} />
-            <h2 className="text-[11px] font-black text-foreground uppercase tracking-widest">Raise New Ticket</h2>
+            <h2 className="text-xs font-black text-foreground uppercase tracking-widest">Raise New Ticket</h2>
           </div>
           <div className="space-y-4">
             <form onSubmit={handleSubmit}>
@@ -256,13 +254,13 @@ return (
                       size="sm"
                       onClick={() => setCategory(t)}
                       disabled={loading}
-                      className="text-[9px] font-black rounded-lg uppercase tracking-widest"
+                      className="text-xs font-black rounded-lg uppercase tracking-widest"
                     >
                       {t}
                     </Button>
                   ))}
                 </div>
-                <p className="text-[9px] font-medium text-muted-foreground">Selected: {category}</p>
+                <p className="text-xs font-medium text-muted-foreground">Selected: {category}</p>
               </div>
               <Button 
                 type="submit"

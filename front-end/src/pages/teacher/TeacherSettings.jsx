@@ -1,6 +1,5 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
   User, BookOpen, Save, CheckCircle2, Clock, Shield, Bell, Smartphone, Fingerprint, Edit3, Eye, EyeOff, Phone, Plus, Calendar, Award, Users,
 } from 'lucide-react';
@@ -24,11 +23,10 @@ export function TeacherSettings() {
   const [errors, setErrors] = React.useState({});
 
   const [message, setMessage] = React.useState('');
-  const [messageType, setMessageType] = React.useState(''); // 'success' or 'error'
+  const [messageType, setMessageType] = React.useState('');
   const [settingsClasses, setSettingsClasses] = React.useState([]);
   const [notificationPreferences, setNotificationPreferences] = React.useState([]);
 
-  // Fetch data on mount
   React.useEffect(() => {
     const fetchData = async () => {
       try {
@@ -50,7 +48,6 @@ export function TeacherSettings() {
     fetchData();
   }, []);
 
-  // Validation (client-side gate; backend remains the ultimate source of truth)
   const validate = (values) => {
     const newErrors = {};
     if (!values.name.trim()) newErrors.name = 'Name is required';
@@ -70,27 +67,23 @@ export function TeacherSettings() {
     return Object.keys(v).length === 0;
   }, [profile, loading]);
 
-  // Handle input change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProfile(prev => ({
       ...prev,
       [name]: value
     }));
-    // Validate on change
     const fieldErrors = validate({ [name]: value });
     setErrors(prev => ({
       ...prev,
       ...fieldErrors
     }));
-    // Clear message when user starts typing
     if (message) {
       setMessage('');
       setMessageType('');
     }
   };
 
-  // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     const fieldErrors = validate(profile);
@@ -119,7 +112,7 @@ export function TeacherSettings() {
     }
   };
 
-if (loading) {
+  if (loading) {
     return (
       <div className="flex-1 overflow-y-auto bg-background p-6 md:p-8 lg:p-12 pb-32 lg:pb-24">
         <div className="max-w-3xl mx-auto">
@@ -147,8 +140,8 @@ if (loading) {
               <User size={28} />
             </div>
             <div>
-              <h1 className="text-[28px] md:text-[34px] font-black text-foreground tracking-tighter leading-none italic font-display uppercase">My Identity</h1>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">Professional profile & academic credentials</p>
+              <h1 className="text-2xl md:text-3xl font-black text-foreground tracking-tight leading-none uppercase">My Identity</h1>
+              <p className="text-xs font-black text-muted-foreground uppercase tracking-widest mt-1">Professional profile & academic credentials</p>
             </div>
           </header>
 
@@ -156,13 +149,13 @@ if (loading) {
             <section className="bg-card rounded-[2rem] border border-border p-8 shadow-sm">
               <div className="p-6 border-b border-border bg-muted/30 flex items-center gap-3">
                 <User className="text-foreground" size={20} />
-                <h2 className="text-[11px] font-black text-foreground uppercase tracking-widest">Personal Details</h2>
+                <h2 className="text-xs font-black text-foreground uppercase tracking-widest">Personal Details</h2>
               </div>
               <div className="p-8 space-y-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                          <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Full Name</label>
+                          <label className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-2 block">Full Name</label>
                           {profile.role === 'TEACHER' ? (
                              <Input
                                name="name"
@@ -174,20 +167,20 @@ if (loading) {
                                )}
                              />
                            ) : (
-                             <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground">
-                               {profile.name || '—'}
-                             </p>
+                              <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-sm font-black text-foreground">
+                                {profile.name || '—'}
+                              </p>
                            )}
-                          {errors.name && <p className="text-[9px] text-destructive mt-1">{errors.name}</p>}
+                          {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
                         </div>
                       <div>
-                        <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Staff ID</label>
-                        <div className="px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black font-mono text-muted-foreground">
+                        <label className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-2 block">Staff ID</label>
+                        <div className="px-5 py-3.5 bg-muted border border-border rounded-2xl text-sm font-black font-mono text-muted-foreground">
                           {profile.staffId ? profile.staffId : '—'}
                         </div>
                       </div>
                         <div>
-                          <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Department</label>
+                          <label className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-2 block">Department</label>
                           {profile.role === 'TEACHER' ? (
                              <Input
                                name="department"
@@ -199,14 +192,14 @@ if (loading) {
                                )}
                              />
                            ) : (
-                             <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground">
-                               {profile.department || '—'}
-                             </p>
+                              <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-sm font-black text-foreground">
+                                {profile.department || '—'}
+                              </p>
                            )}
-                          {errors.department && <p className="text-[9px] text-destructive mt-1">{errors.department}</p>}
+                          {errors.department && <p className="text-xs text-destructive mt-1">{errors.department}</p>}
                         </div>
                       <div>
-                        <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Email</label>
+                        <label className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-2 block">Email</label>
                           {profile.role === 'TEACHER' ? (
                              <Input
                                type="email"
@@ -219,14 +212,14 @@ if (loading) {
                                )}
                              />
                            ) : (
-                             <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground">
-                               {profile.email || '—'}
-                             </p>
+                              <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-sm font-black text-foreground">
+                                {profile.email || '—'}
+                              </p>
                            )}
-                        {errors.email && <p className="text-[9px] text-destructive mt-1">{errors.email}</p>}
+                        {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
                       </div>
                       <div>
-                        <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Phone</label>
+                        <label className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-2 block">Phone</label>
                           {profile.role === 'TEACHER' ? (
                              <Input
                                type="tel"
@@ -239,15 +232,15 @@ if (loading) {
                                )}
                              />
                            ) : (
-                             <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-foreground">
-                               {profile.phone || '—'}
-                             </p>
+                              <p className="w-full px-5 py-3.5 bg-muted border border-border rounded-2xl text-sm font-black text-foreground">
+                                {profile.phone || '—'}
+                              </p>
                            )}
-                        {errors.phone && <p className="text-[9px] text-destructive mt-1">{errors.phone}</p>}
+                        {errors.phone && <p className="text-xs text-destructive mt-1">{errors.phone}</p>}
                       </div>
                       <div>
-                        <label className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 block">Role</label>
-                        <div className="px-5 py-3.5 bg-muted border border-border rounded-2xl text-[14px] font-black text-muted-foreground">
+                        <label className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-2 block">Role</label>
+                        <div className="px-5 py-3.5 bg-muted border border-border rounded-2xl text-sm font-black text-muted-foreground">
                           {profile.role ? profile.role : '—'}
                         </div>
                       </div>
@@ -266,7 +259,7 @@ if (loading) {
             <section className="bg-card rounded-[2rem] border border-border p-8 shadow-sm">
               <div className="p-6 border-b border-border bg-muted/30 flex items-center gap-3">
                 <BookOpen className="text-foreground" size={20} />
-                <h2 className="text-[11px] font-black text-foreground uppercase tracking-widest">My Classes</h2>
+                <h2 className="text-xs font-black text-foreground uppercase tracking-widest">My Classes</h2>
               </div>
               <div className="p-8 space-y-4">
                 {settingsClasses.map((cls, i) => (
@@ -277,11 +270,11 @@ if (loading) {
                       </div>
                       <div>
                         <p className="text-sm font-black text-foreground">{cls.subject}</p>
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase">{cls.className} • {cls.studentCount} students</p>
+                        <p className="text-xs font-bold text-muted-foreground uppercase">{cls.className} • {cls.studentCount} students</p>
                       </div>
                     </div>
                      <button 
-                       className="text-[9px] font-black text-brand-primary uppercase tracking-widest hover:underline"
+                       className="text-xs font-black text-brand-primary uppercase tracking-widest hover:underline"
                        onClick={() => navigate(`/grading?subject=${encodeURIComponent(cls.subject)}&class=${encodeURIComponent(cls.className)}`)}
                      >
                        Enter Marks
@@ -294,14 +287,14 @@ if (loading) {
             <section className="bg-card rounded-[2rem] border border-border p-8 shadow-sm">
               <div className="p-6 border-b border-border bg-muted/30 flex items-center gap-3">
                 <Bell className="text-foreground" size={20} />
-                <h2 className="text-[11px] font-black text-foreground uppercase tracking-widest">Notification Preferences</h2>
+                <h2 className="text-xs font-black text-foreground uppercase tracking-widest">Notification Preferences</h2>
               </div>
               <div className="p-8 space-y-4">
                 {notificationPreferences.map((pref, i) => (
                   <div key={i} className="flex items-center justify-between p-5 bg-muted rounded-2xl">
                     <div>
                       <p className="text-sm font-black text-foreground">{pref.label}</p>
-                      <p className="text-[10px] font-medium text-muted-foreground mt-0.5">{pref.desc}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{pref.desc}</p>
                     </div>
                      <Switch checked={pref.enabled} onCheckedChange={() => {}} />
                   </div>

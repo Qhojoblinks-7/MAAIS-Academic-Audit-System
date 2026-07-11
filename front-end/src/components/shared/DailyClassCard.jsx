@@ -20,14 +20,14 @@ export function DailyClassCard({ entry, user, hoveredId, setHoveredId, selectedE
       <div className="flex items-center gap-6">
         <div className="w-20 text-center border-r border-border pr-6 shrink-0">
           <p className="text-base font-black text-foreground">{entry.startTime}</p>
-          <p className="text-[9px] font-bold text-muted-foreground uppercase">{entry.endTime}</p>
+          <p className="text-xs font-bold text-muted-foreground uppercase">{entry.endTime}</p>
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-1">
             <h4 className="text-lg font-black text-foreground truncate">{entry.subjectName}</h4>
             <span className={cn(
-              "px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider shrink-0",
+              "px-2 py-0.5 rounded text-xs font-black uppercase tracking-wider shrink-0",
               entry.type === 'LAB' ? "bg-success/10 text-success" :
               entry.type === 'SUBSTITUTION' ? "bg-brand-secondary/10 text-brand-secondary" :
               "bg-muted text-muted-foreground"
@@ -48,7 +48,7 @@ export function DailyClassCard({ entry, user, hoveredId, setHoveredId, selectedE
           {entry.missingObservations && (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-warning/10 border border-warning/20 rounded-xl text-warning">
               <ShieldAlert size={14} />
-              <span className="text-[9px] font-black uppercase">{entry.missingObservations} Missing</span>
+              <span className="text-xs font-black uppercase">{entry.missingObservations} Missing</span>
             </div>
           )}
           <button
@@ -68,12 +68,12 @@ export function DailyClassCard({ entry, user, hoveredId, setHoveredId, selectedE
             exit={{ height: 0, opacity: 0 }}
             className="mt-4 pt-4 border-t border-border"
           >
-            <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-3">Session Tasks</p>
+            <p className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-3">Session Tasks</p>
             <div className="grid grid-cols-2 gap-3">
               {entry.tasks.map((task, idx) => (
                 <div key={idx} className="flex items-center gap-2 p-2 bg-muted rounded-lg border border-border">
                   <div className="w-1.5 h-1.5 bg-success rounded-full" />
-                  <span className="text-[10px] font-bold text-foreground">{task}</span>
+                  <span className="text-xs font-bold text-foreground">{task}</span>
                 </div>
               ))}
             </div>
@@ -100,12 +100,12 @@ export function DailyClassCard({ entry, user, hoveredId, setHoveredId, selectedE
             </div>
             {entry.materials?.length > 0 && (
               <div className="mt-4">
-                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-3">Materials</p>
+                <p className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-3">Materials</p>
                 <div className="flex flex-wrap gap-2">
                   {entry.materials.map((mat, i) => (
                     <span
                       key={i}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-muted rounded-xl border border-border text-[10px] font-bold text-muted-foreground"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-muted rounded-xl border border-border text-xs font-bold text-muted-foreground"
                     >
                       {mat.type === 'PDF' ? <FileText size={12} className="text-destructive" /> : <LinkIcon size={12} className="text-brand-secondary" />}
                       {mat.title}

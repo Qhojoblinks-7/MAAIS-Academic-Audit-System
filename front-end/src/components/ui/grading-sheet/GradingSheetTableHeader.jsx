@@ -14,13 +14,13 @@ export function GradingSheetTableHeader({
 
   return (
     <TableHeader>
-      <TableRow className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-        <TableHead className="px-4 py-3 text-left w-16 border-r border-slate-100">ID</TableHead>
-        <TableHead className="px-4 py-3 text-left border-r border-slate-100">Student Name</TableHead>
+      <TableRow className="bg-muted border-b border-border text-muted-foreground text-xs font-bold uppercase tracking-wider">
+        <TableHead className="px-4 py-3 text-left w-16 border-r border-border">ID</TableHead>
+        <TableHead className="px-4 py-3 text-left border-r border-border">Student Name</TableHead>
         
         {/* Compact Default Mode (SBA Column Only) */}
         {!isExamExpanded && (
-          <TableHead className="px-4 py-3 text-center w-28 border-r border-slate-100 text-slate-700 font-semibold">
+          <TableHead className="px-4 py-3 text-center w-28 border-r border-border text-foreground font-semibold">
             {subjectConfig?.sbaLabel || 'SBA (30%)'}
           </TableHead>
         )}
@@ -31,27 +31,27 @@ export function GradingSheetTableHeader({
             {activeSections.map((section, idx) => (
               <TableHead 
                 key={`sec-hdr-${idx}`} 
-                className="px-4 py-3 text-center w-24 border-r border-slate-100 text-slate-600 bg-slate-50/50"
+                className="px-4 py-3 text-center w-24 border-r border-border text-foreground bg-muted/50"
               >
                 {section}
               </TableHead>
             ))}
-            <TableHead className="px-4 py-3 text-center w-24 border-r border-slate-100 bg-slate-100/50 text-slate-700 font-semibold">
+            <TableHead className="px-4 py-3 text-center w-24 border-r border-border bg-muted/40 text-foreground font-semibold">
               Total ({subjectConfig?.maxRaw || 100})
             </TableHead>
           </>
         )}
         
         {/* Exam Score Summary Trigger */}
-        <TableHead className="px-4 py-3 text-center w-36 border-r border-slate-100">
+        <TableHead className="px-4 py-3 text-center w-36 border-r border-border">
           <div className="flex items-center justify-center gap-2">
-            <span className="text-slate-700 font-semibold">
+            <span className="text-foreground font-semibold">
               {subjectConfig?.examLabel || 'Exam (70%)'}
             </span>
             <button 
               type="button"
               onClick={() => setIsExamExpanded(!isExamExpanded)} 
-              className="text-slate-400 hover:text-emerald-600 transition-colors outline-none focus:ring-1 focus:ring-emerald-500 rounded-full cursor-pointer"
+              className="text-muted-foreground hover:text-success transition-colors outline-none focus:ring-1 focus:ring-success rounded-full cursor-pointer"
               title={isExamExpanded ? "Collapse Breakdown Columns" : "Expand Section Details"}
             >
               {isExamExpanded ? <MinusCircle size={15} /> : <PlusCircle size={15} />}
@@ -59,9 +59,9 @@ export function GradingSheetTableHeader({
           </div>
         </TableHead>
         
-        <TableHead className="px-4 py-3 text-center w-20 border-r border-slate-100 text-slate-700 font-semibold">Final</TableHead>
-        <TableHead className="px-4 py-3 text-center w-20 border-r border-slate-100 text-slate-700 font-semibold">Grade</TableHead>
-        <TableHead className="px-6 py-3 text-left tracking-normal text-slate-400">Smart Remark</TableHead>
+        <TableHead className="px-4 py-3 text-center w-20 border-r border-border text-foreground font-semibold">Final</TableHead>
+        <TableHead className="px-4 py-3 text-center w-20 border-r border-border text-foreground font-semibold">Grade</TableHead>
+        <TableHead className="px-6 py-3 text-left tracking-normal text-muted-foreground">Smart Remark</TableHead>
       </TableRow>
     </TableHeader>
   );

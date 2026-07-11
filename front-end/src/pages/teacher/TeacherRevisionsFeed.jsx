@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { EmptyState } from '../../components/molecules';
 import {
@@ -204,7 +203,7 @@ const TeacherRevisionsFeed = () => {
               </div>
             </div>
 
-            <div className="hidden sm:flex items-center gap-1.5 bg-amber-50 text-amber-800 px-2.5 py-1 rounded-lg border border-amber-200/30 text-[11px] font-semibold">
+            <div className="hidden sm:flex items-center gap-1.5 bg-amber-50 text-amber-800 px-2.5 py-1 rounded-lg border border-amber-200/30 text-xs font-semibold">
               <AlertTriangle size={12} className="text-amber-600 animate-pulse" />
               <span>{revisions.filter(r => r.status !== 'RESOLVED' && r.status !== 'REJECTED').length} Active Requests</span>
             </div>
@@ -237,7 +236,7 @@ const TeacherRevisionsFeed = () => {
                      <span>{tab === 'pending' ? 'Pending Reply' : tab}</span>
                      {count > 0 && (
                        <span className={cn(
-                         "inline-flex items-center justify-center min-w-[18px] h-5 px-1 rounded-full text-[10px] font-bold",
+                         "inline-flex items-center justify-center min-w-[18px] h-5 px-1 rounded-full text-xs font-bold",
                          activeTab === tab 
                            ? "bg-slate-900 text-white" 
                            : "bg-slate-200 text-slate-600"
@@ -274,47 +273,45 @@ const TeacherRevisionsFeed = () => {
             filteredData.map((job, idx) => {
               const isSelected = selected?.id === job.id;
               return (
-                <motion.div
-                  key={job.id}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.15, delay: idx * 0.02 }}
-                  onClick={() => {
-                    setSelected(job);
-                    setChatInput('');
-                  }}
-                  className={cn(
-                    "p-5 rounded-xl border transition-all duration-200 cursor-pointer relative group bg-white",
-                    isSelected 
-                      ? "border-slate-900 shadow-sm ring-1 ring-slate-900/5" 
-                      : "border-slate-200/70 hover:border-slate-350 hover:shadow-sm"
-                  )}
-                >
+                 <div
+                   key={job.id}
+                   style={{ animationDelay: `${idx * 20}ms` }}
+                   onClick={() => {
+                     setSelected(job);
+                     setChatInput('');
+                   }}
+                   className={cn(
+                     "p-5 rounded-xl border transition-all duration-200 cursor-pointer relative group bg-white animate-in fade-in slide-in-from-bottom-2",
+                     isSelected 
+                       ? "border-slate-900 shadow-sm ring-1 ring-slate-900/5" 
+                       : "border-slate-200/70 hover:border-slate-350 hover:shadow-sm"
+                   )}
+                 >
                   {isSelected && (
                     <div className="absolute top-0 bottom-0 left-0 w-1 bg-slate-900 rounded-l-xl" />
                   )}
 
                   <div className="flex items-center justify-between mb-3">
                      <div className="flex items-center gap-2">
-                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded border tracking-wide", statusStyles[(job.status || '').toUpperCase()] || 'bg-slate-100')}>
+                      <span className={cn("text-xs font-bold px-2 py-0.5 rounded border tracking-wide", statusStyles[(job.status || '').toUpperCase()] || 'bg-slate-100')}>
                         {(job.status || '').toUpperCase() === 'AWAITING_APPROVAL' ? 'Awaiting HOD' : (job.status || '').toUpperCase() === 'TEACHER_REPLIED' ? 'HOD Reviewing' : (job.status || '').toUpperCase() === 'REJECTED' ? 'Rejected' : (job.status || '').toUpperCase() === 'RESOLVED' ? 'Resolved' : (job.status || '').toUpperCase() === 'IN_REVIEW' ? 'In Review' : 'Unknown'}
                       </span>
-                       <span className={cn("text-[9px] font-extrabold px-1.5 py-0.5 rounded border tracking-wider", severityStyles[(job.severity || '').toUpperCase()] || '')}>
+                       <span className={cn("text-xs font-extrabold px-1.5 py-0.5 rounded border tracking-wider", severityStyles[(job.severity || '').toUpperCase()] || '')}>
                          {(job.severity || '').toUpperCase()}
                        </span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-slate-400 text-[11px] font-medium">
+                    <div className="flex items-center gap-1.5 text-slate-400 text-xs font-medium">
                       <Clock size={12} />
                       <span>{formatTime(job.time)}</span>
                     </div>
                   </div>
 
-                  <p className="text-[13px] font-medium text-slate-700 leading-relaxed mb-4 bg-slate-50 border border-slate-100 p-3 rounded-lg font-mono tracking-tight">
+                  <p className="text-sm font-medium text-slate-700 leading-relaxed mb-4 bg-slate-50 border border-slate-100 p-3 rounded-lg font-mono tracking-tight">
                     {job.issue}
                   </p>
 
                   <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                    <div className="flex items-center gap-4 text-[12px] font-medium text-slate-600">
+                    <div className="flex items-center gap-4 text-sm font-medium text-slate-600">
                       <div className="flex items-center gap-1.5">
                         <User size={13} className="text-slate-400" />
                         <span className="font-semibold text-slate-800">{job.student}</span>
@@ -330,25 +327,20 @@ const TeacherRevisionsFeed = () => {
                       isSelected ? "text-slate-900 translate-x-0.5" : "text-slate-300 group-hover:text-slate-500 group-hover:translate-x-0.5"
                     )} />
                   </div>
-                </motion.div>
+                </div>
               );
             })
           )}
         </div>
       </div>
 
-      <AnimatePresence mode="wait">
-        {selected ? (
-          <motion.div
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 12 }}
-            transition={{ duration: 0.15 }}
-            className="w-[28rem] bg-white h-full border-l border-slate-200/70 flex flex-col shrink-0 shadow-2xl shadow-slate-900/5 hidden lg:flex min-h-0"
-          >
+       {selected ? (
+           <div
+             className="w-[28rem] bg-white h-full border-l border-slate-200/70 flex flex-col shrink-0 shadow-2xl shadow-slate-900/5 hidden lg:flex min-h-0 animate-in fade-in slide-in-from-right-4"
+           >
             <div className="p-6 border-b border-slate-100 flex items-start justify-between bg-slate-50/40 shrink-0">
               <div>
-                <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
                   <Hourglass size={12} className="text-slate-400" /> Grade Revision
                 </div>
                 <h3 className="text-base font-bold text-slate-900 tracking-tight">{selected.student}</h3>
@@ -443,12 +435,12 @@ const TeacherRevisionsFeed = () => {
                   Open Correction Sheet <ArrowRight size={13} />
                 </button>
               ) : selected.status === 'TEACHER_REPLIED' ? (
-                <div className="flex items-center gap-2 text-[10px] font-bold text-sky-700 bg-sky-50 px-3 py-2 rounded-lg">
+                <div className="flex items-center gap-2 text-xs font-bold text-sky-700 bg-sky-50 px-3 py-2 rounded-lg">
                   <Clock size={14} /> Waiting for HOD Final Decision
                 </div>
               ) : selected.status === 'RESOLVED' || selected.status === 'REJECTED' ? (
                 <div className={cn(
-                  "flex items-center gap-2 text-[10px] font-bold px-3 py-2 rounded-lg",
+                  "flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-lg",
                   selected.status === 'REJECTED' ? "text-red-700 bg-red-50" : "text-emerald-700 bg-emerald-50"
                 )}>
                   <Check size={14} />
@@ -456,17 +448,16 @@ const TeacherRevisionsFeed = () => {
                 </div>
               ) : null)}
             </div>
-          </motion.div>
+          </div>
           ) : (
             <div className="w-[28rem] bg-slate-50/20 border-l border-slate-200/60 hidden lg:flex flex-col items-center justify-center p-8 text-center shrink-0">
               <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center mb-3 text-slate-400">
                 <Check size={16} />
               </div>
               <p className="text-xs font-semibold text-slate-700">No Request Selected</p>
-              <p className="text-[11px] text-slate-400 mt-0.5 max-w-[200px]">Select a grade revision request to view HOD feedback and respond.</p>
+              <p className="text-xs text-slate-400 mt-0.5 max-w-[200px]">Select a grade revision request to view HOD feedback and respond.</p>
             </div>
           )}
-        </AnimatePresence>
     </div>
   );
 };

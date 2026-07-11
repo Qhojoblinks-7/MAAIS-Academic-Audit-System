@@ -30,16 +30,16 @@ export function HODArchiveFilterMatrix({
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm space-y-3">
+    <div className="bg-surface border-border rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm space-y-3">
       {/* Header Info Block */}
-      <div className="flex flex-row items-center justify-between gap-2 border-b border-slate-100 pb-2 md:border-none md:pb-0">
+      <div className="flex flex-row items-center justify-between gap-2 border-b border-border pb-2 md:border-none md:pb-0">
         <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 bg-slate-900 rounded-full shrink-0" />
-          <h3 className="text-[9px] sm:text-xs font-black text-slate-900 uppercase tracking-widest leading-none">
+          <span className="w-1.5 h-1.5 bg-foreground rounded-full shrink-0" />
+          <h3 className="text-xs sm:text-xs font-black text-foreground uppercase tracking-widest leading-none">
             Archive Vault Filter
           </h3>
         </div>
-        <span className="text-[7px] sm:text-[9px] font-bold text-slate-400 uppercase text-right truncate max-w-[180px] xs:max-w-none">
+        <span className="text-xs sm:text-xs font-bold text-muted-foreground uppercase text-right truncate max-w-[180px] xs:max-w-none">
           Longitudinal Trace Index
         </span>
       </div>
@@ -47,24 +47,24 @@ export function HODArchiveFilterMatrix({
       {/* Grid Inputs Wrapper */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3">
         {/* Search Input Container */}
-        <div className="relative flex items-center py-2 sm:py-3 bg-slate-50 border border-slate-200/80 rounded-lg px-2.5 sm:px-4 sm:col-span-2 md:col-span-1">
-          <Search className="text-slate-400 mr-1.5 shrink-0" size={12} />
+        <div className="relative flex items-center py-2 sm:py-3 bg-muted border border-border rounded-lg px-2.5 sm:px-4 sm:col-span-2 md:col-span-1">
+          <Search className="text-muted-foreground mr-1.5 shrink-0" size={12} />
           <input 
             type="text" 
             placeholder="Search name or index..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="bg-transparent border-none text-[10px] sm:text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none w-full p-0 focus:ring-0 leading-none"
+            className="bg-transparent border-none text-xs sm:text-xs text-foreground placeholder:text-muted-foreground focus:outline-none w-full p-0 focus:ring-0 leading-none"
           />
         </div>
 
         {/* Filter Stream */}
-        <div className="relative flex items-center py-2 sm:py-3 bg-slate-50 border border-slate-200/80 rounded-lg px-2.5 sm:px-4">
-          <span className="text-[8px] font-black text-slate-400 mr-1.5 shrink-0 tracking-wider">STREAM:</span>
+        <div className="relative flex items-center py-2 sm:py-3 bg-muted border border-border rounded-lg px-2.5 sm:px-4">
+          <span className="text-xs font-black text-muted-foreground mr-1.5 shrink-0 tracking-wider">STREAM:</span>
           <select 
             value={selectedClass}
             onChange={(e) => onClassChange(e.target.value)}
-            className="bg-transparent border-none text-[10px] sm:text-xs text-slate-800 font-extrabold focus:outline-none cursor-pointer w-full p-0 focus:ring-0 appearance-none leading-none"
+            className="bg-transparent border-none text-xs sm:text-xs text-foreground font-extrabold focus:outline-none cursor-pointer w-full p-0 focus:ring-0 appearance-none leading-none"
           >
             {availableClasses.map(cls => (
               <option key={cls} value={cls}>{getClassLabel(cls)}</option>
@@ -73,12 +73,12 @@ export function HODArchiveFilterMatrix({
         </div>
 
         {/* Filter Cohort */}
-        <div className="relative flex items-center py-2 sm:py-3 bg-slate-50 border border-slate-200/80 rounded-lg px-2.5 sm:px-4">
-          <span className="text-[8px] font-black text-slate-400 mr-1.5 shrink-0 tracking-wider">COHORT:</span>
+        <div className="relative flex items-center py-2 sm:py-3 bg-muted border border-border rounded-lg px-2.5 sm:px-4">
+          <span className="text-xs font-black text-muted-foreground mr-1.5 shrink-0 tracking-wider">COHORT:</span>
           <select 
             value={selectedYear}
             onChange={(e) => onYearChange(e.target.value)}
-            className="bg-transparent border-none text-[10px] sm:text-xs text-slate-800 font-extrabold focus:outline-none cursor-pointer w-full p-0 focus:ring-0 appearance-none leading-none"
+            className="bg-transparent border-none text-xs sm:text-xs text-foreground font-extrabold focus:outline-none cursor-pointer w-full p-0 focus:ring-0 appearance-none leading-none"
           >
             {availableYears.map(year => (
               <option key={year} value={year}>{getYearLabel(year)}</option>

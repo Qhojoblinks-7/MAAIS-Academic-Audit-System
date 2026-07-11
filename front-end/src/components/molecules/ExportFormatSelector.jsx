@@ -49,7 +49,7 @@ export function ExportFormatSelector({
 
   return (
     <div className={cn('relative', className)}>
-      <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 block mb-1.5">
+      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground block mb-1.5">
         Export Format
       </label>
 
@@ -60,8 +60,8 @@ export function ExportFormatSelector({
         className={cn(
           'w-full px-3 py-2 text-xs font-medium border rounded-xl flex items-center gap-2 transition-all',
           disabled
-            ? 'bg-gray-50 border-gray-100 text-gray-400 cursor-not-allowed'
-            : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'
+            ? 'bg-muted border-border text-muted-foreground cursor-not-allowed'
+            : 'bg-surface border-border text-foreground hover:border-border'
         )}
       >
         {React.createElement(currentFormat.icon, { size: 14 })}
@@ -69,7 +69,7 @@ export function ExportFormatSelector({
         <ChevronDown
           size={12}
           className={cn(
-            'text-gray-400 transition-transform',
+            'text-muted-foreground transition-transform',
             internalOpen && 'rotate-180'
           )}
         />
@@ -81,7 +81,7 @@ export function ExportFormatSelector({
             className="fixed inset-0 z-40"
             onClick={() => setInternalOpen(false)}
           />
-          <div className="absolute top-full mt-1 w-full bg-white rounded-xl border border-gray-100 shadow-lg p-1 z-50">
+          <div className="absolute top-full mt-1 w-full bg-surface rounded-xl border border-border shadow-lg p-1 z-50">
             {FORMATS.map((format) => {
               const isActive = currentFormatId === format.id;
               return (
@@ -92,14 +92,14 @@ export function ExportFormatSelector({
                   className={cn(
                     'w-full px-3 py-2.5 text-left rounded-lg flex items-start gap-2.5 transition-all',
                     isActive
-                      ? 'bg-emerald-50 text-emerald-700'
-                      : 'hover:bg-gray-50 text-gray-700'
+                      ? 'bg-success/10 text-success'
+                      : 'hover:bg-muted text-foreground'
                   )}
                 >
                   <format.icon size={15} className="mt-0.5 shrink-0" />
                   <div>
                     <p className="text-xs font-medium">{format.label}</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       {format.description}
                     </p>
                   </div>

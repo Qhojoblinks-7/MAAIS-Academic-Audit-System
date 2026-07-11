@@ -43,8 +43,8 @@ React.useEffect(() => {
     { icon: ShieldCheck, label: 'User Roles', id: 'system', path: '/system', roles: ['ADMIN'] },
     { icon: Database, label: 'Extended Logs', id: 'audit-ext', path: '/audit/extended', roles: ['ADMIN'] },
     { icon: AlertCircle, label: 'Academic Audit', id: 'audit', path: '/audit', roles: ['HOD', 'ADMIN'] },
-    { icon: AlertCircle, label: 'Revisions', id: 'revisions', path: '/revisions', roles: ['TEACHER'], badge: revisionCount || 0, badgeColor: 'bg-rose-500' },
-     { icon: ClipboardCheck, label: 'Missing Obs', id: 'missing-obs', path: '/missing-observations', roles: ['TEACHER'], badge: missingObservationCount || 0, badgeColor: 'bg-amber-500' },
+    { icon: AlertCircle, label: 'Revisions', id: 'revisions', path: '/revisions', roles: ['TEACHER'], badge: revisionCount || 0, badgeColor: 'bg-destructive' },
+     { icon: ClipboardCheck, label: 'Missing Obs', id: 'missing-obs', path: '/missing-observations', roles: ['TEACHER'], badge: missingObservationCount || 0, badgeColor: 'bg-warning' },
      { icon: GraduationCap, label: 'Grading', id: 'grading', path: '/grading', roles: ['TEACHER'] },
     { icon: GraduationCap, label: 'Teacher Hub', id: 'teacher-dashboard', path: '/teacher-dashboard', roles: ['TEACHER'] },
     { icon: Database, label: 'Archive', id: 'archive', path: '/archive', roles: ['TEACHER', 'HOD'] },
@@ -82,7 +82,7 @@ const handleLogout = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setMobileMenuOpen(false)}
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] lg:hidden"
+            className="fixed inset-0 bg-foreground/60 backdrop-blur-sm z-[110] lg:hidden"
           />
 
           {/* Drawer Wrapper */}
@@ -91,23 +91,23 @@ const handleLogout = () => {
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-y-0 left-0 w-[280px] bg-white z-[120] lg:hidden flex flex-col shadow-2xl"
+            className="fixed inset-y-0 left-0 w-[280px] bg-surface z-[120] lg:hidden flex flex-col shadow-2xl"
           >
             {/* Header Branding Container */}
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between shrink-0">
+             <div className="p-6 border-b border-border flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-emerald-800 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-emerald-800/20">
+                <div className="w-10 h-10 bg-foreground rounded-xl flex items-center justify-center text-background font-black text-xl shadow-lg shadow-foreground/20">
                   M
                 </div>
                 <div>
-                  <p className="text-sm font-black text-slate-900 tracking-tight">MAAIS</p>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Security Node</p>
+                   <p className="text-sm font-black text-foreground tracking-tight">MAAIS</p>
+                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none">Security Node</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all cursor-pointer"
+                 className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-all cursor-pointer"
                 aria-label="Close menu"
               >
                 <X size={20} />
@@ -125,23 +125,23 @@ const handleLogout = () => {
                       to={item.id === 'dashboard' && user?.role === 'STUDENT' ? `/student/portal` : item.path}
                       onClick={() => setMobileMenuOpen(false)}
                       className={cn(
-                        "flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group cursor-pointer",
-                        isActive
-                          ? "bg-slate-50 text-emerald-800 shadow-inner font-bold"
-                          : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium"
+                       "flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group cursor-pointer",
+                         isActive
+                           ? "bg-muted text-foreground shadow-inner font-bold"
+                           : "text-text-secondary hover:bg-muted hover:text-foreground font-medium"
                       )}
                     >
-                      <item.icon size={20} className={cn(isActive ? "text-emerald-800" : "text-slate-400 group-hover:text-slate-900")} strokeWidth={isActive ? 2.5 : 2} />
-                      <span className="flex-1 text-[14px] tracking-tight">{item.label}</span>
+                       <item.icon size={20} className={cn(isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground")} strokeWidth={isActive ? 2.5 : 2} />
+                       <span className="flex-1 text-sm tracking-tight">{item.label}</span>
                       {item.badge && (
                         <span className={cn(
-                          "px-2 py-0.5 text-[10px] font-bold text-white rounded-full",
-                          item.badgeColor || "bg-rose-500"
+                           "px-2 py-0.5 text-xs font-bold text-background rounded-full",
+                           item.badgeColor || "bg-destructive"
                         )}>
                           {item.badge}
                         </span>
                       )}
-                      {isActive && <ChevronRight size={14} className="text-emerald-800/40" />}
+                       {isActive && <ChevronRight size={14} className="text-muted-foreground" />}
                     </Link>
                   );
                 })}
@@ -149,8 +149,8 @@ const handleLogout = () => {
 
               {/* Dynamic Child Anchors for Student Dashboards */}
               {user?.role === 'STUDENT' && filteredStudentTabs.length > 0 && location.pathname.includes('/student/portal') && (
-                <div className="mt-6 pt-6 border-t border-slate-100">
-                  <p className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Portal Sections</p>
+                 <div className="mt-6 pt-6 border-t border-border">
+                   <p className="px-4 text-xs font-black text-muted-foreground uppercase tracking-widest mb-2">Portal Sections</p>
                   <nav className="space-y-1">
                     {filteredStudentTabs.map((tab) => {
                       const tabHash = tab.hash.slice(1);
@@ -162,14 +162,14 @@ const handleLogout = () => {
                           key={tab.id}
                           to={`/student/portal${tab.hash}`}
                           onClick={() => setMobileMenuOpen(false)}
-                           className={cn(
-                             "flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all text-[14px] tracking-tight cursor-pointer",
-                             isActive
-                               ? "bg-emerald-50/60 text-emerald-900 font-black"
-                               : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium"
-                           )}
-                         >
-                           <tab.icon size={20} className={cn(isActive ? "text-emerald-800" : "text-slate-400")} />
+                            className={cn(
+                              "flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all text-sm tracking-tight cursor-pointer",
+                              isActive
+                                ? "bg-success/5 text-success font-black"
+                                : "text-text-secondary hover:bg-muted hover:text-foreground font-medium"
+                            )}
+                          >
+                            <tab.icon size={20} className={cn(isActive ? "text-success" : "text-muted-foreground")} />
                            {tab.label}
                          </Link>
                       );
@@ -179,29 +179,29 @@ const handleLogout = () => {
               )}
 
 {/* Support & System Action Toggles */}
-              <div className="mt-8 pt-8 border-t border-slate-100 space-y-1">
+              <div className="mt-8 pt-8 border-t border-border space-y-1">
                 {user?.role === 'STUDENT' ? (
                   <>
                     <Link
                       to="/support"
                       onClick={() => setMobileMenuOpen(false)}
-                      className={cn(
-                        "w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all text-[14px] tracking-tight cursor-pointer font-medium",
-                        location.pathname === '/support' ? "bg-slate-50 text-emerald-800 font-bold" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                      )}
-                    >
-                      <LifeBuoy size={20} className={cn(location.pathname === '/support' ? "text-emerald-800" : "text-slate-400")} />
+                       className={cn(
+                         "w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all text-sm tracking-tight cursor-pointer font-medium",
+                         location.pathname === '/support' ? "bg-muted text-foreground font-bold" : "text-text-secondary hover:bg-muted hover:text-foreground"
+                       )}
+                     >
+                       <LifeBuoy size={20} className={cn(location.pathname === '/support' ? "text-foreground" : "text-muted-foreground")} />
                       ICT Support
                     </Link>
                     <Link
                       to="/settings"
                       onClick={() => setMobileMenuOpen(false)}
-                      className={cn(
-                        "w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all text-[14px] tracking-tight cursor-pointer font-medium",
-                        location.pathname === '/settings' ? "bg-slate-50 text-emerald-800 font-bold" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                      )}
-                    >
-                      <Settings size={20} className={cn(location.pathname === '/settings' ? "text-emerald-800" : "text-slate-400")} />
+                       className={cn(
+                         "w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all text-sm tracking-tight cursor-pointer font-medium",
+                         location.pathname === '/settings' ? "bg-muted text-foreground font-bold" : "text-text-secondary hover:bg-muted hover:text-foreground"
+                       )}
+                     >
+                       <Settings size={20} className={cn(location.pathname === '/settings' ? "text-foreground" : "text-muted-foreground")} />
                       Settings
                     </Link>
                   </>
@@ -210,17 +210,17 @@ const handleLogout = () => {
                     <button
                       type="button"
                       onClick={() => { setMobileMenuOpen(false); setSupportModalOpen(true); }}
-                      className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all font-medium text-[14px] tracking-tight cursor-pointer"
-                    >
-                      <LifeBuoy size={20} className="text-slate-400" />
+                       className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-text-secondary hover:bg-muted hover:text-foreground transition-all font-medium text-sm tracking-tight cursor-pointer"
+                     >
+                       <LifeBuoy size={20} className="text-muted-foreground" />
                       ICT Support
                     </button>
                     <button
                       type="button"
                       onClick={() => { setMobileMenuOpen(false); setSettingsModalOpen(true); }}
-                      className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all font-medium text-[14px] tracking-tight cursor-pointer"
-                    >
-                      <Settings size={20} className="text-slate-400" />
+                       className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-text-secondary hover:bg-muted hover:text-foreground transition-all font-medium text-sm tracking-tight cursor-pointer"
+                     >
+                       <Settings size={20} className="text-muted-foreground" />
                       Settings
                     </button>
                   </>
@@ -229,9 +229,9 @@ const handleLogout = () => {
             </div>
 
             {/* Account Profile Block */}
-            <div className="p-6 bg-slate-50 border-t border-slate-100 mt-auto shrink-0">
+            <div className="p-6 bg-muted border-t border-border mt-auto shrink-0">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-surface border border-border shadow-sm overflow-hidden shrink-0">
                   <img 
                     src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.name || 'default')}`} 
                     alt="User Profile" 
@@ -239,14 +239,14 @@ const handleLogout = () => {
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-bold text-slate-900 tracking-tight truncate">{user?.name || 'System User'}</p>
-                  <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">{user?.role}</p>
+                   <p className="text-sm font-bold text-foreground tracking-tight truncate">{user?.name || 'System User'}</p>
+                   <p className="text-xs font-black text-success uppercase tracking-widest">{user?.role}</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 py-4 bg-rose-50 text-rose-600 font-bold rounded-2xl text-xs hover:bg-rose-100 transition-all border border-rose-100 cursor-pointer"
+                 className="w-full flex items-center justify-center gap-2 py-4 bg-destructive/10 text-destructive font-bold rounded-2xl text-xs hover:bg-destructive/20 transition-all border border-destructive/20 cursor-pointer"
               >
                 <LogOut size={16} />
                 Terminate Session

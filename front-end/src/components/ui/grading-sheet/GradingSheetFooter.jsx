@@ -21,19 +21,19 @@ export function GradingSheetFooter({
   onRequestRevision,
 }) {
   return (
-    <footer className="mt-8 flex flex-wrap justify-between items-center gap-4 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+    <footer className="mt-8 flex flex-wrap justify-between items-center gap-4 bg-surface p-6 rounded-2xl border border-border shadow-sm">
       <div className="flex items-center gap-4">
-        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", isSubmissionLocked ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600")}>
+        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", isSubmissionLocked ? "bg-warning/10 text-warning" : "bg-success/10 text-success")}>
           {isSubmissionLocked ? <Lock size={20} /> : <ShieldCheck size={20} />}
         </div>
         <div>
-          <p className="text-sm font-black text-gray-900">{isSubmissionLocked ? "Submission Locked" : "Audit Ready"}</p>
-          <p className="text-xs font-bold text-gray-500">{isSubmissionLocked ? `${missingCount} observations missing.` : "All observations logged."}</p>
+          <p className="text-sm font-black text-foreground">{isSubmissionLocked ? "Submission Locked" : "Audit Ready"}</p>
+          <p className="text-xs font-bold text-muted-foreground">{isSubmissionLocked ? `${missingCount} observations missing.` : "All observations logged."}</p>
         </div>
       </div>
       
       <div className="flex items-center gap-3">
-        <div className="text-xs text-gray-500 bg-gray-50 px-3 py-1 rounded-lg leading-relaxed">
+        <div className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded-lg leading-relaxed">
           <span className="font-bold">WAEC STP:</span> 30% SBA + 70% Exam = 100%
           &nbsp;|&nbsp;
           <span className="font-bold">Grades (A1–F9):</span>
@@ -45,9 +45,9 @@ export function GradingSheetFooter({
            disabled={isSubmissionLocked}
            className={cn(
              "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2",
-             isSubmissionLocked 
-               ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
-               : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 cursor-pointer"
+              isSubmissionLocked 
+                ? "bg-muted text-muted-foreground cursor-not-allowed" 
+                : "bg-muted text-foreground hover:bg-muted border border-border cursor-pointer"
            )}
          >
            <Save size={14} /> Save Draft
@@ -58,9 +58,9 @@ export function GradingSheetFooter({
            disabled={isSubmissionLocked || missingCount > 0}
            className={cn(
              "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2",
-             isSubmissionLocked || missingCount > 0
-               ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
-               : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-md cursor-pointer"
+              isSubmissionLocked || missingCount > 0
+                ? "bg-muted text-muted-foreground cursor-not-allowed" 
+                : "bg-success text-background hover:bg-success/90 shadow-md cursor-pointer"
            )}
          >
            <Send size={14} /> Submit to HOD
@@ -72,9 +72,9 @@ export function GradingSheetFooter({
              disabled={isSubmissionLocked}
              className={cn(
                "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2",
-               isSubmissionLocked
-                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                 : "bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-200 cursor-pointer"
+                isSubmissionLocked
+                  ? "bg-muted text-muted-foreground cursor-not-allowed"
+                  : "bg-warning/10 text-warning hover:bg-warning/20 border border-warning/20 cursor-pointer"
              )}
            >
              <MessageSquare size={14} /> Request Revision

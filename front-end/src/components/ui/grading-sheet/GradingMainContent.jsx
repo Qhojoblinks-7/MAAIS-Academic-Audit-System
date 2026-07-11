@@ -47,15 +47,15 @@ export function GradingMainContent({
 
         {/* Slot: injected STP error overlay */}
         {showSTPOverlay && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
-            <div className="text-xs font-bold text-red-700 uppercase tracking-widest w-full">
+          <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3">
+            <div className="text-xs font-bold text-destructive uppercase tracking-widest w-full">
               {stpErrors.map((err, i) => (
                 <p key={i} className="mb-1 last:mb-0">• {err}</p>
               ))}
             </div>
             <button
               onClick={onCloseSTP}
-              className="text-red-500 hover:bg-red-100 rounded p-1 shrink-0 text-xs font-black cursor-pointer"
+              className="text-destructive hover:bg-destructive/10 rounded p-1 shrink-0 text-xs font-black cursor-pointer"
             >
               ✕
             </button>
