@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LifeBuoy, 
@@ -145,55 +145,55 @@ export function AdminSupport() {
   };
 
   const evaluateHealthStatus = (val) => {
-    if (!val) return 'text-gray-400';
+    if (!val) return 'text-text-secondary';
     const normalized = String(val).toUpperCase();
     if (normalized.includes('UP') || normalized.includes('HEALTHY') || normalized.includes('OK') || parseInt(val) < 75) {
-      return 'text-emerald-600 bg-emerald-50 border-emerald-100';
+      return 'text-brand-primary bg-brand-primary/10 border-brand-primary/20';
     }
     if (normalized.includes('WARN') || normalized.includes('WARNING') || (parseInt(val) >= 75 && parseInt(val) < 90)) {
-      return 'text-amber-600 bg-amber-50 border-amber-100';
+      return 'text-warning bg-warning/10 border-warning/20';
     }
-    return 'text-rose-600 bg-rose-50 border-rose-100';
+    return 'text-destructive bg-destructive/10 border-destructive/20';
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-[#F9F9F7]">
+    <div className="flex-1 flex flex-col min-h-0 bg-background">
       <div className="flex-1 overflow-auto p-8 lg:p-12 pb-32 lg:pb-24 scrollbar-hide">
         <div className="max-w-5xl mx-auto space-y-6">
           <header className="mb-8">
             <div className="flex items-center gap-4 mb-3">
-              <div className="w-12 h-12 bg-emerald-950 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-emerald-950/20">
+              <div className="w-12 h-12 bg-brand-dark rounded-2xl flex items-center justify-center text-primary-foreground shadow-xl shadow-brand-dark/20">
                 <LifeBuoy size={28} />
               </div>
               <div>
-                <h1 className="text-[28px] md:text-[34px] font-black text-gray-900 tracking-tighter leading-none italic font-display italic uppercase">Executive Engineering Desk</h1>
-                <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest mt-1">Direct priority engineering & protocol documentation hub</p>
+                <h1 className="text-[28px] md:text-[34px] font-black text-text-primary tracking-tighter leading-none italic font-display italic uppercase">Executive Engineering Desk</h1>
+                <p className="text-[10px] font-black text-brand-primary uppercase tracking-widest mt-1">Direct priority engineering & protocol documentation hub</p>
               </div>
             </div>
           </header>
 
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Support Center</h2>
-              <p className="text-sm text-gray-500 mt-1">Ticket tracking · system health · escalation management</p>
+              <h2 className="text-2xl font-bold text-text-primary">Support Center</h2>
+              <p className="text-sm text-text-secondary mt-1">Ticket tracking · system health · escalation management</p>
             </div>
             <div className="flex items-center gap-2">
               <button 
                 onClick={fetchAll}
-                className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 shadow-xs transition-colors"
+                className="px-4 py-2 bg-surface border border-border rounded-xl text-xs font-medium text-text-primary hover:bg-muted flex items-center gap-2 shadow-xs transition-colors"
               >
                 <RefreshCw size={14} /> Refresh Stream
               </button>
               <button
                 onClick={() => setShowCreateDrawer(true)}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-medium hover:bg-emerald-700 flex items-center gap-2 shadow-sm transition-colors"
+                className="px-4 py-2 bg-brand-primary text-primary-foreground rounded-xl text-xs font-medium hover:bg-brand-primary/90 flex items-center gap-2 shadow-sm transition-colors"
               >
                 <Plus size={14} /> New Ticket
               </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-1 w-fit">
+          <div className="flex items-center gap-1 bg-surface rounded-2xl border border-border shadow-sm p-1 w-fit">
             {['tickets', 'escalations', 'contacts'].map((t) => (
               <button
                 key={t}
@@ -201,8 +201,8 @@ export function AdminSupport() {
                 className={cn(
                   "px-4 py-2 rounded-xl text-xs font-semibold transition-all",
                   subTab === t
-                    ? "bg-gray-900 text-white shadow-xs"
-                    : "text-gray-600 hover:bg-gray-50"
+                    ? "bg-brand-dark text-primary-foreground shadow-xs"
+                    : "text-text-secondary hover:bg-muted"
                 )}
               >
                 {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -212,7 +212,7 @@ export function AdminSupport() {
 
           {subTab === 'tickets' && (
             <div className="space-y-5">
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <div className="bg-surface rounded-2xl border border-border shadow-sm p-4">
                 <div className="flex items-center gap-1.5 flex-wrap justify-between">
                   <div className="flex items-center gap-1 flex-wrap">
                     {tabsConfig.map((tab) => (
@@ -222,12 +222,12 @@ export function AdminSupport() {
                         className={cn(
                           'px-3 py-1.5 type-base text-[10px] font-bold rounded-lg transition-all uppercase tracking-wider border',
                           ticketTabs === tab.id
-                            ? 'bg-emerald-600 text-white border-emerald-600'
-                            : 'bg-gray-50 text-gray-600 border-gray-100 hover:bg-gray-100'
+                            ? 'bg-brand-primary text-primary-foreground border-brand-primary'
+                            : 'bg-muted text-text-secondary border-border hover:bg-border'
                         )}
                       >
                         {tab.label}
-                        <span className={cn('ml-1.5 font-mono', ticketTabs === tab.id ? 'text-emerald-100' : 'text-gray-400')}>
+                        <span className={cn('ml-1.5 font-mono', ticketTabs === tab.id ? 'text-primary-foreground/80' : 'text-text-secondary')}>
                           ({tab.count})
                         </span>
                       </button>
@@ -235,16 +235,16 @@ export function AdminSupport() {
                   </div>
                   
                   <div className="relative min-w-[200px]">
-                    <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
                     <input
                       type="text"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search unique ticket tags..."
-                      className="w-full pl-8 pr-8 py-1.5 text-xs bg-gray-50/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:bg-white"
+                      className="w-full pl-8 pr-8 py-1.5 text-xs bg-muted/50 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-primary/10 focus:bg-surface"
                     />
                     {search && (
-                      <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary">
                         <XCircle size={12} />
                       </button>
                     )}
@@ -270,26 +270,26 @@ export function AdminSupport() {
 
           {subTab === 'escalations' && (
             <motion.div key="esc" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <div className="bg-surface rounded-2xl border border-border shadow-sm p-5">
                 <div className="flex items-center gap-2 mb-4">
-                  <AlertTriangle size={16} className="text-amber-500" />
-                  <h2 className="text-sm font-bold text-gray-900">Escalated Engineering Failures</h2>
-                  <span className="ml-auto px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-mono font-bold rounded-full">{escalatedIssues.length}</span>
+                  <AlertTriangle size={16} className="text-warning" />
+                  <h2 className="text-sm font-bold text-text-primary">Escalated Engineering Failures</h2>
+                  <span className="ml-auto px-2 py-0.5 bg-muted text-text-secondary text-[10px] font-mono font-bold rounded-full">{escalatedIssues.length}</span>
                 </div>
                 {escalatedIssues.length === 0 ? (
                   <EmptyState icon={ShieldCheck} title="All environments clear" description="No operational tasks are escalated at this block interval." />
                 ) : (
                   <div className="grid sm:grid-cols-2 gap-3">
                     {escalatedIssues.map((issue, i) => (
-                      <div key={issue.id || i} className="flex flex-col p-4 bg-gray-50 border border-gray-200/60 rounded-xl shadow-xs">
+                      <div key={issue.id || i} className="flex flex-col p-4 bg-muted border border-border rounded-xl shadow-xs">
                         <div className="flex items-start justify-between gap-4">
-                          <p className="text-xs font-bold text-gray-900 truncate">{issue.title || issue.subject || 'System Incident'}</p>
+                          <p className="text-xs font-bold text-text-primary truncate">{issue.title || issue.subject || 'System Incident'}</p>
                           <AlertSeverityChip severity={issue.severity || 'MEDIUM'} />
                         </div>
-                        <p className="text-xs text-gray-500 mt-2 line-clamp-2">{issue.description || 'No analytical trace attached.'}</p>
-                        <div className="mt-4 pt-3 border-t border-gray-200/50 flex items-center justify-between text-[10px] font-mono text-gray-400">
+                        <p className="text-xs text-text-secondary mt-2 line-clamp-2">{issue.description || 'No analytical trace attached.'}</p>
+                        <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-[10px] font-mono text-text-secondary">
                           <span>ID: {issue.id?.slice(-8) || 'GEN-ERR'}</span>
-                          <span className="text-amber-700 font-semibold bg-amber-50 px-1.5 py-0.5 rounded">Awaiting Ops Action</span>
+                          <span className="text-warning font-semibold bg-warning/10 px-1.5 py-0.5 rounded">Awaiting Ops Action</span>
                         </div>
                       </div>
                     ))}
@@ -302,10 +302,10 @@ export function AdminSupport() {
           {subTab === 'contacts' && (
             <motion.div key="contacts" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
               <div className="grid lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+                <div className="lg:col-span-2 bg-surface rounded-2xl border border-border shadow-sm p-5 space-y-4">
                   <div className="flex items-center gap-2">
-                    <Users size={16} className="text-emerald-600" />
-                    <h2 className="text-sm font-bold text-gray-900">Active Alert Routing Channels</h2>
+                    <Users size={16} className="text-brand-primary" />
+                    <h2 className="text-sm font-bold text-text-primary">Active Alert Routing Channels</h2>
                   </div>
                   <div className="space-y-2">
                     {contactChannels ? (
@@ -314,32 +314,32 @@ export function AdminSupport() {
                         { key: 'sms', label: 'SMS Gateway Broadcast', icon: Phone, value: contactChannels.sms ?? false },
                         { key: 'whatsapp', label: 'WhatsApp Secure Stream', icon: Globe, value: contactChannels.whatsapp ?? false },
                       ].map(({ key, label, icon: Icon, value }) => (
-                        <div key={key} className="flex items-center justify-between p-3.5 bg-gray-50 rounded-xl border border-gray-100">
+                        <div key={key} className="flex items-center justify-between p-3.5 bg-muted rounded-xl border border-border">
                           <div className="flex items-center gap-3">
-                            <Icon size={15} className="text-gray-500" />
-                            <span className="text-xs font-medium text-gray-900">{label}</span>
+                            <Icon size={15} className="text-text-secondary" />
+                            <span className="text-xs font-medium text-text-primary">{label}</span>
                           </div>
                           <button
                             onClick={() => {}}
                             className={cn(
                               "w-9 h-5 rounded-full transition-all relative outline-none",
-                              value ? "bg-emerald-600" : "bg-gray-200"
+                              value ? "bg-brand-primary" : "bg-muted"
                             )}
                           >
-                            <div className={cn("w-4 h-4 bg-white rounded-full shadow-xs transition-transform absolute top-0.5", value ? "right-0.5" : "left-0.5")} />
+                            <div className={cn("w-4 h-4 bg-surface rounded-full shadow-xs transition-transform absolute top-0.5", value ? "right-0.5" : "left-0.5")} />
                           </button>
                         </div>
                       ))
                     ) : (
-                      <p className="text-xs text-gray-400">Loading channel states...</p>
+                      <p className="text-xs text-text-secondary">Loading channel states...</p>
                     )}
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col justify-between">
+                <div className="bg-surface rounded-2xl border border-border shadow-sm p-5 flex flex-col justify-between">
                   <div className="flex items-center gap-2 mb-4">
-                    <Cpu size={16} className="text-blue-600" />
-                    <h2 className="text-sm font-bold text-gray-900">Infrastructure Snapshots</h2>
+                    <Cpu size={16} className="text-brand-primary" />
+                    <h2 className="text-sm font-bold text-text-primary">Infrastructure Snapshots</h2>
                   </div>
                   {systemHealth ? (
                     <div className="grid grid-cols-2 gap-2.5">
@@ -351,17 +351,17 @@ export function AdminSupport() {
                       ].map(({ label, icon: Icon, value }) => {
                         const styleClass = evaluateHealthStatus(value);
                         return (
-                          <div key={label} className="p-3 bg-gray-50 rounded-xl border border-gray-100/70 flex flex-col items-center text-center justify-center">
+                          <div key={label} className="p-3 bg-muted rounded-xl border border-border flex flex-col items-center text-center justify-center">
                             <Icon size={15} className={cn("mb-1", styleClass.split(' ')[0])} />
-                            <p className="text-xs font-mono font-bold text-gray-900 mt-1">{value}</p>
-                            <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400 mt-0.5">{label}</p>
+                            <p className="text-xs font-mono font-bold text-text-primary mt-1">{value}</p>
+                            <p className="text-[9px] font-bold uppercase tracking-wider text-text-secondary mt-0.5">{label}</p>
                           </div>
                         );
                       })}
                     </div>
                   ) : (
                     <div className="text-center py-6">
-                      <LoadingSpinner size="sm" className="mx-auto text-blue-600" />
+                      <LoadingSpinner size="sm" className="mx-auto text-brand-primary" />
                     </div>
                   )}
                 </div>
@@ -377,7 +377,7 @@ export function AdminSupport() {
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-gray-900/40 backdrop:blur-xs flex items-center justify-end"
+            className="fixed inset-0 z-50 bg-brand-dark/40 backdrop:blur-xs flex items-center justify-end"
             onClick={() => setShowCreateDrawer(false)}
           >
             <motion.div
@@ -386,49 +386,49 @@ export function AdminSupport() {
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 26, stiffness: 220 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md bg-white h-full flex flex-col shadow-2xl border-l border-gray-100"
+              className="w-full max-w-md bg-surface h-full flex flex-col shadow-2xl border-l border-border"
             >
-              <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between shrink-0">
+              <div className="px-6 py-5 border-b border-border flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600 border border-rose-100">
+                  <div className="w-9 h-9 rounded-xl bg-destructive/10 flex items-center justify-center text-destructive border border-destructive/20">
                     <LifeBuoy size={18} />
                   </div>
-                  <h3 className="text-base font-bold text-gray-900">New Support Ticket</h3>
+                  <h3 className="text-base font-bold text-text-primary">New Support Ticket</h3>
                 </div>
-                <button onClick={() => setShowCreateDrawer(false)} className="p-2 hover:bg-gray-100 rounded-xl transition-all text-gray-400 hover:text-gray-600">
+                <button onClick={() => setShowCreateDrawer(false)} className="p-2 hover:bg-muted rounded-xl transition-all text-text-secondary hover:text-text-primary">
                   <XCircle size={18} />
                 </button>
               </div>
 
               <div className="flex-1 overflow-auto p-6 space-y-5">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5">Subject</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-text-secondary mb-1.5">Subject</p>
                   <input
                     type="text"
                     value={form.subject}
                     onChange={(e) => setForm({ ...form, subject: e.target.value })}
                     placeholder="Brief description of the issue"
-                    className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white"
+                    className="w-full px-3 py-2.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary bg-surface"
                   />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5">Category</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-text-secondary mb-1.5">Category</p>
                     <select
                       value={form.category}
                       onChange={(e) => setForm({ ...form, category: e.target.value })}
-                      className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                      className="w-full px-3 py-2.5 text-sm border border-border rounded-xl bg-surface appearance-none focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
                     >
                       {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c.charAt(0) + c.slice(1).toLowerCase()}</option>)}
                     </select>
                   </div>
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5">Priority</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-text-secondary mb-1.5">Priority</p>
                     <select
                       value={form.priority}
                       onChange={(e) => setForm({ ...form, priority: e.target.value })}
-                      className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                      className="w-full px-3 py-2.5 text-sm border border-border rounded-xl bg-surface appearance-none focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
                     >
                       {PRIORITY_OPTIONS.map(p => <option key={p} value={p}>{p.charAt(0) + p.slice(1).toLowerCase()}</option>)}
                     </select>
@@ -436,13 +436,13 @@ export function AdminSupport() {
                 </div>
 
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5">Description Context</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-text-secondary mb-1.5">Description Context</p>
                   <textarea
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                     placeholder="Provide explicit logs details, reproduction steps, or unexpected system outputs..."
                     rows={5}
-                    className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-none bg-white"
+                    className="w-full px-3 py-2.5 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary resize-none bg-surface"
                   />
                 </div>
 
@@ -454,14 +454,14 @@ export function AdminSupport() {
                 />
               </div>
 
-              <div className="px-6 py-4 border-t border-gray-100 flex items-center gap-3 shrink-0 bg-gray-50/50">
-                <button onClick={() => setShowCreateDrawer(false)} className="flex-1 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+              <div className="px-6 py-4 border-t border-border flex items-center gap-3 shrink-0 bg-muted/50">
+                <button onClick={() => setShowCreateDrawer(false)} className="flex-1 py-2.5 bg-surface border border-border rounded-xl text-sm font-medium text-text-primary hover:bg-muted transition-colors">
                   Cancel
                 </button>
                 <button 
                   onClick={() => handleCreateTicketSubmit(form)} 
                   disabled={!form.subject.trim() || !form.description.trim()}
-                  className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors shadow-xs"
+                  className="flex-1 py-2.5 bg-brand-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-brand-primary/90 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors shadow-xs"
                 >
                   <Plus size={14} /> Submit Ticket
                 </button>
@@ -475,28 +475,28 @@ export function AdminSupport() {
         {showEscalateDrawer && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-gray-900/40 backdrop:blur-xs flex items-center justify-end"
+            className="fixed inset-0 z-50 bg-brand-dark/40 backdrop:blur-xs flex items-center justify-end"
             onClick={() => setShowEscalateDrawer(false)}
           >
             <motion.div
               initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 26, stiffness: 220 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md bg-white h-full flex flex-col shadow-2xl border-l border-gray-100"
+              className="w-full max-w-md bg-surface h-full flex flex-col shadow-2xl border-l border-border"
             >
-              <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between shrink-0">
+              <div className="px-6 py-5 border-b border-border flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2">
-                  <AlertTriangle size={18} className="text-amber-500" />
-                  <h3 className="text-base font-bold text-gray-900">Escalate System Incident</h3>
+                  <AlertTriangle size={18} className="text-warning" />
+                  <h3 className="text-base font-bold text-text-primary">Escalate System Incident</h3>
                 </div>
-                <button onClick={() => setShowEscalateDrawer(false)} className="p-2 hover:bg-gray-100 rounded-xl text-gray-400 hover:text-gray-600">
+                <button onClick={() => setShowEscalateDrawer(false)} className="p-2 hover:bg-muted rounded-xl text-text-secondary hover:text-text-primary">
                   <XCircle size={18} />
                 </button>
               </div>
               <div className="flex-1 overflow-auto p-6 space-y-4">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Target Ticket Index</p>
-                  <p className="text-xs font-mono font-bold text-gray-700 bg-gray-50 px-2.5 py-1.5 rounded-lg border border-gray-100">{escalateTicketId || '—'}</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-text-secondary mb-1">Target Ticket Index</p>
+                  <p className="text-xs font-mono font-bold text-text-primary bg-muted px-2.5 py-1.5 rounded-lg border border-border">{escalateTicketId || '—'}</p>
                 </div>
                 <HODCommentInput
                   label="Escalation Statement Context"
@@ -506,14 +506,14 @@ export function AdminSupport() {
                   onChange={(val) => setEscalateReason(val)}
                 />
               </div>
-              <div className="px-6 py-4 border-t border-gray-100 flex items-center gap-3 shrink-0 bg-gray-50/50">
-                <button onClick={() => setShowEscalateDrawer(false)} className="flex-1 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+              <div className="px-6 py-4 border-t border-border flex items-center gap-3 shrink-0 bg-muted/50">
+                <button onClick={() => setShowEscalateDrawer(false)} className="flex-1 py-2.5 bg-surface border border-border rounded-xl text-sm font-medium text-text-primary hover:bg-muted transition-colors">
                   Cancel
                 </button>
                 <button 
                   onClick={handleEscalateSubmit} 
                   disabled={!escalateReason.trim()}
-                  className="flex-1 py-2.5 bg-amber-600 text-white rounded-xl text-sm font-medium hover:bg-amber-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors shadow-xs"
+                  className="flex-1 py-2.5 bg-warning text-primary-foreground rounded-xl text-sm font-medium hover:bg-warning/90 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors shadow-xs"
                 >
                   <AlertTriangle size={12} /> Confirm Escalation
                 </button>

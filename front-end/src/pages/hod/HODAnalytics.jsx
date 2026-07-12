@@ -25,12 +25,12 @@ import {
 
 // Explicit Sub-layout wrappers
 const CardHeader = ({ children, className }) => (
-  <div className={cn("px-5 py-4 border-b border-slate-100 flex items-center justify-between", className)}>
+  <div className={cn("hod-card-header", className)}>
     {children}
   </div>
 );
 const CardContent = ({ children, className }) => (
-  <div className={cn("p-5", className)}>{children}</div>
+  <div className={cn("hod-card-content", className)}>{children}</div>
 );
 
 // Helper function to safely isolate date strings
@@ -41,28 +41,29 @@ const getLocalDateString = () => {
 
 // Memoized Sub-Row for department progress table
 const ClassProgressRow = React.memo(({ className, progress, status }) => {
-  const pctColor = progress >= 90 ? 'text-emerald-600' : progress >= 70 ? 'text-amber-600' : 'text-rose-600';
-  const barColor = progress >= 90 ? 'bg-emerald-500' : progress >= 70 ? 'bg-amber-500' : 'bg-rose-500';
+  const pctColor = progress >= 90 ? 'hod-text-emerald' : progress >= 70 ? 'hod-text-amber' : 'hod-text-rose';
+  const barColor = progress >= 90 ? 'hod-bg-emerald' : progress >= 70 ? 'hod-bg-amber' : 'hod-bg-rose';
+  const badgeColor = progress >= 90 ? 'hod-badge-emerald' : progress >= 70 ? 'hod-badge-amber' : 'hod-badge-rose';
   return (
-    <TableRow className="hover:bg-slate-50/80 transition-all duration-200">
-      <TableCell className="py-3 px-6 font-semibold text-slate-900">
+    <TableRow className="hod-progress-row">
+      <TableCell className="hod-progress-cell-name">
         {className}
       </TableCell>
-      <TableCell className="py-3 px-6">
-        <div className="flex items-center gap-4">
-          <span className={`w-12 shrink-0 font-bold tabular-nums ${pctColor}`}>
+      <TableCell className="hod-progress-cell-bar">
+        <div className="hod-progress-flex">
+          <span className={`hod-progress-pct ${pctColor}`}>
             {progress}%
           </span>
-          <div className="w-full max-w-[180px] h-2 bg-slate-100 rounded-full overflow-hidden hidden sm:block">
+          <div className="hod-progress-track">
             <div
-              className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+              className={`hod-progress-fill ${barColor}`}
               style={{ width: `${Math.min(100, progress)}%` }}
             />
           </div>
         </div>
       </TableCell>
-      <TableCell className="py-3 px-6 text-right">
-        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${progress >= 90 ? 'bg-emerald-50 text-emerald-700' : progress >= 70 ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'}`}>
+      <TableCell className="hod-progress-status-cell">
+        <span className={`hod-progress-badge ${badgeColor}`}>
           {status || 'active'}
         </span>
       </TableCell>
@@ -99,60 +100,60 @@ function ScoreDistributionChart({ alerts }) {
   }, [scores]);
 
   const colorMap = {
-    rose: 'bg-rose-500',
-    orange: 'bg-orange-500',
-    amber: 'bg-amber-500',
-    yellow: 'bg-yellow-400',
-    lime: 'bg-lime-400',
-    indigo: 'bg-indigo-500',
-    emerald: 'bg-emerald-500',
+    rose: 'hod-bar-rose',
+    orange: 'hod-bar-orange',
+    amber: 'hod-bar-amber',
+    yellow: 'hod-bar-yellow',
+    lime: 'hod-bar-lime',
+    indigo: 'hod-bar-indigo',
+    emerald: 'hod-bar-emerald',
   };
 
   const maxCount = buckets.length > 0 ? Math.max(...buckets.map((b) => b.count)) : 1;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+    <div className="hod-score-card">
+      <div className="hod-score-header">
+        <div className="hod-title-group">
+          <div className="hod-icon-box--indigo">
             <BarChart3 size={16} />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+            <h3 className="hod-title">
               Score Distribution
             </h3>
-            <p className="text-xs text-slate-500 font-medium">Current department scores across {scores.length} intervention alerts</p>
+            <p className="hod-score-subtitle">Current department scores across {scores.length} intervention alerts</p>
           </div>
         </div>
       </div>
 
       {buckets.length === 0 ? (
-        <div className="flex items-center justify-center h-[140px]">
+        <div className="hod-chart-empty">
           <EmptyState context="grades" variant="compact" />
         </div>
       ) : (
-        <div className="flex items-end gap-2 h-[140px]">
+        <div className="hod-chart-bars">
           {buckets.map((bucket, idx) => (
-            <div key={idx} className="flex-1 flex flex-col items-center gap-1.5">
-              <span className="text-[10px] font-bold text-slate-600 tabular-nums">{bucket.count}</span>
+            <div key={idx} className="hod-chart-col">
+              <span className="hod-chart-count">{bucket.count}</span>
               <div
-                className={cn("w-full rounded-t-md transition-all duration-500", colorMap[bucket.color])}
+                className={cn("hod-chart-bar", colorMap[bucket.color])}
                 style={{ height: `${Math.max(12, (bucket.count / maxCount) * 100)}%` }}
               />
-              <span className="text-[9px] font-bold text-slate-400">{bucket.label}</span>
+              <span className="hod-chart-bar-label">{bucket.label}</span>
             </div>
           ))}
         </div>
       )}
 
-      <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
-        <span className="text-slate-500 font-medium">
-          Dept average: <span className="text-slate-900 font-bold">
+      <div className="hod-chart-footer">
+        <span className="hod-chart-footer-text">
+          Dept average: <span className="hod-chart-footer-strong">
             {scores.length > 0 ? Math.round(scores.reduce((s, v) => s + v, 0) / scores.length) : 0}%
           </span>
         </span>
-        <span className="text-slate-500 font-medium">
-          Passing (≥50): <span className="text-emerald-600 font-bold">
+        <span className="hod-chart-footer-text">
+          Passing (≥50): <span className="hod-chart-footer-pass">
             {scores.length > 0 ? Math.round(scores.filter((s) => s >= 50).length / scores.length * 100) : 0}%
           </span>
         </span>
@@ -298,50 +299,49 @@ export function HODAnalytics() {
   const metricCards = useMemo(() => {
     const fmt = (v) => v == null ? '—' : `${v}%`;
     const trendVal = dataMetrics.performanceMetrics.improvementTrend;
-    const trendColor = trendVal > 0 ? "text-emerald-700" : trendVal < 0 ? "text-rose-700" : "text-slate-700";
-    const trendBg = trendVal > 0 ? "bg-emerald-50/50 border-emerald-100" : trendVal < 0 ? "bg-rose-50/50 border-rose-100" : "bg-white";
+    const trendKey = trendVal > 0 ? 'up' : trendVal < 0 ? 'down' : 'neutral';
     return [
       {
         label: "Dept Average Score",
         value: fmt(dataMetrics.performanceMetrics.averageScore),
-        color: "text-slate-900",
-        highlight: "bg-white",
+        highlight: "hod-kpi-tile--neutral",
+        valueClass: "hod-kpi-value--default",
         badge: "Current"
       },
       {
         label: "Pass Rate",
         value: fmt(dataMetrics.performanceMetrics.passRate),
-        color: "text-slate-900",
-        highlight: "bg-white",
+        highlight: "hod-kpi-tile--neutral",
+        valueClass: "hod-kpi-value--default",
         badge: "Passing"
       },
       {
         label: "Distinction Rate",
         value: fmt(dataMetrics.performanceMetrics.distinctionRate),
-        color: "text-slate-900",
-        highlight: "bg-white",
+        highlight: "hod-kpi-tile--neutral",
+        valueClass: "hod-kpi-value--default",
         badge: "Top Performers"
       },
       {
         label: "Academic Trend",
         value: trendVal == 0 ? '0%' : `${trendVal >= 0 ? '+' : ''}${trendVal}%`,
-        color: trendColor,
-        highlight: trendBg,
+        highlight: `hod-kpi-tile--${trendKey}`,
+        valueClass: `hod-kpi-value--${trendKey}`,
         badge: "vs Previous"
       },
     ];
   }, [dataMetrics]);
 
    const isLoading = !dataMetrics.classPerformance.length && !filteredAlerts.length && !departmentProgress.length && !interventionAlerts.length;
-  
+   
    if (isLoading) {
      return (
-       <div className="flex-1 flex flex-col justify-center items-center min-h-[450px] bg-slate-50/50">
-         <div className="relative flex items-center justify-center">
-           <div className="inline-block animate-spin rounded-full border-4 border-slate-200 border-t-indigo-600 w-10 h-10" />
-           <TrendingUp size={16} className="absolute text-indigo-600 animate-pulse" />
+       <div className="hod-loading">
+         <div className="hod-spinner-wrap">
+           <div className="hod-spinner" />
+           <TrendingUp size={16} className="hod-spinner-icon" />
          </div>
-         <p className="mt-4 text-xs font-bold text-slate-500 uppercase tracking-widest">
+         <p className="hod-loading-text">
            Syncing analytics database...
          </p>
        </div>
@@ -349,113 +349,110 @@ export function HODAnalytics() {
    }
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto bg-slate-50/30 p-6 space-y-6 font-sans antialiased max-w-7xl mx-auto w-full">
-      
+    <div className="hod-page">
+
       {/* 1. Header & Controls Workspace Container */}
-      <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-5 space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-          <div className="flex items-center gap-2.5">
-            <span className="p-2 bg-slate-50 border border-slate-100 text-slate-700 rounded-lg">
+      <div className="hod-panel">
+        <div className="hod-panel-header">
+          <div className="hod-title-group">
+            <span className="hod-icon-box">
               <SlidersHorizontal size={14} />
             </span>
             <div>
-              <h2 className="text-sm font-bold tracking-tight text-slate-900">
+              <h2 className="hod-title">
                 Analytics Control Matrix
               </h2>
-              <p className="text-xs text-slate-500">Configure real-time filter scopes</p>
+              <p className="hod-subtitle">Configure real-time filter scopes</p>
             </div>
           </div>
           <button
             onClick={handleResetFilters}
-            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-indigo-600 bg-slate-50 hover:bg-slate-100/80 px-3 py-1.5 border border-slate-200/60 rounded-lg transition-all cursor-pointer"
+            className="hod-btn-reset"
           >
             <RefreshCw size={12} /> Reset Filters
           </button>
         </div>
 
-         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-           <div className="space-y-1.5">
-             <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+         <div className="hod-grid-4">
+           <div className="hod-field">
+             <label className="hod-field-label">
                Academic Year
              </label>
-             <div className="relative">
+             <div className="hod-select-wrap">
                <select
                  value={analyticsAcademicYearId}
                  onChange={(e) => setAnalyticsAcademicYearId(e.target.value)}
-                 className="w-full px-3 py-2 text-xs bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-700 font-semibold cursor-pointer appearance-none"
+                 className="hod-select"
                 >
                   <option value="">All Years</option>
                   {(academicYears || []).map((yr) => (
                     <option key={yr.id} value={yr.id}>{yr.label}</option>
                   ))}
                 </select>
-               <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+               <ChevronDown size={12} className="hod-chevron" />
              </div>
            </div>
 
-           <div className="space-y-1.5">
-             <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+           <div className="hod-field">
+             <label className="hod-field-label">
                Semester
              </label>
-             <div className="relative">
+             <div className="hod-select-wrap">
                <select
                  value={analyticsTermNumber}
                  onChange={(e) => setAnalyticsTermNumber(e.target.value)}
-                 className="w-full px-3 py-2 text-xs bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-700 font-semibold cursor-pointer appearance-none"
+                 className="hod-select"
                >
                  <option value="">All Semesters</option>
                  <option value="sem-1">Semester 1</option>
                  <option value="sem-2">Semester 2</option>
                </select>
-               <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+               <ChevronDown size={12} className="hod-chevron" />
              </div>
            </div>
 
-           <div className="space-y-1.5">
-             <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+           <div className="hod-field">
+             <label className="hod-field-label">
                Start Date
              </label>
              <input
                type="date"
                value={analyticsStartDate}
                onChange={(e) => setAnalyticsStartDate(e.target.value)}
-               className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-600 font-medium"
+               className="hod-date-input"
              />
            </div>
 
-           <div className="space-y-1.5">
-             <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+           <div className="hod-field">
+             <label className="hod-field-label">
                End Date
              </label>
              <input
                type="date"
                value={analyticsEndDate}
                onChange={(e) => setAnalyticsEndDate(e.target.value)}
-               className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-600 font-medium"
+               className="hod-date-input"
              />
            </div>
          </div>
       </div>
 
       {/* 2. Primary KPI Performance Tiles */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="hod-kpi-grid">
         {metricCards.map((card, idx) => (
           <div
             key={idx}
-            className={cn(
-              "p-5 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between group hover:shadow-sm transition-all duration-200 min-h-[110px]",
-              card.highlight,
-            )}
+            className={cn("hod-kpi-tile", card.highlight)}
           >
-            <div className="flex justify-between items-start">
-              <p className="text-xs font-semibold text-slate-500">
+            <div className="hod-kpi-top">
+              <p className="hod-kpi-label">
                 {card.label}
               </p>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
+              <span className="hod-kpi-badge">
                 {card.badge}
               </span>
             </div>
-            <p className={cn("text-3xl font-bold tracking-tight mt-2 tabular-nums", card.color)}>
+            <p className={cn("hod-kpi-value", card.valueClass)}>
               {card.value}
             </p>
           </div>
@@ -463,34 +460,34 @@ export function HODAnalytics() {
       </div>
 
        {/* 3. Performance Trend Visualization */}
-       <div className="w-full">
+       <div className="hod-score-section">
          <ScoreDistributionChart alerts={filteredAlerts} />
        </div>
 
       {/* 4. Operational Grid Division Module */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      <div className="hod-op-grid">
         {/* Left Column Section: Subject Ledger Directory Table */}
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden lg:col-span-2">
+        <div className="hod-table-card hod-col-span-2">
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-md">
+            <div className="hod-title-group">
+              <div className="hod-icon-box--sm">
                 <BarChart3 size={14} />
               </div>
-              <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+              <h3 className="hod-title">
                 Course Tracking Profiles
               </h3>
             </div>
           </CardHeader>
-          <div className="overflow-x-auto">
+          <div className="hod-table-scroll">
              <Table>
                <TableHeader>
-                  <TableRow className="bg-slate-50/70 border-b border-slate-100 text-[11px] font-bold text-slate-500 tracking-wider uppercase">
-                    <TableHead className="py-3 px-6">Class Name</TableHead>
-                    <TableHead className="py-3 px-6">Submission Progress</TableHead>
-                    <TableHead className="py-3 px-6 text-right">Status</TableHead>
+                  <TableRow className="hod-table-head-row">
+                    <TableHead className="hod-table-head-cell">Class Name</TableHead>
+                    <TableHead className="hod-table-head-cell">Submission Progress</TableHead>
+                    <TableHead className="hod-table-head-cell hod-table-head-cell--right">Status</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody className="divide-y divide-slate-100 text-xs text-slate-700 font-medium">
+                <TableBody className="hod-table-body">
                   {dataMetrics.classPerformance.map((cls, index) => (
                     <ClassProgressRow
                       key={index}
@@ -505,19 +502,19 @@ export function HODAnalytics() {
         </div>
 
         {/* Right Column Section: Meta Analytics Ledger Panels */}
-        <div className="space-y-6 lg:col-span-1">
-          <Card className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <div className="hod-side-col hod-col-span-1">
+          <Card className="hod-table-card">
             <CardHeader>
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-md">
+              <div className="hod-title-group">
+                <div className="hod-icon-box--sm">
                   <GraduationCap size={14} />
                 </div>
-                <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+                <h3 className="hod-title">
                   Department Registry
                 </h3>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4 text-xs font-semibold text-slate-600">
+            <CardContent className="hod-registry-content">
               {[
                 {
                   label: "Total Enrolled Cohort",
@@ -541,14 +538,14 @@ export function HODAnalytics() {
                   alert: true,
                 },
               ].map((row, rIdx) => (
-                <div key={rIdx} className="flex justify-between items-center py-1 border-b border-slate-50 last:border-0">
-                  <span className="text-slate-500 font-medium flex items-center gap-2">
-                    <row.icon size={14} className="text-slate-400" /> {row.label}
+                <div key={rIdx} className="hod-registry-row">
+                  <span className="hod-registry-label">
+                    <row.icon size={14} className="hod-icon-muted" /> {row.label}
                   </span>
                   <span
                     className={cn(
-                      "font-bold text-xs text-slate-900 tabular-nums",
-                      row.alert && row.value > 0 ? "text-rose-600 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-md" : "bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-md",
+                      "hod-registry-value",
+                      row.alert && row.value > 0 ? "hod-registry-value--alert" : ""
                     )}
                   >
                     {row.value}
@@ -558,18 +555,18 @@ export function HODAnalytics() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+          <Card className="hod-table-card">
             <CardHeader>
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-md">
+              <div className="hod-title-group">
+                <div className="hod-icon-box--sm">
                   <CalendarRange size={14} />
                 </div>
-                <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+                <h3 className="hod-title">
                   Audit Stream
                 </h3>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3.5 text-xs text-slate-600 font-medium">
+            <CardContent className="hod-audit-content">
               {filteredAlerts.length === 0 ? (
                 <EmptyState context="grades" variant="compact" />
               ) : (
@@ -580,12 +577,12 @@ export function HODAnalytics() {
                     const student = alert.studentName || 'Unknown student';
                     const action = alert.resolved ? 'Resolved' : `Opened — ${(alert.severity || 'MEDIUM').toLowerCase()} priority`;
                     return (
-                      <div key={alert.id || aIdx} className="flex items-start gap-3 group">
+                      <div key={alert.id || aIdx} className="hod-audit-item">
                         <span className={cn(
-                          "w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 group-hover:scale-120 transition-transform",
-                          alert.resolved ? 'bg-emerald-400' : 'bg-amber-400'
+                          "hod-audit-dot",
+                          alert.resolved ? 'hod-dot-emerald' : 'hod-dot-amber'
                         )} />
-                        <p className="leading-relaxed group-hover:text-slate-900 transition-colors">
+                        <p className="hod-audit-text">
                           {student} — {action} {date ? `on ${date}` : ''}
                         </p>
                       </div>

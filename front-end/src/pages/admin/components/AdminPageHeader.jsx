@@ -8,12 +8,12 @@ export function AdminPageHeader({ title, subtitle, icon: Icon, actions, backLink
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           {backLink && (
-            <Link to={backLink} className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.25em] text-text-secondary mb-2 hover:text-text-primary transition-all">
+             <Link to={backLink} className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 hover:text-foreground transition-all">
               <ChevronRight size={10} className="rotate-180" />
               <span>Back</span>
             </Link>
           )}
-          <h1 className="text-2xl font-black text-text-primary italic font-display tracking-tight leading-none">
+          <h1 className="text-2xl font-black text-foreground tracking-tight leading-none">
             {subtitle}
           </h1>
         </div>

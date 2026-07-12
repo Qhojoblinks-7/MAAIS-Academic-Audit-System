@@ -1,13 +1,36 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, ChevronRight, ChevronDown, Send, Flag, AlertTriangle, User, Clock, MessageSquare } from 'lucide-react';
+import { Calendar, ChevronRight, ChevronDown, User, Clock } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { StatusBadge, JustificationQualityIndicator, ActionButtonGroup, HODCommentInput } from '../molecules';
+import { StatusBadge, JustificationQualityIndicator, HODCommentInput } from '../molecules';
 import { EmptyState } from '../molecules/EmptyState';
-import { useHOD } from '../../context/HODContext';
+
+const GRADE_SCALE = {
+  'A1': 'Excellent', 'B2': 'Very Good', 'B3': 'Good',
+  'C4': 'Credit',   'C5': 'Credit',   'C6': 'Credit',
+  'D7': 'Pass',     'E8': 'Pass',     'F9': 'Fail',
+};
+
+const toTitle = (str) => str.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim();
+
+const formatValue = (val) => {
+  if (val == null) return '—';
+  if (typeof val === 'object') {
+    if (Array.isArray(val)) return val.map(formatValue).join(', ');
+    return Object.entries(val).map(([k, v]) => `${toTitle(k)}: ${formatValue(v)}`).join('\n');
+  }
+  const str = String(val);
+  const gradeLabel = GRADE_SCALE[str];
+  return gradeLabel ? `${str} (${gradeLabel})` : str;
+};
+
+const DeltaBlock = ({ value, color }) => (
+  <span className={`font-mono text-[10px] ${color} px-2 py-1.5 rounded border whitespace-pre-wrap leading-relaxed`}>
+    {formatValue(value)}
+  </span>
+);
 
 function TimelineEntry({ log, onComment, isExpanded, onToggle }) {
-  const [comment, setComment] = useState(log.hodComment || '');
   const isShort = (log.justification || '').trim().length < 10;
 
   return (
@@ -61,28 +84,23 @@ function TimelineEntry({ log, onComment, isExpanded, onToggle }) {
             <div className="px-3 pb-3 pl-[3.75rem] border-t border-gray-50">
               <div className="py-2 space-y-2">
                 <div className="flex items-center gap-2 text-[10px] text-gray-500">
-                  <span className="font-medium uppercase tracking-wider">Record</span>
+                  <span className="font-medium uppercase tracking-wider">Entry</span>
                   <span className="text-gray-300">|</span>
-                  <span className="font-mono">{log.recordId || '—'}</span>
+                  <span className="font-mono text-[10px]">{log.recordId ? `#${log.recordId.slice(0, 8)}…` : '—'}</span>
                   <span className="text-gray-300">|</span>
-                  <span className="text-gray-400">{log.entityType || log.recordType || '—'}</span>
+                   <span className="text-gray-400">{toTitle(log.entityType || log.recordType || '—')}</span>
                 </div>
 
-                {(log.oldValue || log.newValue) && (
-                  <div className="flex items-center gap-3 py-1 bg-gray-50 rounded-lg px-3">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Delta</span>
-                    <span className="text-xs font-bold text-rose-600">
-                      {(() => {
-                        const o = log.oldValue;
-                        const n = log.newValue;
-                        if (o != null && n != null) return `${JSON.stringify(o)} → ${JSON.stringify(n)}`;
-                        if (o != null) return `${JSON.stringify(o)} → (removed)`;
-                        if (n != null) return `(none) → ${JSON.stringify(n)}`;
-                        return '—';
-                      })()}
-                    </span>
-                  </div>
-                )}
+                  {(log.oldValue || log.newValue) && (
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 py-2 bg-gray-50 rounded-lg px-3">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mt-0.5 shrink-0">Delta</span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <DeltaBlock value={log.oldValue} color="text-rose-700 bg-rose-50 border-rose-100" />
+                        <span className="text-gray-400 text-xs">→</span>
+                        <DeltaBlock value={log.newValue} color="text-emerald-700 bg-emerald-50 border-emerald-100" />
+                      </div>
+                    </div>
+                  )}
 
                 {log.justification && (
                   <div className="py-1">
@@ -114,11 +132,8 @@ function TimelineEntry({ log, onComment, isExpanded, onToggle }) {
 export function AuditLogTimeline({
   logs: controlledLogs,
   onAddComment,
-  filterPresets,
   className,
 }) {
-  const { getFilteredAuditLogs, auditFilter, setAuditFilter } = useHOD();
-  const logs = controlledLogs ?? getFilteredAuditLogs();
   const [expandedId, setExpandedId] = useState(null);
 
   const toggleExpand = (id) => setExpandedId((prev) => (prev === id ? null : id));
@@ -127,34 +142,10 @@ export function AuditLogTimeline({
     onAddComment?.(logId, comment);
   };
 
-  const filters = filterPresets || [
-    { value: 'all', label: 'All' },
-    { value: 'RESOLVED', label: 'Resolved' },
-    { value: 'FLAGGED', label: 'Flagged' },
-    { value: 'LOCKED', label: 'Locked' },
-    { value: 'PENDING', label: 'Pending' },
-    { value: 'DRAFT', label: 'Draft' },
-  ];
+  const logs = controlledLogs ?? [];
 
   return (
     <div className={cn('space-y-3', className)}>
-      <div className="flex items-center gap-2 flex-wrap">
-        {filters.map((f) => (
-          <button
-            key={f.value}
-            onClick={() => setAuditFilter(f.value)}
-            className={cn(
-              'px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all uppercase tracking-wider',
-              auditFilter === f.value
-                ? 'bg-emerald-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            )}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-
       <div className="space-y-2">
         {logs.length === 0 ? (
           <EmptyState context="tickets" variant="compact" />

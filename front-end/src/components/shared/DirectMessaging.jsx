@@ -46,7 +46,7 @@ export function DirectMessaging({ userId, userRole, counterpartRole = 'HOD' }) {
           
           // Update unread count if message is for current user and not read
           if (data.recipientId === currentUserId && !(data.read || false)) {
-            setUncount(prev => prev + 1);
+            setUnreadCount(prev => prev + 1);
           }
         }
       }
@@ -195,6 +195,8 @@ export function DirectMessaging({ userId, userRole, counterpartRole = 'HOD' }) {
                 ))}
               </div>
             )}
+          </div>
+        )}
 
       <div className="mt-3 pt-2 border-t border-border">
         <div className="flex items-center gap-2">

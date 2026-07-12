@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { BarChart3 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 
@@ -40,15 +40,15 @@ export function StatCard({ label, value, icon: Icon, color = 'gray', trend }) {
 
 export function StatusBadge({ status, label }) {
   const styles = {
-    PAID: 'bg-success/10 text-success border-success/20/80',
-    PARTIAL: 'bg-warning/10 text-warning border-warning/20/80',
+    PAID: 'bg-success/10 text-success border-success/20',
+    PARTIAL: 'bg-warning/10 text-warning border-warning/20',
     PENDING: 'bg-background text-text-secondary border-border',
-    OVERDUE: 'bg-destructive/10 text-destructive border-destructive/20/80',
+    OVERDUE: 'bg-destructive/10 text-destructive border-destructive/20',
     ACTIVE: 'bg-success/10 border-success/20 text-success',
     INACTIVE: 'bg-background border-border text-text-secondary',
-    READY: 'bg-success/10 text-success border-success/20/80',
-    MISSING_MARKS: 'bg-destructive/10 text-destructive border-destructive/20/80',
-    PENDING_APPROVAL: 'bg-warning/10 text-warning border-warning/20/80'
+    READY: 'bg-success/10 text-success border-success/20',
+    MISSING_MARKS: 'bg-destructive/10 text-destructive border-destructive/20',
+    PENDING_APPROVAL: 'bg-warning/10 text-warning border-warning/20'
   };
 
   return (

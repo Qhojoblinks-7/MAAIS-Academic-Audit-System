@@ -1,37 +1,45 @@
 import { cn } from '../../lib/utils';
 
 const colorStyles = {
-  emerald: 'bg-success/10 text-success border-success/20',
-  blue: 'bg-brand-primary/5 text-brand-primary border-brand-primary/20',
-  amber: 'bg-warning/10 text-warning border-warning/20',
-  slate: 'bg-background text-text-primary border-border'
+  emerald: 'bg-success/10 text-success',
+  blue: 'bg-brand-primary/5 text-brand-primary',
+  amber: 'bg-warning/10 text-warning',
+  slate: 'bg-background text-text-primary',
 };
 
-export function HODArchiveKPICard({ title, val, note, icon: Icon, color = 'slate' }) {
+export function HODArchiveKPICard({ title, val, note, icon: Icon, color = 'slate', progress }) {
   return (
     <div className={cn(
-      "bg-surface p-3 rounded-xl border border-border shadow-xs w-full flex flex-col justify-between min-w-0",
-      colorStyles[color]
+      "bg-surface p-4 rounded-2xl border border-border/50 shadow-sm hover:shadow-md transition-all relative group"
     )}>
-      <div className="flex items-center gap-2.5 mb-2 min-w-0">
-        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border", colorStyles[color])}>
-          <Icon size={15} />
+      <div className="flex items-center justify-between h-full gap-2">
+        <div className="flex items-center gap-2.5 flex-1 min-w-0">
+          <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shrink-0", colorStyles[color])}>
+            <Icon size={18} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1 truncate whitespace-nowrap">{title}</p>
+            {progress !== undefined ? (
+              <div className="space-y-1">
+                <div className="h-1.5 w-24 bg-border rounded-full overflow-hidden">
+                  <div
+                    className={cn("h-full rounded-full", progress < 40 ? "bg-destructive" : progress < 75 ? "bg-warning" : "bg-success")}
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <p className="text-[9px] font-semibold text-text-secondary whitespace-nowrap">
+                  <span>{progress.toFixed(1)}% Complete</span>
+                </p>
+              </div>
+            ) : (
+              <p className="text-[11px] font-medium text-text-secondary leading-tight truncate whitespace-nowrap">{note}</p>
+            )}
+          </div>
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-black text-text-primary tracking-tighter leading-none truncate">
-            {val}
-          </p>
-          <p className="text-[8px] font-black text-text-secondary uppercase tracking-wider mt-0.5 font-mono leading-none truncate">
-            {title}
-          </p>
+        <div className="text-right pl-2 shrink-0">
+          <p className="text-3xl font-bold tracking-tighter leading-none tabular-nums whitespace-nowrap">{val}</p>
         </div>
       </div>
-
-      {note && (
-        <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wide truncate mt-0.5">
-          {note}
-        </p>
-      )}
     </div>
   );
 }

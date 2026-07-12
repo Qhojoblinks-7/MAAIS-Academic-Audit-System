@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EmptyState } from '../../components/molecules';
@@ -12,7 +12,7 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
-import { useTickets, useUnreadNotifications, useAnalyticsPulse as useAdminAnalyticsPulse, useArchiveStats as useAdminArchiveStats, useAllStudents, useStudentCount, useStudentBoarderStats, useStaffCount, useAllStaff, useApprovals, useResolveApproval, useSystemFreeze, useToggleSystemFreeze, useAllDepartments, useAllSubjects, useAcademicYear, useAcademicYears } from '../../lib/hooks';
+import { useTickets, useUnreadNotifications, useAnalyticsPulse as useAdminAnalyticsPulse, useArchiveStats as useAdminArchiveStats, useAllStudents, useStudentCount, useStudentBoarderStats, useStaffCount, useAllStaff, useApprovals, useResolveApproval, useSystemFreeze, useToggleSystemFreeze, useAllDepartments, useAllSubjects, useAllClasses, useCurriculumMatrix, useAcademicYear, useAcademicYears } from '../../lib/hooks';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
@@ -43,9 +43,9 @@ function Sparkline({ color }) {
 }
 
 const fabActions = [
-  { label: 'Register Node', icon: 'UserPlus', color: 'bg-white text-slate-900', hover: 'hover:bg-slate-100' },
-  { label: 'Broadcast Pulse', icon: 'Radio', color: 'bg-white text-slate-900', hover: 'hover:bg-slate-100' },
-  { label: 'Emergency Freeze', icon: 'Lock', color: 'bg-rose-600 text-white', hover: 'hover:bg-rose-700' },
+  { label: 'Register Node', icon: 'UserPlus', color: 'bg-surface text-text-primary', hover: 'hover:bg-muted' },
+  { label: 'Broadcast Pulse', icon: 'Radio', color: 'bg-surface text-text-primary', hover: 'hover:bg-muted' },
+  { label: 'Emergency Freeze', icon: 'Lock', color: 'bg-destructive text-primary-foreground', hover: 'hover:bg-destructive/90' },
 ];
 
 const registerNodeProtocols = [
@@ -117,6 +117,11 @@ export function AdminHome() {
   const [openKebabId, setOpenKebabId] = React.useState(null);
   const [removedTicketIds, setRemovedTicketIds] = React.useState(new Set());
   const [bulkActionLoading, setBulkActionLoading] = React.useState(false);
+  const [activeTrack, setActiveTrack] = React.useState('ALL');
+  const [selectedClassId, setSelectedClassId] = React.useState('');
+  const [selectedDepartmentId, setSelectedDepartmentId] = React.useState('');
+
+  const classesQuery = useAllClasses();
 
   const activeYear = activeYearQuery.data;
   const academicYears = academicYearsQuery.data || [];
@@ -138,6 +143,8 @@ export function AdminHome() {
     const match = academicYears.find(y => y.label === configForm.academicYear);
     return match?.id || resolvedYear?.id || null;
   }, [configForm.academicYear, academicYears, resolvedYear]);
+
+  const curriculumMatrixQuery = useCurriculumMatrix(selectedAcademicYearId);
 
   const selectedTermId = React.useMemo(() => {
     if (!configForm.term || !resolvedYear?.terms?.length) return activeTerm?.id || null;
@@ -180,6 +187,14 @@ export function AdminHome() {
 
   const departments = departmentsQuery.data || [];
   const subjects = subjectsQuery.data || [];
+
+  const rawClasses = classesQuery.data || [];
+  const classes = Array.isArray(rawClasses) ? rawClasses : (rawClasses?.data || rawClasses?.items || [])
+    .filter((c) => c.id && (c.name || c.className))
+    .sort((a, b) => (a.name || a.className).localeCompare(b.name || b.className));
+
+  const rawMatrix = curriculumMatrixQuery.data || [];
+  const curriculumMatrix = Array.isArray(rawMatrix) ? rawMatrix : (rawMatrix?.data || rawMatrix?.items || []);
 
   const tickets = ticketsQuery.data || [];
   const notifications = notificationsQuery.data || [];
@@ -280,7 +295,7 @@ export function AdminHome() {
     { label: 'Student Census', value: totalStudents, trend: '#10b981', bg: 'bg-success/10', color: 'text-success', subtext: `${boarderCount.toLocaleString()} Boarders / ${dayCount.toLocaleString()} Day Students` },
     { label: 'Faculty Engagement', value: staffCount, trend: '#3b82f6', bg: 'bg-brand-primary/5', color: 'text-brand-primary', subtext: '8 Teachers currently offline' },
     { label: 'Grading Progress', value: gradingProgress, trend: '#f59e0b', progress: gradingProgressBar, bg: 'bg-warning/10', color: 'text-warning', subtext: avgScore ? 'Institutional grade average' : 'Awaiting data...' },
-    { label: 'Flagged Activities', value: unreadCount || '0', trend: '#ef4444', progress: unreadCount ? Math.min((unreadCount / 10) * 100, 100) : 0, bg: 'bg-destructive/10', color: 'text-destructivent', subtext: 'Integrity issues detected' },
+    { label: 'Flagged Activities', value: unreadCount || '0', trend: '#ef4444', progress: unreadCount ? Math.min((unreadCount / 10) * 100, 100) : 0, bg: 'bg-destructive/10', color: 'text-destructive', subtext: 'Integrity issues detected' },
   ];
 
   const chartDatasets = React.useMemo(() => {
@@ -291,6 +306,14 @@ export function AdminHome() {
     const subjectsMap = new Map(subjects.map(s => [s.id, s]));
     const departmentsMap = new Map(departments.map(d => [d.id, d]));
 
+    const subjectClassesMap = new Map();
+    curriculumMatrix.forEach(m => {
+      if (!subjectClassesMap.has(m.subjectId)) {
+        subjectClassesMap.set(m.subjectId, new Set());
+      }
+      subjectClassesMap.get(m.subjectId).add(m.classSectionId);
+    });
+
     const deptData = {};
     analytics.subjectPerformance.forEach(sp => {
       const score = parseFloat(sp.averageScore);
@@ -298,6 +321,15 @@ export function AdminHome() {
 
       const subject = subjectsMap.get(sp.subjectId);
       if (!subject?.departmentId) return;
+
+      if (activeTrack !== 'ALL' && subject.type !== activeTrack) return;
+
+      if (selectedClassId) {
+        const assignedClasses = subjectClassesMap.get(sp.subjectId);
+        if (subject.type !== 'Core' && (!assignedClasses || !assignedClasses.has(selectedClassId))) {
+          return;
+        }
+      }
 
       const deptId = subject.departmentId;
       if (!deptData[deptId]) {
@@ -318,6 +350,8 @@ export function AdminHome() {
     Object.entries(deptData).forEach(([deptId, data]) => {
       const dept = departmentsMap.get(deptId);
       const name = dept?.name || data.name || deptId;
+
+      if (selectedDepartmentId && deptId !== selectedDepartmentId) return;
 
       const avgScore = data.count > 0 ? Math.round(data.sum / data.count) : 0;
       avgScoreTab.push({
@@ -340,7 +374,7 @@ export function AdminHome() {
       'Avg Score': avgScoreTab,
       'Completion': completionTab,
     };
-  }, [analytics, subjects, departments, totalStudents]);
+  }, [analytics, subjects, departments, totalStudents, activeTrack, selectedClassId, selectedDepartmentId, curriculumMatrix]);
 
   React.useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -544,7 +578,7 @@ export function AdminHome() {
                 }
                 setShowConfigModal(true);
               }}
-              className="px-3 py-1.5 bg-brand-dark text-white rounded-xl flex items-center gap-2 shadow-md hover:bg-brand-dark transition-all cursor-pointer"
+              className="px-3 py-1.5 bg-brand-dark text-primary-foreground rounded-xl flex items-center gap-2 shadow-md hover:bg-brand-dark/90 transition-all cursor-pointer"
             >
               <Calendar size={12} className="text-text-secondary" />
               <span className="text-[9px] font-black tracking-wider uppercase">{activeYearLabel || 'No Year'} Academic • {activeTermLabel || '—'}</span>
@@ -608,27 +642,68 @@ export function AdminHome() {
                })}
              </div>
 
-             {/* Performance Heatmap */}
-             <section className="bg-surface p-5 rounded-2xl border border-border shadow-sm relative overflow-hidden shrink-0">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-[11px] font-black text-text-primary uppercase tracking-wider">Departmental Performance Heatmap</h3>
-                  <p className="text-[9px] font-semibold text-text-secondary uppercase tracking-widest mt-0.5">Academic Health Quotient</p>
+              {/* Performance Heatmap */}
+              <section className="bg-surface p-5 rounded-2xl border border-border shadow-sm relative overflow-hidden shrink-0">
+               <div className="flex flex-col gap-3 mb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-[11px] font-black text-text-primary uppercase tracking-wider">Departmental Performance Heatmap</h3>
+                    <p className="text-[9px] font-semibold text-text-secondary uppercase tracking-widest mt-0.5">Academic Health Quotient</p>
+                  </div>
+                  <div className="flex bg-background p-0.5 rounded-lg border border-border">
+                    {Object.keys(chartDatasets).map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => setActiveMetric(t)}
+                        className={cn(
+                          "px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-wider transition-all",
+                          t === activeMetric ? "bg-surface text-text-primary shadow-xs" : "text-text-secondary hover:text-text-secondary"
+                        )}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-<div className="flex bg-background p-0.5 rounded-lg border border-border">
-                   {Object.keys(chartDatasets).map((t) => (
-                     <button 
-                       key={t} 
-                       onClick={() => setActiveMetric(t)}
-                       className={cn(
-                         "px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-wider transition-all",
-                         t === activeMetric ? "bg-surface text-text-primary shadow-xs" : "text-text-secondary hover:text-text-secondary"
-                       )}
-                     >
-                       {t}
-                     </button>
-                   ))}
-                 </div>
+
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex bg-background p-0.5 rounded-lg border border-border">
+                    {['ALL', 'CORE', 'ELECTIVE'].map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => setActiveTrack(t)}
+                        className={cn(
+                          "px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-wider transition-all",
+                          t === activeTrack ? "bg-surface text-text-primary shadow-xs" : "text-text-secondary hover:text-text-secondary"
+                        )}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+
+                  <select
+                    value={selectedClassId}
+                    onChange={(e) => setSelectedClassId(e.target.value)}
+                    className="px-2.5 py-1 bg-background border border-border rounded-md text-[10px] font-bold text-text-primary uppercase tracking-wider"
+                  >
+                    <option value="">All Classes</option>
+                    {(classes || []).map((c) => (
+                      <option key={c.id} value={c.id}>{c.name || c.className}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={selectedDepartmentId}
+                    onChange={(e) => setSelectedDepartmentId(e.target.value)}
+                    className="px-2.5 py-1 bg-background border border-border rounded-md text-[10px] font-bold text-text-primary uppercase tracking-wider"
+                  >
+                    <option value="">All Departments</option>
+                    {(departments || []).map((d) => (
+                      <option key={d.id} value={d.id}>{d.name || d.code || d.id}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div className="h-[180px] w-full text-xs">
@@ -679,10 +754,10 @@ export function AdminHome() {
              <section className="bg-brand-dark rounded-2xl p-5 shadow-md relative overflow-hidden flex flex-col">
                <div className="flex items-center justify-between mb-4">
                  <div>
-                   <h3 className="text-[11px] font-black text-white uppercase tracking-wider">Registry Activity Feed</h3>
+                   <h3 className="text-[11px] font-black text-primary-foreground uppercase tracking-wider">Registry Activity Feed</h3>
                    <p className="text-[9px] font-semibold text-text-secondary uppercase tracking-widest mt-0.5">Live Audit Trail</p>
                  </div>
-                 <Link to="/audit/extended" className="text-[8px] font-black text-text-secondary uppercase tracking-wider hover:text-white transition-all">View Extended</Link>
+                 <Link to="/audit/extended" className="text-[8px] font-black text-text-secondary uppercase tracking-wider hover:text-primary-foreground transition-all">View Extended</Link>
                </div>
 
                 <div className="overflow-y-auto scrollbar-hide custom-scrollbar space-y-0.5 text-xs max-h-64">
@@ -699,7 +774,7 @@ export function AdminHome() {
                         "w-1 h-1 rounded-full shrink-0", 
                         log.type === 'comm' ? 'bg-brand-secondary' : log.type === 'security' ? 'bg-destructive' : 'bg-brand-dark group-hover:bg-success'
                       )} />
-                      <p className="text-xs font-medium text-text-secondary truncate group-hover:text-white">{log.event}</p>
+                      <p className="text-xs font-medium text-text-secondary truncate group-hover:text-primary-foreground">{log.event}</p>
                     </motion.div>
                   ))}
                 </AnimatePresence>
@@ -736,7 +811,7 @@ export function AdminHome() {
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <p className="text-xs font-black text-text-primary truncate leading-none mb-0.5">{req.teacher}</p>
-                                {meta.highPriority && <span className="px-1 py-0.5 bg-destructive text-white text-[8px] font-black uppercase rounded">High Priority</span>}
+                                {meta.highPriority && <span className="px-1 py-0.5 bg-destructive text-primary-foreground text-[8px] font-black uppercase rounded">High Priority</span>}
                                 {meta.escalated && <Flag size={10} className="text-destructive" />}
                                 {meta.deferred && <span className="px-1 py-0.5 bg-warning/10 text-warning text-[8px] font-black uppercase rounded">Deferred</span>}
                               </div>
@@ -764,7 +839,7 @@ export function AdminHome() {
                         <div className="flex gap-1.5 opacity-0 group-hover/card:opacity-100 transition-opacity">
                           <button 
                             onClick={() => handleResolveApproval(req.id, 'grant', req.teacher)}
-                            className="flex-1 py-1.5 bg-success text-white rounded-lg text-[8px] font-black uppercase tracking-wider hover:bg-success/90 transition-all flex items-center justify-center gap-1"
+                            className="flex-1 py-1.5 bg-success text-primary-foreground rounded-lg text-[8px] font-black uppercase tracking-wider hover:bg-success/90 transition-all flex items-center justify-center gap-1"
                           >
                             <ThumbsUp size={10} /> Grant
                           </button>
@@ -795,7 +870,7 @@ export function AdminHome() {
                 <h3 className="text-[11px] font-black text-text-primary uppercase tracking-wider mb-0">Network Support Queue</h3>
                 <button 
                   onClick={() => navigate('/support/new')}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-brand-dark text-white rounded-lg text-[8px] font-black uppercase tracking-wider hover:bg-brand-dark transition-all"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-brand-dark text-primary-foreground rounded-lg text-[8px] font-black uppercase tracking-wider hover:bg-brand-dark/90 transition-all"
                 >
                   <Plus size={14} /> New Ticket
                 </button>
@@ -858,7 +933,7 @@ export function AdminHome() {
       <Button variant="outline" className="p-1 h-7 w-7" title="Copy Memo" onClick={handleCopyMemo}>
         <Copy size={12} />
       </Button>
-      <Button className="h-7 px-2 text-[8px] font-black uppercase tracking-wider bg-brand-dark text-white hover:bg-brand-dark" onClick={handleDispatchMemo}>
+      <Button className="h-7 px-2 text-[8px] font-black uppercase tracking-wider bg-brand-dark text-primary-foreground hover:bg-brand-dark/90" onClick={handleDispatchMemo}>
         <Send size={10} className="mr-1" /> Dispatch
       </Button>
     </div>
@@ -922,8 +997,8 @@ export function AdminHome() {
            onClick={() => setFabOpen(!fabOpen)}
            className={cn(
              "w-12 h-12 rounded-xl flex items-center justify-center transition-all shadow-md transform active:scale-95 z-50",
-             fabOpen ? "bg-brand-dark text-white rotate-45" : 
-             isFreezeActive ? "bg-destructive text-white animate-pulse" : "bg-brand-dark text-white"
+             fabOpen ? "bg-brand-dark text-primary-foreground rotate-45" : 
+             isFreezeActive ? "bg-destructive text-primary-foreground animate-pulse" : "bg-brand-dark text-primary-foreground"
            )}
          >
            {isFreezeActive && !fabOpen ? <Lock size={20} /> : <Plus size={20} />}
@@ -972,10 +1047,10 @@ export function AdminHome() {
            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
               <div className="absolute inset-0 bg-brand-dark/40 backdrop-blur-xs" onClick={() => setActiveAction(null)} />
               <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-md bg-surface rounded-2xl shadow-xl overflow-hidden">
-                <div className="p-5 bg-brand-dark text-white flex justify-between items-center">
+                <div className="p-5 bg-brand-dark text-primary-foreground flex justify-between items-center">
                   <div>
                     <h3 className="text-xl font-black italic font-display">Broadcast Pulse</h3>
-                    <p className="text-[8px] font-black uppercase text-white/50 tracking-wider mt-0.5">Omni-Channel Channels</p>
+                    <p className="text-[8px] font-black uppercase text-primary-foreground/50 tracking-wider mt-0.5">Omni-Channel Channels</p>
                   </div>
                   <X size={18} className="cursor-pointer hover:text-destructive transition-all" onClick={() => setActiveAction(null)} />
                 </div>
@@ -990,7 +1065,7 @@ export function AdminHome() {
                            variant="outline"
                            className={cn(
                              "flex-1 py-2",
-                             c === selectedChannel ? "bg-brand-dark text-white" : "text-text-secondary"
+                             c === selectedChannel ? "bg-brand-dark text-primary-foreground" : "text-text-secondary"
                            )}
                          >
                            {c}
@@ -1012,7 +1087,7 @@ export function AdminHome() {
                      disabled={!broadcastPayload.trim()}
                      className={cn(
                        "w-full py-3.5",
-                       broadcastPayload.trim() ? "bg-brand-dark text-white" : "bg-border text-text-secondary"
+                       broadcastPayload.trim() ? "bg-brand-dark text-primary-foreground" : "bg-border text-text-secondary"
                      )}
                    >
                      <Radio size={14} className={cn(broadcastPayload.trim() && "animate-pulse")} /> Initiate Global Pulse
@@ -1180,7 +1255,7 @@ export function AdminHome() {
 
                 <button
                   onClick={handleConfigSave}
-                  className="w-full py-3 bg-brand-dark text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-black transition-all shadow-lg"
+                  className="w-full py-3 bg-brand-dark text-primary-foreground rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-brand-dark/90 transition-all shadow-lg"
                 >
                   Save Configuration
                 </button>
@@ -1213,18 +1288,18 @@ export function AdminHome() {
                       <p className="text-[10px] font-bold text-text-secondary">Index #{1000 + i} • Grade Change Request</p>
                     </div>
                     <div className="flex gap-2">
-                      <button onClick={() => { toast.success(`Approval #${i + 1} granted`); pushLog(`Approval #${i + 1} granted by Admin.`, 'system'); }} className="px-3 py-1.5 bg-success text-white rounded-lg text-[9px] font-black uppercase">Grant</button>
+                      <button onClick={() => { toast.success(`Approval #${i + 1} granted`); pushLog(`Approval #${i + 1} granted by Admin.`, 'system'); }} className="px-3 py-1.5 bg-success text-primary-foreground rounded-lg text-[9px] font-black uppercase">Grant</button>
                       <button onClick={() => { toast.success(`Approval #${i + 1} aborted`); pushLog(`Approval #${i + 1} aborted by Admin.`, 'security'); }} className="px-3 py-1.5 bg-surface border border-border text-text-secondary rounded-lg text-[9px] font-black uppercase hover:text-destructive hover:border-destructive/30">Abort</button>
                     </div>
                   </div>
                 ))}
               </div>
               <div className="p-5 border-t border-border flex gap-3">
-                <button onClick={() => handleBulkAction('grant')} disabled={bulkActionLoading} className="flex-1 py-3 bg-success text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-success/90 disabled:opacity-50 flex items-center justify-center gap-2">
+                <button onClick={() => handleBulkAction('grant')} disabled={bulkActionLoading} className="flex-1 py-3 bg-success text-primary-foreground rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-success/90 disabled:opacity-50 flex items-center justify-center gap-2">
                   {bulkActionLoading && <Loader2 size={14} className="animate-spin" />}
                   Grant All
                 </button>
-                <button onClick={() => handleBulkAction('clear')} disabled={bulkActionLoading} className="flex-1 py-3 bg-destructive text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-destructive/90 disabled:opacity-50 flex items-center justify-center gap-2">
+                <button onClick={() => handleBulkAction('clear')} disabled={bulkActionLoading} className="flex-1 py-3 bg-destructive text-primary-foreground rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-destructive/90 disabled:opacity-50 flex items-center justify-center gap-2">
                   {bulkActionLoading && <Loader2 size={14} className="animate-spin" />}
                   Clear Queue
                 </button>
@@ -1268,15 +1343,15 @@ export function AdminHome() {
                 </div>
               </div>
               <div className="p-5 border-t border-border flex gap-3">
-                <button onClick={() => handleRebootNode(selectedTicket.id)} disabled={rebootingNodeId === selectedTicket.id} className="flex-1 py-3 bg-brand-primary text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-brand-primary/90 disabled:opacity-50 flex items-center justify-center gap-2">
+                <button onClick={() => handleRebootNode(selectedTicket.id)} disabled={rebootingNodeId === selectedTicket.id} className="flex-1 py-3 bg-brand-primary text-primary-foreground rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-brand-primary/90 disabled:opacity-50 flex items-center justify-center gap-2">
                   {rebootingNodeId === selectedTicket.id && <Loader2 size={14} className="animate-spin" />}
                   <RefreshCw size={14} /> Reboot Node
                 </button>
-                <button onClick={() => handleIssueToken(selectedTicket.id)} disabled={issuingTokenId === selectedTicket.id} className="flex-1 py-3 bg-warning text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-warning/90 disabled:opacity-50 flex items-center justify-center gap-2">
+                <button onClick={() => handleIssueToken(selectedTicket.id)} disabled={issuingTokenId === selectedTicket.id} className="flex-1 py-3 bg-warning text-primary-foreground rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-warning/90 disabled:opacity-50 flex items-center justify-center gap-2">
                   {issuingTokenId === selectedTicket.id && <Loader2 size={14} className="animate-spin" />}
                   <KeyRound size={14} /> Issue Temp Token
                 </button>
-                <button onClick={() => handleMarkResolved(selectedTicket.id)} disabled={resolvingTicketId === selectedTicket.id} className="flex-1 py-3 bg-success text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-success/90 disabled:opacity-50 flex items-center justify-center gap-2">
+                <button onClick={() => handleMarkResolved(selectedTicket.id)} disabled={resolvingTicketId === selectedTicket.id} className="flex-1 py-3 bg-success text-primary-foreground rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-success/90 disabled:opacity-50 flex items-center justify-center gap-2">
                   {resolvingTicketId === selectedTicket.id && <Loader2 size={14} className="animate-spin" />}
                   <CircleCheck size={14} /> Mark Resolved
                 </button>

@@ -30,15 +30,15 @@ import { Card } from '@/components/ui/card';
 import { useStudentBehavior, useStudentInterventions } from '@/lib/hooks/api/admin';
 
 const getWAECGrade = (score) => {
-  if (score >= 80) return { grade: 'A1', color: 'bg-slate-100 text-slate-900 border-slate-300 font-bold' };
-  if (score >= 70) return { grade: 'B2', color: 'bg-slate-50 text-slate-800 border-slate-205' };
-  if (score >= 65) return { grade: 'B3', color: 'bg-slate-50 text-slate-850 border-slate-205' };
-  if (score >= 60) return { grade: 'C4', color: 'bg-[#F9F9F7] text-slate-700 border-slate-200' };
-  if (score >= 55) return { grade: 'C5', color: 'bg-[#F9F9F7] text-slate-705 border-slate-200' };
-  if (score >= 50) return { grade: 'C6', color: 'bg-[#F9F9F7] text-slate-705 border-slate-200' };
-  if (score >= 45) return { grade: 'D7', color: 'bg-amber-50 text-amber-800 border-amber-200' };
-  if (score >= 40) return { grade: 'E8', color: 'bg-orange-50 text-orange-800 border-orange-200' };
-  return { grade: 'F9', color: 'bg-rose-50 text-rose-800 border-rose-250' };
+  if (score >= 80) return { grade: 'A1', color: 'bg-muted text-foreground border-border font-bold' };
+  if (score >= 70) return { grade: 'B2', color: 'bg-muted text-foreground border-border' };
+  if (score >= 65) return { grade: 'B3', color: 'bg-muted text-foreground border-border' };
+  if (score >= 60) return { grade: 'C4', color: 'bg-muted text-foreground border-border' };
+  if (score >= 55) return { grade: 'C5', color: 'bg-muted text-foreground border-border' };
+  if (score >= 50) return { grade: 'C6', color: 'bg-muted text-foreground border-border' };
+  if (score >= 45) return { grade: 'D7', color: 'bg-warning/10 text-warning border-warning/20' };
+  if (score >= 40) return { grade: 'E8', color: 'bg-warning/10 text-warning border-warning/20' };
+  return { grade: 'F9', color: 'bg-destructive/10 text-destructive border-destructive/20' };
 };
 
 function mapBehaviorToObservation(raw) {
@@ -220,7 +220,7 @@ export function HODArchiveDetailView({ student, onBack }) {
      
 
       {showToast && (
-        <div className="fixed bottom-8 right-8 bg-slate-900 border border-slate-800 text-white px-6 py-4 rounded-2xl shadow-xl z-50 flex items-center gap-3 text-xs font-black tracking-wide animate-bounce">
+        <div className="fixed bottom-8 right-8 bg-foreground border border-foreground/20 text-background px-6 py-4 rounded-2xl shadow-xl z-50 flex items-center gap-3 text-xs font-black tracking-wide animate-bounce">
           <ShieldCheck className="text-emerald-400" size={16} />
           {showToast}
         </div>
@@ -277,7 +277,7 @@ export function HODArchiveDetailView({ student, onBack }) {
                 alt={student.name}
                 className="w-24 h-24 rounded-[2rem] bg-muted p-1 border-4 border-muted shadow-md"
               />
-              <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-xl flex items-center justify-center text-white bg-foreground shadow-lg border-2 border-white">
+              <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-xl flex items-center justify-center text-background bg-foreground shadow-lg border-2 border-white">
                 <ShieldCheck size={16} />
               </div>
             </div>
@@ -285,7 +285,7 @@ export function HODArchiveDetailView({ student, onBack }) {
             <div className="text-center md:text-left">
               <div className="flex items-center justify-center md:justify-start gap-3">
                 <span className="px-2.5 py-0.5 bg-muted font-mono rounded-lg text-[10px] font-black uppercase tracking-widest">{student.index}</span>
-                <span className="px-2.5 py-0.5 bg-foreground text-white rounded-lg text-[10px] font-black uppercase tracking-widest">Class of {student.graduationYear}</span>
+                <span className="px-2.5 py-0.5 bg-foreground text-background rounded-lg text-[10px] font-black uppercase tracking-widest">Class of {student.graduationYear}</span>
               </div>
               <h1 className="text-3xl font-black text-foreground tracking-tighter mt-2">{student.name}</h1>
               <p className="text-muted-foreground font-bold text-xs mt-1 uppercase tracking-wider font-sans">
@@ -304,8 +304,19 @@ export function HODArchiveDetailView({ student, onBack }) {
             ].map((stat, i) => (
               <div key={i} className="bg-muted/80 border border-border rounded-2xl px-5 py-4 min-w-[130px] flex flex-col justify-between">
                 <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{stat.label}</p>
-                <p className={cn('text-xl font-extrabold tracking-tight mt-1 text-foreground', stat.accent && 'text-success bg-none font-black text-[10px]')}>
-                  {stat.val}
+                <p className={cn(
+                  'mt-1 text-foreground tracking-tight',
+                  stat.accent ? 'text-[10px] font-black text-success' : 'text-5xl font-extrabold'
+                )}>
+                  {(() => {
+                    if (stat.accent) return stat.val;
+                    const s = String(stat.val);
+                    return s.endsWith('%') ? (
+                      <>{s.slice(0, -1)}<span className="text-2xl font-bold align-baseline">{s.slice(-1)}</span></>
+                    ) : (
+                      stat.val
+                    );
+                  })()}
                 </p>
                 <p className="text-[9px] font-semibold text-muted-foreground mt-1 leading-none">{stat.note}</p>
               </div>
@@ -314,28 +325,28 @@ export function HODArchiveDetailView({ student, onBack }) {
         </Card>
 
 {/* Section 1: Dynamic Performance Trend Graph */}
-        <section className="bg-white rounded-[2.5rem] border border-slate-200/60 p-8 shadow-sm">
-          <header className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+        <section className="bg-card rounded-[2.5rem] border border-border p-8 shadow-sm">
+          <header className="flex items-center justify-between mb-6 pb-4 border-b border-border">
             <div className="flex items-center gap-3 font-sans">
-              <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-900">
+              <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center text-foreground">
                 <TrendingUp size={20} />
               </div>
               <div>
-                <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">1. Verified Academic Profile Trajectory</h3>
-                <p className="text-[10px] font-bold text-slate-400 uppercase">Tamper-Proof Longitudinal Progress Tracker</p>
+                <h3 className="text-sm font-black text-foreground uppercase tracking-widest">1. Verified Academic Profile Trajectory</h3>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase">Tamper-Proof Longitudinal Progress Tracker</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg text-[9px] font-black text-slate-600 uppercase tracking-wider">
-              <Bot size={13} className="text-slate-900" />
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg text-[9px] font-black text-muted-foreground uppercase tracking-wider">
+              <Bot size={13} className="text-foreground" />
               Department Certified Grade trace
             </div>
           </header>
 
           {history.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 bg-slate-50/50 border border-slate-200/50 rounded-3xl text-center">
-              <History size={36} className="text-slate-300 mb-2 font-sans" />
-              <p className="text-xs font-black text-slate-800 uppercase tracking-widest">No Past Terms Archived Yet</p>
-              <p className="text-[10px] text-slate-450 uppercase font-black tracking-wider mt-1">This student is currently in SHS 1. Archives compile starting in Form 2.</p>
+            <div className="flex flex-col items-center justify-center py-20 bg-muted/50 border border-border rounded-3xl text-center">
+              <History size={36} className="text-muted-foreground mb-2 font-sans" />
+              <p className="text-xs font-black text-foreground uppercase tracking-widest">No Past Terms Archived Yet</p>
+              <p className="text-[10px] text-muted-foreground uppercase font-black tracking-wider mt-1">This student is currently in SHS 1. Archives compile starting in Form 2.</p>
             </div>
           ) : (
             <div className="h-[300px] w-full pt-4">
@@ -343,30 +354,30 @@ export function HODArchiveDetailView({ student, onBack }) {
                 <AreaChart data={history}>
                   <defs>
                     <linearGradient id="hodTrendGlow1" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0f172a" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#0f172a" stopOpacity={0} />
+                      <stop offset="5%" stopColor="var(--brand-primary)" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="var(--brand-primary)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e2e8f0" />
+                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="var(--border)" />
                   <XAxis
                     dataKey="term"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 9, fontWeight: 900, fill: '#64748b' }}
+                    tick={{ fontSize: 9, fontWeight: 900, fill: 'var(--muted-foreground)' }}
                     dy={8}
                   />
                   <YAxis
                     domain={[30, 100]}
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 9, fontWeight: 900, fill: '#64748b' }}
+                    tick={{ fontSize: 9, fontWeight: 900, fill: 'var(--muted-foreground)' }}
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#0f172a',
+                      backgroundColor: 'var(--foreground)',
                       borderRadius: '16px',
                       border: 'none',
-                      color: 'white',
+                      color: 'var(--background)',
                       fontSize: '11px',
                       fontWeight: 900,
                       boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
@@ -376,7 +387,7 @@ export function HODArchiveDetailView({ student, onBack }) {
                   <Area
                     type="monotone"
                     dataKey="finalGrade"
-                    stroke="#0f172a"
+                    stroke="var(--brand-primary)"
                     strokeWidth={5}
                     fillOpacity={1}
                     fill="url(#hodTrendGlow1)"
@@ -413,7 +424,7 @@ export function HODArchiveDetailView({ student, onBack }) {
                   <Card key={term.term} className="rounded-3xl overflow-hidden flex flex-col">
                     <div className="bg-muted px-6 py-4.5 border-b border-border flex justify-between items-center">
                       <div className="flex items-center gap-3 font-sans">
-                        <div className="w-8 h-8 bg-foreground rounded-lg flex items-center justify-center text-white text-xs font-black">
+                        <div className="w-8 h-8 bg-foreground rounded-lg flex items-center justify-center text-background text-xs font-black">
                           {tIdx + 1}
                         </div>
                         <div>
@@ -591,24 +602,24 @@ export function HODArchiveDetailView({ student, onBack }) {
         </div>
 
 {/* Section 4: HOD Final Certification */}
-        <section className="bg-foreground rounded-[3rem] p-10 text-white shadow-xl relative overflow-hidden font-sans">
+        <section className="bg-foreground rounded-[3rem] p-10 text-background shadow-xl relative overflow-hidden font-sans">
           <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-tr from-white/10 to-white/0 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
 
           <div className="relative">
             <header className="flex items-center gap-3 mb-8">
-              <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white">
+              <div className="w-10 h-10 bg-card/10 rounded-xl flex items-center justify-center text-background">
                 <ShieldCheck size={20} />
               </div>
               <div>
-                <h4 className="text-sm font-black text-white uppercase tracking-widest font-sans">5. Official Board Endorsement & Certificate of Clearance</h4>
-                <p className="text-[10px] font-bold text-slate-400 uppercase">Archived Clearance Statement and Seal verification indicators</p>
+                <h4 className="text-sm font-black text-background uppercase tracking-widest font-sans">5. Official Board Endorsement & Certificate of Clearance</h4>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase">Archived Clearance Statement and Seal verification indicators</p>
               </div>
             </header>
 
             <div className="space-y-6">
               <div className="bg-foreground/60 p-6 rounded-2xl border border-border/60">
                 <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest block mb-2">Authenticated HOD Entry Note</span>
-                <p className="text-sm font-semibold italic text-white/80 leading-relaxed">
+                <p className="text-sm font-semibold italic text-background/80 leading-relaxed">
                   "{student.hodComment || 'Overall academic portfolio audited and cleared for permanent historical archive.'}"
                 </p>
               </div>
@@ -616,7 +627,7 @@ export function HODArchiveDetailView({ student, onBack }) {
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-foreground/60">
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 rounded-full shrink-0 bg-success animate-pulse" />
-                  <p className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                     Archive Status: VERIFIED & SEALED IN HISTORICAL VAULT
                   </p>
                 </div>
@@ -636,11 +647,11 @@ export function HODArchiveDetailView({ student, onBack }) {
             <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 border-t border-foreground/80 [border-top-style:dashed]">
               <div className="text-center md:text-left">
                 <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest block leading-none mb-1">Audit Clearance Anchor</span>
-                <span className="text-[11px] font-mono font-black text-white/80">MAAIS-VAULT-HASH-{student.id}-99X</span>
+                <span className="text-[11px] font-mono font-black text-background/80">MAAIS-VAULT-HASH-{student.id}-99X</span>
               </div>
               <div className="text-center md:text-right">
                 <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest block leading-none mb-1">Approved Department Head Signature</span>
-                <span className="text-sm font-display italic font-medium text-white/80">Head of Department, General & Applied Sciences</span>
+                <span className="text-sm font-display italic font-medium text-background/80">Head of Department, General & Applied Sciences</span>
               </div>
             </div>
           </div>

@@ -26,14 +26,14 @@ function ChatBubble({ msg }) {
   const role = (msg.role || '').toUpperCase();
   return (
     <div className={cn('flex gap-3', role === 'HOD' ? 'flex-row' : 'flex-row-reverse')}>
-      <div className={cn('w-8 h-8 flex items-center justify-center rounded-full shrink-0', role === 'HOD' ? 'bg-amber-100 text-amber-600' : role === 'TEACHER' ? 'bg-sky-100 text-sky-600' : 'bg-slate-200 text-slate-600')}>
+      <div className={cn('w-8 h-8 flex items-center justify-center rounded-full shrink-0', role === 'HOD' ? 'bg-warning/10 text-warning' : role === 'TEACHER' ? 'bg-brand-primary/10 text-brand-primary' : 'bg-muted text-muted-foreground')}>
         {role === 'HOD' ? 'H' : role === 'TEACHER' ? 'T' : '?'}
       </div>
       <div className="flex-1 max-w-[80%]">
-        <div className={cn('px-3 py-2 rounded-xl', role === 'HOD' ? 'bg-amber-50 text-slate-800 rounded-tl-none' : role === 'TEACHER' ? 'bg-sky-50 text-slate-800 rounded-tr-none' : 'bg-slate-100 text-slate-800 rounded-tl-none')}>
-          <p className="text-xs font-medium text-slate-500 mb-0.5">{msg.user}</p>
-          <p className="text-sm text-slate-800 whitespace-pre-wrap break-words">{msg.message}</p>
-          <p className="text-xs text-slate-400 mt-1">{formatTime(msg.time)}</p>
+        <div className={cn('px-3 py-2 rounded-xl', role === 'HOD' ? 'bg-warning/10 text-foreground rounded-tl-none' : role === 'TEACHER' ? 'bg-brand-primary/10 text-foreground rounded-tr-none' : 'bg-muted text-foreground rounded-tl-none')}>
+          <p className="text-xs font-medium text-muted-foreground mb-0.5">{msg.user}</p>
+          <p className="text-sm text-foreground whitespace-pre-wrap break-words">{msg.message}</p>
+          <p className="text-xs text-muted-foreground mt-1">{formatTime(msg.time)}</p>
         </div>
       </div>
     </div>
@@ -119,15 +119,15 @@ export function RevisionRequests({ pipeline }) {
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-foreground rounded-xl flex items-center justify-center shadow-sm">
-                <AlertTriangle size={18} className="text-amber-400" />
+                <AlertTriangle size={18} className="text-warning" />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-foreground tracking-tight">HOD Revision Review</h1>
                 <p className="text-xs text-muted-foreground font-medium">Approve or reject grade revision requests from teachers</p>
               </div>
             </div>
-            <div className="hidden sm:flex items-center gap-1.5 bg-amber-50 text-amber-800 px-2.5 py-1 rounded-lg border border-amber-200/30 text-[11px] font-semibold">
-              <AlertTriangle size={12} className="text-amber-600 animate-pulse" />
+            <div className="hidden sm:flex items-center gap-1.5 bg-warning/10 text-warning px-2.5 py-1 rounded-lg border border-warning/20 text-[11px] font-semibold">
+              <AlertTriangle size={12} className="text-warning animate-pulse" />
               <span>{pendingCount} Pending Approvals</span>
             </div>
           </div>
@@ -155,7 +155,7 @@ export function RevisionRequests({ pipeline }) {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search student, code, course..."
-                className="w-full pl-9 pr-4 py-1.5 bg-muted border border-border rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-950/5 focus:border-slate-400 transition-all placeholder:text-muted-foreground"
+                className="w-full pl-9 pr-4 py-1.5 bg-muted border border-border rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-brand-primary/10 focus:border-brand-primary transition-all placeholder:text-muted-foreground"
               />
             </div>
           </div>
@@ -184,7 +184,7 @@ export function RevisionRequests({ pipeline }) {
                   {isSelected && <div className="absolute top-0 bottom-0 left-0 w-1 bg-foreground rounded-l-xl" />}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded border tracking-wide', statusStyles[(job.status || '').toUpperCase()] || 'bg-slate-100')}>{statusLabel(job.status)}</span>
+                      <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded border tracking-wide', statusStyles[(job.status || '').toUpperCase()] || 'bg-muted')}>{statusLabel(job.status)}</span>
                       <span className={cn('text-[9px] font-extrabold px-1.5 py-0.5 rounded border tracking-wider', severityStyles[job.severity] || '')}>{job.severity}</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-muted-foreground text-[11px] font-medium">
@@ -261,12 +261,12 @@ export function RevisionRequests({ pipeline }) {
                   >
                     {selected.issue && (
                       <div className="flex gap-3 flex-row">
-                        <div className="w-8 h-8 flex items-center justify-center rounded-full bg-amber-100 text-amber-600 shrink-0">H</div>
+                        <div className="w-8 h-8 flex items-center justify-center rounded-full bg-warning/10 text-warning shrink-0">H</div>
                         <div className="flex-1 max-w-[80%]">
-                          <div className="px-3 py-2 rounded-xl bg-amber-50 text-slate-800 rounded-tl-none">
-                            <p className="text-xs font-medium text-slate-500 mb-0.5">HOD</p>
-                            <p className="text-sm text-slate-800 whitespace-pre-wrap break-words">{selected.issue}</p>
-                            <p className="text-xs text-slate-400 mt-1">{formatTime(selected.time)}</p>
+                          <div className="px-3 py-2 rounded-xl bg-warning/10 text-foreground rounded-tl-none">
+                            <p className="text-xs font-medium text-muted-foreground mb-0.5">HOD</p>
+                            <p className="text-sm text-foreground whitespace-pre-wrap break-words">{selected.issue}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{formatTime(selected.time)}</p>
                           </div>
                         </div>
                       </div>
@@ -285,7 +285,7 @@ export function RevisionRequests({ pipeline }) {
                     onChange={(e) => setDiscussionInput(e.target.value)}
                     placeholder="Type your message..."
                     rows={1}
-                    className="w-full p-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-500/20 resize-none"
+                    className="w-full p-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-primary/10 resize-none"
                     disabled={isSending}
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendDiscussionMessage(); } }}
                   />
@@ -305,27 +305,27 @@ export function RevisionRequests({ pipeline }) {
                     value={hodComment}
                     onChange={(e) => setHodComment(e.target.value)}
                     placeholder="Add your approval or rejection reason..."
-                    className="w-full p-3 bg-muted/60 border border-border rounded-xl text-xs font-medium focus:bg-card focus:outline-none focus:ring-2 focus:ring-foreground/5 focus:border-slate-500 placeholder:text-muted-foreground resize-none transition-all leading-relaxed"
+                    className="w-full p-3 bg-muted/60 border border-border rounded-xl text-xs font-medium focus:bg-card focus:outline-none focus:ring-2 focus:ring-brand-primary/10 focus:border-brand-primary placeholder:text-muted-foreground resize-none transition-all leading-relaxed"
                   />
                   <div className="flex gap-2">
                     <button
                       onClick={handleApprove}
                       disabled={!hodComment.trim() || isApproving}
-                      className={cn('flex-1 py-2.5 rounded-xl text-xs font-bold tracking-wide border transition-all flex items-center justify-center gap-1.5', hodComment.trim() && !isApproving ? 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700 cursor-pointer shadow-sm' : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60')}
+                      className={cn('flex-1 py-2.5 rounded-xl text-xs font-bold tracking-wide border transition-all flex items-center justify-center gap-1.5', hodComment.trim() && !isApproving ? 'bg-success border-success text-primary-foreground hover:bg-success/90 cursor-pointer shadow-sm' : 'bg-muted border-border text-muted-foreground cursor-not-allowed opacity-60')}
                     >
                       {isApproving ? 'Approving...' : <>Approve <ThumbsUp size={13} /></>}
                     </button>
                     <button
                       onClick={handleReject}
                       disabled={isRejecting}
-                      className="flex-1 py-2.5 bg-white text-slate-700 rounded-xl text-xs font-bold tracking-wide border border-slate-200 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
+                      className="flex-1 py-2.5 bg-card text-foreground rounded-xl text-xs font-bold tracking-wide border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
                     >
                       {isRejecting ? 'Rejecting...' : <>Reject <ThumbsDown size={13} /></>}
                     </button>
                   </div>
                 </>
               ) : (
-                <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-3 py-2 rounded-lg">
+                <div className="flex items-center gap-2 text-[10px] font-bold text-success bg-success/10 px-3 py-2 rounded-lg">
                   <ShieldCheck size={14} />
                   Revision Approved & Resolved
                 </div>

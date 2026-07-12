@@ -1,6 +1,7 @@
 import { getAuthToken } from '../../services/auth';
 import { api } from './client';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 const BASE = '';
 
 export const hodApi = {
@@ -54,7 +55,11 @@ validateLock: (termId) =>
 
   exportWAECCSV: (termId, className) => {
     const token = getAuthToken();
-    return fetch(`${BASE}/hod/export-waec/${termId}?class=${encodeURIComponent(className)}`, {
+    const url = new URL(
+      `${API_BASE_URL}/hod/export-waec/${termId}?class=${encodeURIComponent(className)}`,
+      window.location.origin,
+    ).toString();
+    return fetch(url, {
       method: 'GET',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),

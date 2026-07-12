@@ -38,18 +38,18 @@ export function ApprovalsView() {
   };
   
   return (
-    <div className="flex-1 overflow-y-auto bg-slate-50 p-6 scrollbar-hide">
+    <div className="flex-1 overflow-y-auto bg-background p-6 scrollbar-hide">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold text-slate-900">Approval Queue Management</h1>
+          <h1 className="text-2xl font-bold text-text-primary">Approval Queue Management</h1>
           <div className="flex items-center gap-3">
-            <Link to="/admin/home" className="text-slate-500 hover:text-slate-700 transition-colors">
+            <Link to="/admin/home" className="text-text-secondary hover:text-text-primary transition-colors">
               <Users size={20} /> Back to Dashboard
             </Link>
             <button 
               onClick={() => navigate('/approvals/new')}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm font-medium"
+              className="flex items-center gap-2 px-4 py-2 bg-brand-dark text-primary-foreground rounded-lg hover:bg-brand-dark/90 transition-colors text-sm font-medium"
             >
               <Plus size={16} /> New Approval Request
             </button>
@@ -58,43 +58,43 @@ export function ApprovalsView() {
         
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-xl border border-slate-200/50">
+          <div className="bg-surface p-4 rounded-xl border border-border">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-500 text-sm">Total Requests</p>
-                <p className="text-2xl font-bold text-slate-900">{approvals.length}</p>
+                <p className="text-text-secondary text-sm">Total Requests</p>
+                <p className="text-2xl font-bold text-text-primary">{approvals.length}</p>
               </div>
-              <Users size={24} className="text-slate-400" />
+              <Users size={24} className="text-text-secondary" />
             </div>
           </div>
-          <div className="bg-white p-4 rounded-xl border border-slate-200/50">
+          <div className="bg-surface p-4 rounded-xl border border-border">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-500 text-sm">Pending Review</p>
-                <p className="text-2xl font-bold text-emerald-600">{approvals.filter(a => !['approved', 'rejected'].includes(a.status)).length}</p>
+                <p className="text-text-secondary text-sm">Pending Review</p>
+                <p className="text-2xl font-bold text-brand-primary">{approvals.filter(a => !['approved', 'rejected'].includes(a.status)).length}</p>
               </div>
-              <AlertCircle size={24} className="text-amber-400" />
+              <AlertCircle size={24} className="text-warning" />
             </div>
           </div>
-          <div className="bg-white p-4 rounded-xl border border-slate-200/50">
+          <div className="bg-surface p-4 rounded-xl border border-border">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-500 text-sm">Today's Actions</p>
-                <p className="text-2xl font-bold text-slate-900">12</p>
+                <p className="text-text-secondary text-sm">Today's Actions</p>
+                <p className="text-2xl font-bold text-text-primary">12</p>
               </div>
-              <Clock size={24} className="text-blue-400" />
+              <Clock size={24} className="text-brand-primary" />
             </div>
           </div>
         </div>
         
         {/* Filters and Search */}
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-slate-200/50">
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface p-5 rounded-xl border border-border">
           <div className="flex items-center gap-3">
-            <label className="text-slate-700 font-medium text-sm">Filter:</label>
+            <label className="text-text-primary font-medium text-sm">Filter:</label>
             <select 
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="border border-slate-200 rounded px-3 py-1 text-sm focus:ring-2 focus:ring-slate-400"
+              className="border border-border rounded px-3 py-1 text-sm focus:ring-2 focus:ring-ring"
             >
               <option value="all">All Requests</option>
               <option value="pending">Pending Review</option>
@@ -108,11 +108,11 @@ export function ApprovalsView() {
               placeholder="Search by teacher or detail..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 border border-slate-200 rounded px-4 py-2 focus:ring-2 focus:ring-slate-400 text-sm"
+              className="flex-1 border border-border rounded px-4 py-2 focus:ring-2 focus:ring-ring text-sm"
             />
             <button 
               onClick={() => setSearchTerm('')}
-              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+              className="p-2 text-text-secondary hover:text-text-primary hover:bg-muted rounded-lg transition-colors"
             >
               <X size={18} />
             </button>
@@ -120,39 +120,39 @@ export function ApprovalsView() {
         </div>
         
         {/* Approvals List */}
-        <div className="bg-white rounded-xl border border-slate-200/50">
+        <div className="bg-surface rounded-xl border border-border">
           {filteredApprovals.length === 0 ? (
             <div className="p-8 text-center">
               <EmptyState context="tickets" />
               {filter !== 'all' && (
                 <button 
                   onClick={() => setFilter('all')}
-                  className="mt-4 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm font-medium"
+                  className="mt-4 px-4 py-2 bg-brand-dark text-primary-foreground rounded-lg hover:bg-brand-dark/90 transition-colors text-sm font-medium"
                 >
                   Show All Requests
                 </button>
               )}
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-border">
               {filteredApprovals.map((approval) => (
-                <div key={approval.id} className="p-5 hover:bg-slate-50 transition-colors">
+                <div key={approval.id} className="p-5 hover:bg-muted transition-colors">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                          <Users size={18} className="text-slate-600" />
+                        <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
+                          <Users size={18} className="text-text-secondary" />
                         </div>
                         <div>
-                          <p className="font-medium text-slate-900">{approval.teacher}</p>
-                          <p className="text-slate-500 text-sm">{approval.time}</p>
+                          <p className="font-medium text-text-primary">{approval.teacher}</p>
+                          <p className="text-text-secondary text-sm">{approval.time}</p>
                         </div>
                       </div>
-                      <p className="text-slate-700">{approval.detail}</p>
+                      <p className="text-text-primary">{approval.detail}</p>
                       {approval.document && (
                         <div className="mt-2 flex items-center gap-2 text-sm">
-                          <FileCheck size={14} className="text-emerald-500" />
-                          <span className="text-slate-600">Document attached</span>
+                          <FileCheck size={14} className="text-success" />
+                          <span className="text-text-secondary">Document attached</span>
                         </div>
                       )}
                     </div>
@@ -160,9 +160,9 @@ export function ApprovalsView() {
                     <div className="flex items-center gap-2 text-xs">
                       <span className={cn(
                         "px-2.5 py-0.5 rounded text-[9px] font-medium",
-                        approval.status === 'approved' ? "bg-emerald-50 text-emerald-800" :
-                        approval.status === 'rejected' ? "bg-rose-50 text-rose-800" :
-                        "bg-slate-50 text-slate-600"
+                        approval.status === 'approved' ? "bg-brand-primary/10 text-brand-primary" :
+                        approval.status === 'rejected' ? "bg-destructive/10 text-destructive" :
+                        "bg-background text-text-secondary"
                       )}>
                         {approval.status === 'approved' ? 'Approved' : 
                          approval.status === 'rejected' ? 'Rejected' : 
@@ -171,7 +171,7 @@ export function ApprovalsView() {
                       
                       <button 
                         onClick={() => navigate(`/approvals/inspect/${approval.id}`)}
-                        className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+                        className="p-1 text-text-secondary hover:text-text-primary hover:bg-muted rounded-lg transition-colors"
                         title="View Details"
                       >
                         <ChevronRight size={16} />
@@ -184,13 +184,13 @@ export function ApprovalsView() {
                     <div className="mt-4 flex gap-3">
                       <button 
                         onClick={() => handleResolveApproval(approval.id, 'grant', approval.teacher)}
-                        className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
+                        className="flex-1 px-4 py-2 bg-brand-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-brand-primary/90 transition-colors flex items-center justify-center gap-2"
                       >
                         <ThumbsUp size={16} /> Approve
                       </button>
                       <button 
                         onClick={() => handleResolveApproval(approval.id, 'abort', approval.teacher)}
-                        className="flex-1 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm font-medium hover:text-rose-600 hover:border-rose-200 transition-colors flex items-center justify-center gap-2"
+                        className="flex-1 px-4 py-2 bg-surface border border-border text-text-secondary rounded-lg text-sm font-medium hover:text-destructive hover:border-destructive/30 transition-colors flex items-center justify-center gap-2"
                       >
                         <ThumbsDown size={16} /> Reject
                       </button>
@@ -199,9 +199,9 @@ export function ApprovalsView() {
                   
                   {/* Status Info for resolved items */}
                   {['approved', 'rejected'].includes(approval.status) && (
-                    <div className="mt-3 p-3 bg-slate-50 rounded-lg text-sm">
-                      <p className="font-medium text-slate-900">Resolution:</p>
-                      <p className="text-slate-600">
+                    <div className="mt-3 p-3 bg-background rounded-lg text-sm">
+                      <p className="font-medium text-text-primary">Resolution:</p>
+                      <p className="text-text-secondary">
                         {approval.status === 'approved' 
                           ? 'Approved by admin on ' + new Date().toLocaleDateString() 
                           : 'Rejected by admin on ' + new Date().toLocaleDateString()}

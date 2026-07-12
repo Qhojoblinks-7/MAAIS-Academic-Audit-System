@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { 
   Calendar as CalendarIcon, Grid3X3, ChevronRight, Clock
 } from 'lucide-react';
@@ -11,25 +11,25 @@ export const SchedulingView = () => {
   const [activeTab, setActiveTab] = useState('Timetable');
 
   return (
-    <div className="flex-1 flex flex-col h-screen bg-slate-50 overflow-hidden antialiased">
+    <div className="flex-1 flex flex-col h-screen bg-background overflow-hidden antialiased">
       
       {/* Header Controls - Re-engineered for small laptops & tablets */}
-      <header className="px-4 md:px-6 pt-4 md:pt-6 pb-3 bg-white border-b border-slate-100 shrink-0">
+      <header className="px-4 md:px-6 pt-4 md:pt-6 pb-3 bg-surface border-b border-border shrink-0">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
           
           {/* Typography Stack */}
           <div>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black italic font-display text-slate-900 tracking-tight leading-none">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black italic font-display text-text-primary tracking-tight leading-none">
               The Heartbeat Control
             </h1>
             
-            <p className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] md:tracking-[0.3em] mt-1.5 md:mt-2">
+            <p className="text-[8px] md:text-[9px] font-black text-text-secondary uppercase tracking-[0.2em] md:tracking-[0.3em] mt-1.5 md:mt-2">
               Conflict-Free Timetables & Global Term Planning
             </p>
           </div>
 
           {/* Core Tab Navigation Switcher - Optimized padding limits tracking bloating */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/60 shadow-inner select-none w-full md:w-auto self-stretch md:self-auto justify-center">
+          <div className="flex items-center gap-1 bg-muted p-1 rounded-xl border border-border shadow-inner select-none w-full md:w-auto self-stretch md:self-auto justify-center">
             {[
 { id: 'Timetable', label: 'Master Timetable', icon: Clock },
 { id: 'Calendar', label: 'Event Planner', icon: CalendarIcon },
@@ -42,8 +42,8 @@ export const SchedulingView = () => {
                   className={cn(
                     "flex items-center justify-center gap-2 flex-1 md:flex-none px-4 lg:px-6 py-2 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-widest transition-all duration-150 whitespace-nowrap",
                     activeTab === tab.id 
-                      ? "bg-white text-slate-900 shadow-xs ring-1 ring-slate-200/50" 
-                      : "text-slate-400 hover:text-slate-600"
+                      ? "bg-surface text-text-primary shadow-xs ring-1 ring-border" 
+                      : "text-text-secondary hover:text-text-primary"
                   )}
                 >
                   <Icon size={12} className="shrink-0" />
@@ -56,7 +56,7 @@ export const SchedulingView = () => {
       </header>
 
       {/* Dynamic Content Pipeline Area */}
-      <div className="flex-1 relative overflow-hidden bg-slate-50">
+      <div className="flex-1 relative overflow-hidden bg-background">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -72,19 +72,19 @@ export const SchedulingView = () => {
       </div>
 
       {/* Status Stream Footer Monitor */}
-      <footer className="px-6 py-2.5 bg-slate-900 shrink-0 hidden xl:block">
+      <footer className="px-6 py-2.5 bg-brand-dark shrink-0 hidden xl:block">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
            <div className="flex items-center gap-5">
               <div className="flex items-center gap-1.5">
-                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.6)]" />
-                 <span className="text-[8px] font-black text-white/50 uppercase tracking-widest">Real-time Conflict Analysis Active</span>
+                 <div className="w-1.5 h-1.5 bg-brand-primary rounded-full animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.6)]" />
+                 <span className="text-[8px] font-black text-primary-foreground/50 uppercase tracking-widest">Real-time Conflict Analysis Active</span>
               </div>
               <div className="flex items-center gap-1.5">
-                 <div className="w-1.5 h-1.5 bg-amber-500 rounded-full shadow-[0_0_6px_rgba(245,158,11,0.6)]" />
-                 <span className="text-[8px] font-black text-white/50 uppercase tracking-widest">Double Track (Gold) Context</span>
+                 <div className="w-1.5 h-1.5 bg-warning rounded-full shadow-[0_0_6px_rgba(245,158,11,0.6)]" />
+                 <span className="text-[8px] font-black text-primary-foreground/50 uppercase tracking-widest">Double Track (Gold) Context</span>
               </div>
            </div>
-           <p className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em]">Institutional Intelligence v2.0</p>
+           <p className="text-[8px] font-black text-primary-foreground/20 uppercase tracking-[0.2em]">Institutional Intelligence v2.0</p>
         </div>
       </footer>
     </div>

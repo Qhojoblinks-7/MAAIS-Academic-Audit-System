@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
    Search, Download, 
    ChevronRight, TrendingUp,
@@ -15,7 +15,7 @@ import { toast, Toaster } from '../../components/ui/toast.tsx';
 import { EmptyState } from '../../components/molecules';
 import { useAllStudents, useCreateStudent, useBatchImportStudents, usePromoteStudent, useBuildTranscript, useGenerateReportCard, useDeactivateUser, useUpdateStudentProfile } from '../../lib/hooks';
 import { 
-  ResponsiveContainer, PieChart as RePieChart, Pie, Cell,
+  ResponsiveContainer,
   XAxis, YAxis, Tooltip, 
   LineChart as ReLineChart, Line, CartesianGrid
 } from 'recharts';
@@ -59,19 +59,19 @@ const StudentDossier = ({
   ];
 
   return (
-    <div className="flex flex-col h-full bg-white">
-      <div className="p-8 bg-slate-900 text-white shrink-0">
+      <div className="flex flex-col h-full bg-surface">
+      <div className="p-8 bg-brand-dark text-primary-foreground shrink-0">
         <div className="flex justify-between items-start mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center text-white ring-1 ring-white/20">
+            <div className="w-16 h-16 bg-primary-foreground/10 rounded-2xl flex items-center justify-center text-primary-foreground ring-1 ring-primary-foreground/20">
               <GraduationCap size={32} />
             </div>
             <div>
               <h3 className="text-2xl font-black italic font-display">{student.name}</h3>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">{student.indexNumber}</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-foreground/50">{student.indexNumber}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-all">
+          <button onClick={onClose} className="p-2 hover:bg-primary-foreground/10 rounded-xl transition-all">
             <X size={24} />
           </button>
         </div>
@@ -88,7 +88,7 @@ const StudentDossier = ({
               onClick={() => setActiveTab(tab.id)}
               className={cn(
                 "flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                activeTab === tab.id ? "bg-white text-slate-900 shadow-xl" : "bg-white/5 text-white/60 hover:bg-white/10"
+                activeTab === tab.id ? "bg-primary-foreground text-brand-dark shadow-xl" : "bg-primary-foreground/5 text-primary-foreground/60 hover:bg-primary-foreground/10"
               )}
             >
               <tab.icon size={14} />
@@ -98,11 +98,11 @@ const StudentDossier = ({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-8 bg-slate-50 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto p-8 bg-muted scrollbar-hide">
         {activeTab === 'Academic' && (
           <div className="space-y-6">
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Longitudinal Performance</h4>
+            <div className="bg-surface p-6 rounded-3xl border border-border shadow-sm">
+              <h4 className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-6">Longitudinal Performance</h4>
               <div className="h-40 w-full mb-6">
                 <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <ReLineChart data={performanceData}>
@@ -114,7 +114,7 @@ const StudentDossier = ({
                   </ReLineChart>
                 </ResponsiveContainer>
               </div>
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Historical Subject Ledger</h4>
+              <h4 className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-4">Historical Subject Ledger</h4>
 <div className="space-y-2">
                 {student.subjects && student.subjects.length > 0 
                   ? student.subjects.map((sub, i) => {
@@ -122,18 +122,18 @@ const StudentDossier = ({
                        const totalScore = sub.totalScore ?? sub.classScore ?? sub.examScore ?? 0;
                        const letterGrade = sub.grade || (totalScore >= 80 ? 'A' : totalScore >= 70 ? 'B' : totalScore >= 60 ? 'C' : 'D');
                        return (
-                         <div key={i} className="flex justify-between items-center p-3 hover:bg-slate-50 rounded-2xl transition-all border border-transparent hover:border-slate-100">
+                          <div key={i} className="flex justify-between items-center p-3 hover:bg-muted rounded-2xl transition-all border border-transparent hover:border-text-secondary">
                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
+                              <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center text-text-secondary">
                                 <FileText size={14} />
                              </div>
-                              <span className="text-[12px] font-bold text-slate-700">{subjectName}</span>
+                              <span className="text-[12px] font-bold text-text-primary">{subjectName}</span>
                            </div>
                            <div className="flex items-center gap-4">
-                              <span className="text-[11px] font-black italic font-display text-slate-400">{totalScore}%</span>
+                              <span className="text-[11px] font-black italic font-display text-text-secondary">{totalScore}%</span>
                               <span className={cn(
                                 "px-2.5 py-1 rounded-lg text-[10px] font-black italic font-display",
-                                letterGrade.startsWith('A') || letterGrade.startsWith('1') ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-600"
+                                letterGrade.startsWith('A') || letterGrade.startsWith('1') ? "bg-brand-primary/10 text-brand-primary" : "bg-muted text-text-secondary"
                               )}>
                                 {letterGrade}
                               </span>
@@ -150,32 +150,32 @@ const StudentDossier = ({
 
         {activeTab === 'BioData' && (
           <div className="space-y-6">
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Institutional Identity</p>
+            <div className="bg-surface p-6 rounded-3xl border border-border shadow-sm">
+              <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-6">Institutional Identity</p>
               <div className="space-y-4">
                   {[
                     { label: 'Index Number', value: student.indexNumber },
                     { label: 'Date of Birth', value: student.dob ? new Date(student.dob).toLocaleDateString() : 'N/A' },
                     { label: 'Program Node', value: student.program },
                   ].map((item, i) => (
-                    <div key={i} className="flex justify-between items-center py-3 border-b border-slate-50">
-                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">{item.label}</span>
-                      <span className="text-[12px] font-black text-slate-900 italic font-display">{item.value || 'N/A'}</span>
+                    <div key={i} className="flex justify-between items-center py-3 border-b border-border">
+                      <span className="text-[11px] font-bold text-text-secondary uppercase tracking-tight">{item.label}</span>
+                      <span className="text-[12px] font-black text-text-primary italic font-display">{item.value || 'N/A'}</span>
                     </div>
                   ))}
               </div>
             </div>
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">BECE Placement Dossier</p>
+            <div className="bg-surface p-6 rounded-3xl border border-border shadow-sm">
+              <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-6">BECE Placement Dossier</p>
               <div className="space-y-4">
                   {[
                     { label: 'Placement Aggregate', value: student.beceAggregate || 'N/A' },
                     { label: 'Primary Residency', value: student.beceResidency || 'N/A' },
                     { label: 'Placement Protocol', value: student.placementType || 'N/A' },
                   ].map((item, i) => (
-                    <div key={i} className="flex justify-between items-center py-3 border-b border-slate-50">
-                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">{item.label}</span>
-                      <span className="text-[12px] font-black text-indigo-600 italic font-display">{item.value}</span>
+                    <div key={i} className="flex justify-between items-center py-3 border-b border-border">
+                      <span className="text-[11px] font-bold text-text-secondary uppercase tracking-tight">{item.label}</span>
+                      <span className="text-[12px] font-black text-brand-primary italic font-display">{item.value}</span>
                     </div>
                   ))}
               </div>
@@ -185,28 +185,28 @@ const StudentDossier = ({
 
         {activeTab === 'Log' && (
           <div className="space-y-4">
-            <div className="p-6 bg-white border border-slate-200 rounded-3xl">
+            <div className="p-6 bg-surface border border-border rounded-3xl">
               <div className="flex items-center gap-3 mb-6">
-                 <div className="w-10 h-10 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center">
+                 <div className="w-10 h-10 bg-destructive/10 text-destructive rounded-xl flex items-center justify-center">
                    <HeartPulse size={20} />
                  </div>
-                 <h4 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">Medical Log</h4>
+                 <h4 className="text-[11px] font-black text-text-primary uppercase tracking-widest">Medical Log</h4>
               </div>
-              <div className="p-4 bg-rose-50/50 border border-rose-100 rounded-2xl">
-                 <p className="text-[13px] font-bold text-slate-700 leading-relaxed italic">
+              <div className="p-4 bg-destructive/50 border border-destructive rounded-2xl">
+                 <p className="text-[13px] font-bold text-text-primary leading-relaxed italic">
                    {student.healthNotes || 'No acute medical flags inherited.'}
                  </p>
               </div>
             </div>
-            <div className="p-6 bg-white border border-slate-200 rounded-3xl">
+            <div className="p-6 bg-surface border border-border rounded-3xl">
               <div className="flex items-center gap-3 mb-6">
-                 <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
+                 <div className="w-10 h-10 bg-warning/10 text-warning rounded-xl flex items-center justify-center">
                    <AlertCircle size={20} />
                  </div>
-                 <h4 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">Discipline Log</h4>
+                 <h4 className="text-[11px] font-black text-text-primary uppercase tracking-widest">Discipline Log</h4>
               </div>
-              <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
-                 <p className="text-[13px] font-bold text-slate-600 leading-relaxed italic">
+              <div className="p-4 bg-muted border border-border rounded-2xl">
+                 <p className="text-[13px] font-bold text-text-secondary leading-relaxed italic">
                    {student.disciplinaryNotes || 'Institutional conduct threshold maintained.'}
                  </p>
               </div>
@@ -216,21 +216,21 @@ const StudentDossier = ({
 
         {activeTab === 'Guardian' && (
           <div className="space-y-6">
-             <div className="bg-white p-8 rounded-4xl border border-slate-200 shadow-sm text-center">
-                <div className="w-20 h-20 bg-slate-100 rounded-3xl flex items-center justify-center text-slate-400 mx-auto mb-6">
+             <div className="bg-surface p-8 rounded-4xl border border-border shadow-sm text-center">
+                <div className="w-20 h-20 bg-muted rounded-3xl flex items-center justify-center text-text-secondary mx-auto mb-6">
                   <Users size={40} />
                 </div>
-                <h3 className="text-xl font-black italic font-display text-slate-900 mb-1">
+                <h3 className="text-xl font-black italic font-display text-text-primary mb-1">
                   {(student.emergencyContact?.name) || 'Guardian Not Linked'}
                 </h3>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-8">
+                <p className="text-[10px] font-black uppercase tracking-widest text-text-secondary mb-8">
                   {student.emergencyContact?.relation || 'No parent association'}
                 </p>
                 <div className="flex gap-3">
-                  <button className="flex-1 py-4 bg-slate-900 text-white rounded-2xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-widest">
+                  <button className="flex-1 py-4 bg-brand-dark text-primary-foreground rounded-2xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-widest">
                     <Phone size={16} /> Voice
                   </button>
-                  <button className="flex-1 py-4 bg-white text-slate-900 border border-slate-200 rounded-2xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-widest">
+                  <button className="flex-1 py-4 bg-surface text-text-primary border border-border rounded-2xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-widest">
                     <MessageSquare size={16} /> SMS
                   </button>
                 </div>
@@ -239,10 +239,10 @@ const StudentDossier = ({
         )}
       </div>
 
-      <div className="p-8 bg-white border-t border-slate-100 flex gap-3 shrink-0">
+      <div className="p-8 bg-surface border-t border-border flex gap-3 shrink-0">
         <button 
           onClick={() => executeSensitiveAction('delete-student')}
-          className="p-4 bg-rose-50 text-rose-600 rounded-2xl hover:bg-rose-100 transition-all"
+          className="p-4 bg-destructive/10 text-destructive rounded-2xl hover:bg-destructive/10 transition-all"
         >
           <Trash2 size={20} />
         </button>
@@ -252,7 +252,7 @@ const StudentDossier = ({
               onGenerateReport?.(student.id);
             }
           }}
-          className="flex-1 py-4 border border-slate-200 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-3"
+          className="flex-1 py-4 border border-border rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-3"
         >
           <Download size={16} /> Dossier
         </button>
@@ -262,7 +262,7 @@ const StudentDossier = ({
               onBuildTranscript?.(student.id);
             }
           }}
-          className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest"
+          className="flex-1 py-4 bg-brand-dark text-primary-foreground rounded-2xl text-[11px] font-black uppercase tracking-widest"
         >
           Transcript
         </button>
@@ -642,26 +642,6 @@ export const StudentRegistry = () => {
     });
   }, [displayStudents, searchQuery, selectedProgram]);
 
-  const genderData = useMemo(() => [
-    { name: 'Male', value: displayStudents.filter(s => s.gender === 'Male').length },
-    { name: 'Female', value: displayStudents.filter(s => s.gender === 'Female').length },
-  ], [displayStudents]);
-
-  const atRiskCount = useMemo(() => 
-    displayStudents.filter(s => s.atRisk).length,
-    [displayStudents]
-  );
-
-  const programPerformanceData = useMemo(() => {
-    return PROGRAMS.map(prog => {
-      const programStudents = displayStudents.filter(s => s.program === prog);
-      const average = programStudents.length > 0
-        ? Math.round(programStudents.reduce((sum, s) => sum + s.averageGrade, 0) / programStudents.length)
-        : 0;
-      return { name: prog, average };
-    });
-  }, [displayStudents]);
-
   const confirmVerification = async () => {
     const action = showReverification.action;
     setShowReverification({ active: false, action: null });
@@ -825,18 +805,18 @@ export const StudentRegistry = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden relative">
-      <header className="px-8 py-6 bg-white border-b border-slate-200/60 shrink-0">
+    <div className="flex-1 flex flex-col bg-muted overflow-hidden relative">
+      <header className="px-8 py-6 bg-surface border-b border-border shrink-0">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-black text-slate-900 italic font-display tracking-tight leading-none">
+            <h1 className="text-2xl font-black text-text-primary italic font-display tracking-tight leading-none">
               Institutional Population Intelligence
             </h1>
           </div>
             <div className="flex items-center gap-3">
               <button 
                 onClick={() => setShowCreateForm(true)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest"
+                className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-primary-foreground rounded-xl text-[10px] font-black uppercase tracking-widest"
               >
                 + Register
               </button>
@@ -861,66 +841,25 @@ export const StudentRegistry = () => {
                   URL.revokeObjectURL(url);
                   toast.success(`Exported ${filteredStudents.length} student records`);
                 }}
-                className="flex items-center gap-2 px-5 py-2.5 bg-white text-slate-900 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm"
+                className="flex items-center gap-2 px-5 py-2.5 bg-surface text-text-primary border border-border rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm"
               >
                 <FileText size={16} /> Bulk Reports
               </button>
-              <button onClick={() => setIsBatchUploading(true)} className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 text-slate-900 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest">
+              <button onClick={() => setIsBatchUploading(true)} className="flex items-center gap-2 px-5 py-2.5 bg-muted text-text-primary border border-border rounded-xl text-[10px] font-black uppercase tracking-widest">
                 <FileUp size={16} /> CSSPS Upload
               </button>
-              <button onClick={() => setIsPromoting(true)} className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20">
+              <button onClick={() => setIsPromoting(true)} className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-primary-foreground rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-brand-primary/20">
                 <TrendingUp size={16} /> Promotion Engine
               </button>
            </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-6">
-          <div className="bg-slate-50 p-5 rounded-[2rem] border border-slate-100 flex items-center justify-between">
-            <div className="h-16 w-16 shrink-0">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                <RePieChart>
-                  <Pie data={genderData} cx="50%" cy="50%" innerRadius={20} outerRadius={30} paddingAngle={5} dataKey="value">
-                    <Cell fill="#0f172a" /><Cell fill="#94a3b8" />
-                  </Pie>
-                </RePieChart>
-              </ResponsiveContainer>
-            </div>
-<div className="text-right">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Gender Equity</p>
-                <p className="text-xl font-black italic font-display text-slate-900">
-                  {genderData[1]?.value || 0}:{genderData[0]?.value || 0}
-                </p>
-             </div>
-          </div>
-          <div className="bg-rose-50 p-5 rounded-[2rem] border border-rose-100 flex items-center justify-between">
-            <div className="w-12 h-12 bg-rose-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-rose-500/20">
-               <AlertCircle size={24} />
-            </div>
-            <div className="text-right">
-               <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">At-Risk</p>
-               <p className="text-xl font-black italic font-display text-rose-900">{atRiskCount} Nodes</p>
-            </div>
-          </div>
-          <div className="md:col-span-1 xl:col-span-2 bg-slate-50 p-5 rounded-[2rem] border border-slate-100 flex items-center gap-8">
-{programPerformanceData.slice(0, 2).map(prog => (
-               <div key={prog.name} className="flex-1 space-y-3">
-                 <div className="flex justify-between items-center">
-                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{prog.name}</p>
-                   <p className="text-[10px] font-black text-slate-900">{prog.average}%</p>
-                 </div>
-                 <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                   <motion.div initial={{ width: 0 }} animate={{ width: `${prog.average}%` }} transition={{ duration: 1 }} className="h-full bg-slate-900" />
-                 </div>
-               </div>
-             ))}
-          </div>
-        </div>
       </header>
 
-      <div className="px-8 py-5 bg-white border-b border-slate-200/60 flex flex-wrap items-center justify-between gap-6">
+      <div className="px-8 py-5 bg-surface border-b border-border flex flex-wrap items-center justify-between gap-6">
           <div className="flex items-center gap-4 flex-1 min-w-[300px]">
             <div className="relative flex-1">
-              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" />
               <Input placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-12 pr-6 py-3" />
             </div>
             <Select value={selectedProgram} onValueChange={(e) => setSelectedProgram(e.target.value)} className="w-full">
@@ -936,7 +875,7 @@ export const StudentRegistry = () => {
             </Select>
          </div>
           <div className="flex items-center gap-3">
-             <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+             <div className="flex bg-muted p-1 rounded-xl border border-border">
                 <Button onClick={() => setViewMode('Academic')} variant={viewMode === 'Academic' ? "default" : "outline"} className="px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest">
                   Academic
                 </Button>
@@ -983,32 +922,32 @@ export const StudentRegistry = () => {
         <Card>
           <Table containerClassName="overflow-visible">
             <TableHeader>
-                <TableRow className="bg-slate-50/80 border-b border-slate-100">
-                  <TableHead className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Index / Name</TableHead>
-                  <TableHead className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Program</TableHead>
-                  <TableHead className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Performance</TableHead>
-                  <TableHead className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Guardian</TableHead>
-                  <TableHead className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Protocol</TableHead>
+                <TableRow className="bg-muted/80 border-b border-border">
+                  <TableHead className="px-8 py-5 text-[10px] font-black text-text-secondary uppercase tracking-widest">Index / Name</TableHead>
+                  <TableHead className="px-6 py-5 text-[10px] font-black text-text-secondary uppercase tracking-widest">Program</TableHead>
+                  <TableHead className="px-6 py-5 text-[10px] font-black text-text-secondary uppercase tracking-widest text-center">Performance</TableHead>
+                  <TableHead className="px-6 py-5 text-[10px] font-black text-text-secondary uppercase tracking-widest">Guardian</TableHead>
+                  <TableHead className="px-8 py-5 text-[10px] font-black text-text-secondary uppercase tracking-widest text-right">Protocol</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
               {filteredStudents.map((stu) => (
-                <TableRow key={stu.id} className="group hover:bg-slate-50 cursor-pointer transition-all" onClick={() => setSelectedStudentId(stu.id)}>
+                <TableRow key={stu.id} className="group hover:bg-muted cursor-pointer transition-all" onClick={() => setSelectedStudentId(stu.id)}>
                   <TableCell className="px-8 py-5">
                     <div className="flex items-center gap-4">
-                       <div className="w-11 h-11 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all"><GraduationCap size={18} /></div>
+                       <div className="w-11 h-11 bg-muted rounded-xl flex items-center justify-center text-text-secondary group-hover:bg-brand-dark group-hover:text-primary-foreground transition-all"><GraduationCap size={18} /></div>
                        <div>
-                          <p className="text-[14px] font-black italic font-display text-slate-900 leading-none mb-1.5">{stu.name}</p>
-                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{stu.indexNumber}</p>
+                          <p className="text-[14px] font-black italic font-display text-text-primary leading-none mb-1.5">{stu.name}</p>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-text-secondary">{stu.indexNumber}</p>
                        </div>
                     </div>
                   </TableCell>
                   <TableCell className="px-6 py-5">
-                     <span className="text-[12px] font-black text-slate-900">{stu.program}</span>
+                     <span className="text-[12px] font-black text-text-primary">{stu.program}</span>
                   </TableCell>
                   <TableCell className="px-6 py-5 text-center">
                      <Badge className={cn(
-                       stu.averageGrade >= 75 ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"
+                       stu.averageGrade >= 75 ? "bg-brand-primary/10 text-brand-primary" : "bg-brand-primary/10 text-brand-primary"
                      )}>
                        {stu.averageGrade}%
                      </Badge>
@@ -1016,8 +955,8 @@ export const StudentRegistry = () => {
                    <TableCell className="px-6 py-5 text-center">
                       <Badge className={cn(
                         stu.emergencyContact
-                          ? "bg-emerald-50 text-emerald-600"
-                          : "bg-slate-100 text-slate-400"
+                          ? "bg-brand-primary/10 text-brand-primary"
+                          : "bg-muted text-text-secondary"
                       )}>
                         {stu.emergencyContact ? 'Linked' : 'Unlinked'}
                       </Badge>
@@ -1026,17 +965,17 @@ export const StudentRegistry = () => {
                       <div className="relative inline-block">
                         <button 
                           onClick={(e) => { e.stopPropagation(); setOpenKebabId(openKebabId === stu.id ? null : stu.id); }}
-                          className="p-3 bg-slate-50 text-slate-400 hover:bg-slate-900 hover:text-white rounded-xl transition-all"
+                          className="p-3 bg-muted text-text-secondary hover:bg-brand-dark hover:text-primary-foreground rounded-xl transition-all"
                         >
                           <MoreVertical size={18} />
                         </button>
                         {openKebabId === stu.id && (
-                          <div className="absolute right-0 top-12 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1">
-                            <button onClick={() => handleKebabAction(stu.id, 'dossier')} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><FileText size={12} className="text-blue-500" /> View Full Dossier</button>
-                            <button onClick={() => handleKebabAction(stu.id, 'toggle-risk')} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><AlertTriangle size={12} className={cn("text-amber-500", stu.atRisk && "fill-amber-500")} /> {stu.atRisk ? 'Clear Academic Risk' : 'Flag Academic Risk'}</button>
-                            <button onClick={() => handleKebabAction(stu.id, 'cycle-funding')} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><ShieldCheck size={12} className="text-emerald-600" /> Funding: {stu.fundingStatus}</button>
-                            <div className="h-px bg-slate-100 my-1" />
-                            <button onClick={() => handleKebabAction(stu.id, 'purge')} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2"><Trash2 size={12} /> Purge Student Record</button>
+                          <div className="absolute right-0 top-12 w-56 bg-surface border border-border rounded-xl shadow-xl z-50 py-1">
+                            <button onClick={() => handleKebabAction(stu.id, 'dossier')} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-text-primary hover:bg-muted flex items-center gap-2"><FileText size={12} className="text-brand-primary" /> View Full Dossier</button>
+                            <button onClick={() => handleKebabAction(stu.id, 'toggle-risk')} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-text-primary hover:bg-muted flex items-center gap-2"><AlertTriangle size={12} className={cn("text-warning", stu.atRisk && "fill-warning")} /> {stu.atRisk ? 'Clear Academic Risk' : 'Flag Academic Risk'}</button>
+                            <button onClick={() => handleKebabAction(stu.id, 'cycle-funding')} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-text-primary hover:bg-muted flex items-center gap-2"><ShieldCheck size={12} className="text-brand-primary" /> Funding: {stu.fundingStatus}</button>
+                            <div className="h-px bg-muted my-1" />
+                            <button onClick={() => handleKebabAction(stu.id, 'purge')} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-destructive hover:bg-destructive/10 flex items-center gap-2"><Trash2 size={12} /> Purge Student Record</button>
                           </div>
                         )}
                       </div>
@@ -1051,8 +990,8 @@ export const StudentRegistry = () => {
       <AnimatePresence>
         {selectedStudent && (
           <div className="fixed inset-0 z-[150] flex justify-end">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedStudentId(null)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
-            <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 300 }} className="relative w-full max-w-xl bg-white h-full shadow-2xl">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedStudentId(null)} className="absolute inset-0 bg-brand-dark/40 backdrop-blur-sm" />
+            <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 300 }} className="relative w-full max-w-xl bg-surface h-full shadow-2xl">
 <StudentDossier 
                 student={selectedStudent} 
                 onClose={() => setSelectedStudentId(null)}
@@ -1067,11 +1006,11 @@ export const StudentRegistry = () => {
       <AnimatePresence>
         {showReverification.active && (
              <div className="fixed inset-0 z-[300] flex items-center justify-center p-6">
-                 <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" />
-                 <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-10 text-center">
-                     <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-6"><Lock size={32} /></div>
-                     <h3 className="text-2xl font-black italic font-display text-slate-900 mb-2">Confirm Action</h3>
-                     <p className="text-[13px] text-slate-600 mb-6">This action requires administrative authorization. Please confirm to proceed.</p>
+                 <div className="absolute inset-0 bg-brand-dark/80 backdrop-blur-md" />
+                 <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-md bg-surface rounded-[2.5rem] shadow-2xl p-10 text-center">
+                     <div className="w-16 h-16 bg-destructive/10 text-destructive rounded-2xl flex items-center justify-center mx-auto mb-6"><Lock size={32} /></div>
+                     <h3 className="text-2xl font-black italic font-display text-text-primary mb-2">Confirm Action</h3>
+                     <p className="text-[13px] text-text-secondary mb-6">This action requires administrative authorization. Please confirm to proceed.</p>
                      {showReverification.action === 'delete-student' && (
                        <div className="mb-6">
                          <input
@@ -1079,23 +1018,23 @@ export const StudentRegistry = () => {
                            placeholder="Enter admin password override"
                            value={adminPassword}
                            onChange={(e) => setAdminPassword(e.target.value)}
-                           className="w-full px-4 py-3 border border-slate-200 rounded-xl text-[11px] font-bold text-center outline-none focus:ring-2 focus:ring-rose-500"
+                           className="w-full px-4 py-3 border border-border rounded-xl text-[11px] font-bold text-center outline-none focus:ring-2 focus:ring-destructive"
                          />
                        </div>
                      )}
                      <div className="flex gap-3">
-                        <button onClick={() => { setShowReverification({ active: false, action: null }); setAdminPassword(''); }} className="flex-1 py-4 bg-slate-50 rounded-xl text-[10px] font-black uppercase tracking-widest">Abort</button>
-                        <button onClick={confirmVerification} className="flex-1 py-4 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Authorize</button>
+                        <button onClick={() => { setShowReverification({ active: false, action: null }); setAdminPassword(''); }} className="flex-1 py-4 bg-muted rounded-xl text-[10px] font-black uppercase tracking-widest">Abort</button>
+                        <button onClick={confirmVerification} className="flex-1 py-4 bg-brand-dark text-primary-foreground rounded-xl text-[10px] font-black uppercase tracking-widest">Authorize</button>
                      </div>
                  </motion.div>
              </div>
            )}
 {isBatchUploading && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
-             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setIsBatchUploading(false)} />
-             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl p-12">
-                   <div className="w-24 h-24 bg-indigo-50 text-indigo-600 rounded-[2.5rem] flex items-center justify-center mx-auto mb-10"><FileUp size={48} /></div>
-                   <h3 className="text-3xl font-black italic font-display text-slate-900 mb-4">CSSPS Batch Intake</h3>
+             <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md" onClick={() => setIsBatchUploading(false)} />
+             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-2xl bg-surface rounded-[3rem] shadow-2xl p-12">
+                   <div className="w-24 h-24 bg-brand-primary/10 text-brand-primary rounded-[2.5rem] flex items-center justify-center mx-auto mb-10"><FileUp size={48} /></div>
+                   <h3 className="text-3xl font-black italic font-display text-text-primary mb-4">CSSPS Batch Intake</h3>
                    
                    <div className="mb-6">
                      <input
@@ -1107,12 +1046,12 @@ export const StudentRegistry = () => {
                      />
                      <label
                        htmlFor="cssps-file-input"
-                       className="border-4 border-dashed border-slate-100 rounded-[2.5rem] py-16 mb-6 hover:bg-slate-50 cursor-pointer flex flex-col items-center justify-center"
+                       className="border-4 border-dashed border-border rounded-[2.5rem] py-16 mb-6 hover:bg-muted cursor-pointer flex flex-col items-center justify-center"
                      >
-                       <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">Drop CSSPS File Here</p>
-                       <p className="text-[10px] text-slate-300">CSV/Excel formats supported</p>
+                       <p className="text-[11px] font-black uppercase tracking-widest text-text-secondary mb-2">Drop CSSPS File Here</p>
+                       <p className="text-[10px] text-muted">CSV/Excel formats supported</p>
                        {csspsFile && (
-                         <p className="mt-3 text-[12px] font-black text-indigo-600">
+                         <p className="mt-3 text-[12px] font-black text-brand-primary">
                            {csspsFile.name}
                          </p>
                        )}
@@ -1120,25 +1059,25 @@ export const StudentRegistry = () => {
                    </div>
 
                    {csspsPreview.length > 0 && (
-                      <div className="mb-6 max-h-64 overflow-y-auto border border-slate-100 rounded-2xl p-4 scrollbar-hide">
-                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Preview ({csspsPreview.length} records)</p>
+                      <div className="mb-6 max-h-64 overflow-y-auto border border-border rounded-2xl p-4 scrollbar-hide">
+                       <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-3">Preview ({csspsPreview.length} records)</p>
                        <div className="space-y-1">
                          {csspsPreview.slice(0, 5).map((record, i) => (
-                           <div key={i} className="flex justify-between text-[11px] py-1 border-b border-slate-50">
-                             <span className="font-bold text-slate-900">{record.indexNumber}</span>
-                             <span className="text-slate-600">{record.firstName} {record.lastName}</span>
-                             <span className="text-slate-400">{record.placementAggregate || 'N/A'}</span>
+                           <div key={i} className="flex justify-between text-[11px] py-1 border-b border-border">
+                             <span className="font-bold text-text-primary">{record.indexNumber}</span>
+                             <span className="text-text-secondary">{record.firstName} {record.lastName}</span>
+                             <span className="text-text-secondary">{record.placementAggregate || 'N/A'}</span>
                            </div>
                          ))}
                          {csspsPreview.length > 5 && (
-                           <p className="text-[10px] text-slate-400 italic">...and {csspsPreview.length - 5} more</p>
+                           <p className="text-[10px] text-text-secondary italic">...and {csspsPreview.length - 5} more</p>
                          )}
                        </div>
                      </div>
                    )}
 
                    {csspsError && (
-                     <div className="mb-4 p-3 bg-rose-50 text-rose-600 rounded-xl text-[11px] font-black">
+                     <div className="mb-4 p-3 bg-destructive/10 text-destructive rounded-xl text-[11px] font-black">
                        {csspsError}
                      </div>
                    )}
@@ -1146,7 +1085,7 @@ export const StudentRegistry = () => {
                    <div className="flex gap-4">
                       <button 
                         onClick={handleCancelCsspsUpload}
-                        className="flex-1 py-5 bg-slate-50 rounded-[2rem] text-[11px] font-black uppercase tracking-widest"
+                        className="flex-1 py-5 bg-muted rounded-[2rem] text-[11px] font-black uppercase tracking-widest"
                       >
                         Cancel
                       </button>
@@ -1156,8 +1095,8 @@ export const StudentRegistry = () => {
                         className={cn(
                           "flex-1 py-5 rounded-[2rem] text-[11px] font-black uppercase tracking-widest",
                           isProcessingCssps || !csspsFile 
-                            ? "bg-slate-200 text-slate-400 cursor-not-allowed" 
-                            : "bg-indigo-600 text-white hover:bg-indigo-700"
+                            ? "bg-muted text-text-secondary cursor-not-allowed" 
+                            : "bg-brand-primary text-primary-foreground hover:bg-brand-primary"
                         )}
                       >
                         {isProcessingCssps ? 'Processing...' : 'Verify & Import'}
@@ -1168,15 +1107,15 @@ export const StudentRegistry = () => {
            )}
            {importResults && (
              <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
-                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl p-10 text-center">
-                   <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6"><CheckCircle size={32} /></div>
-                   <h3 className="text-2xl font-black italic font-display text-slate-900 mb-2">Import Complete</h3>
-                   <p className="text-[14px] text-slate-600 mb-6">
+                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-lg bg-surface rounded-[2.5rem] shadow-2xl p-10 text-center">
+                   <div className="w-16 h-16 bg-brand-primary/10 text-brand-primary rounded-2xl flex items-center justify-center mx-auto mb-6"><CheckCircle size={32} /></div>
+                   <h3 className="text-2xl font-black italic font-display text-text-primary mb-2">Import Complete</h3>
+                   <p className="text-[14px] text-text-secondary mb-6">
                      Successfully imported {importResults.success} students. {importResults.failed > 0 && `${importResults.failed} failed.`}
                    </p>
                    <button 
                      onClick={() => setImportResults(null)}
-                     className="px-8 py-3 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest"
+                     className="px-8 py-3 bg-brand-dark text-primary-foreground rounded-2xl text-[11px] font-black uppercase tracking-widest"
                    >
                      Done
                    </button>
@@ -1185,55 +1124,55 @@ export const StudentRegistry = () => {
             )}
             {showCreateForm && (
               <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
-                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setShowCreateForm(false)} />
-                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl p-10">
-                  <h3 className="text-2xl font-black italic font-display text-slate-900 mb-8">Register New Student</h3>
+                <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md" onClick={() => setShowCreateForm(false)} />
+                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-lg bg-surface rounded-[2.5rem] shadow-2xl p-10">
+                  <h3 className="text-2xl font-black italic font-display text-text-primary mb-8">Register New Student</h3>
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">First Name *</label>
-                        <input value={newStudent.firstName} onChange={(e) => setNewStudent({...newStudent, firstName: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-bold" placeholder="First Name" />
+                        <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">First Name *</label>
+                        <input value={newStudent.firstName} onChange={(e) => setNewStudent({...newStudent, firstName: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold" placeholder="First Name" />
                       </div>
                       <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Last Name *</label>
-                        <input value={newStudent.lastName} onChange={(e) => setNewStudent({...newStudent, lastName: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-bold" placeholder="Last Name" />
+                        <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Last Name *</label>
+                        <input value={newStudent.lastName} onChange={(e) => setNewStudent({...newStudent, lastName: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold" placeholder="Last Name" />
                       </div>
                     </div>
                     <div>
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Index Number *</label>
-                      <input value={newStudent.indexNumber} onChange={(e) => setNewStudent({...newStudent, indexNumber: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-bold" placeholder="e.g. MSHTS/2024/001" />
+                      <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Index Number *</label>
+                      <input value={newStudent.indexNumber} onChange={(e) => setNewStudent({...newStudent, indexNumber: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold" placeholder="e.g. MSHTS/2024/001" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Gender</label>
-                        <select value={newStudent.gender} onChange={(e) => setNewStudent({...newStudent, gender: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-bold">
+                        <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Gender</label>
+                        <select value={newStudent.gender} onChange={(e) => setNewStudent({...newStudent, gender: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold">
                           <option value="MALE">Male</option>
                           <option value="FEMALE">Female</option>
                         </select>
                       </div>
                       <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Date of Birth</label>
-                        <input type="date" value={newStudent.dateOfBirth} onChange={(e) => setNewStudent({...newStudent, dateOfBirth: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-bold" />
+                        <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Date of Birth</label>
+                        <input type="date" value={newStudent.dateOfBirth} onChange={(e) => setNewStudent({...newStudent, dateOfBirth: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold" />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Email</label>
-                        <input value={newStudent.email} onChange={(e) => setNewStudent({...newStudent, email: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-bold" placeholder="student@email.com" />
+                        <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Email</label>
+                        <input value={newStudent.email} onChange={(e) => setNewStudent({...newStudent, email: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold" placeholder="student@email.com" />
                       </div>
                       <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Class / Program</label>
-                        <select value={newStudent.classId} onChange={(e) => setNewStudent({...newStudent, classId: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-bold">
+                        <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Class / Program</label>
+                        <select value={newStudent.classId} onChange={(e) => setNewStudent({...newStudent, classId: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold">
                           <option value="">Select Program</option>
                           {PROGRAMS.map(p => <option key={p} value={p}>{p}</option>)}
                         </select>
                       </div>
                     </div>
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-4 mb-4">Default password: Student@123!</p>
+                  <p className="text-[10px] text-text-secondary mt-4 mb-4">Default password: Student@123!</p>
                   <div className="flex gap-4">
-                    <button onClick={() => setShowCreateForm(false)} className="flex-1 py-4 bg-slate-50 rounded-[2rem] text-[11px] font-black uppercase tracking-widest">Cancel</button>
-                    <button onClick={handleCreateStudent} disabled={creatingStudent || !newStudent.firstName || !newStudent.indexNumber} className={cn("flex-1 py-4 rounded-[2rem] text-[11px] font-black uppercase tracking-widest", creatingStudent || !newStudent.firstName || !newStudent.indexNumber ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-emerald-600 text-white")}>
+                    <button onClick={() => setShowCreateForm(false)} className="flex-1 py-4 bg-muted rounded-[2rem] text-[11px] font-black uppercase tracking-widest">Cancel</button>
+                    <button onClick={handleCreateStudent} disabled={creatingStudent || !newStudent.firstName || !newStudent.indexNumber} className={cn("flex-1 py-4 rounded-[2rem] text-[11px] font-black uppercase tracking-widest", creatingStudent || !newStudent.firstName || !newStudent.indexNumber ? "bg-muted text-text-secondary cursor-not-allowed" : "bg-brand-primary text-primary-foreground")}>
                       {creatingStudent ? 'Registering...' : 'Register Student'}
                     </button>
                   </div>
@@ -1242,14 +1181,14 @@ export const StudentRegistry = () => {
             )}
            {isPromoting && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
-             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setIsPromoting(false)} />
-             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl p-12">
-                  <h3 className="text-3xl font-black italic font-display text-slate-900 mb-12">Promotion Engine</h3>
+             <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md" onClick={() => setIsPromoting(false)} />
+             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-2xl bg-surface rounded-[3rem] shadow-2xl p-12">
+                  <h3 className="text-3xl font-black italic font-display text-text-primary mb-12">Promotion Engine</h3>
                   <div className="grid grid-cols-2 gap-8 mb-12">
                      <select 
                        value={selectedSourceClass}
                        onChange={(e) => setSelectedSourceClass(e.target.value)}
-                       className="px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none"
+                       className="px-6 py-4 bg-muted border border-border rounded-2xl outline-none"
                      >
                        <option value="">Source Cohort</option>
                        {PROGRAMS.map(prog => <option key={prog} value={prog}>{prog}</option>)}
@@ -1257,14 +1196,14 @@ export const StudentRegistry = () => {
                      <select 
                        value={selectedDestClass}
                        onChange={(e) => setSelectedDestClass(e.target.value)}
-                       className="px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none"
+                       className="px-6 py-4 bg-muted border border-border rounded-2xl outline-none"
                      >
                        <option value="">Destination Pipeline</option>
                        {PROGRAMS.map(prog => <option key={prog} value={prog}>{prog}</option>)}
                      </select>
                   </div>
                   <div className="flex gap-4">
-                     <button onClick={() => setIsPromoting(false)} className="flex-1 py-5 bg-slate-50 rounded-[2rem] text-[11px] font-black uppercase tracking-widest">Abort</button>
+                     <button onClick={() => setIsPromoting(false)} className="flex-1 py-5 bg-muted rounded-[2rem] text-[11px] font-black uppercase tracking-widest">Abort</button>
                      <button 
                        onClick={() => {
                          setIsPromoting(false);
@@ -1273,12 +1212,12 @@ export const StudentRegistry = () => {
                        disabled={!selectedSourceClass || !selectedDestClass}
                        className={cn(
                          "flex-1 py-5 rounded-[2rem] text-[11px] font-black uppercase tracking-widest",
-                         selectedSourceClass && selectedDestClass ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                         selectedSourceClass && selectedDestClass ? "bg-brand-primary text-primary-foreground" : "bg-muted text-text-secondary cursor-not-allowed"
                        )}
                      >Execute</button>
                   </div>
                   {promotionStatus && (
-                    <div className="mt-6 p-4 bg-emerald-50 text-emerald-600 rounded-2xl text-[11px] font-black">
+                    <div className="mt-6 p-4 bg-brand-primary/10 text-brand-primary rounded-2xl text-[11px] font-black">
                       Promoted {promotionStatus.promoted} students successfully
                     </div>
                   )}

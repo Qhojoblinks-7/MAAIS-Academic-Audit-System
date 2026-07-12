@@ -64,18 +64,18 @@ export function DepartmentManagementView({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={() => setActiveOperation(null)}
-          className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+          className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md"
         />
         <motion.div
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
-          className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+          className="relative w-full max-w-lg bg-surface rounded-[2.5rem] shadow-2xl overflow-hidden"
         >
           <div className="p-10">
             <header className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-4">
-<div className="w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center">
+<div className="w-12 h-12 bg-brand-primary text-primary-foreground rounded-2xl flex items-center justify-center">
                    {type === "Registry Transfer" && <ArrowRight size={24} />}
                    {type === "Credential Reset" && <RotateCcw size={24} />}
                    {type === "Audit Trail View" && <Search size={24} />}
@@ -84,17 +84,17 @@ export function DepartmentManagementView({
                    {type === "Authorize Template Update" && <FileText size={24} />}
                  </div>
                 <div>
-                  <h3 className="text-xl font-black italic font-display text-slate-900 leading-none mb-1">
+                  <h3 className="text-xl font-black italic font-display text-foreground leading-none mb-1">
                     {type}
                   </h3>
-<p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic leading-none">
+<p className="text-xs font-bold text-muted-foreground uppercase tracking-widest italic leading-none">
                      {type === "Authorize Template Update" ? "Target:" : "Node:"} {staffName}
                    </p>
                 </div>
               </div>
               <button
                 onClick={() => setActiveOperation(null)}
-                className="p-2 text-slate-300 hover:text-slate-900 transition-all"
+                className="p-2 text-muted-foreground hover:text-foreground transition-all"
               >
                 <X size={24} />
               </button>
@@ -102,7 +102,7 @@ export function DepartmentManagementView({
 
             {type === "Registry Transfer" && (
               <div className="space-y-6">
-                <p className="text-sm font-medium text-slate-600 leading-relaxed">
+                <p className="text-sm font-medium text-foreground/60 leading-relaxed">
                   Select the destination cluster for this faculty node. This
                   will relocate all associated academic history and current
                   assessment permissions.
@@ -114,19 +114,19 @@ export function DepartmentManagementView({
                       <button
                         key={d.id}
                         onClick={() => handleRegistryTransfer(d.id)}
-                        className="p-4 border border-slate-100 rounded-2xl text-left hover:border-slate-300 hover:bg-slate-50 transition-all group flex items-center justify-between"
+                        className="p-4 border border-border rounded-2xl text-left hover:border-border hover:bg-muted/30 transition-all group flex items-center justify-between"
                       >
                         <div className="flex items-center gap-3">
                           <div
                             className={`w-1.5 h-6 rounded-full ${d.color}`}
                           />
-                          <span className="text-[13px] font-black italic text-slate-900">
+                          <span className="text-sm font-black italic text-foreground">
                             {d.name} Cluster
                           </span>
                         </div>
                         <ChevronRight
                           size={16}
-                          className="text-slate-300 group-hover:text-slate-900 transition-all"
+                          className="text-muted-foreground group-hover:text-foreground transition-all"
                         />
                       </button>
                     ))}
@@ -136,8 +136,8 @@ export function DepartmentManagementView({
 
             {type === "Credential Reset" && (
               <div className="space-y-8">
-                <div className="p-6 bg-amber-50 rounded-3xl border border-amber-100">
-                  <p className="text-sm font-medium text-amber-900 leading-relaxed">
+                <div className="p-6 bg-warning/10 rounded-3xl border border-warning/20">
+                  <p className="text-sm font-medium text-warning leading-relaxed">
                     This will invalidate current session tokens and generate a
                     temporary institutional access key for{" "}
                     <span className="font-black italic underline">
@@ -147,12 +147,12 @@ export function DepartmentManagementView({
                   </p>
                 </div>
                 <div className="space-y-3">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
+                  <p className="text-xs font-black text-muted-foreground uppercase tracking-widest text-center">
                     Authentication Required
                   </p>
                   <button
                     onClick={performCredentialReset}
-                    className="w-full py-4 bg-slate-900 text-white font-black rounded-2xl text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-900/20 cursor-pointer"
+                    className="w-full py-4 bg-brand-primary text-primary-foreground font-black rounded-2xl text-xs uppercase tracking-widest hover:bg-brand-primary/90 transition-all shadow-xl shadow-brand-primary/20 cursor-pointer"
                   >
                     Authorize Reset Protocol
                   </button>
@@ -166,7 +166,7 @@ export function DepartmentManagementView({
                    {activeOperation && activeOperation.deptId ? (
                      <AuditTrailLogs deptId={activeOperation.deptId} />
                    ) : (
-                     <p className="text-sm text-slate-500 italic">Loading audit logs...</p>
+                     <p className="text-sm text-foreground/50 italic">Loading audit logs...</p>
                    )}
                  </div>
                  <button 
@@ -174,7 +174,7 @@ export function DepartmentManagementView({
                      const result = await generateFullForensicReport(selectedDept?.id, selectedDept?.name);
                      setAlert({ isOpen: true, title: 'Forensic Report Generated', message: result.message, type: result.success ? 'success' : 'info' });
                    }}
-                   className="w-full py-4 border border-slate-200 text-slate-900 font-black rounded-2xl text-[11px] uppercase tracking-widest hover:bg-slate-50 transition-all"
+                   className="w-full py-4 border border-border text-foreground font-black rounded-2xl text-xs uppercase tracking-widest hover:bg-muted/30 transition-all"
                  >
                    Generate Full Forensic Report
                  </button>
@@ -183,9 +183,9 @@ export function DepartmentManagementView({
 
             {type === "Revoke Authority" && (
               <div className="space-y-8 text-center">
-                <p className="text-slate-500 font-medium leading-relaxed italic px-4">
+                <p className="text-foreground/50 font-medium leading-relaxed italic px-4">
                   Confirmed: strip{" "}
-                  <span className="text-slate-900 font-black italic">
+                  <span className="text-foreground font-black italic">
                     "{staffName}"
                   </span>{" "}
                   of all HOD management tokens and administrative oversight?
@@ -193,13 +193,13 @@ export function DepartmentManagementView({
                 <div className="flex gap-3">
                   <button
                     onClick={() => setActiveOperation(null)}
-                    className="flex-1 py-4 bg-slate-50 text-slate-900 font-black rounded-2xl text-[11px] uppercase tracking-widest"
+                    className="flex-1 py-4 bg-muted/30 text-foreground font-black rounded-2xl text-xs uppercase tracking-widest"
                   >
                     Cancel
                   </button>
 <button
                      onClick={handleRevokeAuthority}
-                     className="flex-1 py-4 bg-rose-600 text-white font-black rounded-2xl text-[11px] uppercase tracking-widest hover:bg-rose-700 shadow-xl shadow-rose-600/20 cursor-pointer"
+                     className="flex-1 py-4 bg-destructive text-primary-foreground font-black rounded-2xl text-xs uppercase tracking-widest hover:bg-destructive/80 shadow-xl shadow-destructive/20 cursor-pointer"
                    >
                      Revoke Authority
                    </button>
@@ -209,8 +209,8 @@ export function DepartmentManagementView({
 
              {type === "Deep Archive" && (
                <div className="space-y-8 text-center">
-                 <div className="p-6 bg-slate-900 text-white rounded-[2rem] text-left">
-                   <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-3">
+                 <div className="p-6 bg-brand-primary text-primary-foreground rounded-[2rem] text-left">
+                   <p className="text-xs font-black text-primary-foreground/40 uppercase tracking-[0.2em] mb-3">
                      Protocol Implications
                    </p>
                    <ul className="space-y-3">
@@ -221,9 +221,9 @@ export function DepartmentManagementView({
                      ].map((text, i) => (
                        <li
                          key={i}
-                         className="flex items-center gap-3 text-[11px] font-bold italic"
+                         className="flex items-center gap-3 text-xs font-bold italic"
                        >
-                         <ShieldCheck size={14} className="text-emerald-400" />
+                         <ShieldCheck size={14} className="text-success" />
                          {text}
                        </li>
                      ))}
@@ -232,13 +232,13 @@ export function DepartmentManagementView({
                  <div className="flex gap-3">
                    <button
                      onClick={() => setActiveOperation(null)}
-                     className="flex-1 py-4 bg-slate-50 text-slate-900 font-black rounded-2xl text-[11px] uppercase tracking-widest"
+                     className="flex-1 py-4 bg-muted/30 text-foreground font-black rounded-2xl text-xs uppercase tracking-widest"
                    >
                      Abort
                    </button>
                    <button
                      onClick={handleDeepArchive}
-                     className="flex-1 py-4 bg-slate-900 text-white font-black rounded-2xl text-[11px] uppercase tracking-widest cursor-pointer"
+                     className="flex-1 py-4 bg-brand-primary text-primary-foreground font-black rounded-2xl text-xs uppercase tracking-widest cursor-pointer"
                    >
                      Initiate Archive
                    </button>
@@ -248,8 +248,8 @@ export function DepartmentManagementView({
 
              {type === "Authorize Template Update" && (
                <div className="space-y-6">
-                 <div className="p-6 bg-blue-50 rounded-3xl border border-blue-100">
-                   <p className="text-sm font-medium text-blue-900 leading-relaxed">
+                 <div className="p-6 bg-brand-primary/10 rounded-3xl border border-brand-primary/20">
+                   <p className="text-sm font-medium text-brand-primary leading-relaxed">
                      Authorize template updates for{" "}
                      <span className="font-black italic underline">
                        {selectedDept?.name || staffName}
@@ -258,12 +258,12 @@ export function DepartmentManagementView({
                    </p>
                  </div>
                  <div className="space-y-3">
-                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
+                   <p className="text-xs font-black text-muted-foreground uppercase tracking-widest text-center">
                      Authorization Required
                    </p>
                    <button
                      onClick={handleAuthorizeTemplateUpdate}
-                     className="w-full py-4 bg-slate-900 text-white font-black rounded-2xl text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-900/20 cursor-pointer"
+                     className="w-full py-4 bg-brand-primary text-primary-foreground font-black rounded-2xl text-xs uppercase tracking-widest hover:bg-brand-primary/90 transition-all shadow-xl shadow-brand-primary/20 cursor-pointer"
                    >
                      Authorize Template Update (20%)
                    </button>
@@ -271,8 +271,8 @@ export function DepartmentManagementView({
                </div>
              )}
           </div>
-          <div className="bg-slate-50 py-5 text-center border-t border-slate-100">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">
+          <div className="bg-muted/30 py-5 text-center border-t border-border">
+            <p className="text-xs font-black text-muted-foreground uppercase tracking-[0.25em]">
               Institutional Protocol: Level 4 Authorized
             </p>
           </div>
@@ -282,7 +282,7 @@ export function DepartmentManagementView({
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden relative">
+    <div className="flex-1 flex flex-col bg-muted/30 overflow-hidden relative">
       <AnimatePresence mode="wait">
         {!selectedDept ? (
           <DepartmentGrid
@@ -298,7 +298,7 @@ export function DepartmentManagementView({
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="flex-1 flex flex-col bg-white overflow-hidden"
+            className="flex-1 flex flex-col bg-surface overflow-hidden"
           >
             <DepartmentDetailsHeader
               selectedDept={selectedDept}
@@ -341,44 +341,44 @@ export function DepartmentManagementView({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setAssigningHOD(null)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+              className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md"
             />
             <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+              className="relative w-full max-w-md bg-surface rounded-[2.5rem] shadow-2xl overflow-hidden"
             >
               <div className="p-10 text-center">
-                <div className="w-20 h-20 bg-amber-50 text-amber-600 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner ring-1 ring-amber-100">
-                  <Crown size={40} className="fill-amber-500/20" />
+                <div className="w-20 h-20 bg-warning/10 text-warning rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner ring-1 ring-warning/20">
+                  <Crown size={40} className="fill-warning/20" />
                 </div>
 
-                <h3 className="text-2xl font-black italic font-display text-slate-900 tracking-tight leading-none mb-3">
+                <h3 className="text-2xl font-black italic font-display text-foreground tracking-tight leading-none mb-3">
                   Authority Elevation
                 </h3>
-                <p className="text-slate-500 font-bold leading-relaxed mb-10 px-4 text-sm">
+                <p className="text-foreground/50 font-bold leading-relaxed mb-10 px-4 text-sm">
                   Elevate{" "}
-                  <span className="text-slate-900 font-black italic">
+                  <span className="text-foreground font-black italic">
                     "{assigningHOD.staffName}"
                   </span>{" "}
                   to Head of Department for {assigningHOD.deptName}?
                 </p>
 
-                <div className="bg-slate-50 border border-slate-100 rounded-3xl p-5 mb-10 text-left">
+                <div className="bg-muted/30 border border-border rounded-3xl p-5 mb-10 text-left">
                   <div className="flex items-center gap-3 mb-3">
-                    <ShieldCheck size={16} className="text-emerald-600" />
-                    <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">
+                    <ShieldCheck size={16} className="text-success" />
+                    <p className="text-xs font-black text-foreground uppercase tracking-widest">
                       Granted Token Permissions
                     </p>
                   </div>
                   <ul className="space-y-2">
-                    <li className="text-[11px] font-medium text-slate-500 flex items-center gap-2 italic">
-                      <div className="w-1 h-1 rounded-full bg-slate-300" />
+                    <li className="text-xs font-medium text-foreground/50 flex items-center gap-2 italic">
+                      <div className="w-1 h-1 rounded-full bg-border" />
                       validation of Cluster Assessment Matrices
                     </li>
-                    <li className="text-[11px] font-medium text-slate-500 flex items-center gap-2 italic">
-                      <div className="w-1 h-1 rounded-full bg-slate-300" />
+                    <li className="text-xs font-medium text-foreground/50 flex items-center gap-2 italic">
+                      <div className="w-1 h-1 rounded-full bg-border" />
                       Registry Certification Authority
                     </li>
                   </ul>
@@ -387,13 +387,13 @@ export function DepartmentManagementView({
                 <div className="flex gap-3">
                   <button
                     onClick={() => setAssigningHOD(null)}
-                    className="flex-1 py-4 bg-slate-50 text-slate-900 font-black rounded-2xl text-[11px] uppercase tracking-widest border border-slate-200/50"
+                    className="flex-1 py-4 bg-muted/30 text-foreground font-black rounded-2xl text-xs uppercase tracking-widest border border-border/50"
                   >
                     Abort
                   </button>
                   <button
                     onClick={confirmAssignment}
-                    className="flex-1 py-4 bg-slate-900 text-white font-black rounded-2xl text-[11px] uppercase tracking-widest"
+                    className="flex-1 py-4 bg-brand-primary text-primary-foreground font-black rounded-2xl text-xs uppercase tracking-widest"
                   >
                     Confirm
                   </button>
@@ -415,23 +415,23 @@ export function DepartmentManagementView({
                animate={{ opacity: 1 }}
                exit={{ opacity: 0 }}
                onClick={closeSpawnModal}
-               className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+               className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md"
              />
              <motion.div
                initial={{ scale: 0.9, opacity: 0, y: 20 }}
                animate={{ scale: 1, opacity: 1, y: 0 }}
                exit={{ scale: 0.9, opacity: 0, y: 20 }}
-               className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+               className="relative w-full max-w-md bg-surface rounded-[2.5rem] shadow-2xl overflow-hidden"
              >
                <div className="p-10">
                  <div className="flex items-center justify-between mb-6">
-                   <h3 className="text-xl font-black italic font-display text-slate-900">
+                   <h3 className="text-xl font-black italic font-display text-foreground">
                      Spawn Department
                    </h3>
                    <button
                      type="button"
                      onClick={closeSpawnModal}
-                     className="p-2 text-slate-300 hover:text-slate-900 transition-all"
+                     className="p-2 text-muted-foreground hover:text-foreground transition-all"
                    >
                      <X size={24} />
                    </button>
@@ -445,7 +445,7 @@ export function DepartmentManagementView({
                   className="space-y-6"
                 >
                    <div>
-                     <label className="block text-[10px] font-bold text-slate-600 mb-2">
+                     <label className="block text-xs font-bold text-foreground/60 mb-2">
                        Department Name
                      </label>
                      <input
@@ -454,14 +454,14 @@ export function DepartmentManagementView({
                        onChange={(e) =>
                          setSpawnForm({ ...spawnForm, name: e.target.value })
                        }
-                       className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 outline-none transition-all"
+                       className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent text-foreground outline-none transition-all"
                        placeholder="Enter department name"
                        required
                      />
                    </div>
 
                    <div>
-                     <label className="block text-[10px] font-bold text-slate-600 mb-2">
+                     <label className="block text-xs font-bold text-foreground/60 mb-2">
                        Initial HOD Name
                      </label>
                      <input
@@ -470,13 +470,13 @@ export function DepartmentManagementView({
                        onChange={(e) =>
                          setSpawnForm({ ...spawnForm, hodName: e.target.value })
                        }
-                       className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 outline-none transition-all"
+                       className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent text-foreground outline-none transition-all"
                        placeholder="e.g., Anthony Hackman"
                      />
                    </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-2">
+                    <label className="block text-xs font-bold text-foreground/60 mb-2">
                       Description (Optional)
                     </label>
                     <textarea
@@ -487,7 +487,7 @@ export function DepartmentManagementView({
                           description: e.target.value,
                         })
                       }
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 outline-none transition-all h-[80px] resize-none"
+                      className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent text-foreground outline-none transition-all h-[80px] resize-none"
                       placeholder="Enter department description"
                     />
                   </div>
@@ -496,13 +496,13 @@ export function DepartmentManagementView({
                      <button
                        type="button"
                        onClick={closeSpawnModal}
-                       className="flex-1 px-5 py-3 text-slate-900 font-black rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-all"
+                       className="flex-1 px-5 py-3 text-foreground font-black rounded-xl border border-border bg-muted/30 hover:bg-muted/20 transition-all"
                      >
                        Cancel
                      </button>
                     <button
                       type="submit"
-                      className="flex-1 px-5 py-3 bg-slate-900 text-white font-black rounded-xl hover:bg-black transition-all shadow-lg shadow-slate-900/10"
+                      className="flex-1 px-5 py-3 bg-brand-primary text-primary-foreground font-black rounded-xl hover:bg-brand-primary/90 transition-all shadow-lg shadow-brand-primary/10"
                     >
                       Spawn Department
                     </button>
@@ -529,39 +529,39 @@ export function DepartmentManagementView({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={closeTransferModal}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+              className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md"
             />
             <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+              className="relative w-full max-w-lg bg-surface rounded-[2.5rem] shadow-2xl overflow-hidden"
             >
               <div className="p-10">
                 <header className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center">
+                    <div className="w-12 h-12 bg-brand-primary text-primary-foreground rounded-2xl flex items-center justify-center">
                       <ArrowRight size={24} />
                     </div>
                     <div>
-                      <h3 className="text-xl font-black italic font-display text-slate-900 leading-none mb-1">
+                      <h3 className="text-xl font-black italic font-display text-foreground leading-none mb-1">
                         Transfer Teacher
                       </h3>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic leading-none">
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest italic leading-none">
                         Select teacher to add to {transferModal.deptName}
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={closeTransferModal}
-                    className="p-2 text-slate-300 hover:text-slate-900 transition-all"
+                    className="p-2 text-muted-foreground hover:text-foreground transition-all"
                   >
                     <X size={24} />
                   </button>
                 </header>
 
                 <div className="space-y-6">
-                  <p className="text-sm font-medium text-slate-600 leading-relaxed">
+                  <p className="text-sm font-medium text-foreground/60 leading-relaxed">
                     Select a teacher from another department to transfer to this cluster.
                   </p>
 <div className="grid grid-cols-1 gap-3 max-h-80 overflow-y-auto scrollbar-hide">
@@ -569,24 +569,24 @@ export function DepartmentManagementView({
                       <button
                         key={staff.id}
                         onClick={() => executeTransfer && executeTransfer(staff.id, transferModal.deptId)}
-                        className="p-4 border border-slate-100 rounded-2xl text-left hover:border-slate-300 hover:bg-slate-50 transition-all group flex items-center justify-between"
+                        className="p-4 border border-border rounded-2xl text-left hover:border-border hover:bg-muted/30 transition-all group flex items-center justify-between"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 font-black text-[10px]">
+                          <div className="w-8 h-8 rounded-lg bg-muted/20 flex items-center justify-center text-foreground/60 font-black text-xs">
                             {staff.name?.trim().split(/\s+/).map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                           </div>
                           <div>
-                            <span className="text-[13px] font-black italic text-slate-900 block">
+                            <span className="text-sm font-black italic text-foreground block">
                               {staff.name}
                             </span>
-                            <span className="text-[10px] font-medium text-slate-400">
+                            <span className="text-xs font-medium text-muted-foreground">
                               {staff.currentDept}
                             </span>
                           </div>
                         </div>
                         <ChevronRight
                           size={16}
-                          className="text-slate-300 group-hover:text-slate-900 transition-all"
+                          className="text-muted-foreground group-hover:text-foreground transition-all"
                         />
                       </button>
                     ))}
@@ -615,28 +615,28 @@ function AuditTrailLogs({ deptId }) {
    }, [deptId]);
 
    if (loading) {
-     return <p className="text-sm text-slate-500 italic">Loading audit trail...</p>;
+     return <p className="text-sm text-foreground/50 italic">Loading audit trail...</p>;
    }
 
    if (!logs || logs.length === 0) {
-     return <p className="text-sm text-slate-500 italic">No audit trail entries found for this department.</p>;
+     return <p className="text-sm text-foreground/50 italic">No audit trail entries found for this department.</p>;
    }
 
    return logs.map((log, i) => (
      <div
        key={log.id || i}
-       className="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl"
+       className="flex items-start gap-4 p-4 bg-muted/30 rounded-2xl"
      >
-       <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+       <div className="w-2 h-2 rounded-full bg-success/100 mt-1.5 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
        <div>
-         <p className="text-sm font-black italic text-slate-900">
+         <p className="text-sm font-black italic text-foreground">
            {log.action || log.payload?.action || 'Action'}
          </p>
-         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+         <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
            {new Date(log.createdAt || log.timestamp || log.time).toLocaleString()} • {log.status || log.payload?.status || 'Completed'}
          </p>
          {log.payload?.description && (
-           <p className="text-[9px] text-slate-500 mt-1 truncate max-w-xs">
+           <p className="text-[9px] text-foreground/50 mt-1 truncate max-w-xs">
              {log.payload.description}
            </p>
          )}

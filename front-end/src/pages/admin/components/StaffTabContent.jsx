@@ -56,29 +56,29 @@ export function StaffTabContent({
         return (
           <div 
             key={member.id} 
-            className="staff-row-node p-2 sm:p-2.5 bg-white border border-slate-100 rounded-xl hover:border-slate-200 hover:shadow-xs transition-all group flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+            className="staff-row-node p-2 sm:p-2.5 bg-surface border border-border rounded-xl hover:border-border hover:shadow-xs transition-all group flex flex-col sm:flex-row sm:items-center justify-between gap-2"
           >
             {/* Staff Profile Node Info */}
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-500 font-black text-[10px] shrink-0 select-none group-hover:bg-emerald-50 group-hover:text-emerald-700 transition-colors">
+              <div className="w-7 h-7 rounded-lg bg-muted/20 border border-border flex items-center justify-center text-foreground/50 font-black text-[10px] shrink-0 select-none group-hover:bg-success/10 group-hover:text-success transition-colors">
                 {initials}
               </div>
               <div className="min-w-0">
-                <p className="text-[11px] font-bold text-slate-900 leading-tight truncate">
+                <p className="text-[11px] font-bold text-foreground leading-tight truncate">
                   {member.name}
                 </p>
-                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider truncate font-mono mt-0.5">
+                <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider truncate font-mono mt-0.5">
                   {member.role}
                 </p>
               </div>
             </div>
 
             {/* Context Action Matrix */}
-            <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto border-t border-slate-50 sm:border-0 pt-1.5 sm:pt-0">
+            <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto border-t border-border sm:border-0 pt-1.5 sm:pt-0">
               {/* Hierarchical Authorization Badging */}
               {member.isHOD ? (
-                <div className="px-1.5 py-0.5 bg-amber-50/80 text-amber-700 rounded border border-amber-100/60 flex items-center gap-1">
-                  <Crown size={9} className="fill-amber-500 text-amber-500 shrink-0" />
+                <div className="px-1.5 py-0.5 bg-warning/10 text-warning rounded border border-warning/20 flex items-center gap-1">
+                  <Crown size={9} className="fill-warning text-warning shrink-0" />
                   <span className="text-[7.5px] font-black uppercase tracking-wider leading-none whitespace-nowrap font-mono">
                     HOD
                   </span>
@@ -89,7 +89,7 @@ export function StaffTabContent({
                     e.stopPropagation();
                     handleAssignHOD(e, member.id, member.name, dept.id, dept.name);
                   }}
-                  className="p-1 text-slate-300 hover:text-amber-500 hover:bg-amber-50/60 rounded-md transition-all group-hover:text-slate-400 cursor-pointer" 
+                  className="p-1 text-muted-foreground hover:text-warning hover:bg-warning/10 rounded-md transition-all group-hover:text-muted-foreground cursor-pointer" 
                   title="Assign HOD Token"
                 >
                   <Crown size={12} />
@@ -106,8 +106,8 @@ export function StaffTabContent({
                   className={cn(
                     "p-1 rounded-md transition-all cursor-pointer",
                     openKebabId === member.id 
-                      ? "bg-slate-900 text-white shadow-xs" 
-                      : "text-slate-300 hover:text-slate-900 hover:bg-slate-50 group-hover:text-slate-400"
+                      ? "bg-brand-primary text-primary-foreground shadow-xs" 
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/20 group-hover:text-muted-foreground"
                   )}
                 >
                   <MoreVertical size={12} />
@@ -134,22 +134,22 @@ export function StaffTabContent({
                         right: dropdownCoords.right
                       }}
                       className={cn(
-                        "absolute w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-[250] overflow-hidden",
+                        "absolute w-44 bg-surface border border-border rounded-xl shadow-xl z-[250] overflow-hidden",
                         dropdownCoords.positionBelow ? "origin-top-right mt-1" : "origin-bottom-right mb-1"
                       )}
                     >
-                      <div className="p-1 border-b border-slate-100 bg-slate-50/50">
-                        <p className="text-[7.5px] font-black uppercase tracking-wider text-slate-400 px-2 py-0.5 font-mono">
+                      <div className="p-1 border-b border-border bg-muted/20">
+                        <p className="text-[7.5px] font-black uppercase tracking-wider text-muted-foreground px-2 py-0.5 font-mono">
                           System Operational Protocol
                         </p>
                       </div>
 <div className="p-1 space-y-0.5">
 {[
-                            { label: 'Registry Transfer', icon: ArrowRight, color: 'hover:text-blue-600 hover:bg-blue-50/80', isDeptLevel: false },
-                            { label: 'Credential Reset', icon: RotateCcw, color: 'hover:text-amber-600 hover:bg-amber-50/80', isDeptLevel: false },
-                            { label: 'Audit Trail View', icon: Search, color: 'hover:text-indigo-600 hover:bg-indigo-50/80', isDeptLevel: true },
-                            { label: 'Revoke Authority', icon: ShieldCheck, color: 'hover:text-rose-600 hover:bg-rose-50/80', isDeptLevel: false },
-                            { label: 'Authorize Template Update', icon: FileText, color: 'hover:text-blue-600 hover:bg-blue-50/80', isDeptLevel: true },
+                            { label: 'Registry Transfer', icon: ArrowRight, color: 'hover:text-brand-primary hover:bg-brand-primary/10', isDeptLevel: false },
+                            { label: 'Credential Reset', icon: RotateCcw, color: 'hover:text-warning hover:bg-warning/10', isDeptLevel: false },
+                            { label: 'Audit Trail View', icon: Search, color: 'hover:text-brand-primary hover:bg-brand-primary/10', isDeptLevel: true },
+                            { label: 'Revoke Authority', icon: ShieldCheck, color: 'hover:text-destructive hover:bg-destructive/5', isDeptLevel: false },
+                            { label: 'Authorize Template Update', icon: FileText, color: 'hover:text-brand-primary hover:bg-brand-primary/10', isDeptLevel: true },
                           ].map((item) => (
                             <button
                               key={item.label}
@@ -161,7 +161,7 @@ export function StaffTabContent({
                                 handleNodeOperation(item.label, targetId, targetName, dept.id);
                               }}
                               className={cn(
-                                "w-full flex items-center gap-2 px-2 py-1.5 text-[10px] font-bold text-slate-600 rounded-lg transition-all text-left cursor-pointer",
+                                "w-full flex items-center gap-2 px-2 py-1.5 text-[10px] font-bold text-foreground/60 rounded-lg transition-all text-left cursor-pointer",
                                 item.color
                               )}
                             >
@@ -170,13 +170,13 @@ export function StaffTabContent({
                             </button>
                           ))}
                       </div>
-                      <div className="p-1 bg-slate-50/60 border-t border-slate-100">
+                      <div className="p-1 bg-muted/20 border-t border-border">
 <button 
                            onClick={(e) => {
                              e.stopPropagation();
                              handleNodeOperation('Deep Archive', member.id, member.name, dept.id);
                            }}
-                           className="w-full flex items-center gap-2 px-2 py-1.5 text-[10px] font-bold text-slate-400 hover:text-rose-600 hover:bg-rose-50/80 rounded-lg transition-all text-left cursor-pointer"
+                           className="w-full flex items-center gap-2 px-2 py-1.5 text-[10px] font-bold text-muted-foreground hover:text-destructive hover:bg-destructive/5 rounded-lg transition-all text-left cursor-pointer"
                          >
                            <Trash2 size={11} className="shrink-0" />
                            <span className="truncate">Deep Archive</span>
@@ -193,7 +193,7 @@ export function StaffTabContent({
       
 {/* Append/Transfer Trigger */}
        {dept.id && onAddTeacher && (
-         <button onClick={onAddTeacher} className="w-full h-8 px-3 border border-dashed border-slate-200 rounded-xl text-[8.5px] font-bold text-slate-400 hover:text-slate-700 hover:border-slate-300 hover:bg-slate-50/50 uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 mt-1 cursor-pointer group">
+         <button onClick={onAddTeacher} className="w-full h-8 px-3 border border-dashed border-border rounded-xl text-[8.5px] font-bold text-muted-foreground hover:text-foreground/80 hover:border-border hover:bg-muted/20 uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 mt-1 cursor-pointer group">
            <Plus size={11} className="shrink-0 transition-transform group-hover:rotate-90" />
            <span className="truncate">Transfer Teacher to Cluster</span>
          </button>

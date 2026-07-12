@@ -40,18 +40,18 @@ export function ApprovalInspectView() {
   };
   
   return (
-    <div className="flex-1 overflow-y-auto bg-slate-50 p-6 scrollbar-hide">
+    <div className="flex-1 overflow-y-auto bg-background p-6 scrollbar-hide">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold text-slate-900">Approval Request Details</h1>
+          <h1 className="text-2xl font-bold text-text-primary">Approval Request Details</h1>
           <div className="flex items-center gap-3">
-            <Link to="/approvals/all" className="text-slate-500 hover:text-slate-700 transition-colors">
+            <Link to="/approvals/all" className="text-text-secondary hover:text-text-primary transition-colors">
               <X size={20} /> Back to Queue
             </Link>
             <button 
               onClick={handleDeleteApproval}
-              className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors text-sm font-medium"
+              className="flex items-center gap-2 px-4 py-2 bg-destructive text-primary-foreground rounded-lg hover:bg-destructive/90 transition-colors text-sm font-medium"
             >
               <Trash2 size={16} /> Delete Request
             </button>
@@ -59,30 +59,30 @@ export function ApprovalInspectView() {
         </div>
         
         {/* Approval Card */}
-        <div className="bg-white rounded-xl border border-slate-200/50 shadow-sm">
+        <div className="bg-surface rounded-xl border border-border shadow-sm">
           {/* Header Info */}
-          <div className="p-6 border-b border-slate-100">
+          <div className="p-6 border-b border-border">
             <div className="flex justify-between items-start">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center">
-                    <Users size={24} className="text-slate-600" />
+                  <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
+                    <Users size={24} className="text-text-secondary" />
                   </div>
                   <div>
-                    <p className="text-slate-500 text-sm">Requested By</p>
-                    <p className="text-2xl font-bold text-slate-900">{approval.teacher}</p>
+                    <p className="text-text-secondary text-sm">Requested By</p>
+                    <p className="text-2xl font-bold text-text-primary">{approval.teacher}</p>
                   </div>
                 </div>
-                <p className="text-slate-700">{approval.detail}</p>
+                <p className="text-text-primary">{approval.detail}</p>
               </div>
               
               <div className="text-right">
-                <p className="text-slate-500 text-sm">Request Time</p>
-                <p className="text-2xl font-bold text-slate-900">{approval.time}</p>
+                <p className="text-text-secondary text-sm">Request Time</p>
+                <p className="text-2xl font-bold text-text-primary">{approval.time}</p>
                 <div className="mt-4">
                   <span className={cn(
                     "px-3 py-1 rounded text-sm font-medium",
-                    "bg-slate-100 text-slate-600"
+                    "bg-muted text-text-secondary"
                   )}>
                     ID: {approval.id}
                   </span>
@@ -93,13 +93,13 @@ export function ApprovalInspectView() {
           
           {/* Resolution Section */}
           <div className="p-6">
-            <h2 className="text-xl font-semibold text-slate-900 mb-4">Resolution</h2>
+            <h2 className="text-xl font-semibold text-text-primary mb-4">Resolution</h2>
             
             {/* Resolution Form (if not already resolved) */}
             {resolutionStatus === '' && (
               <div className="mb-6">
                 <div className="mb-4">
-                  <label className="block text-slate-700 font-medium mb-2">Resolution Status</label>
+                  <label className="block text-text-primary font-medium mb-2">Resolution Status</label>
                   <div className="flex gap-3">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
@@ -108,7 +108,7 @@ export function ApprovalInspectView() {
                         value="grant"
                         checked={resolutionStatus === 'grant'}
                         onChange={(e) => setResolutionStatus(e.target.value)}
-                        className="h-4 w-4 text-slate-600"
+                        className="h-4 w-4 text-text-secondary"
                       />
                       <span>Grant Approval</span>
                     </label>
@@ -119,7 +119,7 @@ export function ApprovalInspectView() {
                         value="abort"
                         checked={resolutionStatus === 'abort'}
                         onChange={(e) => setResolutionStatus(e.target.value)}
-                        className="h-4 w-4 text-slate-600"
+                        className="h-4 w-4 text-text-secondary"
                       />
                       <span>Reject Request</span>
                     </label>
@@ -127,24 +127,24 @@ export function ApprovalInspectView() {
                 </div>
                 
                 <div className="mb-4">
-                  <label className="block text-slate-700 font-medium mb-2">Resolution Notes (Optional)</label>
+                  <label className="block text-text-primary font-medium mb-2">Resolution Notes (Optional)</label>
                   <textarea
                     value={resolutionNotes}
                     onChange={(e) => setResolutionNotes(e.target.value)}
                     placeholder="Provide details for your decision..."
-                    className="w-full min-h-[80px] border border-slate-200 rounded px-3 py-2 focus:ring-2 focus:ring-slate-400 text-sm resize-y"
+                    className="w-full min-h-[80px] border border-border rounded px-3 py-2 focus:ring-2 focus:ring-ring text-sm resize-y"
                   />
                 </div>
                 
                 <button 
                   onClick={handleResolveApproval}
                   disabled={resolutionStatus === ''}
-                  className="w-full px-4 py-3 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
+                  className="w-full px-4 py-3 bg-brand-dark text-primary-foreground rounded-lg text-sm font-medium hover:bg-brand-dark/90 transition-colors flex items-center justify-center gap-2"
                 >
                   {resolutionStatus === '' ? 'Submit Resolution' : 'Submitting...'}
                   {resolutionStatus !== '' && (
                     <span className="ml-2">
-                      <Check size={16} className="text-green-400" />
+                      <Check size={16} className="text-success" />
                     </span>
                   )}
                 </button>
@@ -157,24 +157,24 @@ export function ApprovalInspectView() {
                 <div className="flex items-center gap-3 p-4 rounded-lg">
                   <div className={cn(
                     "w-10 h-10 rounded-lg flex items-center justify-center",
-                    resolutionStatus === 'grant' ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"
+                    resolutionStatus === 'grant' ? "bg-brand-primary/10 text-brand-primary" : "bg-destructive/10 text-destructive"
                   )}>
                     {resolutionStatus === 'grant' ? <Check size={18} /> : <ThumbsDown size={18} />}
                   </div>
                   <div>
-                    <p className="font-medium text-slate-900">
+                    <p className="font-medium text-text-primary">
                       {resolutionStatus === 'grant' ? 'Approval Granted' : 'Request Rejected'}
                     </p>
-                    <p className="text-slate-600 text-sm">
+                    <p className="text-text-secondary text-sm">
                       Resolved on {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
                     </p>
                   </div>
                 </div>
                 
                 {resolutionNotes.trim() !== '' && (
-                  <div className="p-4 bg-slate-50 rounded-lg">
-                    <p className="text-slate-700 font-medium mb-2">Resolution Notes:</p>
-                    <p className="text-slate-600">{resolutionNotes}</p>
+                  <div className="p-4 bg-background rounded-lg">
+                    <p className="text-text-primary font-medium mb-2">Resolution Notes:</p>
+                    <p className="text-text-secondary">{resolutionNotes}</p>
                   </div>
                 )}
                 
@@ -184,7 +184,7 @@ export function ApprovalInspectView() {
                       setResolutionStatus('');
                       setResolutionNotes('');
                     }}
-                    className="px-4 py-2 bg-slate-200 text-slate-600 rounded-lg hover:bg-slate-300 transition-colors text-sm font-medium"
+                    className="px-4 py-2 bg-muted text-text-secondary rounded-lg hover:bg-border transition-colors text-sm font-medium"
                   >
                     Edit Resolution
                   </button>
@@ -194,33 +194,33 @@ export function ApprovalInspectView() {
           </div>
           
           {/* Activity Log */}
-          <div className="p-6 border-t border-slate-100">
-            <h2 className="text-xl font-semibold text-slate-900 mb-4">Activity Log</h2>
+          <div className="p-6 border-t border-border">
+            <h2 className="text-xl font-semibold text-text-primary mb-4">Activity Log</h2>
             <div className="space-y-3">
-              <div className="flex items-start gap-4 py-3 border-b border-slate-50">
+              <div className="flex items-start gap-4 py-3 border-b border-border">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center">
-                    <Clock size={16} className="text-slate-600" />
+                  <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
+                    <Clock size={16} className="text-text-secondary" />
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-slate-700">Request submitted by {approval.teacher}</p>
-                  <p className="text-slate-500 text-sm">{approval.time}</p>
+                  <p className="text-text-primary">Request submitted by {approval.teacher}</p>
+                  <p className="text-text-secondary text-sm">{approval.time}</p>
                 </div>
               </div>
               
               {resolutionStatus !== '' && (
                 <div className="flex items-start gap-4 py-3">
                   <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center">
-                      {resolutionStatus === 'grant' ? <Check size={16} className="text-emerald-600" /> : <ThumbsDown size={16} className="text-rose-600" />}
+                    <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
+                      {resolutionStatus === 'grant' ? <Check size={16} className="text-brand-primary" /> : <ThumbsDown size={16} className="text-destructive" />}
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-slate-700">
+                    <p className="text-text-primary">
                       {resolutionStatus === 'grant' ? 'Approval granted by admin' : 'Request rejected by admin'}
                     </p>
-                    <p className="text-slate-500 text-sm">
+                    <p className="text-text-secondary text-sm">
                       {new Date().toLocaleTimeString()} • {new Date().toLocaleDateString()}
                     </p>
                   </div>

@@ -30,29 +30,29 @@ function SubjectRow({ subject, studentName, onAddRemark, onApprove, onReject }) 
   };
 
   return (
-    <div className="border border-gray-200/60 rounded-xl p-3 bg-white shadow-3xs transition-all hover:border-gray-300">
+    <div className="border border-border rounded-xl p-3 bg-card shadow-xs transition-all hover:border-muted">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex-1 min-w-0 space-y-2">
           <div className="flex items-center gap-2 flex-wrap">
-            <BookOpen size={12} className="text-gray-400 shrink-0" />
-            <p className="text-xs font-bold text-gray-900">{subject?.subject || subject?.name || 'Unassigned Curriculum'}</p>
+            <BookOpen size={12} className="text-muted-foreground shrink-0" />
+            <p className="text-xs font-bold text-foreground">{subject?.subject || subject?.name || 'Unassigned Curriculum'}</p>
             <SubmissionProgressSparkline value={subject?.progress || 0} size="sm" />
           </div>
-          <div className="grid grid-cols-3 gap-2 max-w-xs bg-slate-50 p-2 rounded-lg border border-gray-200/40">
+           <div className="grid grid-cols-3 gap-2 max-w-xs bg-muted p-2 rounded-lg border border-border">
             <div>
-              <p className="text-[8px] font-bold uppercase tracking-wider text-gray-400">SBA</p>
-              <p className="text-xs font-bold text-gray-700">{subject?.sba ?? '—'}</p>
+              <p className="text-[8px] font-bold uppercase tracking-wider text-muted-foreground">SBA</p>
+              <p className="text-xs font-bold text-foreground">{subject?.sba ?? '—'}</p>
             </div>
             <div>
-              <p className="text-[8px] font-bold uppercase tracking-wider text-gray-400">Exam</p>
-              <p className="text-xs font-bold text-gray-700">{subject?.exam ?? '—'}</p>
+              <p className="text-[8px] font-bold uppercase tracking-wider text-muted-foreground">Exam</p>
+              <p className="text-xs font-bold text-foreground">{subject?.exam ?? '—'}</p>
             </div>
             <div>
-              <p className="text-[8px] font-bold uppercase tracking-wider text-gray-400">Final</p>
-              <p className="text-xs font-bold text-gray-950">{subject?.final ?? '—'}</p>
+              <p className="text-[8px] font-bold uppercase tracking-wider text-muted-foreground">Final</p>
+              <p className="text-xs font-bold text-foreground">{subject?.final ?? '—'}</p>
             </div>
           </div>
-          <div className="text-[10px] text-gray-400 font-medium flex items-center gap-1.5">
+          <div className="text-[10px] text-muted-foreground font-medium flex items-center gap-1.5">
             Status Boundary: <StatusBadge status={subject?.grade || 'N/A'} />
           </div>
         </div>
@@ -63,7 +63,7 @@ function SubjectRow({ subject, studentName, onAddRemark, onApprove, onReject }) 
             value={remark}
             onChange={(e) => setRemark(e.target.value)}
             placeholder="Add override details..."
-            className="px-2.5 py-1.5 text-xs bg-slate-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 placeholder-gray-400 font-medium w-full sm:w-44"
+            className="px-2.5 py-1.5 text-xs bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary/10 focus:border-brand-primary placeholder:text-muted-foreground font-medium w-full sm:w-44"
           />
           <ActionButtonGroup
             actions={[

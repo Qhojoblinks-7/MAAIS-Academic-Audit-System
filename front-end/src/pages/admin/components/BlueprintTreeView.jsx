@@ -437,15 +437,15 @@ export function BlueprintTreeView({
 
   return (
     <div className="xl:col-span-8 space-y-6">
-      <div className="bg-white rounded-[2.5rem] border border-slate-200 p-8 shadow-sm">
+      <div className="bg-surface rounded-[2.5rem] border border-border p-8 shadow-sm">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-[0.25em]">Institutional Blueprint</h3>
-            <p className="text-[9px] font-medium text-slate-400 mt-1 uppercase tracking-widest italic">Physical & Logical Entity Tree</p>
+            <h3 className="text-xs font-black text-foreground uppercase tracking-[0.25em]">Institutional Blueprint</h3>
+            <p className="text-[9px] font-medium text-muted-foreground mt-1 uppercase tracking-widest italic">Physical & Logical Entity Tree</p>
           </div>
           <button 
             onClick={() => setShowYearModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/20"
+            className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-brand-primary/20"
           >
             <Plus size={14} /> Add Year Group
           </button>
@@ -458,13 +458,13 @@ export function BlueprintTreeView({
                 onClick={() => toggleYear(year.id)}
                 className={cn(
                   "flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all",
-                  expandedYears.includes(year.id) ? "bg-slate-900 text-white shadow-xl" : "bg-slate-50 text-slate-900 hover:bg-slate-100"
+                  expandedYears.includes(year.id) ? "bg-brand-primary text-primary-foreground shadow-xl" : "bg-muted/30 text-foreground hover:bg-muted/50"
                 )}
               >
                 <div className="flex items-center gap-4">
                   <div className={cn(
                     "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
-                    expandedYears.includes(year.id) ? "bg-white/10 text-white" : "bg-white text-slate-400 border border-slate-200"
+                    expandedYears.includes(year.id) ? "bg-surface/10 text-primary-foreground" : "bg-surface text-muted-foreground border border-border"
                   )}>
                     {expandedYears.includes(year.id) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                   </div>
@@ -472,22 +472,22 @@ export function BlueprintTreeView({
                 </div>
                 <div className="flex items-center gap-6">
                   <div className="text-right">
-                    <p className={cn("text-[9px] font-black uppercase tracking-widest", expandedYears.includes(year.id) ? "text-white/40" : "text-slate-400")}>Pop. Census</p>
-                    <p className="text-[11px] font-black italic font-display">{year.programs.reduce((acc, p) => acc + p.classrooms.reduce((acc2, c) => acc2 + c.studentsCount, 0), 0)} Units</p>
+                    <p className={cn("text-[9px] font-black uppercase tracking-widest", expandedYears.includes(year.id) ? "text-primary-foreground/40" : "text-muted-foreground")}>Pop. Census</p>
+                    <p className="text-xs font-black italic font-display">{year.programs.reduce((acc, p) => acc + p.classrooms.reduce((acc2, c) => acc2 + c.studentsCount, 0), 0)} Units</p>
                   </div>
                   <div className="relative inline-block">
                     <button 
                       onClick={(e) => { e.stopPropagation(); setOpenKebabYearId(openKebabYearId === year.id ? null : year.id); }}
-                      className={cn("p-2 rounded-xl transition-all", expandedYears.includes(year.id) ? "text-white/40 hover:text-white hover:bg-white/10" : "text-slate-300 hover:text-slate-900 hover:bg-slate-100")}
+                      className={cn("p-2 rounded-xl transition-all", expandedYears.includes(year.id) ? "text-primary-foreground/40 hover:text-primary-foreground hover:bg-surface/10" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}
                     >
                       <MoreVertical size={16} />
                     </button>
                     {openKebabYearId === year.id && (
-                      <div className="absolute right-0 top-12 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1">
-                        <button onClick={() => handleYearKebabAction(year, 'promotion')} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><TrendingUp size={12} className="text-emerald-600" /> Level Promotion / Rollover</button>
-                        <button onClick={() => handleYearKebabAction(year, 'restructure')} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Settings2 size={12} className="text-blue-600" /> Program Restructuring</button>
-                        <div className="h-px bg-slate-100 my-1" />
-                        <button onClick={() => handleYearKebabAction(year, 'archive')} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Archive size={12} className="text-amber-600" /> Archive / Deactivate Level</button>
+                      <div className="absolute right-0 top-12 w-56 bg-surface border border-border rounded-xl shadow-xl z-50 py-1">
+                        <button onClick={() => handleYearKebabAction(year, 'promotion')} className="w-full text-left px-3 py-2.5 text-xs font-bold text-foreground/80 hover:bg-muted/50 flex items-center gap-2"><TrendingUp size={12} className="text-success" /> Level Promotion / Rollover</button>
+                        <button onClick={() => handleYearKebabAction(year, 'restructure')} className="w-full text-left px-3 py-2.5 text-xs font-bold text-foreground/80 hover:bg-muted/50 flex items-center gap-2"><Settings2 size={12} className="text-brand-primary" /> Program Restructuring</button>
+                        <div className="h-px bg-muted/20 my-1" />
+                        <button onClick={() => handleYearKebabAction(year, 'archive')} className="w-full text-left px-3 py-2.5 text-xs font-bold text-foreground/80 hover:bg-muted/50 flex items-center gap-2"><Archive size={12} className="text-warning" /> Archive / Deactivate Level</button>
                       </div>
                     )}
                   </div>
@@ -500,7 +500,7 @@ export function BlueprintTreeView({
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="pl-8 space-y-3 overflow-hidden border-l-2 border-slate-100 ml-8"
+                    className="pl-8 space-y-3 overflow-hidden border-l-2 border-border ml-8"
                   >
                     {year.programs.map((program) => (
                       <div key={program.id} className="space-y-3">
@@ -508,16 +508,16 @@ export function BlueprintTreeView({
                           onClick={(e) => { e.stopPropagation(); toggleProgram(program.id); }}
                           className={cn(
                             "flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all",
-                            expandedPrograms.includes(program.id) ? "bg-emerald-50 text-emerald-900 border border-emerald-100 shadow-sm" : "bg-white border border-slate-100 hover:bg-slate-50"
+                            expandedPrograms.includes(program.id) ? "bg-success/10 text-success border border-success/20 shadow-sm" : "bg-surface border border-border hover:bg-muted/50"
                           )}
                         >
                           <div className="flex items-center gap-4">
-                            <School size={16} className={cn(expandedPrograms.includes(program.id) ? "text-emerald-600" : "text-slate-300")} />
-                            <span className="text-[12px] font-black uppercase tracking-widest">{program.name}</span>
+                            <School size={16} className={cn(expandedPrograms.includes(program.id) ? "text-success" : "text-muted-foreground")} />
+                            <span className="text-xs font-black uppercase tracking-widest">{program.name}</span>
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{program.classrooms.length} Structural Nodes</span>
-                            {expandedPrograms.includes(program.id) ? <ChevronDown size={14} className="text-emerald-400" /> : <ChevronRight size={14} className="text-slate-300" />}
+                            <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">{program.classrooms.length} Structural Nodes</span>
+                            {expandedPrograms.includes(program.id) ? <ChevronDown size={14} className="text-success/60" /> : <ChevronRight size={14} className="text-muted-foreground" />}
                           </div>
                         </div>
 
@@ -527,47 +527,47 @@ export function BlueprintTreeView({
                               initial={{ opacity: 0, x: -10 }}
                               animate={{ opacity: 1, x: 0 }}
                               exit={{ opacity: 0, x: -10 }}
-                              className="pl-4 space-y-2 border-l-2 border-emerald-100/50"
+                              className="pl-4 space-y-2 border-l-2 border-success/20"
                             >
                               {program.classrooms.map((classroom) => (
-                                <div key={classroom.id} className="flex items-center justify-between p-5 bg-white rounded-2xl border border-slate-100 hover:border-slate-300 transition-all shadow-sm group">
+                                <div key={classroom.id} className="flex items-center justify-between p-5 bg-surface rounded-2xl border border-border hover:border-brand-primary/30 transition-all shadow-sm group">
                                   <div className="flex items-center gap-5">
-                                    <div className="w-10 h-10 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center transition-all group-hover:bg-slate-900 group-hover:text-white">
+                                    <div className="w-10 h-10 bg-muted/30 text-muted-foreground rounded-xl flex items-center justify-center transition-all group-hover:bg-brand-primary group-hover:text-primary-foreground">
                                       <Layers size={18} />
                                     </div>
                                     <div>
-                                      <p className="text-[14px] font-black italic font-display text-slate-900 leading-none mb-1">{classroom.name}</p>
+                                      <p className="text-sm font-black italic font-display text-foreground leading-none mb-1">{classroom.name}</p>
                                       <div className="flex items-center gap-2">
-                                        <Users size={10} className="text-slate-300" />
-                                        <span className="text-[9px] font-black uppercase text-slate-400 tracking-[0.15em]">{classroom.studentsCount} Linked Profiles</span>
+                                        <Users size={10} className="text-muted-foreground" />
+                                        <span className="text-[9px] font-black uppercase text-muted-foreground tracking-[0.15em]">{classroom.studentsCount} Linked Profiles</span>
                                       </div>
                                     </div>
                                   </div>
 
                                   <div className="flex items-center gap-8">
                                     <div className="text-center min-w-[80px]">
-                                      <p className="text-[8px] font-black uppercase text-slate-400 tracking-widest mb-1.5">Capacity Load</p>
+                                      <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest mb-1.5">Capacity Load</p>
                                       <div className="flex items-center gap-2">
-                                        <div className="h-1 flex-1 bg-slate-100 rounded-full overflow-hidden min-w-[50px]">
+                                        <div className="h-1 flex-1 bg-muted/20 rounded-full overflow-hidden min-w-[50px]">
                                           <div 
                                             className={cn(
                                               "h-full rounded-full transition-all duration-1000",
-                                              classroom.studentsCount >= classroom.capacity ? "bg-rose-500" : "bg-emerald-500"
+                                              classroom.studentsCount >= classroom.capacity ? "bg-destructive" : "bg-success"
                                             )}
                                             style={{ width: `${Math.min((classroom.studentsCount / classroom.capacity) * 100, 100)}%` }}
                                           />
                                         </div>
                                         <span className={cn(
-                                          "text-[10px] font-black italic font-display",
-                                          classroom.studentsCount >= classroom.capacity ? "text-rose-600" : "text-emerald-600 font-mono"
+                                          "text-xs font-black italic font-display",
+                                          classroom.studentsCount >= classroom.capacity ? "text-destructive" : "text-success font-mono"
                                         )}>
                                           {classroom.studentsCount}/{classroom.capacity}
                                         </span>
                                       </div>
                                       {classroom.studentsCount > classroom.capacity && (
                                         <div className="flex items-center gap-1 mt-1 justify-center">
-                                          <AlertTriangle size={8} className="text-rose-500" />
-                                          <span className="text-[7px] font-black text-rose-500 uppercase tracking-tighter">Capacity Threshold Exceeded</span>
+                                          <AlertTriangle size={8} className="text-destructive" />
+                                          <span className="text-[7px] font-black text-destructive uppercase tracking-tighter">Capacity Threshold Exceeded</span>
                                         </div>
                                       )}
                                     </div>
@@ -579,22 +579,22 @@ export function BlueprintTreeView({
                                             key={student.id || i}
                                             title={`${student.firstName} ${student.lastName}`}
                                             className={cn(
-                                              "w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-black text-white shadow-sm ring-2 ring-white",
-                                              i === 0 ? "bg-blue-500" : i === 1 ? "bg-amber-500" : i === 2 ? "bg-emerald-500" : "bg-rose-500"
+                                              "w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-black text-primary-foreground shadow-sm ring-2 ring-surface",
+                                              i === 0 ? "bg-brand-primary" : i === 1 ? "bg-warning" : i === 2 ? "bg-success" : "bg-destructive"
                                             )}
                                           >
                                             {student.initial}
                                           </div>
                                         ))}
                                         {classroom.studentAvatars.length > 3 && (
-                                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-[7px] font-black text-white bg-slate-400 shadow-sm ring-2 ring-white">
+                                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-[7px] font-black text-primary-foreground bg-muted/40 shadow-sm ring-2 ring-surface">
                                             +{classroom.studentAvatars.length - 3}
                                           </div>
                                         )}
                                       </div>
                                     )}
 
-                                    <div className="h-8 w-px bg-slate-100" />
+                                    <div className="h-8 w-px bg-muted/20" />
 
                                     <div className="flex -space-x-2">
                                       {Object.entries(classroom.houseDistribution).map(([house, count], i) => (
@@ -602,8 +602,8 @@ export function BlueprintTreeView({
                                           key={house} 
                                           title={`${house}: ${count} Students`}
                                           className={cn(
-                                            "w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[9px] font-black text-white shadow-sm ring-1 ring-slate-100",
-                                            i === 0 ? "bg-blue-500" : i === 1 ? "bg-amber-500" : "bg-emerald-500"
+                                            "w-8 h-8 rounded-full border-2 border-surface flex items-center justify-center text-[9px] font-black text-primary-foreground shadow-sm ring-1 ring-border",
+                                            i === 0 ? "bg-brand-primary" : i === 1 ? "bg-warning" : "bg-success"
                                           )}
                                         >
                                           {house[0]}
@@ -614,17 +614,17 @@ export function BlueprintTreeView({
                                     <div className="relative inline-block">
                                       <button 
                                         onClick={(e) => { e.stopPropagation(); setOpenKebabClassroomId(openKebabClassroomId === classroom.id ? null : classroom.id); }}
-                                        className="p-2.5 text-slate-300 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all"
+                                        className="p-2.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-xl transition-all"
                                       >
                                         <MoreVertical size={18} />
                                       </button>
                                       {openKebabClassroomId === classroom.id && (
-                                        <div className="absolute right-0 top-12 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1">
-                                          <button onClick={() => handleClassroomKebabAction(classroom.id, 'transfers', classroom)} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><UserPlus size={12} className="text-indigo-600" /> Student Transfers</button>
-                                          <button onClick={() => handleClassroomKebabAction(classroom.id, 'capacity', classroom)} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Ruler size={12} className="text-blue-600" /> Capacity Overrides</button>
-                                          <button onClick={() => handleClassroomKebabAction(classroom.id, 'rebalance', classroom)} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"><Home size={12} className="text-emerald-600" /> House Rebalancing</button>
-                                          <div className="h-px bg-slate-100 my-1" />
-                                          <button onClick={() => handleClassroomKebabAction(classroom.id, 'dissolve', classroom)} className="w-full text-left px-3 py-2.5 text-[10px] font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2"><Trash2 size={12} /> Unit Dissolution</button>
+                                        <div className="absolute right-0 top-12 w-56 bg-surface border border-border rounded-xl shadow-xl z-50 py-1">
+                                          <button onClick={() => handleClassroomKebabAction(classroom.id, 'transfers', classroom)} className="w-full text-left px-3 py-2.5 text-xs font-bold text-foreground/80 hover:bg-muted/50 flex items-center gap-2"><UserPlus size={12} className="text-brand-primary" /> Student Transfers</button>
+                                          <button onClick={() => handleClassroomKebabAction(classroom.id, 'capacity', classroom)} className="w-full text-left px-3 py-2.5 text-xs font-bold text-foreground/80 hover:bg-muted/50 flex items-center gap-2"><Ruler size={12} className="text-brand-primary" /> Capacity Overrides</button>
+                                          <button onClick={() => handleClassroomKebabAction(classroom.id, 'rebalance', classroom)} className="w-full text-left px-3 py-2.5 text-xs font-bold text-foreground/80 hover:bg-muted/50 flex items-center gap-2"><Home size={12} className="text-success" /> House Rebalancing</button>
+                                          <div className="h-px bg-muted/20 my-1" />
+                                          <button onClick={() => handleClassroomKebabAction(classroom.id, 'dissolve', classroom)} className="w-full text-left px-3 py-2.5 text-xs font-bold text-destructive hover:bg-destructive/5 flex items-center gap-2"><Trash2 size={12} /> Unit Dissolution</button>
                                         </div>
                                       )}
                                     </div>
@@ -633,10 +633,10 @@ export function BlueprintTreeView({
                               ))}
                               <button 
                                 onClick={() => openClassroomModal(program)}
-                                className="w-full py-4 border-2 border-dashed border-slate-100 rounded-xl flex items-center justify-center gap-3 text-slate-300 hover:text-slate-500 hover:bg-slate-50 transition-all"
+                                className="w-full py-4 border-2 border-dashed border-border rounded-xl flex items-center justify-center gap-3 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
                               >
                                 <Plus size={16} />
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Add Classroom Unit</span>
+                                <span className="text-xs font-black uppercase tracking-[0.2em]">Add Classroom Unit</span>
                               </button>
                             </motion.div>
                           )}
@@ -659,35 +659,35 @@ export function BlueprintTreeView({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowYearModal(false)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+              className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md"
             />
             <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+              className="relative w-full max-w-md bg-surface rounded-[2.5rem] shadow-2xl overflow-hidden"
             >
               <div className="p-10">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-black italic font-display text-slate-900">Add Year Group</h3>
-                  <button onClick={() => setShowYearModal(false)} className="p-2 text-slate-300 hover:text-slate-900 transition-all">
+                  <h3 className="text-xl font-black italic font-display text-foreground">Add Year Group</h3>
+                  <button onClick={() => setShowYearModal(false)} className="p-2 text-muted-foreground hover:text-foreground transition-all">
                     <X size={24} />
                   </button>
                 </div>
                 <form onSubmit={(e) => { e.preventDefault(); handleAddYear(); }} className="space-y-6">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-2">Year Group Name</label>
+                    <label className="block text-xs font-bold text-foreground/70 mb-2">Year Group Name</label>
                     <input
                       type="text"
                       value={yearForm.name}
                       onChange={(e) => setYearForm({ ...yearForm, name: e.target.value })}
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 outline-none transition-all"
+                      className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent text-foreground outline-none transition-all"
                       placeholder="e.g., SHS 4"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-3">Select Programs</label>
+                    <label className="block text-xs font-bold text-foreground/70 mb-3">Select Programs</label>
                     <div className="grid grid-cols-2 gap-3">
                       {programs.map((prog) => (
                         <label key={prog} className="flex items-center gap-2 cursor-pointer">
@@ -703,9 +703,9 @@ export function BlueprintTreeView({
                                   : prev.selectedPrograms.filter(p => p !== prog)
                               }));
                             }}
-                            className="w-4 h-4 rounded border-slate-300 focus:ring-2 focus:ring-blue-500"
+                            className="w-4 h-4 rounded border-border focus:ring-2 focus:ring-brand-primary"
                           />
-                          <span className="text-[12px] font-bold text-slate-700">{prog}</span>
+                          <span className="text-xs font-bold text-foreground/80">{prog}</span>
                         </label>
                       ))}
                     </div>
@@ -714,13 +714,13 @@ export function BlueprintTreeView({
                     <button
                       type="button"
                       onClick={() => setShowYearModal(false)}
-                      className="flex-1 px-5 py-3 bg-slate-50 text-slate-900 font-black rounded-xl border border-slate-200 hover:bg-slate-100 transition-all"
+                      className="flex-1 px-5 py-3 bg-muted/30 text-foreground font-black rounded-xl border border-border hover:bg-muted/50 transition-all"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 px-5 py-3 bg-emerald-600 text-white font-black rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20"
+                      className="flex-1 px-5 py-3 bg-success text-primary-foreground font-black rounded-xl hover:bg-success/80 transition-all shadow-lg shadow-success/20"
                     >
                       Create Level
                     </button>
@@ -740,50 +740,50 @@ export function BlueprintTreeView({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowClassroomModal(false)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+              className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md"
             />
             <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+              className="relative w-full max-w-md bg-surface rounded-[2.5rem] shadow-2xl overflow-hidden"
             >
               <div className="p-10">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-black italic font-display text-slate-900">Add Classroom Unit</h3>
-                  <button onClick={() => setShowClassroomModal(false)} className="p-2 text-slate-300 hover:text-slate-900 transition-all">
+                  <h3 className="text-xl font-black italic font-display text-foreground">Add Classroom Unit</h3>
+                  <button onClick={() => setShowClassroomModal(false)} className="p-2 text-muted-foreground hover:text-foreground transition-all">
                     <X size={24} />
                   </button>
                 </div>
                 <form onSubmit={(e) => { e.preventDefault(); handleAddClassroom(); }} className="space-y-6">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-2">Classroom Name</label>
+                    <label className="block text-xs font-bold text-foreground/70 mb-2">Classroom Name</label>
                     <input
                       type="text"
                       value={classroomForm.name}
                       onChange={(e) => setClassroomForm({ ...classroomForm, name: e.target.value })}
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 outline-none transition-all"
+                      className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent text-foreground outline-none transition-all"
                       placeholder="e.g., 1 Science 3"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-2">Capacity Load</label>
+                    <label className="block text-xs font-bold text-foreground/70 mb-2">Capacity Load</label>
                     <input
                       type="number"
                       value={classroomForm.capacity}
                       onChange={(e) => setClassroomForm({ ...classroomForm, capacity: parseInt(e.target.value) || 45 })}
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 outline-none transition-all"
+                      className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent text-foreground outline-none transition-all"
                       defaultValue={45}
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-2">Initial Student Count</label>
+                    <label className="block text-xs font-bold text-foreground/70 mb-2">Initial Student Count</label>
                     <input
                       type="number"
                       value={classroomForm.initialStudents}
                       onChange={(e) => setClassroomForm({ ...classroomForm, initialStudents: parseInt(e.target.value) || 0 })}
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 outline-none transition-all"
+                      className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent text-foreground outline-none transition-all"
                       defaultValue={0}
                     />
                   </div>
@@ -791,13 +791,13 @@ export function BlueprintTreeView({
                     <button
                       type="button"
                       onClick={() => setShowClassroomModal(false)}
-                      className="flex-1 px-5 py-3 bg-slate-50 text-slate-900 font-black rounded-xl border border-slate-200 hover:bg-slate-100 transition-all"
+                      className="flex-1 px-5 py-3 bg-muted/30 text-foreground font-black rounded-xl border border-border hover:bg-muted/50 transition-all"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 px-5 py-3 bg-emerald-600 text-white font-black rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20"
+                      className="flex-1 px-5 py-3 bg-success text-primary-foreground font-black rounded-xl hover:bg-success/80 transition-all shadow-lg shadow-success/20"
                     >
                       Add Classroom
                     </button>
@@ -817,26 +817,26 @@ export function BlueprintTreeView({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={closeRestructureModal}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+              className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md"
             />
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[85vh] flex flex-col"
+              className="relative w-full max-w-2xl bg-surface rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[85vh] flex flex-col"
             >
-              <div className="p-8 border-b border-slate-100">
+              <div className="p-8 border-b border-border">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                    <div className="w-10 h-10 bg-brand-primary/10 text-brand-primary rounded-xl flex items-center justify-center">
                       <Settings2 size={20} />
                     </div>
                     <div>
-                      <h3 className="text-xl font-black italic font-display text-slate-900">Program Restructuring</h3>
-                      <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">{restructureData.yearName} • Reassign classroom units to programs</p>
+                      <h3 className="text-xl font-black italic font-display text-foreground">Program Restructuring</h3>
+                      <p className="text-[9px] font-black uppercase text-muted-foreground tracking-wider">{restructureData.yearName} • Reassign classroom units to programs</p>
                     </div>
                   </div>
-                  <button onClick={closeRestructureModal} className="p-2 text-slate-300 hover:text-slate-900 transition-all">
+                  <button onClick={closeRestructureModal} className="p-2 text-muted-foreground hover:text-foreground transition-all">
                     <X size={24} />
                   </button>
                 </div>
@@ -844,38 +844,38 @@ export function BlueprintTreeView({
 
               <div className="p-8 overflow-y-auto space-y-4 flex-1">
                 {restructureData.programs.map((p) => (
-                  <div key={p.key} className="rounded-2xl border border-slate-200 p-4">
+                  <div key={p.key} className="rounded-2xl border border-border p-4">
                     <div className="flex items-center justify-between mb-3 gap-3">
                       <input
                         value={p.name}
                         onChange={(e) => renameProgram(p.key, e.target.value)}
-                        className="text-[13px] font-black uppercase tracking-widest text-slate-900 outline-none bg-transparent border-b border-transparent focus:border-slate-300 px-1 py-0.5 min-w-0 flex-1"
+                        className="text-sm font-black uppercase tracking-widest text-foreground outline-none bg-transparent border-b border-transparent focus:border-border px-1 py-0.5 min-w-0 flex-1"
                       />
                       <button
                         onClick={() => removeProgram(p.key)}
                         disabled={p.classrooms.length > 0}
-                        className="text-[9px] font-black uppercase tracking-wider text-rose-500 disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 shrink-0"
+                        className="text-[9px] font-black uppercase tracking-wider text-destructive disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 shrink-0"
                       >
                         <Trash2 size={12} /> Remove
                       </button>
                     </div>
                     {p.classrooms.length === 0 ? (
-                      <p className="text-[10px] text-slate-300 italic py-2">No classroom units assigned</p>
+                      <p className="text-xs text-muted-foreground italic py-2">No classroom units assigned</p>
                     ) : (
                       <div className="space-y-2">
                         {p.classrooms.map((c) => (
-                          <div key={c.id} className="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2 gap-3">
+                          <div key={c.id} className="flex items-center justify-between bg-muted/30 rounded-xl px-3 py-2 gap-3">
                             <div className="flex items-center gap-2 min-w-0">
-                              <Layers size={14} className="text-slate-300 shrink-0" />
-                              <span className="text-[12px] font-black italic font-display text-slate-700 truncate">{c.name}</span>
+                              <Layers size={14} className="text-muted-foreground shrink-0" />
+                              <span className="text-xs font-black italic font-display text-foreground/80 truncate">{c.name}</span>
                               {c.originalProgram !== p.name && (
-                                <span className="text-[8px] font-black uppercase text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded shrink-0">Moved</span>
+                                <span className="text-[8px] font-black uppercase text-warning bg-warning/10 px-1.5 py-0.5 rounded shrink-0">Moved</span>
                               )}
                             </div>
                             <select
                               value={p.key}
                               onChange={(e) => moveClassroom(c.id, p.key, e.target.value)}
-                              className="text-[10px] font-bold text-slate-700 border border-slate-200 rounded-lg px-2 py-1 bg-white outline-none shrink-0"
+                              className="text-xs font-bold text-foreground/80 border border-border rounded-lg px-2 py-1 bg-surface outline-none shrink-0"
                             >
                               {restructureData.programs.map((opt) => (
                                 <option key={opt.key} value={opt.key}>{opt.name}</option>
@@ -889,17 +889,17 @@ export function BlueprintTreeView({
                 ))}
                 <button
                   onClick={addProgram}
-                  className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center gap-2 text-slate-300 hover:text-slate-500 hover:bg-slate-50 transition-all text-[10px] font-black uppercase tracking-[0.2em]"
+                  className="w-full py-3 border-2 border-dashed border-border rounded-xl flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all text-xs font-black uppercase tracking-[0.2em]"
                 >
                   <Plus size={14} /> Add Program
                 </button>
               </div>
 
-              <div className="p-6 border-t border-slate-100 flex gap-3">
+              <div className="p-6 border-t border-border flex gap-3">
                 <button
                   type="button"
                   onClick={closeRestructureModal}
-                  className="flex-1 px-5 py-3 bg-slate-50 text-slate-900 font-black rounded-xl border border-slate-200 hover:bg-slate-100 transition-all"
+                  className="flex-1 px-5 py-3 bg-muted/30 text-foreground font-black rounded-xl border border-border hover:bg-muted/50 transition-all"
                 >
                   Cancel
                 </button>
@@ -907,7 +907,7 @@ export function BlueprintTreeView({
                   type="button"
                   onClick={handleApplyRestructure}
                   disabled={updateClassMutation.isPending}
-                  className="flex-1 px-5 py-3 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-60 flex items-center justify-center gap-2"
+                  className="flex-1 px-5 py-3 bg-brand-primary text-primary-foreground font-black rounded-xl hover:bg-brand-primary/90 transition-all shadow-lg shadow-brand-primary/20 disabled:opacity-60 flex items-center justify-center gap-2"
                 >
                   {updateClassMutation.isPending ? (<><Loader2 size={14} className="animate-spin" /> Applying...</>) : 'Apply Restructure'}
                 </button>
@@ -925,26 +925,26 @@ export function BlueprintTreeView({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={closeTransferModal}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+              className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md"
             />
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[85vh] flex flex-col"
+              className="relative w-full max-w-lg bg-surface rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[85vh] flex flex-col"
             >
-              <div className="p-8 border-b border-slate-100">
+              <div className="p-8 border-b border-border">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+                    <div className="w-10 h-10 bg-brand-primary/10 text-brand-primary rounded-xl flex items-center justify-center">
                       <UserPlus size={20} />
                     </div>
                     <div>
-                      <h3 className="text-xl font-black italic font-display text-slate-900">Student Transfers</h3>
-                      <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">{transferClassroom.name} • Move learners to another unit</p>
+                      <h3 className="text-xl font-black italic font-display text-foreground">Student Transfers</h3>
+                      <p className="text-[9px] font-black uppercase text-muted-foreground tracking-wider">{transferClassroom.name} • Move learners to another unit</p>
                     </div>
                   </div>
-                  <button onClick={closeTransferModal} className="p-2 text-slate-300 hover:text-slate-900 transition-all">
+                  <button onClick={closeTransferModal} className="p-2 text-muted-foreground hover:text-foreground transition-all">
                     <X size={24} />
                   </button>
                 </div>
@@ -952,11 +952,11 @@ export function BlueprintTreeView({
 
               <div className="p-8 overflow-y-auto space-y-5 flex-1">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-600 mb-2 uppercase tracking-wider">Destination Classroom Unit</label>
+                  <label className="block text-xs font-bold text-foreground/70 mb-2 uppercase tracking-wider">Destination Classroom Unit</label>
                   <select
                     value={transferTargetId}
                     onChange={(e) => setTransferTargetId(e.target.value)}
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-slate-900 outline-none transition-all bg-white"
+                    className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent text-foreground outline-none transition-all bg-surface"
                   >
                     <option value="">Select destination…</option>
                     {transferTargets.map((t) => (
@@ -967,33 +967,33 @@ export function BlueprintTreeView({
 
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider">Select Students</label>
+                    <label className="block text-xs font-bold text-foreground/70 uppercase tracking-wider">Select Students</label>
                     {sourceStudents.length > 0 && (
                       <button
                         onClick={() => setSelectedStudentIds(new Set(sourceStudents.map((s) => s.id)))}
-                        className="text-[9px] font-black uppercase tracking-wider text-indigo-600 hover:text-indigo-700"
+                        className="text-[9px] font-black uppercase tracking-wider text-brand-primary hover:text-brand-primary/80"
                       >
                         Select All
                       </button>
                     )}
                   </div>
                   {sourceStudents.length === 0 ? (
-                    <p className="text-[10px] text-slate-300 italic py-3">No active students enrolled in this unit.</p>
+                    <p className="text-xs text-muted-foreground italic py-3">No active students enrolled in this unit.</p>
                   ) : (
-                    <div className="space-y-1.5 max-h-64 overflow-y-auto scrollbar-hide custom-scrollbar border border-slate-100 rounded-xl p-1.5">
+                    <div className="space-y-1.5 max-h-64 overflow-y-auto scrollbar-hide custom-scrollbar border border-border rounded-xl p-1.5">
                       {sourceStudents.map((s) => {
                         const checked = selectedStudentIds.has(s.id);
                         return (
                           <button
                             key={s.id}
                             onClick={() => toggleTransferStudent(s.id)}
-                            className={cn("w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-left", checked ? "bg-indigo-50" : "hover:bg-slate-50")}
+                            className={cn("w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-left", checked ? "bg-brand-primary/10" : "hover:bg-muted/50")}
                           >
-                            <div className={cn("w-4 h-4 rounded border flex items-center justify-center shrink-0", checked ? "bg-indigo-600 border-indigo-600" : "border-slate-300")}>
-                              {checked && <Check size={12} className="text-white" />}
+                            <div className={cn("w-4 h-4 rounded border flex items-center justify-center shrink-0", checked ? "bg-brand-primary border-brand-primary" : "border-border")}>
+                              {checked && <Check size={12} className="text-primary-foreground" />}
                             </div>
-                            <span className="text-[12px] font-bold text-slate-700 truncate">{s.firstName} {s.lastName}</span>
-                            {s.indexNumber && <span className="text-[9px] font-semibold text-slate-400 ml-auto">{s.indexNumber}</span>}
+                            <span className="text-xs font-bold text-foreground/80 truncate">{s.firstName} {s.lastName}</span>
+                            {s.indexNumber && <span className="text-[9px] font-semibold text-muted-foreground ml-auto">{s.indexNumber}</span>}
                           </button>
                         );
                       })}
@@ -1002,11 +1002,11 @@ export function BlueprintTreeView({
                 </div>
               </div>
 
-              <div className="p-6 border-t border-slate-100 flex gap-3">
+              <div className="p-6 border-t border-border flex gap-3">
                 <button
                   type="button"
                   onClick={closeTransferModal}
-                  className="flex-1 px-5 py-3 bg-slate-50 text-slate-900 font-black rounded-xl border border-slate-200 hover:bg-slate-100 transition-all"
+                  className="flex-1 px-5 py-3 bg-muted/30 text-foreground font-black rounded-xl border border-border hover:bg-muted/50 transition-all"
                 >
                   Cancel
                 </button>
@@ -1014,7 +1014,7 @@ export function BlueprintTreeView({
                   type="button"
                   onClick={handleApplyTransfer}
                   disabled={transferStudentsMutation.isPending}
-                  className="flex-1 px-5 py-3 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-60 flex items-center justify-center gap-2"
+                  className="flex-1 px-5 py-3 bg-brand-primary text-primary-foreground font-black rounded-xl hover:bg-brand-primary/90 transition-all shadow-lg shadow-brand-primary/20 disabled:opacity-60 flex items-center justify-center gap-2"
                 >
                   {transferStudentsMutation.isPending ? (
                     <><Loader2 size={14} className="animate-spin" /> Transferring...</>
@@ -1036,45 +1036,45 @@ export function BlueprintTreeView({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={closeCapacityModal}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+              className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md"
             />
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+              className="relative w-full max-w-md bg-surface rounded-[2.5rem] shadow-2xl overflow-hidden"
             >
               <div className="p-8">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                    <div className="w-10 h-10 bg-brand-primary/10 text-brand-primary rounded-xl flex items-center justify-center">
                       <Ruler size={20} />
                     </div>
                     <div>
-                      <h3 className="text-xl font-black italic font-display text-slate-900">Capacity Override</h3>
-                      <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">{capacityClassroom.name}</p>
+                      <h3 className="text-xl font-black italic font-display text-foreground">Capacity Override</h3>
+                      <p className="text-[9px] font-black uppercase text-muted-foreground tracking-wider">{capacityClassroom.name}</p>
                     </div>
                   </div>
-                  <button onClick={closeCapacityModal} className="p-2 text-slate-300 hover:text-slate-900 transition-all">
+                  <button onClick={closeCapacityModal} className="p-2 text-muted-foreground hover:text-foreground transition-all">
                     <X size={24} />
                   </button>
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider">Capacity Load</label>
+                  <label className="block text-xs font-bold text-foreground/70 uppercase tracking-wider">Capacity Load</label>
                   <input
                     type="number"
                     min={1}
                     value={capacityValue}
                     onChange={(e) => setCapacityValue(e.target.value)}
                     autoFocus
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 outline-none transition-all"
+                    className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent text-foreground outline-none transition-all"
                   />
                 </div>
                 <div className="flex gap-3 mt-6">
                   <button
                     type="button"
                     onClick={closeCapacityModal}
-                    className="flex-1 px-5 py-3 bg-slate-50 text-slate-900 font-black rounded-xl border border-slate-200 hover:bg-slate-100 transition-all"
+                    className="flex-1 px-5 py-3 bg-muted/30 text-foreground font-black rounded-xl border border-border hover:bg-muted/50 transition-all"
                   >
                     Cancel
                   </button>
@@ -1082,7 +1082,7 @@ export function BlueprintTreeView({
                     type="button"
                     onClick={handleApplyCapacity}
                     disabled={updateClassCapacityMutation.isPending}
-                    className="flex-1 px-5 py-3 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-60 flex items-center justify-center gap-2"
+                    className="flex-1 px-5 py-3 bg-brand-primary text-primary-foreground font-black rounded-xl hover:bg-brand-primary/90 transition-all shadow-lg shadow-brand-primary/20 disabled:opacity-60 flex items-center justify-center gap-2"
                   >
                     {updateClassCapacityMutation.isPending ? (
                       <><Loader2 size={14} className="animate-spin" /> Updating...</>

@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { ShieldCheck, User, Clock, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
@@ -93,7 +93,7 @@ export function AuditLogsView() {
         {/* View Header */}
         <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-foreground rounded-2xl flex items-center justify-center text-white shadow-xl shadow-foreground/10">
+            <div className="w-12 h-12 bg-foreground rounded-2xl flex items-center justify-center text-primary-foreground shadow-xl shadow-foreground/10">
               <ShieldCheck size={28} />
             </div>
             <div>

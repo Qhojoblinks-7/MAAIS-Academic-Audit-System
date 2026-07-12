@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Clock, Calendar, Users, Home,
   AlertCircle, ChevronRight, ChevronLeft,
@@ -54,13 +54,13 @@ const DAY_MAP = {
 };
 
 const DEPT_COLORS = {
-  Science: 'bg-blue-500',
-  'General Arts': 'bg-purple-500',
-  Business: 'bg-amber-500',
-  Vocational: 'bg-emerald-500',
-  HomeEconomics: 'bg-rose-500',
-  'Visual Arts': 'bg-orange-500',
-  default: 'bg-slate-500',
+  Science: 'bg-brand-primary',
+  'General Arts': 'bg-brand-secondary',
+  Business: 'bg-warning',
+  Vocational: 'bg-success',
+  HomeEconomics: 'bg-destructive',
+  'Visual Arts': 'bg-warning',
+  default: 'bg-muted',
 };
 
 const getDeptColor = (subject) => {
@@ -376,7 +376,7 @@ const conflicts = useMemo(() => {
   const isLoading = trackClassesQuery.isLoading || allClassesQuery.isLoading || trackTimetableQuery.isLoading || allTimetableQuery.isLoading || trackAssignmentsQuery.isLoading || allAssignmentsQuery.isLoading;
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 overflow-hidden">
+    <div className="flex flex-col h-full bg-background overflow-hidden">
       <div className="p-8 space-y-8 flex-1 overflow-y-auto scrollbar-hide">
         <Toaster />
         {(isBroadcasted || isFinalized) && (
@@ -386,8 +386,8 @@ const conflicts = useMemo(() => {
             className={cn(
               'p-4 rounded-[2rem] border flex items-center gap-3',
               isFinalized
-                ? 'bg-amber-50 border-amber-200 text-amber-900'
-                : 'bg-emerald-50 border-emerald-200 text-emerald-900',
+                ? 'bg-warning/10 border-warning text-warning'
+                : 'bg-brand-primary/10 border-brand-primary text-brand-primary',
             )}
           >
             {isFinalized ? <AlertTriangle size={18} /> : <CheckCircle2 size={18} />}
@@ -400,14 +400,14 @@ const conflicts = useMemo(() => {
         )}
 
         <div className="flex flex-col xl:flex-row gap-6 justify-between items-start">
-          <div className="flex items-center gap-2 p-1 bg-white border border-slate-200 rounded-2xl shadow-sm">
+          <div className="flex items-center gap-2 p-1 bg-surface border border-border rounded-2xl shadow-sm">
             <button
               onClick={() => setActiveTrack('Gold')}
               className={cn(
                 'px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all',
                 activeTrack === 'Gold'
-                  ? 'bg-amber-500 text-white shadow-lg'
-                  : 'text-slate-400 hover:bg-slate-50',
+                  ? 'bg-warning text-primary-foreground shadow-lg'
+                  : 'text-text-secondary hover:bg-muted',
               )}
             >
               Gold Track
@@ -417,8 +417,8 @@ const conflicts = useMemo(() => {
               className={cn(
                 'px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all',
                 activeTrack === 'Green'
-                  ? 'bg-emerald-500 text-white shadow-lg'
-                  : 'text-slate-400 hover:bg-slate-50',
+                  ? 'bg-brand-primary text-primary-foreground shadow-lg'
+                  : 'text-text-secondary hover:bg-muted',
               )}
             >
               Green Track
@@ -436,7 +436,7 @@ const conflicts = useMemo(() => {
                 }
               }}
               disabled={isLoading}
-              className="px-6 py-3 bg-white border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest outline-none focus:ring-4 focus:ring-slate-900/5 transition-all disabled:opacity-50"
+              className="px-6 py-3 bg-surface border border-border rounded-2xl text-[10px] font-black uppercase tracking-widest outline-none focus:ring-4 focus:ring-border transition-all disabled:opacity-50"
             >
               {isLoading ? (
                 <option>Loading classes...</option>
@@ -454,8 +454,8 @@ const conflicts = useMemo(() => {
               className={cn(
                 'flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all',
                 isBroadcasted
-                  ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50',
+                  ? 'bg-brand-primary/10 border border-brand-primary text-brand-primary'
+                  : 'bg-surface border border-border text-text-secondary hover:bg-muted',
               )}
             >
               <Share2 size={14} /> {isBroadcasted ? 'Broadcasted' : 'Distribute to Apps'}
@@ -466,8 +466,8 @@ const conflicts = useMemo(() => {
               className={cn(
                 'px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all',
                 isFinalized
-                  ? 'bg-amber-500 text-white shadow-lg'
-                  : 'bg-slate-900 text-white shadow-xl shadow-slate-900/20 hover:bg-black',
+                  ? 'bg-warning text-primary-foreground shadow-lg'
+                  : 'bg-brand-dark text-primary-foreground shadow-xl shadow-brand-dark/20 hover:bg-brand-dark/90',
               )}
             >
               <Save size={14} /> {isFinalized ? 'Finalized' : 'Finalize Grid'}
@@ -477,12 +477,12 @@ const conflicts = useMemo(() => {
 
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
           <div className="xl:col-span-3 space-y-6">
-            <div className="bg-white rounded-[2.5rem] border border-slate-200 p-8 shadow-sm h-full flex flex-col">
-              <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-                <Layers size={18} className="text-teal-500" />
+            <div className="bg-surface rounded-[2.5rem] border border-border p-8 shadow-sm h-full flex flex-col">
+              <h3 className="text-[12px] font-black text-text-primary uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+                <Layers size={18} className="text-success" />
                 Unassigned Logic
               </h3>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-6">
+              <p className="text-[9px] font-bold text-text-secondary uppercase tracking-widest mb-6">
                 Subject Mapping Backlog
               </p>
 
@@ -495,7 +495,7 @@ const conflicts = useMemo(() => {
               ) : (
                 <div className="flex-1 space-y-3 overflow-y-auto pr-2 scrollbar-hide">
                   {unassignedLessons.length === 0 ? (
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center py-8">
+                    <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest text-center py-8">
                       All assignments scheduled
                     </p>
                   ) : (
@@ -505,25 +505,25 @@ const conflicts = useMemo(() => {
                         draggable={!isFinalized}
                         onDragStart={isFinalized ? undefined : (e) => handleDragStart(e, lesson)}
                         className={cn(
-                          'p-4 bg-slate-50 border border-slate-100 rounded-2xl transition-all group relative overflow-hidden',
+                          'p-4 bg-muted border border-border rounded-2xl transition-all group relative overflow-hidden',
                           isFinalized
                             ? 'opacity-50 cursor-not-allowed'
-                            : 'cursor-grab active:cursor-grabbing hover:border-slate-300',
+                            : 'cursor-grab active:cursor-grabbing hover:border-text-secondary',
                         )}
                       >
                         <div className={cn('absolute left-0 top-0 bottom-0 w-1', lesson.color)} />
                         <div className="flex justify-between items-start mb-2">
-                          <p className="text-[12px] font-black italic text-slate-900 leading-tight">
+                          <p className="text-[12px] font-black italic text-text-primary leading-tight">
                             {lesson.subject}
                           </p>
-                          <GripVertical size={14} className="text-slate-300 group-hover:text-slate-900 transition-colors" />
+                          <GripVertical size={14} className="text-muted group-hover:text-text-primary transition-colors" />
                         </div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest">
                           {lesson.class}
                         </p>
                         <div className="flex items-center gap-1.5 mt-2">
-                          <Users size={10} className="text-slate-300" />
-                          <span className="text-[9px] font-bold text-slate-500 uppercase">{lesson.teacher}</span>
+                          <Users size={10} className="text-muted" />
+                          <span className="text-[9px] font-bold text-text-secondary uppercase">{lesson.teacher}</span>
                         </div>
                       </div>
                     ))
@@ -531,12 +531,12 @@ const conflicts = useMemo(() => {
                 </div>
               )}
 
-              <div className="pt-6 mt-6 border-t border-slate-100">
-                <div className="bg-blue-50 border border-blue-100 p-4 rounded-2xl">
-                  <p className="text-[10px] font-black text-blue-900 uppercase tracking-widest mb-1 flex items-center gap-2">
+              <div className="pt-6 mt-6 border-t border-border">
+                <div className="bg-brand-primary/10 border border-brand-primary p-4 rounded-2xl">
+                  <p className="text-[10px] font-black text-brand-primary uppercase tracking-widest mb-1 flex items-center gap-2">
                     <CheckCircle2 size={12} /> Optimization Tip
                   </p>
-                  <p className="text-[9px] font-medium text-blue-700 leading-relaxed uppercase tracking-wider italic">
+                  <p className="text-[9px] font-medium text-brand-primary leading-relaxed uppercase tracking-wider italic">
                     Place Core subjects in early slots for better cognitive load.
                   </p>
                 </div>
@@ -546,33 +546,33 @@ const conflicts = useMemo(() => {
 
           <div className="xl:col-span-9">
             {isFinalized && (
-              <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-[2rem] flex items-center gap-3">
-                <AlertTriangle size={18} className="text-amber-600" />
-                <p className="text-[10px] font-black text-amber-900 uppercase tracking-widest">
+              <div className="mb-6 p-4 bg-warning/10 border border-warning rounded-[2rem] flex items-center gap-3">
+                <AlertTriangle size={18} className="text-warning" />
+                <p className="text-[10px] font-black text-warning uppercase tracking-widest">
                   Grid Finalized — Schedule locked into registrar records.
                 </p>
               </div>
             )}
             {trackTimetableQuery.isLoading ? (
-              <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm p-8 space-y-4">
+              <div className="bg-surface rounded-[2.5rem] border border-border shadow-sm p-8 space-y-4">
                 <Skeleton className="h-12 w-full" />
                 {[1, 2, 3, 4, 5].map((i) => (
                   <Skeleton key={i} className="h-24 w-full" />
                 ))}
               </div>
             ) : (
-              <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
+              <div className="bg-surface rounded-[2.5rem] border border-border shadow-sm overflow-hidden">
                 <div className="overflow-x-auto scrollbar-hide">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-slate-50 border-b border-slate-200">
-                        <TableHead className="px-6 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest border-r border-slate-200 sticky left-0 z-10 bg-slate-50">
+                      <TableRow className="bg-background border-b border-border">
+                        <TableHead className="px-6 py-6 text-[10px] font-black text-text-secondary uppercase tracking-widest border-r border-border sticky left-0 z-10 bg-background">
                           Time Slot
                         </TableHead>
                         {DAYS.map((day) => (
                           <TableHead
                             key={day}
-                            className="px-6 py-6 text-[10px] font-black text-slate-900 uppercase tracking-widest text-center min-w-[200px]"
+                            className="px-6 py-6 text-[10px] font-black text-text-primary uppercase tracking-widest text-center min-w-[200px]"
                           >
                             {day}
                           </TableHead>
@@ -583,12 +583,12 @@ const conflicts = useMemo(() => {
                       {TIME_SLOTS.map((slot) => {
                         const isBreak = slot.id.startsWith('break');
                         return (
-                          <TableRow key={slot.id} className={cn(isBreak ? 'bg-slate-50/50' : '')}>
-                            <TableCell className="px-6 py-8 border-r border-slate-200 sticky left-0 z-10 bg-white">
-                              <p className="text-[12px] font-black text-slate-900 italic leading-none mb-1">
+                          <TableRow key={slot.id} className={cn(isBreak ? 'bg-muted/50' : '')}>
+                            <TableCell className="px-6 py-8 border-r border-border sticky left-0 z-10 bg-surface">
+                              <p className="text-[12px] font-black text-text-primary italic leading-none mb-1">
                                 {slot.label}
                               </p>
-                              <div className="flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase">
+                              <div className="flex items-center gap-2 text-[9px] font-black text-text-secondary uppercase">
                                 <Clock size={10} /> {slot.start} - {slot.end}
                               </div>
                             </TableCell>
@@ -601,10 +601,10 @@ const conflicts = useMemo(() => {
                               if (isBreak) {
                                 return (
                                   <TableCell key={day} className="px-4 py-4 text-center">
-                                    <div className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] flex items-center justify-center gap-2">
-                                      <div className="w-8 h-px bg-slate-100" />
+                                    <div className="text-[9px] font-black text-muted uppercase tracking-[0.4em] flex items-center justify-center gap-2">
+                                      <div className="w-8 h-px bg-muted" />
                                       {slot.label}
-                                      <div className="w-8 h-px bg-slate-100" />
+                                      <div className="w-8 h-px bg-muted" />
                                     </div>
                                   </TableCell>
                                 );
@@ -626,13 +626,13 @@ const conflicts = useMemo(() => {
                                     className={cn(
                                       'w-full h-full min-h-[100px] border-2 border-dashed rounded-[1.5rem] flex items-center justify-center transition-all group',
                                       lesson
-                                        ? 'border-transparent bg-slate-50 p-4'
+                                        ? 'border-transparent bg-muted p-4'
                                         : isFinalized
-                                        ? 'border-slate-100 bg-slate-50/30'
-                                        : 'border-slate-100 hover:border-slate-300 hover:bg-slate-50/50 cursor-pointer',
-                                      conflict ? 'bg-rose-50 border-rose-100 ring-4 ring-rose-500/10' : '',
+                                        ? 'border-border bg-muted/30'
+                                        : 'border-border hover:border-text-secondary hover:bg-muted/50 cursor-pointer',
+                                      conflict ? 'bg-destructive/10 border-destructive ring-4 ring-destructive/10' : '',
                                       dragOverSlot === slotKey && !isFinalized
-                                        ? 'bg-slate-200 border-slate-400 scale-[1.02]'
+                                        ? 'bg-muted border-border scale-[1.02]'
                                         : '',
                                     )}
                                   >
@@ -640,29 +640,29 @@ const conflicts = useMemo(() => {
                                       <div className="w-full relative">
                                         <div className={cn('absolute -left-4 top-0 bottom-0 w-1', lesson.color)} />
                                         <div className="flex justify-between items-start mb-1">
-                                          <p className="text-[13px] font-black italic text-slate-900 leading-tight">
+                                          <p className="text-[13px] font-black italic text-text-primary leading-tight">
                                             {lesson.subject}
                                           </p>
                                           <button
                                             onClick={() => removeLesson(slotKey)}
-                                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-slate-300 hover:text-rose-500"
+                                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-muted hover:text-destructive"
                                           >
                                             <Trash2 size={12} />
                                           </button>
                                         </div>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                        <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest">
                                           {lesson.class}
                                         </p>
                                         <div className="flex items-center gap-1.5 mt-2">
-                                          <MapPin size={10} className="text-slate-300" />
-                                          <span className="text-[8px] font-black text-slate-500 uppercase">
+                                          <MapPin size={10} className="text-muted" />
+                                          <span className="text-[8px] font-black text-text-secondary uppercase">
                                             Room {lesson.room || 'B3'}
                                           </span>
                                         </div>
 
                                         {conflict && (
                                           <div
-                                            className="mt-3 p-2 bg-rose-500 text-white rounded-lg flex items-center gap-2"
+                                            className="mt-3 p-2 bg-destructive text-primary-foreground rounded-lg flex items-center gap-2"
                                             title={conflict.msg}
                                           >
                                             <AlertTriangle size={10} className="shrink-0" />
@@ -673,7 +673,7 @@ const conflicts = useMemo(() => {
                                         )}
                                       </div>
                                     ) : (
-                                      <Plus size={20} className="text-slate-200 group-hover:text-slate-400 transition-colors" />
+                                      <Plus size={20} className="text-muted group-hover:text-text-secondary transition-colors" />
                                     )}
                                   </div>
                                 </TableCell>

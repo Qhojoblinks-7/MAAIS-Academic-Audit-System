@@ -187,7 +187,7 @@ const handleAuditTrailClick = () => {
     };
 
     return (
-    <div className="flex-1 p-8 bg-slate-50 overflow-y-auto relative">
+    <div className="flex-1 p-8 bg-muted overflow-y-auto relative">
       {/* Final Seal Confirmation Modal */}
       <AnimatePresence>
         {showSealConfirm && (
@@ -197,37 +197,37 @@ const handleAuditTrailClick = () => {
                animate={{ opacity: 1 }}
                exit={{ opacity: 0 }}
                onClick={() => setShowSealConfirm(false)}
-               className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+               className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md"
              />
              <motion.div 
                initial={{ scale: 0.9, opacity: 0, y: 20 }}
                animate={{ scale: 1, opacity: 1, y: 0 }}
                exit={{ scale: 0.9, opacity: 0, y: 20 }}
-               className="relative w-full max-w-md bg-white rounded-[2.5rem] p-10 shadow-3xl overflow-hidden border border-slate-100"
+               className="relative w-full max-w-md bg-surface rounded-[2.5rem] p-10 shadow-3xl overflow-hidden border border-border"
              >
-                <div className="absolute top-0 left-0 w-full h-1.5 bg-rose-600" />
-                <div className="w-20 h-20 bg-rose-50 rounded-[2rem] flex items-center justify-center mb-8 mx-auto">
-                    <ShieldAlert size={40} className="text-rose-600" />
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-destructive" />
+                <div className="w-20 h-20 bg-destructive/10 rounded-[2rem] flex items-center justify-center mb-8 mx-auto">
+                    <ShieldAlert size={40} className="text-destructive" />
                 </div>
                 
-                <h3 className="text-2xl font-black text-slate-900 text-center italic font-display mb-4">Execute Final Seal?</h3>
-                <p className="text-gray-500 text-center text-sm font-medium leading-relaxed mb-8">
-                  This action will <span className="font-black text-rose-600">permanently freeze</span> all marks and assessments for this term. Publication protocols will trigger immediately.
+                <h3 className="text-2xl font-black text-text-primary text-center italic font-display mb-4">Execute Final Seal?</h3>
+                <p className="text-text-secondary text-center text-sm font-medium leading-relaxed mb-8">
+                  This action will <span className="font-black text-destructive">permanently freeze</span> all marks and assessments for this term. Publication protocols will trigger immediately.
                 </p>
 
                  <div className="space-y-4 mb-10">
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Target Term</p>
-                       <p className="text-sm font-black text-slate-900">
-                         {termSummaryQuery.isLoading ? 'Loading...' : termSummaryQuery.data?.termLabel || '—'}
+                    <div className="p-4 bg-muted rounded-2xl border border-border">
+                       <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-1">Target Term</p>
+                       <p className="text-sm font-black text-text-primary">
+                         {termSummaryQuery.isLoading ? 'Loading...' : termSummaryQuery.data?.termLabel || 'ï¿½'}
                        </p>
                     </div>
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Impact Radius</p>
-                       <p className="text-sm font-black text-slate-900">
+                    <div className="p-4 bg-muted rounded-2xl border border-border">
+                       <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-1">Impact Radius</p>
+                       <p className="text-sm font-black text-text-primary">
                          {termSummaryQuery.isLoading
                            ? 'Loading...'
-                           : `${termSummaryQuery.data?.studentCount?.toLocaleString() ?? '—'} Students & ${termSummaryQuery.data?.gradeEntryCount?.toLocaleString() ?? '—'} Grade Entries`}
+                           : `${termSummaryQuery.data?.studentCount?.toLocaleString() ?? 'ï¿½'} Students & ${termSummaryQuery.data?.gradeEntryCount?.toLocaleString() ?? 'ï¿½'} Grade Entries`}
                        </p>
                     </div>
                  </div>
@@ -235,7 +235,7 @@ const handleAuditTrailClick = () => {
                 <div className="flex gap-4">
                    <button 
                      onClick={() => setShowSealConfirm(false)}
-                     className="flex-1 py-4 text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors"
+                     className="flex-1 py-4 text-[11px] font-black uppercase tracking-widest text-text-secondary hover:text-text-primary transition-colors"
                    >
                      Abort
                    </button>
@@ -258,7 +258,7 @@ const handleAuditTrailClick = () => {
                            setShowSealConfirm(false);
                          }
                        }}
-                      className="flex-1 py-4 bg-rose-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-rose-900/20 hover:bg-rose-700 transition-all"
+                      className="flex-1 py-4 bg-destructive text-primary-foreground rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-destructive/20 hover:bg-destructive transition-all"
                     >
                       {lockTermMutation.isPending ? 'Sealing...' : 'Finalize Term'}
                     </button>
@@ -271,24 +271,24 @@ const handleAuditTrailClick = () => {
       <div className="max-w-7xl mx-auto space-y-10 pb-20">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-black italic font-display text-slate-900 tracking-tight leading-none">
+            <h1 className="text-3xl font-black italic font-display text-text-primary tracking-tight leading-none">
               The Grading Protocol
             </h1>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-3">
+            <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.3em] mt-3">
               Standardized Assessment Logic & WAEC Calibration
             </p>
           </div>
           <div className="flex gap-3">
               <button 
                 onClick={handleAuditTrailClick}
-                className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all"
+                className="flex items-center gap-2 px-6 py-3 bg-surface border border-border rounded-2xl text-[10px] font-black uppercase tracking-widest text-text-secondary hover:bg-muted transition-all"
               >
                 <History size={14} /> Audit Trail
               </button>
               {!isTermFinalized && (
                 <button 
                   onClick={handleCommitChanges}
-                  className="flex items-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 hover:bg-black transition-all"
+                  className="flex items-center gap-2 px-8 py-3 bg-brand-dark text-primary-foreground rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-dark/20 hover:bg-brand-dark transition-all"
                 >
                   <Save size={14} /> Commit Changes
                 </button>
@@ -303,22 +303,22 @@ const handleAuditTrailClick = () => {
             "lg:col-span-2 space-y-8 transition-opacity",
             isTermFinalized && "opacity-60 pointer-events-none"
           )}>
-            <section className="bg-white rounded-[2.5rem] border border-slate-200 p-10 shadow-sm relative overflow-hidden group">
+            <section className="bg-surface rounded-[2.5rem] border border-border p-10 shadow-sm relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-                <Gauge size={80} className="text-slate-900" />
+                <Gauge size={80} className="text-text-primary" />
               </div>
               
               <div className="flex justify-between items-center mb-8">
                 <div>
-                  <h3 className="text-[13px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
-                    <Settings2 size={16} className="text-emerald-600" />
+                  <h3 className="text-[13px] font-black text-text-primary uppercase tracking-[0.2em] flex items-center gap-2">
+                    <Settings2 size={16} className="text-brand-primary" />
                     The Global Weighting Toggle
                   </h3>
-                  <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest leading-relaxed">
+                  <p className="text-[9px] font-bold text-text-secondary mt-1 uppercase tracking-widest leading-relaxed">
                     Define the Continuous Assessment (CA) vs. Examination Split
                   </p>
                 </div>
-                <div className="px-3 py-1 bg-slate-100 rounded-lg text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                <div className="px-3 py-1 bg-muted rounded-lg text-[9px] font-black text-text-secondary uppercase tracking-widest">
                   Standard WASSCE 30/70
                 </div>
               </div>
@@ -327,16 +327,16 @@ const handleAuditTrailClick = () => {
                 <div className="relative">
                   <div className="flex justify-between mb-8 px-4">
                     <div className="text-center">
-                      <p className="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Continuous Assessment</p>
-                      <h4 className="text-5xl font-black italic font-display text-slate-900 tracking-tighter">{caWeight}%</h4>
+                      <p className="text-[10px] font-black text-text-secondary uppercase mb-2 tracking-widest">Continuous Assessment</p>
+                      <h4 className="text-5xl font-black italic font-display text-text-primary tracking-tighter">{caWeight}%</h4>
                     </div>
                     <div className="text-center">
-                      <p className="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Final Examination</p>
-                      <h4 className="text-5xl font-black italic font-display text-slate-900 tracking-tighter text-right">{examWeight}%</h4>
+                      <p className="text-[10px] font-black text-text-secondary uppercase mb-2 tracking-widest">Final Examination</p>
+                      <h4 className="text-5xl font-black italic font-display text-text-primary tracking-tighter text-right">{examWeight}%</h4>
                     </div>
                   </div>
                   
-                  <div className="relative h-4 bg-slate-100 rounded-full cursor-pointer flex items-center group/slider">
+                  <div className="relative h-4 bg-muted rounded-full cursor-pointer flex items-center group/slider">
                     <input 
                       type="range" 
                       min="0" 
@@ -347,27 +347,27 @@ const handleAuditTrailClick = () => {
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     />
                     <div 
-                      className="absolute left-0 top-0 h-full bg-emerald-500 rounded-l-full transition-all duration-300" 
+                      className="absolute left-0 top-0 h-full bg-brand-primary rounded-l-full transition-all duration-300" 
                       style={{ width: `${caWeight}%` }}
                     />
                     <div 
-                      className="absolute h-8 w-8 bg-white border-4 border-slate-900 rounded-full shadow-xl transition-all duration-300 cursor-grab active:scale-95 z-20"
+                      className="absolute h-8 w-8 bg-surface border-4 border-border rounded-full shadow-xl transition-all duration-300 cursor-grab active:scale-95 z-20"
                       style={{ left: `calc(${caWeight}% - 16px)` }}
                     />
-                    <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 text-[8px] font-black text-slate-400 uppercase tracking-[0.4em] pointer-events-none">
+                    <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 text-[8px] font-black text-text-secondary uppercase tracking-[0.4em] pointer-events-none">
                       Dynamic Split
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="p-4 bg-muted rounded-2xl border border-border">
                     <label className="flex items-center gap-3 cursor-pointer">
                       <div className={cn(
-                        "w-5 h-5 rounded-md border-2 border-slate-300 flex items-center justify-center transition-all",
-                        normalizationEnabled ? "bg-slate-900 border-slate-900" : ""
+                        "w-5 h-5 rounded-md border-2 border-border flex items-center justify-center transition-all",
+                        normalizationEnabled ? "bg-brand-dark border-border" : ""
                       )}>
-                        {normalizationEnabled && <ShieldCheck size={12} className="text-white" />}
+                        {normalizationEnabled && <ShieldCheck size={12} className="text-primary-foreground" />}
                         <input 
                           type="checkbox" 
                           className="sr-only" 
@@ -377,19 +377,19 @@ const handleAuditTrailClick = () => {
                         />
                       </div>
                       <div>
-                        <p className="text-[11px] font-black text-slate-900 uppercase tracking-widest">Auto-Normalization</p>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">Scale all raw scores to 100% automatically</p>
+                        <p className="text-[11px] font-black text-text-primary uppercase tracking-widest">Auto-Normalization</p>
+                        <p className="text-[9px] font-bold text-text-secondary uppercase tracking-tighter mt-0.5">Scale all raw scores to 100% automatically</p>
                       </div>
                     </label>
 </div>
-                   <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-500/10">
+                   <div className="p-4 bg-brand-primary/50 rounded-2xl border border-brand-primary/10">
                       <div className="flex items-start gap-3 mb-3">
                         <label className="flex items-center gap-3 cursor-pointer">
                           <div className={cn(
-                            "w-5 h-5 rounded-md border-2 border-slate-300 flex items-center justify-center transition-all",
-                            departmentalOverrideEnabled ? "bg-emerald-600 border-emerald-600" : ""
+                            "w-5 h-5 rounded-md border-2 border-border flex items-center justify-center transition-all",
+                            departmentalOverrideEnabled ? "bg-brand-primary border-brand-primary" : ""
                           )}>
-                            {departmentalOverrideEnabled && <ShieldCheck size={12} className="text-white" />}
+                            {departmentalOverrideEnabled && <ShieldCheck size={12} className="text-primary-foreground" />}
                             <input 
                               type="checkbox" 
                               className="sr-only" 
@@ -399,22 +399,22 @@ const handleAuditTrailClick = () => {
                             />
                           </div>
                           <div>
-                            <p className="text-[11px] font-black text-emerald-600 uppercase tracking-widest">Departmental Override</p>
-                            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter mt-0.5">Allow Tech/Voc to use 40/60 split.</p>
+                            <p className="text-[11px] font-black text-brand-primary uppercase tracking-widest">Departmental Override</p>
+                            <p className="text-[9px] font-bold text-text-secondary uppercase tracking-tighter mt-0.5">Allow Tech/Voc to use 40/60 split.</p>
                           </div>
                         </label>
                       </div>
 {departmentalOverrideEnabled && (
-                         <div className="mt-3 pt-3 border-t border-emerald-200/50">
-                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Departments Requiring Override</p>
+                         <div className="mt-3 pt-3 border-t border-brand-primary/50">
+                           <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mb-2">Departments Requiring Override</p>
                            <div className="space-y-2 max-h-40 overflow-y-auto scrollbar-hide">
                              {departments.map(dept => (
                                <label key={dept.id} className="flex items-center gap-2 cursor-pointer">
                                  <div className={cn(
-                                   "w-4 h-4 rounded border border-slate-300 flex items-center justify-center transition-all",
-                                   departmentOverrides[dept.id] ? "bg-emerald-600 border-emerald-600" : ""
+                                   "w-4 h-4 rounded border border-border flex items-center justify-center transition-all",
+                                   departmentOverrides[dept.id] ? "bg-brand-primary border-brand-primary" : ""
                                  )}>
-                                   {departmentOverrides[dept.id] && <ShieldCheck size={10} className="text-white" />}
+                                   {departmentOverrides[dept.id] && <ShieldCheck size={10} className="text-primary-foreground" />}
                                    <input 
                                      type="checkbox" 
                                      className="sr-only" 
@@ -423,18 +423,18 @@ const handleAuditTrailClick = () => {
                                      onChange={(e) => setDepartmentOverrides(prev => ({ ...prev, [dept.id]: e.target.checked }))}
                                    />
                                  </div>
-                                 <span className="text-[10px] font-bold text-slate-600">{dept.name || dept.label}</span>
+                                 <span className="text-[10px] font-bold text-text-secondary">{dept.name || dept.label}</span>
                                </label>
                              ))}
                            </div>
                          </div>
                        )}
                        {!departmentalOverrideEnabled && departments.length > 0 && (
-                         <div className="mt-3 pt-3 border-t border-emerald-200/50">
-                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Available Departments</p>
+                         <div className="mt-3 pt-3 border-t border-brand-primary/50">
+                           <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mb-2">Available Departments</p>
                            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto scrollbar-hide">
                              {departments.map(dept => (
-                               <span key={dept.id} className="px-2 py-1 bg-white border border-emerald-200 rounded-lg text-[9px] font-bold text-emerald-700">
+                               <span key={dept.id} className="px-2 py-1 bg-surface border border-brand-primary rounded-lg text-[9px] font-bold text-brand-primary">
                                  {dept.name || dept.label}
                                </span>
                              ))}
@@ -447,18 +447,18 @@ const handleAuditTrailClick = () => {
              </section>
 
 {/* 2. Grade Boundary Configuration (The WAEC Scale) */}
-             <section className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-visible">
-                <div className="p-10 border-b border-slate-100 flex justify-between items-center">
+             <section className="bg-surface rounded-[2.5rem] border border-border shadow-sm overflow-visible">
+                <div className="p-10 border-b border-border flex justify-between items-center">
                   <div>
-                    <h3 className="text-[13px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <Palette size={16} className="text-emerald-600" />
+                    <h3 className="text-[13px] font-black text-text-primary uppercase tracking-[0.2em] flex items-center gap-2">
+                        <Palette size={16} className="text-brand-primary" />
                         WAEC Scale Calibration
                     </h3>
-                    <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Mapping Percentage Thresholds to Terminal Grades</p>
+                    <p className="text-[9px] font-bold text-text-secondary mt-1 uppercase tracking-widest">Mapping Percentage Thresholds to Terminal Grades</p>
                   </div>
                    <button 
-                     onClick={() => toast.info('WAEC calibration maps score ranges to terminal grades (A1-F9). Adjust boundaries carefully — they directly affect transcript quality and ranking.')}
-                     className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:text-slate-900 transition-colors"
+                     onClick={() => toast.info('WAEC calibration maps score ranges to terminal grades (A1-F9). Adjust boundaries carefully ï¿½ they directly affect transcript quality and ranking.')}
+                     className="p-3 bg-muted text-text-secondary rounded-xl hover:text-text-primary transition-colors"
                    >
                      <HelpCircle size={18} />
                    </button>
@@ -466,16 +466,16 @@ const handleAuditTrailClick = () => {
                 <div className="overflow-visible">
                    <Table containerClassName="overflow-visible">
                     <TableHeader>
-                      <TableRow className="bg-slate-50 border-b border-slate-100">
-                         <TableHead className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Score Range (%)</TableHead>
-                         <TableHead className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Grade</TableHead>
-                         <TableHead className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Automated Remark (Smart Logic)</TableHead>
+                      <TableRow className="bg-muted border-b border-border">
+                         <TableHead className="px-10 py-5 text-[10px] font-black text-text-secondary uppercase tracking-widest">Score Range (%)</TableHead>
+                         <TableHead className="px-10 py-5 text-[10px] font-black text-text-secondary uppercase tracking-widest text-center">Grade</TableHead>
+                         <TableHead className="px-10 py-5 text-[10px] font-black text-text-secondary uppercase tracking-widest">Automated Remark (Smart Logic)</TableHead>
                          <TableHead className="px-10 py-5"></TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody className="divide-y divide-slate-50 relative">
+                    <TableBody className="divide-y divide-border relative">
                       {boundaries.map((b) => (
-                        <TableRow key={b.id} className="hover:bg-slate-50/50 transition-colors group overflow-visible">
+                        <TableRow key={b.id} className="hover:bg-muted/50 transition-colors group overflow-visible">
 <TableCell className="px-6 py-6 overflow-visible">
                             <div className="flex items-center gap-3">
                                <input 
@@ -484,63 +484,63 @@ const handleAuditTrailClick = () => {
                                  disabled={isTermFinalized}
                                  // Safe input handling: string allows backspacing clean fields
                                  onChange={(e) => handleBoundaryChange(b.id, 'min', e.target.value === '' ? '' : parseInt(e.target.value))}
-                                 className="w-16 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-[12px] font-black font-mono text-center outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                                 className="w-16 px-3 py-2 bg-muted border border-border rounded-xl text-[12px] font-black font-mono text-center outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all"
                                />
-                               <span className="text-slate-300 font-black">—</span>
+                               <span className="text-muted font-black">ï¿½</span>
                                <input 
                                  type="number" 
                                  value={b.max}
                                  disabled={isTermFinalized}
                                  onChange={(e) => handleBoundaryChange(b.id, 'max', e.target.value === '' ? '' : parseInt(e.target.value))}
-                                 className="w-16 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-[12px] font-black font-mono text-center outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                                 className="w-16 px-3 py-2 bg-muted border border-border rounded-xl text-[12px] font-black font-mono text-center outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all"
                                />
                             </div>
                           </TableCell>
                           <TableCell className="px-10 py-6 text-center">
                             <span className={cn(
                               "px-4 py-2 rounded-xl text-[14px] font-black italic font-display border",
-                              b.grade.startsWith('A') ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                              b.grade.startsWith('B') ? "bg-blue-50 text-blue-600 border-blue-100" :
-                              b.grade.startsWith('C') ? "bg-amber-50 text-amber-600 border-amber-100" :
-                              "bg-rose-50 text-rose-600 border-rose-100"
+                              b.grade.startsWith('A') ? "bg-brand-primary/10 text-brand-primary border-brand-primary" :
+                              b.grade.startsWith('B') ? "bg-brand-primary/10 text-brand-primary border-brand-primary" :
+                              b.grade.startsWith('C') ? "bg-warning/10 text-warning border-warning" :
+                              "bg-destructive/10 text-destructive border-destructive"
                             )}>
                               {b.grade}
 </span>
                              </TableCell>
                              <TableCell className="px-12 py-6 relative flex-1">
-                               <Edit3 size={12} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-hover:text-emerald-600 transition-colors" />
+                               <Edit3 size={12} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-hover:text-brand-primary transition-colors" />
                                <input 
                                  type="text"
                                  value={b.remark}
                                  disabled={isTermFinalized}
                                  onChange={(e) => handleBoundaryChange(b.id, 'remark', e.target.value)}
-                                 className="w-full pl-10 pr-4 py-3 bg-transparent border border-transparent hover:border-slate-200 rounded-xl text-[12px] font-bold text-slate-600 outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 transition-all font-sans"
+                                 className="w-full pl-10 pr-4 py-3 bg-transparent border border-transparent hover:border-border rounded-xl text-[12px] font-bold text-text-secondary outline-none focus:bg-surface focus:ring-2 focus:ring-brand-primary/20 transition-all font-sans"
                                />
                              </TableCell>
                              <TableCell className="px-10 py-6 text-right flex items-center gap-2 justify-end">
                               <div className="relative group/suggest">
                                 <button 
                                   disabled={isTermFinalized}
-                                  className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-emerald-500 hover:text-white disabled:hover:bg-slate-50 disabled:hover:text-slate-400 transition-all border border-slate-100"
+                                  className="p-2 bg-muted text-text-secondary rounded-lg hover:bg-brand-primary hover:text-primary-foreground disabled:hover:bg-muted disabled:hover:text-text-secondary transition-all border border-border"
                                 >
                                   <Sparkles size={14} />
                                 </button>
                                 {!isTermFinalized && (
-                                  <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 hidden group-hover/suggest:block z-[1000] scrollbar-hide flex flex-col">
-                                    <div className="px-3 py-2 border-b border-slate-50 mb-1">
-                                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Smart Suggestions</p>
+                                  <div className="absolute right-0 top-full mt-2 w-64 bg-surface rounded-2xl shadow-2xl border border-border p-2 hidden group-hover/suggest:block z-[1000] scrollbar-hide flex flex-col">
+                                    <div className="px-3 py-2 border-b border-border mb-1">
+                                      <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Smart Suggestions</p>
                                     </div>
                                     {b.suggestionPool?.map((suggestion, idx) => (
                                         <button 
                                         key={idx}
                                         onClick={() => handleBoundaryChange(b.id, 'remark', suggestion)}
-                                        className="w-full text-left px-3 py-2 text-[10px] font-bold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors leading-tight flex items-center"
+                                        className="w-full text-left px-3 py-2 text-[10px] font-bold text-text-secondary hover:bg-muted rounded-lg transition-colors leading-tight flex items-center"
                                       >
                                         {suggestion}
                                       </button>
                                     ))}
                                     {(!b.suggestionPool || b.suggestionPool.length === 0) && (
-                                      <div className="px-3 py-2 text-[10px] font-medium text-slate-400 italic">No templates for this category.</div>
+                                      <div className="px-3 py-2 text-[10px] font-medium text-text-secondary italic">No templates for this category.</div>
                                     )}
                                   </div>
                                 )}
@@ -548,7 +548,7 @@ const handleAuditTrailClick = () => {
                               <button 
                                 disabled={isTermFinalized}
                                 onClick={() => handleDeleteBoundary(b.id)}
-                                className="text-slate-300 hover:text-rose-500 disabled:hover:text-slate-300 transition-colors opacity-0 group-hover:opacity-100"
+                                className="text-muted hover:text-destructive disabled:hover:text-muted transition-colors opacity-0 group-hover:opacity-100"
                               >
                                 <Trash2 size={16} />
                               </button>
@@ -559,11 +559,11 @@ const handleAuditTrailClick = () => {
                   </Table>
                 </div>
                
-               <div className="p-8 bg-slate-50 border-t border-slate-100">
+               <div className="p-8 bg-muted border-t border-border">
                   <button 
                     disabled={isTermFinalized}
                     onClick={handleAddBoundary}
-                    className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center gap-3 text-slate-400 hover:text-slate-600 hover:border-slate-300 disabled:opacity-50 disabled:pointer-events-none transition-all"
+                    className="w-full py-4 border-2 border-dashed border-border rounded-2xl flex items-center justify-center gap-3 text-text-secondary hover:text-text-secondary hover:border-border disabled:opacity-50 disabled:pointer-events-none transition-all"
                   >
                     <Plus size={16} />
                     <span className="text-[10px] font-black uppercase tracking-widest">Insert New Threshold</span>
@@ -574,28 +574,28 @@ const handleAuditTrailClick = () => {
 
           {/* 3. The "Final Seal" (Validation Lock) */}
           <div className="space-y-8">
-            <section className="bg-slate-900 rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden">
+            <section className="bg-brand-dark rounded-[2.5rem] p-10 text-primary-foreground shadow-2xl relative overflow-hidden">
                <div className="absolute -bottom-10 -right-10 opacity-10">
                  <Lock size={200} />
                </div>
                
                 <div className="relative z-10">
                   <div className="flex items-start justify-between mb-8">
-                    <div className="w-16 h-16 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[1.5rem] flex items-center justify-center">
-                      {isTermFinalized ? <Lock className="text-rose-400" size={32} /> : <Unlock className="text-emerald-400" size={32} />}
+                    <div className="w-16 h-16 bg-surface/10 backdrop-blur-xl border border-primary-foreground/20 rounded-[1.5rem] flex items-center justify-center">
+                      {isTermFinalized ? <Lock className="text-destructive" size={32} /> : <Unlock className="text-brand-primary" size={32} />}
                     </div>
                     <span className={cn(
                       "text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-lg border",
                       isTermFinalized 
-                        ? "bg-rose-500/20 text-rose-300 border-rose-400/30 animate-pulse" 
-                        : "bg-emerald-500/20 text-emerald-300 border-emerald-400/30"
+                        ? "bg-destructive/20 text-destructive border-destructive/30 animate-pulse" 
+                        : "bg-brand-primary/20 text-brand-primary border-brand-primary/30"
                     )}>
                       {isTermFinalized ? 'TERM LOCKED' : 'TERM UNLOCKED'}
                     </span>
                   </div>
                   
-                  <h3 className="text-2xl font-black text-white italic font-display tracking-tight leading-none mb-3">Terminal Validation Lock</h3>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed mb-10">
+                  <h3 className="text-2xl font-black text-primary-foreground italic font-display tracking-tight leading-none mb-3">Terminal Validation Lock</h3>
+                  <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest leading-relaxed mb-10">
                     {isTermFinalized 
                       ? 'Grading is suspended. No teacher can modify marks. Use Emergency Unlock to restore access.' 
                       : 'Encrypt and freeze the database for report generation. Once locked, no teacher can modify marks.'}
@@ -603,10 +603,10 @@ const handleAuditTrailClick = () => {
                  
                  <div className="space-y-6 mb-12">
                    <div className="flex justify-between items-end">
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-3">Submission Deadline</label>
+                      <label className="text-[9px] font-black text-text-secondary uppercase tracking-[0.2em] block mb-3">Submission Deadline</label>
                       <span className={cn(
                         "text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md mb-2",
-                        getTimeRemaining() === 'DEADLINE PASSED' ? "bg-rose-500 text-white" : "bg-emerald-500 text-white"
+                        getTimeRemaining() === 'DEADLINE PASSED' ? "bg-destructive text-primary-foreground" : "bg-brand-primary text-primary-foreground"
                       )}>
                         {getTimeRemaining()}
                       </span>
@@ -618,7 +618,7 @@ const handleAuditTrailClick = () => {
                           value={deadlineDate}
                           disabled={isTermFinalized}
                           onChange={(e) => setDeadlineDate(e.target.value)}
-                          className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-xs font-black italic font-display outline-none focus:ring-2 focus:ring-white/20 transition-all active:bg-white/10"
+                          className="w-full bg-primary-foreground/5 border border-primary-foreground/10 rounded-2xl px-5 py-4 text-xs font-black italic font-display outline-none focus:ring-2 focus:ring-primary-foreground/20 transition-all active:bg-primary-foreground/10"
                         />
                      </div>
                      <div className="relative">
@@ -627,7 +627,7 @@ const handleAuditTrailClick = () => {
                           value={deadlineTime}
                           disabled={isTermFinalized}
                           onChange={(e) => setDeadlineTime(e.target.value)}
-                          className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-xs font-black italic font-display outline-none focus:ring-2 focus:ring-white/20 transition-all active:bg-white/10"
+                          className="w-full bg-primary-foreground/5 border border-primary-foreground/10 rounded-2xl px-5 py-4 text-xs font-black italic font-display outline-none focus:ring-2 focus:ring-primary-foreground/20 transition-all active:bg-primary-foreground/10"
                         />
                      </div>
                    </div>
@@ -658,8 +658,8 @@ const handleAuditTrailClick = () => {
                   className={cn(
                     "w-full py-5 rounded-[2rem] text-[11px] font-black uppercase tracking-widest transition-all shadow-2xl flex items-center justify-center gap-3",
                     isTermFinalized 
-                      ? "bg-rose-600 text-white shadow-rose-900/40" 
-                      : "bg-emerald-600 text-white shadow-emerald-900/40"
+                      ? "bg-destructive text-primary-foreground shadow-destructive/40" 
+                      : "bg-brand-primary text-primary-foreground shadow-brand-primary/40"
                   )}
                  >
                     {isTermFinalized ? <Unlock size={16} /> : <Lock size={16} />}
@@ -667,30 +667,30 @@ const handleAuditTrailClick = () => {
                  </button>
                  
                  {isTermFinalized && (
-                   <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest text-center mt-6 animate-pulse">
+                   <p className="text-[9px] font-black text-destructive uppercase tracking-widest text-center mt-6 animate-pulse">
                      Database is currently Read-Only
                    </p>
                  )}
                </div>
             </section>
 
-<section className="bg-white rounded-[2.5rem] border border-slate-200 p-8 shadow-sm">
-              <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2 mb-8">
-                <AlertTriangle size={18} className="text-amber-500" />
+<section className="bg-surface rounded-[2.5rem] border border-border p-8 shadow-sm">
+              <h3 className="text-[12px] font-black text-text-primary uppercase tracking-[0.2em] flex items-center gap-2 mb-8">
+                <AlertTriangle size={18} className="text-warning" />
                 System Warnings
               </h3>
               <div className="space-y-4">
                 {!showComplianceResult ? (
-                  <div className="p-4 rounded-2xl border flex gap-4 items-start bg-slate-50 border-slate-100 text-slate-500">
+                  <div className="p-4 rounded-2xl border flex gap-4 items-start bg-muted border-border text-text-secondary">
                     <div className="mt-1"><Info size={14} /></div>
                     <p className="text-[11px] font-bold leading-tight">Run Compliance Suite to generate live diagnostics.</p>
                   </div>
                 ) : complianceWarnings.map((w, i) => (
                   <div key={i} className={cn(
                     "p-4 rounded-2xl border flex gap-4 items-start",
-                    w.severity === 'high' ? "bg-rose-50 border-rose-100 text-rose-900" :
-                    w.severity === 'low' ? "bg-amber-50 border-amber-100 text-amber-900" :
-                    "bg-blue-50 border-blue-100 text-blue-900"
+                    w.severity === 'high' ? "bg-destructive/10 border-destructive text-destructive" :
+                    w.severity === 'low' ? "bg-warning/10 border-warning text-warning" :
+                    "bg-brand-primary/10 border-brand-primary text-brand-primary"
                   )}>
                     <div className="mt-1">
                       {w.severity === 'high' ? <ShieldCheck size={14} /> : <Info size={14} />}
@@ -700,7 +700,7 @@ const handleAuditTrailClick = () => {
                 ))}
               </div>
               
-              <button onClick={runComplianceSuite} className="w-full mt-8 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-slate-900/10">
+              <button onClick={runComplianceSuite} className="w-full mt-8 py-4 bg-brand-dark text-primary-foreground rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-dark transition-all shadow-lg shadow-brand-dark/10">
                 Run Compliance Suite
               </button>
             </section>

@@ -286,27 +286,27 @@ export function CurriculumMatrixView({ displaySubjects: initialSubjects, display
 
   return (
     <div className="space-y-8">
-      <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[80vh]">
-        <div className="p-8 border-b border-slate-100 shrink-0 bg-white">
+      <div className="bg-surface rounded-[2.5rem] border border-border shadow-sm overflow-hidden flex flex-col max-h-[80vh]">
+        <div className="p-8 border-b border-border shrink-0 bg-surface">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-[0.25em]">Curriculum Allocation Matrix</h3>
-              <p className="text-[9px] font-medium text-slate-400 mt-1 uppercase tracking-widest italic">Multi-Program Subject Logical Grid</p>
+              <h3 className="text-xs font-black text-foreground uppercase tracking-[0.25em]">Curriculum Allocation Matrix</h3>
+              <p className="text-[9px] font-medium text-muted-foreground mt-1 uppercase tracking-widest italic">Multi-Program Subject Logical Grid</p>
             </div>
             <div className="flex items-center gap-4">
               <div className="relative">
-                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="text"
                   placeholder="Search Subject Protocol..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 pr-6 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-[12px] font-bold outline-none w-64"
+                  className="pl-12 pr-6 py-3 bg-muted/30 border border-border rounded-2xl text-xs font-bold outline-none w-64"
                 />
               </div>
               <button
                 onClick={autoSyncCore}
-                className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest"
+                className="flex items-center gap-2 px-6 py-3 bg-brand-primary text-primary-foreground rounded-2xl text-[10px] font-black uppercase tracking-widest"
               >
                 <Map size={16} /> Auto-Sync Core
               </button>
@@ -320,7 +320,7 @@ export function CurriculumMatrixView({ displaySubjects: initialSubjects, display
                 onClick={() => setActiveFilters(prev => ({ ...prev, yearGroup: f }))}
                 className={cn(
                   "px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shrink-0 whitespace-nowrap",
-                  activeFilters.yearGroup === f ? "bg-slate-900 text-white shadow-lg" : "bg-slate-50 text-slate-400 border border-slate-200 hover:bg-slate-100"
+                  activeFilters.yearGroup === f ? "bg-brand-primary text-primary-foreground shadow-lg" : "bg-muted/30 text-muted-foreground border border-border hover:bg-muted/50"
                 )}
               >
                 {f}
@@ -331,41 +331,41 @@ export function CurriculumMatrixView({ displaySubjects: initialSubjects, display
 
         <div className="flex-1 overflow-auto">
           <Table className="min-w-[1200px]">
-            <TableHeader className="sticky top-0 z-20 bg-slate-50 border-b border-slate-200">
+            <TableHeader className="sticky top-0 z-20 bg-muted/30 border-b border-border">
               <TableRow>
-                <TableHead className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] w-[250px] bg-slate-50 border-r border-slate-200 sticky left-0 z-30">Subject Logic Unit</TableHead>
-                <TableHead className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center w-[100px]">Credits</TableHead>
+                <TableHead className="px-8 py-5 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] w-[250px] bg-muted/30 border-r border-border sticky left-0 z-30">Subject Logic Unit</TableHead>
+                <TableHead className="px-6 py-5 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] text-center w-[100px]">Credits</TableHead>
                 {classes.map(cls => (
-                  <TableHead key={cls.id} className="px-4 py-5 text-[10px] font-black text-slate-900 uppercase tracking-tighter text-center min-w-[100px] hover:bg-slate-100 transition-colors">
+                  <TableHead key={cls.id} className="px-4 py-5 text-[10px] font-black text-foreground uppercase tracking-tighter text-center min-w-[100px] hover:bg-muted/50 transition-colors">
                     <span className="italic font-display">{cls.name.split(' ')[0]}</span>
                     <span className="block text-[8px] opacity-40 font-black mt-0.5">{cls.name.split(' ').slice(1).join(' ')}</span>
                   </TableHead>
                 ))}
               </TableRow>
             </TableHeader>
-            <TableBody className="divide-y divide-slate-100">
+            <TableBody className="divide-y divide-border">
               {filteredSubjects.map((sub) => {
                 const state = subjectStates[sub.id];
                 return (
-                  <TableRow key={sub.id} className="group hover:bg-slate-50/50">
-                    <TableCell className="px-8 py-5 border-r border-slate-100 bg-white sticky left-0 z-10 group-hover:bg-slate-50 shadow-[5px_0_15px_rgba(0,0,0,0.02)]">
+                  <TableRow key={sub.id} className="group hover:bg-muted/50">
+                    <TableCell className="px-8 py-5 border-r border-border bg-surface sticky left-0 z-10 group-hover:bg-muted/30 shadow-[5px_0_15px_rgba(0,0,0,0.02)]">
                       <div className="flex items-center gap-4">
                         <div className={cn(
                           "w-8 h-8 rounded-lg flex items-center justify-center shadow-sm",
-                          sub.type === 'Core' ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"
+                          sub.type === 'Core' ? "bg-success/10 text-success" : "bg-brand-primary/10 text-brand-primary"
                         )}>
                           {sub.type === 'Core' ? <ShieldCheck size={16} /> : <BookMarked size={16} />}
                         </div>
                         <div>
-                          <p className="text-[13px] font-black italic font-display text-slate-900 leading-none mb-1">{sub.name}</p>
-                          <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{sub.code}</p>
+                          <p className="text-sm font-black italic font-display text-foreground leading-none mb-1">{sub.name}</p>
+                          <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">{sub.code}</p>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="px-6 py-5 text-center border-r border-slate-100">
+                    <TableCell className="px-6 py-5 text-center border-r border-border">
                       <div className="flex items-center justify-center gap-1.5">
-                        <span className="text-sm font-black italic font-display text-slate-900">{sub.creditHours}</span>
-                        <Clock size={10} className="text-slate-300" />
+                        <span className="text-sm font-black italic font-display text-foreground">{sub.creditHours}</span>
+                        <Clock size={10} className="text-muted-foreground" />
                       </div>
                     </TableCell>
                     {classes.map(cls => {
@@ -374,8 +374,8 @@ export function CurriculumMatrixView({ displaySubjects: initialSubjects, display
 
                       return (
                         <TableCell key={cls.id} className={cn(
-                          "px-4 py-5 text-center border-r border-slate-50 transition-colors",
-                          core ? "bg-emerald-50/20" : ""
+                          "px-4 py-5 text-center border-r border-border transition-colors",
+                          core ? "bg-success/10" : ""
                         )}>
                           <div className="flex items-center justify-center">
                             <button
@@ -384,13 +384,13 @@ export function CurriculumMatrixView({ displaySubjects: initialSubjects, display
                               disabled={core}
                               onClick={() => handleToggle(sub.id, cls.id)}
                               className={cn(
-                                "relative w-10 h-6 rounded-full transition-all shadow-inner border border-slate-200",
-                                isAssigned ? "bg-slate-900" : "bg-slate-100",
+                                "relative w-10 h-6 rounded-full transition-all shadow-inner border border-border",
+                                isAssigned ? "bg-brand-primary" : "bg-muted/20",
                                 core ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
                               )}
                             >
                               <div className={cn(
-                                "absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform",
+                                "absolute top-1 w-4 h-4 bg-surface rounded-full shadow-sm transition-transform",
                                 isAssigned ? "left-5" : "left-1"
                               )} />
                             </button>

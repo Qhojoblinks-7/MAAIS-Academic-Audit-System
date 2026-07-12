@@ -35,47 +35,50 @@ export function TeacherSubmissionMatrix({ onRefresh }) {
   if (teacherSubmissions.length === 0) return null;
 
   return (
-    <section className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
-      <div className="p-5 border-b border-slate-100 shrink-0 bg-white flex items-center justify-between">
+    <section className="hod-table-card">
+      <div className="hod-card-header">
         <div>
-          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <BookOpen size={18} className="text-blue-600" />
+          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <BookOpen size={18} className="text-brand-primary" />
             Submission Progress by Teacher
           </h2>
         </div>
         <button
           onClick={handleRefresh}
-          className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50"
+          className="hod-btn-reset uppercase tracking-widest"
         >
           Refresh
         </button>
       </div>
-      <div className="divide-y divide-slate-100">
+      <div className="divide-y divide-border">
         {teacherProgress.map((t, i) => {
-          const hue = Math.round((t.progress / 100) * 120);
-          const barGradient = `linear-gradient(90deg, hsl(${hue}, 80%, 50%), hsl(${Math.min(hue + 20, 120)}, 80%, 60%))`;
+          const barColor = t.progress >= 80
+            ? 'var(--color-success)'
+            : t.progress >= 40
+              ? 'var(--color-warning)'
+              : 'var(--color-danger)';
           return (
             <motion.div
               key={`${t.teacherId}-${i}`}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.03 }}
-              className="p-4 flex items-center gap-5 hover:bg-slate-50/50 transition-all"
+              className="p-4 flex items-center gap-5 hover:bg-muted/50 transition-all"
             >
               <div className="w-36 min-w-[144px] shrink-0">
-                <p className="text-sm font-bold text-slate-900 truncate">{t.teacherName}</p>
-                <p className="text-[9px] text-slate-400 font-bold uppercase">{t.status.replace('_', ' ')}</p>
+                <p className="text-sm font-bold text-foreground truncate">{t.teacherName}</p>
+                <p className="text-xs text-muted-foreground font-bold uppercase">{t.status.replace('_', ' ')}</p>
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] font-bold text-slate-500">
+                  <span className="text-xs font-bold text-muted-foreground">
                     {t.progress}% complete
                   </span>
                 </div>
-                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${Math.min(100, Math.max(0, t.progress))}%`, background: barGradient }}
+                    style={{ width: `${Math.min(100, Math.max(0, t.progress))}%`, background: barColor }}
                   />
                 </div>
               </div>

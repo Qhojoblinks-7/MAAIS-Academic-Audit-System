@@ -1,4 +1,4 @@
-﻿import React, { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Calendar, 
@@ -109,30 +109,30 @@ export function CommsView() {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-[#F0F4F2] overflow-hidden">
+    <div className="flex-1 flex flex-col bg-background overflow-hidden">
       {/* Now & Next Header */}
-      <header className="px-8 pt-8 pb-6 bg-white border-b border-gray-200 shadow-sm z-10">
+      <header className="px-8 pt-8 pb-6 bg-surface border-b border-border shadow-sm z-10">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-emerald-800 rounded-xl flex items-center justify-center text-white">
+            <div className="w-10 h-10 bg-brand-primary rounded-xl flex items-center justify-center text-primary-foreground">
               <Calendar size={24} />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-gray-900 tracking-tight">Academic Schedule</h1>
+              <h1 className="text-2xl font-black text-text-primary tracking-tight">Academic Schedule</h1>
               <div className="flex items-center gap-2 mt-0.5">
-                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">System Sync Active</p>
+                <div className="w-1.5 h-1.5 bg-brand-primary rounded-full animate-pulse" />
+                <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest">System Sync Active</p>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="flex bg-gray-100 p-1 rounded-xl">
+            <div className="flex bg-muted p-1 rounded-xl">
               <button 
                 onClick={() => setView('daily')}
                 className={cn(
                   "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition-all",
-                  view === 'daily' ? "bg-white text-emerald-800 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  view === 'daily' ? "bg-surface text-brand-primary shadow-sm" : "text-text-secondary hover:text-text-primary"
                 )}
               >
                 <List size={16} />
@@ -142,7 +142,7 @@ export function CommsView() {
                 onClick={() => setView('weekly')}
                 className={cn(
                   "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition-all",
-                  view === 'weekly' ? "bg-white text-emerald-800 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  view === 'weekly' ? "bg-surface text-brand-primary shadow-sm" : "text-text-secondary hover:text-text-primary"
                 )}
               >
                 <LayoutGrid size={16} />
@@ -156,22 +156,22 @@ export function CommsView() {
           {/* Current Period */}
           <div className={cn(
             "p-5 rounded-2xl border-2 flex items-center justify-between transition-all",
-            currentPeriod ? "bg-emerald-50 border-emerald-200" : "bg-gray-50 border-gray-200"
+            currentPeriod ? "bg-brand-primary/10 border-brand-primary" : "bg-muted border-border"
           )}>
             <div className="flex items-center gap-4">
               <div className={cn(
                 "w-10 h-10 rounded-xl flex items-center justify-center",
-                currentPeriod ? "bg-emerald-600 text-white" : "bg-gray-200 text-gray-400"
+                currentPeriod ? "bg-brand-primary text-primary-foreground" : "bg-muted text-text-secondary"
               )}>
                 <Timer size={20} />
               </div>
               <div>
-                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Live Period</p>
-                <h3 className="text-base font-black text-gray-900 leading-tight">
+                <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mb-0.5">Live Period</p>
+                <h3 className="text-base font-black text-text-primary leading-tight">
                   {currentPeriod ? `${currentPeriod.subjectName} - ${currentPeriod.className}` : 'No Active Session'}
                 </h3>
                 {currentPeriod && (
-                  <p className="text-[10px] font-bold text-emerald-700 flex items-center gap-1 mt-0.5">
+                  <p className="text-[10px] font-bold text-brand-primary flex items-center gap-1 mt-0.5">
                     <MapPin size={10} /> {currentPeriod.venue}
                   </p>
                 )}
@@ -180,7 +180,7 @@ export function CommsView() {
             {currentPeriod && (
               <button 
                 onClick={() => navigate('/grading')}
-                className="px-4 py-2 bg-emerald-800 text-white rounded-xl font-black text-[10px] hover:bg-emerald-900 transition-all shadow-lg shadow-emerald-900/20 flex items-center gap-2"
+                className="px-4 py-2 bg-brand-primary text-primary-foreground rounded-xl font-black text-[10px] hover:bg-brand-primary transition-all shadow-lg shadow-brand-primary/20 flex items-center gap-2"
               >
                 Open Sheet
                 <ArrowRight size={14} />
@@ -189,24 +189,24 @@ export function CommsView() {
           </div>
 
           {/* Next Period */}
-          <div className="p-5 bg-white border border-gray-200 rounded-2xl flex items-center justify-between">
+          <div className="p-5 bg-surface border border-border rounded-2xl flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400">
+              <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center text-text-secondary">
                 <Clock size={20} />
               </div>
               <div>
-                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Coming Up Next</p>
-                <h3 className="text-base font-black text-gray-900 leading-tight">
+                <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mb-0.5">Coming Up Next</p>
+                <h3 className="text-base font-black text-text-primary leading-tight">
                   {nextPeriod ? `${nextPeriod.subjectName} - ${nextPeriod.className}` : 'End of Day'}
                 </h3>
                 {nextPeriod && (
-                  <p className="text-[10px] font-bold text-gray-500 mt-0.5">Starts at {nextPeriod.startTime}</p>
+                  <p className="text-[10px] font-bold text-text-secondary mt-0.5">Starts at {nextPeriod.startTime}</p>
                 )}
               </div>
             </div>
             <div className="text-right">
-              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">PostgreSQL Lock</p>
-              <p className="text-xs font-black text-red-600">4 Days Remaining</p>
+              <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mb-0.5">PostgreSQL Lock</p>
+              <p className="text-xs font-black text-destructive">4 Days Remaining</p>
             </div>
           </div>
         </div>
@@ -218,11 +218,11 @@ export function CommsView() {
            <div className="h-full flex flex-col p-6 overflow-auto scrollbar-hide">
             <div className="min-w-[1000px] flex-1 flex flex-col">
               {/* Days Header */}
-              <div className="flex border-b border-gray-200 pb-4">
+              <div className="flex border-b border-border pb-4">
                 <div className="w-20" />
                 {DAYS.map(day => (
                   <div key={day} className="flex-1 text-center">
-                    <span className="text-sm font-black text-gray-900 uppercase tracking-widest">{day}</span>
+                    <span className="text-sm font-black text-text-primary uppercase tracking-widest">{day}</span>
                   </div>
                 ))}
               </div>
@@ -232,8 +232,8 @@ export function CommsView() {
                 {/* Time Indicators */}
                 <div className="absolute inset-0 flex flex-col">
                   {HOURS.map(hour => (
-                    <div key={hour} className="flex-1 border-t border-gray-100 relative">
-                      <span className="absolute -left-16 -top-2.5 text-[10px] font-black text-gray-400">
+                    <div key={hour} className="flex-1 border-t border-border relative">
+                      <span className="absolute -left-16 -top-2.5 text-[10px] font-black text-text-secondary">
                         {hour.toString().padStart(2, '0')}:00
                       </span>
                     </div>
@@ -243,11 +243,11 @@ export function CommsView() {
                 {/* Smart Indicator (Current Time Line) */}
                 {currentTime.getDay() >= 1 && currentTime.getDay() <= 5 && (
                   <div 
-                    className="absolute left-0 right-0 border-t-2 border-red-500 z-20 pointer-events-none flex items-center"
+                    className="absolute left-0 right-0 border-t-2 border-destructive z-20 pointer-events-none flex items-center"
                     style={{ top: `${getTimePosition(formatTime(currentTime))}%` }}
                   >
-                    <div className="w-2 h-2 bg-red-500 rounded-full -ml-1" />
-                    <div className="px-2 py-0.5 bg-red-500 text-white text-[8px] font-black rounded-full ml-2">
+                    <div className="w-2 h-2 bg-destructive rounded-full -ml-1" />
+                    <div className="px-2 py-0.5 bg-destructive text-primary-foreground text-[8px] font-black rounded-full ml-2">
                       {formatTime(currentTime)}
                     </div>
                   </div>
@@ -257,7 +257,7 @@ export function CommsView() {
                 <div className="absolute inset-0 flex">
                   <div className="w-20" />
                   {DAYS.map(day => (
-                    <div key={day} className="flex-1 relative border-r border-gray-100 last:border-r-0">
+                    <div key={day} className="flex-1 relative border-r border-border last:border-r-0">
                       {timetableData.filter(e => e.day === day).map(entry => (
                         <motion.div
                           key={entry.id}
@@ -267,11 +267,11 @@ export function CommsView() {
                           onMouseLeave={() => setHoveredId(null)}
                           className={cn(
                             "absolute left-1 right-1 rounded-xl p-2 border shadow-sm cursor-pointer group transition-all z-10 overflow-hidden flex flex-col",
-                            entry.type === 'LAB' ? "bg-emerald-50 border-emerald-200" :
-                            entry.type === 'SUBSTITUTION' ? "bg-blue-50 border-blue-200" :
-                            "bg-white border-gray-200",
-                            entry.isClash && "border-red-500 ring-2 ring-red-100",
-                            hoveredId === entry.id && "z-30 h-auto min-h-[120px] shadow-xl ring-2 ring-emerald-500/20"
+                            entry.type === 'LAB' ? "bg-brand-primary/10 border-brand-primary" :
+                            entry.type === 'SUBSTITUTION' ? "bg-brand-primary/10 border-brand-primary" :
+                            "bg-surface border-border",
+                            entry.isClash && "border-destructive ring-2 ring-destructive",
+                            hoveredId === entry.id && "z-30 h-auto min-h-[120px] shadow-xl ring-2 ring-brand-primary/20"
                           )}
                           style={{
                             top: `${getTimePosition(entry.startTime)}%`,
@@ -281,30 +281,30 @@ export function CommsView() {
                           <div className="flex justify-between items-start mb-1 shrink-0">
                             <span className={cn(
                               "text-[7px] font-black uppercase tracking-wider px-1 py-0.5 rounded",
-                              entry.type === 'LAB' ? "bg-emerald-200 text-emerald-800" :
-                              entry.type === 'SUBSTITUTION' ? "bg-blue-200 text-blue-800" :
-                              "bg-gray-100 text-gray-600"
+                              entry.type === 'LAB' ? "bg-brand-primary/20 text-brand-primary" :
+                              entry.type === 'SUBSTITUTION' ? "bg-brand-primary/20 text-brand-primary" :
+                              "bg-muted text-text-secondary"
                             )}>
                               {entry.type}
                             </span>
                             <div className="flex gap-1">
                               {entry.missingObservations && (
-                                <div className="w-3.5 h-3.5 bg-amber-500 text-white rounded-full flex items-center justify-center text-[8px] font-black">
+                                <div className="w-3.5 h-3.5 bg-warning text-primary-foreground rounded-full flex items-center justify-center text-[8px] font-black">
                                   !
                                 </div>
                               )}
                               {entry.isClash && (
-                                <AlertTriangle size={10} className="text-red-500" />
+                                <AlertTriangle size={10} className="text-destructive" />
                               )}
                             </div>
                           </div>
                           
                           <div className="flex-1 min-h-0">
-                            <h4 className="text-[10px] font-black text-gray-900 leading-tight truncate group-hover:whitespace-normal">{entry.subjectName}</h4>
-                            <p className="text-[8px] font-bold text-gray-500 truncate group-hover:whitespace-normal">{entry.className}</p>
+                            <h4 className="text-[10px] font-black text-text-primary leading-tight truncate group-hover:whitespace-normal">{entry.subjectName}</h4>
+                            <p className="text-[8px] font-bold text-text-secondary truncate group-hover:whitespace-normal">{entry.className}</p>
                           </div>
 
-                          <div className="mt-1 flex items-center gap-1 text-[7px] font-black text-gray-400 uppercase shrink-0">
+                          <div className="mt-1 flex items-center gap-1 text-[7px] font-black text-text-secondary uppercase shrink-0">
                             <MapPin size={8} /> <span className="truncate">{entry.venue}</span>
                           </div>
 
@@ -314,14 +314,14 @@ export function CommsView() {
                               <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                className="mt-2 pt-2 border-t border-gray-100 space-y-2"
+                                className="mt-2 pt-2 border-t border-border space-y-2"
                               >
                                 {entry.tasks && (
                                   <div className="space-y-1">
                                     {entry.tasks.slice(0, 2).map((task, i) => (
                                       <div key={i} className="flex items-center gap-1">
-                                        <div className="w-1 h-1 bg-emerald-500 rounded-full" />
-                                        <span className="text-[8px] font-bold text-gray-600 truncate">{task}</span>
+                                        <div className="w-1 h-1 bg-brand-primary rounded-full" />
+                                        <span className="text-[8px] font-bold text-text-secondary truncate">{task}</span>
                                       </div>
                                     ))}
                                   </div>
@@ -329,7 +329,7 @@ export function CommsView() {
                                 <div className="flex gap-1">
                                   <button 
                                     onClick={(e) => { e.stopPropagation(); navigate('/grading'); }}
-                                    className="flex-1 py-1 bg-emerald-800 text-white text-[8px] font-black rounded-lg hover:bg-emerald-900 transition-all"
+                                    className="flex-1 py-1 bg-brand-primary text-primary-foreground text-[8px] font-black rounded-lg hover:bg-brand-primary transition-all"
                                   >
                                     Open Sheet
                                   </button>
@@ -339,7 +339,7 @@ export function CommsView() {
                                       setSelectedEntry(entry);
                                       setIsResourceModalOpen(true);
                                     }}
-                                    className="flex-1 py-1 bg-white border border-emerald-800 text-emerald-800 text-[8px] font-black rounded-lg hover:bg-emerald-50 transition-all flex items-center justify-center gap-1"
+                                    className="flex-1 py-1 bg-surface border border-brand-primary text-brand-primary text-[8px] font-black rounded-lg hover:bg-brand-primary/10 transition-all flex items-center justify-center gap-1"
                                   >
                                     <LinkIcon size={8} />
                                     Materials
@@ -366,7 +366,7 @@ export function CommsView() {
                     onClick={() => saetSelectedDay(day)}
                     className={cn(
                       "px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap",
-                      selectedDay === day ? "bg-emerald-800 text-white shadow-lg" : "bg-white text-gray-500 hover:bg-gray-50"
+                      selectedDay === day ? "bg-brand-primary text-primary-foreground shadow-lg" : "bg-surface text-text-secondary hover:bg-muted"
                     )}
                   >
                     {day}
@@ -382,32 +382,32 @@ export function CommsView() {
                     onMouseEnter={() => setHoveredId(entry.id)}
                     onMouseLeave={() => setHoveredId(null)}
                     className={cn(
-                      "bg-white rounded-2xl p-5 border border-gray-200 flex flex-col group hover:border-emerald-200 transition-all shadow-sm overflow-hidden",
-                      entry.isClash && "border-red-200 bg-red-50/30"
+                      "bg-surface rounded-2xl p-5 border border-border flex flex-col group hover:border-brand-primary transition-all shadow-sm overflow-hidden",
+                      entry.isClash && "border-destructive bg-destructive/30"
                     )}
                   >
                     <div className="flex items-center gap-6">
-                      <div className="w-20 text-center border-r border-gray-100 pr-6 shrink-0">
-                        <p className="text-base font-black text-gray-900">{entry.startTime}</p>
-                        <p className="text-[9px] font-bold text-gray-400 uppercase">{entry.endTime}</p>
+                      <div className="w-20 text-center border-r border-border pr-6 shrink-0">
+                        <p className="text-base font-black text-text-primary">{entry.startTime}</p>
+                        <p className="text-[9px] font-bold text-text-secondary uppercase">{entry.endTime}</p>
                       </div>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-1">
-                          <h4 className="text-lg font-black text-gray-900 truncate">{entry.subjectName}</h4>
+                          <h4 className="text-lg font-black text-text-primary truncate">{entry.subjectName}</h4>
                           <span className={cn(
                             "px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider shrink-0",
-                            entry.type === 'LAB' ? "bg-emerald-100 text-emerald-700" :
-                            entry.type === 'SUBSTITUTION' ? "bg-blue-100 text-blue-700" :
-                            "bg-gray-100 text-gray-600"
+                            entry.type === 'LAB' ? "bg-brand-primary/10 text-brand-primary" :
+                            entry.type === 'SUBSTITUTION' ? "bg-brand-primary/10 text-brand-primary" :
+                            "bg-muted text-text-secondary"
                           )}>
                             {entry.type}
                           </span>
                         </div>
                         <div className="flex items-center gap-4">
-                          <p className="text-xs font-bold text-gray-500 truncate">{entry.className}</p>
-                          <span className="text-gray-300 shrink-0">•</span>
-                          <p className="text-xs font-bold text-gray-500 flex items-center gap-1 truncate">
+                          <p className="text-xs font-bold text-text-secondary truncate">{entry.className}</p>
+                          <span className="text-muted shrink-0">•</span>
+                          <p className="text-xs font-bold text-text-secondary flex items-center gap-1 truncate">
                             <MapPin size={12} /> {entry.venue}
                           </p>
                         </div>
@@ -415,14 +415,14 @@ export function CommsView() {
 
                       <div className="flex items-center gap-3 shrink-0">
                         {entry.missingObservations && (
-                          <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-100 rounded-xl text-amber-700">
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-warning/10 border border-warning rounded-xl text-warning">
                             <ShieldAlert size={14} />
                             <span className="text-[9px] font-black uppercase">{entry.missingObservations} Missing</span>
                           </div>
                         )}
                         <button 
                           onClick={() => navigate('/grading')}
-                          className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:bg-emerald-800 group-hover:text-white transition-all shadow-sm"
+                          className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center text-text-secondary group-hover:bg-brand-primary group-hover:text-primary-foreground transition-all shadow-sm"
                         >
                           <ChevronRight size={20} />
                         </button>
@@ -435,21 +435,21 @@ export function CommsView() {
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: 'auto', opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          className="mt-4 pt-4 border-t border-gray-100"
+                          className="mt-4 pt-4 border-t border-border"
                         >
-                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-3">Session Tasks</p>
+                          <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mb-3">Session Tasks</p>
                           <div className="grid grid-cols-2 gap-3">
                             {entry.tasks.map((task, idx) => (
-                              <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg border border-gray-100">
-                                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                                <span className="text-[10px] font-bold text-gray-700">{task}</span>
+                              <div key={idx} className="flex items-center gap-2 p-2 bg-muted rounded-lg border border-border">
+                                <div className="w-1.5 h-1.5 bg-brand-primary rounded-full" />
+                                <span className="text-[10px] font-bold text-text-primary">{task}</span>
                               </div>
                             ))}
                           </div>
                           <div className="mt-4 flex gap-3">
                             <button 
                               onClick={() => navigate('/grading')}
-                              className="flex-1 py-2 bg-emerald-800 text-white text-xs font-black rounded-xl hover:bg-emerald-900 transition-all"
+                              className="flex-1 py-2 bg-brand-primary text-primary-foreground text-xs font-black rounded-xl hover:bg-brand-primary transition-all"
                             >
                               Open Grading Sheet
                             </button>
@@ -459,7 +459,7 @@ export function CommsView() {
                                 setSelectedEntry(entry);
                                 setIsResourceModalOpen(true);
                               }}
-                              className="flex-1 py-2 bg-white border border-emerald-800 text-emerald-800 text-xs font-black rounded-xl hover:bg-emerald-50 transition-all flex items-center justify-center gap-2"
+                              className="flex-1 py-2 bg-surface border border-brand-primary text-brand-primary text-xs font-black rounded-xl hover:bg-brand-primary/10 transition-all flex items-center justify-center gap-2"
                             >
                               <FilePlus size={14} />
                               Attach Materials
@@ -472,10 +472,10 @@ export function CommsView() {
                 ))}
                 
                 {timetableData.filter(e => e.day === selectedDay).length === 0 && (
-                  <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200">
-                    <Calendar className="mx-auto text-gray-300 mb-4" size={48} />
-                    <h3 className="text-lg font-black text-gray-900">No Classes Scheduled</h3>
-                    <p className="text-sm font-bold text-gray-500">Enjoy your free period!</p>
+                  <div className="text-center py-20 bg-surface rounded-3xl border-2 border-dashed border-border">
+                    <Calendar className="mx-auto text-muted mb-4" size={48} />
+                    <h3 className="text-lg font-black text-text-primary">No Classes Scheduled</h3>
+                    <p className="text-sm font-bold text-text-secondary">Enjoy your free period!</p>
                   </div>
                 )}
               </div>
@@ -493,25 +493,25 @@ export function CommsView() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsResourceModalOpen(false)}
-              className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-brand-dark/60 backdrop-blur-sm"
             />
             <motion.div 
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-2xl bg-[#F9F9F7] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+              className="relative w-full max-w-2xl bg-background rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
-              <div className="px-8 py-6 bg-white border-b border-gray-100 flex justify-between items-center shrink-0">
+              <div className="px-8 py-6 bg-surface border-b border-border flex justify-between items-center shrink-0">
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-emerald-800 rounded-xl flex items-center justify-center text-white">
+                  <div className="w-10 h-10 bg-brand-primary rounded-xl flex items-center justify-center text-primary-foreground">
                     <BookOpen size={20} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-black text-gray-900 tracking-tight">Learning Materials</h3>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{selectedEntry.subjectName} — {selectedEntry.className}</p>
+                    <h3 className="text-lg font-black text-text-primary tracking-tight">Learning Materials</h3>
+                    <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest">{selectedEntry.subjectName} — {selectedEntry.className}</p>
                   </div>
                 </div>
-                <button onClick={() => setIsResourceModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-xl transition-all text-gray-400">
+                <button onClick={() => setIsResourceModalOpen(false)} className="p-2 hover:bg-muted rounded-xl transition-all text-text-secondary">
                   <Plus size={24} className="rotate-45" />
                 </button>
               </div>
@@ -519,35 +519,35 @@ export function CommsView() {
                <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide">
                 {/* Current Materials */}
                 <div>
-                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Linked Resources</h4>
+                  <h4 className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-4">Linked Resources</h4>
                   <div className="space-y-3">
                     {selectedEntry.materials?.length ? selectedEntry.materials.map(material => (
-                      <div key={material.id} className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl group hover:border-emerald-200 transition-all">
+                      <div key={material.id} className="flex items-center justify-between p-4 bg-surface border border-border rounded-2xl group hover:border-brand-primary transition-all">
                         <div className="flex items-center gap-4">
                           <div className={cn(
                             "w-10 h-10 rounded-xl flex items-center justify-center",
-                            material.type === 'PDF' ? "bg-rose-50 text-rose-600" : "bg-blue-50 text-blue-600"
+                            material.type === 'PDF' ? "bg-destructive/10 text-destructive" : "bg-brand-primary/10 text-brand-primary"
                           )}>
                             {material.type === 'PDF' ? <FileIcon size={20} /> : <LinkIcon size={20} />}
                           </div>
                           <div>
-                            <p className="text-[14px] font-black text-gray-900 tracking-tight leading-none mb-1">{material.title}</p>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Added on {material.addedAt}</p>
+                            <p className="text-[14px] font-black text-text-primary tracking-tight leading-none mb-1">{material.title}</p>
+                            <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest leading-none">Added on {material.addedAt}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                          <a href={material.url} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-400 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all">
+                          <a href={material.url} target="_blank" rel="noopener noreferrer" className="p-2 text-text-secondary hover:text-brand-primary hover:bg-brand-primary/10 rounded-lg transition-all">
                             <ExternalLink size={18} />
                           </a>
-                          <button className="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
+                          <button className="p-2 text-text-secondary hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all">
                             <Trash2 size={18} />
                           </button>
                         </div>
                       </div>
                     )) : (
-                      <div className="text-center py-10 border-2 border-dashed border-gray-100 rounded-3xl">
-                        <FileIcon className="mx-auto text-gray-200 mb-2" size={32} />
-                        <p className="text-xs font-bold text-gray-400 italic">No resources attached to this session.</p>
+                      <div className="text-center py-10 border-2 border-dashed border-border rounded-3xl">
+                        <FileIcon className="mx-auto text-muted mb-2" size={32} />
+                        <p className="text-xs font-bold text-text-secondary italic">No resources attached to this session.</p>
                       </div>
                     )}
                   </div>
@@ -555,30 +555,30 @@ export function CommsView() {
 
                 {/* Add New Material Form: Only visible to teachers/HOD */}
                 {user?.role !== 'STUDENT' && (
-                  <div className="pt-8 border-t border-gray-100">
-                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Attach New Material</h4>
+                  <div className="pt-8 border-t border-border">
+                    <h4 className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-4">Attach New Material</h4>
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                          <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Resource Title</label>
+                          <label className="text-[9px] font-black text-text-secondary uppercase tracking-widest ml-1">Resource Title</label>
                           <input 
                             type="text" 
                             placeholder="e.g., Week 4 Practical Guide" 
                             value={newMaterial.title}
                             onChange={(e) => setNewMaterial(prev => ({ ...prev, title: e.target.value }))}
-                            className="w-full px-5 py-3.5 bg-white border border-gray-100 rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-emerald-500/5 transition-all shadow-sm"
+                            className="w-full px-5 py-3.5 bg-surface border border-border rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-brand-primary/5 transition-all shadow-sm"
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Resource Type</label>
-                          <div className="flex p-1 bg-gray-100 rounded-xl">
+                          <label className="text-[9px] font-black text-text-secondary uppercase tracking-widest ml-1">Resource Type</label>
+                          <div className="flex p-1 bg-muted rounded-xl">
                             {['LINK', 'PDF'].map(t => (
                               <button
                                 key={t}
                                 onClick={() => setNewMaterial(prev => ({ ...prev, type: t }))}
                                 className={cn(
                                   "flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                                  newMaterial.type === t ? "bg-white text-emerald-800 shadow-sm" : "text-gray-400"
+                                  newMaterial.type === t ? "bg-surface text-brand-primary shadow-sm" : "text-text-secondary"
                                 )}
                               >
                                 {t}
@@ -588,19 +588,19 @@ export function CommsView() {
                         </div>
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Link URL (or PDF storage path)</label>
+                        <label className="text-[9px] font-black text-text-secondary uppercase tracking-widest ml-1">Link URL (or PDF storage path)</label>
                         <div className="relative">
-                          <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={16} />
+                          <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={16} />
                           <input 
                             type="text" 
                             placeholder="https://..." 
                             value={newMaterial.url}
                             onChange={(e) => setNewMaterial(prev => ({ ...prev, url: e.target.value }))}
-                            className="w-full pl-12 pr-5 py-3.5 bg-white border border-gray-100 rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-emerald-500/5 transition-all shadow-sm"
+                            className="w-full pl-12 pr-5 py-3.5 bg-surface border border-border rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-brand-primary/5 transition-all shadow-sm"
                           />
                         </div>
                       </div>
-                      <button className="w-full py-4 bg-emerald-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-emerald-900/10 flex items-center justify-center gap-3">
+                      <button className="w-full py-4 bg-brand-primary text-primary-foreground rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-brand-dark transition-all shadow-xl shadow-brand-primary/10 flex items-center justify-center gap-3">
                         <Plus size={16} />
                         Append to Session Registry
                       </button>

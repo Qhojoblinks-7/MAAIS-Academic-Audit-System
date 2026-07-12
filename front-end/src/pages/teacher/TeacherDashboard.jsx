@@ -1,13 +1,12 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { motion } from 'framer-motion';
+import { cn } from '../../lib/utils';
 import { ClassCard } from '../../components/shared/ClassCard';
 import { useRole } from '../../context/RoleContext';
 import { useUI } from '../../context/UIContext';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Percent, GraduationCap, Layers, AlertTriangle, CheckCircle2, Clock, RefreshCw } from 'lucide-react';
 import { teacherService } from '../../services';
-import { NotificationBell } from '../../components/shared/NotificationBell';
-import { Card } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
 
 export function TeacherDashboard() {
   const { user } = useRole();
@@ -79,6 +78,33 @@ export function TeacherDashboard() {
     ? Math.round(teacherClasses.reduce((sum, c) => sum + (c.progress || 0), 0) / teacherClasses.length)
     : 0;
 
+  const kpiStats = useMemo(() => ([
+    {
+      label: 'Assigned Classes',
+      value: teacherClasses.length,
+      icon: 'BookOpen',
+      bg: 'bg-brand-primary/5',
+      color: 'text-brand-primary',
+      subtext: `${teacherClasses.length} active tracks`,
+    },
+    {
+      label: 'Grading Operations',
+      value: `${avgProgress}%`,
+      icon: 'Percent',
+      bg: 'bg-success/10',
+      color: 'text-success',
+      subtext: 'Grading complete',
+    },
+    {
+      label: 'Student Scope',
+      value: totalStudents,
+      icon: 'GraduationCap',
+      bg: 'bg-brand-primary/5',
+      color: 'text-brand-primary',
+      subtext: `${totalStudents} total roster`,
+    },
+  ]), [teacherClasses.length, avgProgress, totalStudents]);
+
   const handleEnterMarks = (cls) => {
     if (user?.role !== 'STUDENT') {
       navigate(`/grading?subject=${encodeURIComponent(cls.subject)}&class=${encodeURIComponent(cls.className)}`); 
@@ -131,60 +157,48 @@ export function TeacherDashboard() {
             <h1 className="text-2xl font-black text-primary tracking-tight leading-none">
               Welcome back, <span className="text-success">{user?.name?.split(' ')[0] || 'Teacher'}</span>!
             </h1>
-            <p className="text-xs font-black text-secondary uppercase tracking-widest mt-2 flex items-center gap-1.5">
-              <Layers size={10} className="text-secondary" />
+            <p className="text-xs font-black text-primary/70 uppercase tracking-widest mt-2 flex items-center gap-1.5">
+              <Layers size={10} className="text-primary/70" />
               Academic Workspace & Assessment Matrix
             </p>
           </div>
         </header>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          
-          <Card className="p-5 rounded-2xl shadow-sm flex flex-col gap-3 ring-0">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center text-primary border border-border shrink-0">
-                <BookOpen size={20} />
-              </div>
-              <div>
-                <p className="text-xs font-black text-secondary uppercase tracking-widest leading-none">Assigned Classes</p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-primary leading-none">{teacherClasses.length}</span>
-                  <span className="text-xs font-bold text-secondary">active tracks</span>
+          {kpiStats.map((card, i) => {
+            const iconMap = { BookOpen, Percent, GraduationCap };
+            const CardIcon = iconMap[card.icon] || BookOpen;
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className="bg-surface p-4 rounded-2xl border border-border/50 shadow-sm hover:shadow-md transition-all relative group"
+              >
+                <div className="flex items-center justify-between h-full gap-4">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shrink-0", card.bg, card.color)}>
+                      <CardIcon size={22} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1 whitespace-nowrap">{card.label}</p>
+                      <p className="text-[11px] font-medium text-text-secondary leading-tight whitespace-nowrap">{card.subtext}</p>
+                    </div>
+                  </div>
+                  <div className="text-right pl-4 shrink-0">
+                    {String(card.value).endsWith('%') ? (
+                      <p className="text-5xl font-bold tracking-tighter leading-none whitespace-nowrap">
+                        {String(card.value).slice(0, -1)}<span className="text-2xl font-bold align-baseline">{String(card.value).slice(-1)}</span>
+                      </p>
+                    ) : (
+                      <p className="text-5xl font-bold tracking-tighter leading-none whitespace-nowrap">{card.value}</p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-5 rounded-2xl shadow-sm flex flex-col gap-3 ring-0">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-success/10 rounded-xl flex items-center justify-center text-success border border-success/30 shrink-0">
-                <Percent size={20} />
-              </div>
-              <div>
-                <p className="text-xs font-black text-secondary uppercase tracking-widest leading-none">Grading Operations</p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-success leading-none">{avgProgress}%</span>
-                  <span className="text-xs font-bold text-success/70">total complete</span>
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-5 rounded-2xl shadow-sm flex flex-col gap-3 ring-0 sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center text-primary border border-border shrink-0">
-                <GraduationCap size={20} />
-              </div>
-              <div>
-                <p className="text-xs font-black text-secondary uppercase tracking-widest leading-none">Student Scope</p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-primary leading-none">{totalStudents}</span>
-                  <span className="text-xs font-bold text-secondary">total roster count</span>
-                </div>
-              </div>
-            </div>
-          </Card>
-
+              </motion.div>
+            );
+          })}
         </div>
 
         <div className={`grid grid-cols-1 md:grid-cols-2 ${rightPanelVisible ? 'lg:grid-cols-2' : 'lg:grid-cols-3'} gap-6`}>

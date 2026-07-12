@@ -85,8 +85,8 @@ export const ConfirmationModal = ({
                 {cancelLabel}
               </button>
               <button onClick={onConfirm} className={cn(
-                "flex-1 py-2.5 text-white rounded-xl text-[9px] font-black uppercase tracking-wider",
-                confirmVariant === 'danger' ? "bg-rose-600 hover:bg-rose-700" : "bg-slate-900 hover:bg-black"
+                "flex-1 py-2.5 text-background rounded-xl text-xs font-black uppercase tracking-wider",
+                confirmVariant === 'danger' ? "bg-destructive hover:bg-destructive/90" : "bg-foreground hover:bg-foreground/90"
               )}>
                 {confirmLabel}
               </button>

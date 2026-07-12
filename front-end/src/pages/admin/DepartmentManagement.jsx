@@ -20,10 +20,10 @@ import {
 } from "../../lib/hooks";
 
 const DEPARTMENT_COLORS = [
-  "bg-blue-500",
-  "bg-emerald-500",
-  "bg-purple-500",
-  "bg-amber-500",
+  "bg-brand-primary",
+  "bg-success",
+  "bg-brand-secondary",
+  "bg-warning",
 ];
 
 export function DepartmentManagement() {

@@ -15,7 +15,7 @@ export function DepartmentDetailsView({
   openTransferModal,
 }) {
   return (
-    <div className="flex-1 overflow-y-auto p-8 lg:p-12 bg-slate-50/30 scrollbar-hide">
+    <div className="flex-1 overflow-y-auto p-8 lg:p-12 bg-muted/30 scrollbar-hide">
       <div className="max-w-4xl">
         <AnimatePresence mode="wait">
           <motion.div
