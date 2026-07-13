@@ -279,10 +279,6 @@ export function Topbar() {
         <nav className="hidden md:block">
           <BreadcrumbNav />
         </nav>
-        <nav className="md:hidden">
-          <BreadcrumbNav compact />
-        </nav>
-
         <div className="flex items-center gap-2 lg:hidden">
           <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)} className="w-9 h-9">
             <Menu size={18} />

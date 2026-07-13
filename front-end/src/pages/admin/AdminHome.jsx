@@ -96,7 +96,6 @@ export function AdminHome() {
   });
   const [activeMemoTab, setActiveMemoTab] = React.useState('operational');
   const [notepadSaved, setNotepadSaved] = React.useState(true);
-  const [activeMetric, setActiveMetric] = React.useState('Avg Score');
   const [activeAction, setActiveAction] = React.useState(null);
   const [freezeReason, setFreezeReason] = React.useState('');
   const [selectedChannel, setSelectedChannel] = React.useState('In-App Push');
@@ -298,9 +297,9 @@ export function AdminHome() {
     { label: 'Flagged Activities', value: unreadCount || '0', trend: '#ef4444', progress: unreadCount ? Math.min((unreadCount / 10) * 100, 100) : 0, bg: 'bg-destructive/10', color: 'text-destructive', subtext: 'Integrity issues detected' },
   ];
 
-  const chartDatasets = React.useMemo(() => {
+  const chartData = React.useMemo(() => {
     if (!analytics?.subjectPerformance?.length || !subjects?.length) {
-      return {};
+      return [];
     }
 
     const subjectsMap = new Map(subjects.map(s => [s.id, s]));
@@ -344,36 +343,23 @@ export function AdminHome() {
       }
     });
 
-    const avgScoreTab = [];
-    const completionTab = [];
+    const data = [];
 
-    Object.entries(deptData).forEach(([deptId, data]) => {
+    Object.entries(deptData).forEach(([deptId, d]) => {
       const dept = departmentsMap.get(deptId);
-      const name = dept?.name || data.name || deptId;
+      const name = dept?.name || d.name || deptId;
 
       if (selectedDepartmentId && deptId !== selectedDepartmentId) return;
 
-      const avgScore = data.count > 0 ? Math.round(data.sum / data.count) : 0;
-      avgScoreTab.push({
+      const avgScore = d.count > 0 ? Math.round(d.sum / d.count) : 0;
+      data.push({
         name,
         value: avgScore,
         color: getColorForDept(name),
       });
-
-      const completion = totalStudents > 0
-        ? Math.min(100, Math.round((data.studentCountSum / (totalStudents * data.count)) * 100))
-        : 0;
-      completionTab.push({
-        name,
-        value: completion,
-        color: getColorForDept(name),
-      });
     });
 
-    return {
-      'Avg Score': avgScoreTab,
-      'Completion': completionTab,
-    };
+    return data;
   }, [analytics, subjects, departments, totalStudents, activeTrack, selectedClassId, selectedDepartmentId, curriculumMatrix]);
 
   React.useEffect(() => {
@@ -646,23 +632,9 @@ export function AdminHome() {
               <section className="bg-surface p-5 rounded-2xl border border-border shadow-sm relative overflow-hidden shrink-0">
                <div className="flex flex-col gap-3 mb-4">
                 <div className="flex items-center justify-between">
-                  <div>
+                   <div>
                     <h3 className="text-[11px] font-black text-text-primary uppercase tracking-wider">Departmental Performance Heatmap</h3>
                     <p className="text-[9px] font-semibold text-text-secondary uppercase tracking-widest mt-0.5">Academic Health Quotient</p>
-                  </div>
-                  <div className="flex bg-background p-0.5 rounded-lg border border-border">
-                    {Object.keys(chartDatasets).map((t) => (
-                      <button
-                        key={t}
-                        onClick={() => setActiveMetric(t)}
-                        className={cn(
-                          "px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-wider transition-all",
-                          t === activeMetric ? "bg-surface text-text-primary shadow-xs" : "text-text-secondary hover:text-text-secondary"
-                        )}
-                      >
-                        {t}
-                      </button>
-                    ))}
                   </div>
                 </div>
 
@@ -708,7 +680,7 @@ export function AdminHome() {
 
               <div className="h-[180px] w-full text-xs">
                 <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                  <BarChart data={chartDatasets[activeMetric] || []} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
+                   <BarChart data={chartData} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 700 }} dy={5} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 700 }} />
@@ -719,26 +691,26 @@ export function AdminHome() {
                           return (
                             <div className="bg-surface p-2 rounded-lg border border-border shadow-lg text-[10px]">
                               <p className="font-black text-text-secondary uppercase tracking-wider mb-0.5">{payload[0].payload.name}</p>
-                              <p className="font-black text-text-primary text-sm">
-                                {payload[0].value}{activeMetric === 'Avg Score' ? '%' : '% Progress'}
-                              </p>
+                               <p className="font-black text-text-primary text-sm">
+                                 {payload[0].value}%
+                               </p>
                             </div>
                           );
                         }
                         return null;
                       }}
                     />
-                    <Bar dataKey="value" radius={[4, 4, 2, 2]} barSize={34}>
-                      {(chartDatasets[activeMetric] || []).map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} fillOpacity={0.85} />
-                      ))}
-                    </Bar>
+                     <Bar dataKey="value" radius={[4, 4, 2, 2]} barSize={34}>
+                       {chartData.map((entry, index) => (
+                         <Cell key={`cell-${index}`} fill={entry.color} fillOpacity={0.85} />
+                       ))}
+                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
 
-              <div className="grid grid-cols-5 gap-2 mt-4 pt-3 border-t border-border">
-                {(chartDatasets[activeMetric] || []).map((dept, i) => (
+               <div className="grid grid-cols-5 gap-2 mt-4 pt-3 border-t border-border">
+                 {chartData.map((dept, i) => (
                   <div key={i} className="space-y-0.5">
                     <p className="text-[8px] font-black text-text-secondary uppercase tracking-wider truncate">{dept.name}</p>
                     <div className="flex items-center gap-1">

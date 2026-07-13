@@ -21,6 +21,7 @@ export function TeacherGradingView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedClass, setSelectedClass] = useState(null);
+  const [selectedSubject, setSelectedSubject] = useState('');
   const [gradingStudents, setGradingStudents] = useState([]);
   const [statusMeta, setStatusMeta] = useState({});
   const [filterOptions, setFilterOptions] = useState([]);
@@ -83,6 +84,18 @@ export function TeacherGradingView() {
 
   const subjectConfig = useMemo(() => ({ ...SUBJECT_CONFIG, ...dynamicSubjectConfig }), [dynamicSubjectConfig]);
 
+  const uniqueSubjects = useMemo(() => {
+    if (!Array.isArray(gradingClasses)) return [];
+    const subjects = [...new Set(gradingClasses.map(c => c.subject).filter(Boolean))];
+    return subjects.sort();
+  }, [gradingClasses]);
+
+  const availableClasses = useMemo(() => {
+    if (!Array.isArray(gradingClasses)) return [];
+    if (!selectedSubject) return gradingClasses;
+    return gradingClasses.filter(c => c.subject === selectedSubject);
+  }, [gradingClasses, selectedSubject]);
+
   /* ── Filtered class list ── */
   const totalStudents = gradingClasses.reduce((sum, c) => sum + (c.studentCount || 0), 0);
   const avgProgress = gradingClasses.length > 0
@@ -96,7 +109,8 @@ export function TeacherGradingView() {
       c.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.className.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter = activeFilter === 'All' || c.status === activeFilter;
-    return matchesSearch && matchesFilter;
+    const matchesSubject = !selectedSubject || c.subject === selectedSubject;
+    return matchesSearch && matchesFilter && matchesSubject;
   });
 
   const statCards = [
@@ -109,9 +123,26 @@ export function TeacherGradingView() {
   /* ── Class selection: no route change, just state ── */
   const handleSelectClass = useCallback(async (cls) => {
     setSelectedClass(cls);
+    if (cls?.subject) {
+      setSelectedSubject(cls.subject);
+    }
     const students = await teacherService.getGradingStudents(cls.subject, cls.className);
     setGradingStudents(students || []);
   }, []);
+
+  const handleSubjectChange = useCallback((e) => {
+    const subject = e.target.value;
+    setSelectedSubject(subject);
+    if (!subject) {
+      setSelectedClass(null);
+      setGradingStudents([]);
+      return;
+    }
+    const firstMatch = gradingClasses.find(c => c.subject === subject);
+    if (firstMatch) {
+      handleSelectClass(firstMatch);
+    }
+  }, [gradingClasses, handleSelectClass]);
 
   useEffect(() => {
     if (!selectedClass) return;
@@ -313,56 +344,65 @@ export function TeacherGradingView() {
            <div
              className="flex-1 flex flex-col overflow-hidden border-l border-border bg-muted animate-in fade-in slide-in-from-right-4"
            >
-            {/* Panel header with back button */}
-            <div className="h-14 bg-card border-b border-border flex items-center px-4 gap-3 shrink-0">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCloseSheet}
-                className="flex items-center gap-2 text-xs font-black text-muted-foreground hover:text-foreground uppercase tracking-widest"
-              >
-                <ArrowLeft size={14} />
-                Back to List
-              </Button>
-              <div className="w-px h-6 bg-border mx-1" />
-              <div className="flex items-center gap-2">
-                <BookOpen size={14} className="text-brand-primary" />
-                <div>
-                  <p className="text-xs font-black text-foreground leading-none">{selectedClass.subject}</p>
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                    {selectedClass.className}
-                    <span className="mx-1.5 text-border">|</span>
-                    <span className="text-success">{selectedClass.department || 'GENERAL'}</span>
-                    <span className="mx-1.5 text-border">|</span>
-                    <span className="text-brand-secondary">{selectedClass.level || 'SHS 1'}</span>
-                  </p>
+              {/* Panel header with back button */}
+              <div className="h-14 bg-card border-b border-border flex items-center px-4 gap-3 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCloseSheet}
+                  className="flex items-center gap-2 text-xs font-black text-muted-foreground hover:text-foreground uppercase tracking-widest"
+                >
+                  <ArrowLeft size={14} />
+                  Back to List
+                </Button>
+                <div className="w-px h-6 bg-border mx-1" />
+                <div className="flex items-center gap-2">
+                  <BookOpen size={14} className="text-brand-primary" />
+                  <div>
+                    <p className="text-xs font-black text-foreground leading-none">{selectedClass.subject}</p>
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                      {selectedClass.className}
+                      <span className="mx-1.5 text-border">|</span>
+                      <span className="text-success">{selectedClass.department || 'GENERAL'}</span>
+                      <span className="mx-1.5 text-border">|</span>
+                      <span className="text-brand-secondary">{selectedClass.level || 'SHS 1'}</span>
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
             {/* GradingSheet — fully controlled by this container */}
             <div className="flex-1 overflow-hidden">
-              <GradingSheet
-                classInfo={{
-                  id: selectedClass.id,
-                  subject: selectedClass.subject,
-                  className: selectedClass.className,
-                  programme: selectedClass.department || 'GENERAL',
-                  studentCount: selectedClass.studentCount,
-                  form: selectedClass.level || 'SHS 1',
-                  academicYear: '2025/2026',
-                }}
-                teacherId={user?.id || user?.staffId}
-                students={gradingStudents}
-                subjectConfig={subjectConfig}
-                stpRules={[
-                  { check: (s) => s.final > 100, message: 'Final score exceeds 100%' },
-                  { check: (s) => s.sba > 30, message: 'SBA exceeds 30% limit' },
-                  { check: (s) => s.exam > 70, message: 'Exam exceeds 70% limit' },
-                  { check: (s) => s.auditStatus === 'MISSING', message: 'Missing behavioral observations' },
-                ]}
-                isTermFinalized={isTermFinalized}
-              />
+               <GradingSheet
+                 classInfo={{
+                   id: selectedClass.id,
+                   subject: selectedClass.subject,
+                   className: selectedClass.className,
+                   programme: selectedClass.department || 'GENERAL',
+                   studentCount: selectedClass.studentCount,
+                   form: selectedClass.level || 'SHS 1',
+                   academicYear: '2025/2026',
+                 }}
+                 teacherId={user?.id || user?.staffId}
+                 students={gradingStudents}
+                 subjectConfig={subjectConfig}
+                 stpRules={[
+                   { check: (s) => s.final > 100, message: 'Final score exceeds 100%' },
+                   { check: (s) => s.sba > 30, message: 'SBA exceeds 30% limit' },
+                   { check: (s) => s.exam > 70, message: 'Exam exceeds 70% limit' },
+                   { check: (s) => s.auditStatus === 'MISSING', message: 'Missing behavioral observations' },
+                 ]}
+                 isTermFinalized={isTermFinalized}
+                 selectedSubject={selectedSubject}
+                 selectedClass={selectedClass}
+                 availableClasses={availableClasses}
+                 uniqueSubjects={uniqueSubjects}
+                 onSubjectChange={handleSubjectChange}
+                 onClassChange={(e) => {
+                   const cls = availableClasses.find(c => c.id === e.target.value);
+                   if (cls) handleSelectClass(cls);
+                 }}
+               />
             </div>
           </div>
          )}

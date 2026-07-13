@@ -41,6 +41,12 @@ import {
  *  revisionId        — deep-link target for corrections
  *  targetStudentId   — pre-select a student row on mount
  *  missingObsId      — compliance-mode anchor
+ *  selectedSubject   — currently selected subject for dropdown
+ *  selectedClass     — currently selected class for dropdown
+ *  availableClasses  — classes filtered by selected subject
+ *  uniqueSubjects    — list of unique subjects
+ *  onSubjectChange   — subject dropdown onChange handler
+ *  onClassChange     — class dropdown onChange handler
  *
  * Exposes GRADE_SCALE via named export.
  */
@@ -152,19 +158,25 @@ export function GradingSheet(props) {
               : ''
           }`}
         >
-          {/* Header */}
-          <GradingSheetHeader
-            DISPLAY_CLASS_INFO={DISPLAY_CLASS_INFO}
-            isCorrectionMode={isCorrectionMode}
-            isMissingObsMode={isMissingObsMode}
-            isSidebarOpen={isSidebarOpen}
-            setIsSidebarOpen={setIsSidebarOpen}
-            runSTPValidation={runSTPValidation}
-            missingCount={missingCount}
-            isTermFinalized={isTermFinalized}
-            onExportWAEC={handleExportWAEC}
-            stpValidating={stpValidating}
-          />
+           {/* Header */}
+           <GradingSheetHeader
+             DISPLAY_CLASS_INFO={DISPLAY_CLASS_INFO}
+             isCorrectionMode={isCorrectionMode}
+             isMissingObsMode={isMissingObsMode}
+             isSidebarOpen={isSidebarOpen}
+             setIsSidebarOpen={setIsSidebarOpen}
+             runSTPValidation={runSTPValidation}
+             missingCount={missingCount}
+             isTermFinalized={isTermFinalized}
+             onExportWAEC={handleExportWAEC}
+             stpValidating={stpValidating}
+             selectedSubject={props.selectedSubject}
+             selectedClass={props.selectedClass}
+             availableClasses={props.availableClasses}
+             uniqueSubjects={props.uniqueSubjects}
+             onSubjectChange={props.onSubjectChange}
+             onClassChange={props.onClassChange}
+           />
 
           {/* STP error overlay */}
           <StpErrorBanner
