@@ -582,6 +582,47 @@ export function useFinalizeTimetable() {
   });
 }
 
+// ── Time Slots ──────────────────────────────────────────────────────────────
+export function useTimeSlots() {
+  return useQuery({
+    queryKey: ['admin', 'time-slots'],
+    queryFn: () => adminApi.getTimeSlots(),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useCreateTimeSlot() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body) => adminApi.createTimeSlot(body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'time-slots'] }),
+  });
+}
+
+export function useUpdateTimeSlot() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }) => adminApi.updateTimeSlot(id, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'time-slots'] }),
+  });
+}
+
+export function useDeleteTimeSlot() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => adminApi.deleteTimeSlot(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'time-slots'] }),
+  });
+}
+
+export function useReorderTimeSlots() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids) => adminApi.reorderTimeSlots(ids),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'time-slots'] }),
+  });
+}
+
 // ── Interventions & Behavior ─────────────────────────────────────────────────
 export function useStudentInterventions(studentId) {
   return useQuery({

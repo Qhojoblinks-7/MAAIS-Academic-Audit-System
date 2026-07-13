@@ -217,11 +217,11 @@ export function DepartmentGrid({ departments, viewType, setViewType, setSelected
                         return null;
                       }}
                     />
-                    <Bar dataKey="teachers" radius={[0, 4, 4, 0]} barSize={16}>
-                      {buildDistribution(departments).map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#1e293b' : '#334155'} />
-                      ))}
-                    </Bar>
+                     <Bar dataKey="teachers" radius={[0, 4, 4, 0]} barSize={16}>
+                       {buildDistribution(departments).map((entry, index) => (
+                         <Cell key={`cell-${index}`} fill={entry.hex || (index % 2 === 0 ? '#1e293b' : '#334155')} />
+                       ))}
+                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>

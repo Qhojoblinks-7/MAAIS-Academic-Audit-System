@@ -8,20 +8,9 @@ import {
 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 
-const DEPT_BG_MAP = {
-  'bg-brand-primary': 'bg-brand-dark',
-  'bg-success': 'bg-success/90',
-  'bg-brand-secondary': 'bg-brand-secondary/90',
-  'bg-warning': 'bg-warning/90',
-  'bg-destructive': 'bg-destructive/90',
-  'bg-brand-primary': 'bg-brand-primary/90',
-  'bg-warning': 'bg-warning/90',
-  'bg-success': 'bg-success/90',
-};
-
 export function DepartmentDetailsHeader({ selectedDept, onBack, onExport, onFreeze, activeTab, setActiveTab }) {
   const isFrozen = selectedDept?.isFrozen;
-  const headerBg = DEPT_BG_MAP[selectedDept?.color] || 'bg-brand-dark';
+  const headerBg = selectedDept?.dark || 'bg-brand-dark';
   return (
     <div className={cn("p-6 text-primary-foreground shrink-0 relative overflow-hidden transition-colors duration-500", headerBg)}>
       <div className="absolute top-0 right-0 p-6 opacity-[0.05] pointer-events-none">

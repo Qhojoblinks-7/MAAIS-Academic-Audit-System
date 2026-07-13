@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
-
-const DEPARTMENT_COLORS = ['bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-orange-500', 'bg-teal-500'];
-const ICON_COLOR_CLASSES = ['text-blue-600', 'text-emerald-600', 'text-purple-600', 'text-amber-600', 'text-rose-600', 'text-cyan-600', 'text-orange-600', 'text-teal-600'];
+import { getDepartmentColor } from '../../../constants/departments';
 
 const CHECKLIST_ITEMS = [
   'HOD authority verified',
@@ -21,8 +19,7 @@ function hashString(str) {
 }
 
 export function pickRandomColor(seed) {
-  const idx = hashString(seed) % DEPARTMENT_COLORS.length;
-  return { color: DEPARTMENT_COLORS[idx], iconColor: ICON_COLOR_CLASSES[idx] };
+  return getDepartmentColor(seed);
 }
 
 export function normalizeDept(dept, index, fallbackStaff) {
@@ -59,6 +56,12 @@ export function normalizeDept(dept, index, fallbackStaff) {
     validationStatus,
     color: randomColor.color,
     iconColor: randomColor.iconColor,
+    hex: randomColor.hex,
+    light: randomColor.light,
+    lightText: randomColor.lightText,
+    border: randomColor.border,
+    dark: randomColor.dark,
+    darkText: randomColor.darkText,
     programs: dept?.programs && dept.programs.length ? dept.programs : [`${dept?.name ?? 'Department'} Program`],
     staff,
     checklist,
@@ -100,6 +103,12 @@ export function normalizeDeptFromApi(dept, index) {
     validationStatus: (hashString(dept.id) % 55) + 45,
     color: randomColor.color,
     iconColor: randomColor.iconColor,
+    hex: randomColor.hex,
+    light: randomColor.light,
+    lightText: randomColor.lightText,
+    border: randomColor.border,
+    dark: randomColor.dark,
+    darkText: randomColor.darkText,
     programs: [`${dept.name} Program`],
     staff: frontendStaff,
     checklist,
@@ -128,10 +137,11 @@ export function buildDistribution(depts) {
   const distributionData = depts.map((dept) => ({
     name: dept.name,
     teachers: dept.teacherCount,
+    hex: dept.hex,
   }));
 
   if (distributionData.length < 5) {
-    distributionData.push({ name: 'Vocational', teachers: Math.floor(Math.random() * 15) + 5 });
+    distributionData.push({ name: 'Vocational', teachers: Math.floor(Math.random() * 15) + 5, hex: '#64748b' });
   }
 
   return distributionData;

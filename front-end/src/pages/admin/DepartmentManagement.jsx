@@ -19,13 +19,6 @@ import {
   useCreateStaff,
 } from "../../lib/hooks";
 
-const DEPARTMENT_COLORS = [
-  "bg-brand-primary",
-  "bg-success",
-  "bg-brand-secondary",
-  "bg-warning",
-];
-
 export function DepartmentManagement() {
   const departmentsQuery = useAllDepartments();
   const apiDepartments = departmentsQuery.data || [];

@@ -147,6 +147,13 @@ export const adminApi = {
   broadcastTimetable: (body) => api.post('/timetable/broadcast', body),
   finalizeTimetable: (body) => api.post('/timetable/finalize', body),
 
+  // ── Time Slots ─────────────────────────────────────────────────────────────
+  getTimeSlots: () => api.get('/time-slots'),
+  createTimeSlot: (body) => api.post('/time-slots', body),
+  updateTimeSlot: (id, body) => api.put(`/time-slots/${id}`, body),
+  deleteTimeSlot: (id) => api.delete(`/time-slots/${id}`),
+  reorderTimeSlots: (ids) => api.post('/time-slots/reorder', { ids }),
+
   // ── Students (Admin-accessible) ────────────────────────────────────────────
   getStudentBehavior: (studentId) => api.get(`/students/${studentId}/behavior`),
   createBehavior: (studentId, data) => api.post(`/students/${studentId}/behavior`, data),

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRole } from '../../context/RoleContext';
 import { useTeacherTimetable } from '../../hooks/useTeacherTimetable';
+import { useTimeSlots } from '../../lib/hooks/api/admin';
 import { WeeklyTimetableView } from './WeeklyTimetableView';
 import { DailyTimetableView } from './DailyTimetableView';
 import { ResourceModal } from './ResourceModal';
@@ -23,6 +24,7 @@ const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 export function TeacherTimetableView() {
   const { user } = useRole();
   const { timetable: fetchedTimetable, loading, error } = useTeacherTimetable();
+  const { data: timeSlotsData = [] } = useTimeSlots();
 
   const [view, setView] = useState('weekly');
   const [selectedDay, setSelectedDay] = useState('Monday');
@@ -32,6 +34,44 @@ export function TeacherTimetableView() {
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
   const [newMaterial, setNewMaterial] = useState({ title: '', url: '', type: 'LINK' });
+
+  const DEFAULT_TIME_SLOTS = [
+    { id: '1', startTime: '08:00', endTime: '08:40', isBreak: false, sortOrder: 1 },
+    { id: '2', startTime: '08:40', endTime: '09:20', isBreak: false, sortOrder: 2 },
+    { id: '3', startTime: '09:20', endTime: '10:00', isBreak: false, sortOrder: 3 },
+    { id: 'break1', startTime: '10:00', endTime: '10:30', isBreak: true, sortOrder: 4 },
+    { id: '4', startTime: '10:30', endTime: '11:10', isBreak: false, sortOrder: 5 },
+    { id: '5', startTime: '11:10', endTime: '11:50', isBreak: false, sortOrder: 6 },
+    { id: '6', startTime: '11:50', endTime: '12:30', isBreak: false, sortOrder: 7 },
+    { id: 'break2', startTime: '12:30', endTime: '13:30', isBreak: true, sortOrder: 8 },
+    { id: '7', startTime: '13:30', endTime: '14:10', isBreak: false, sortOrder: 9 },
+    { id: '8', startTime: '14:10', endTime: '14:50', isBreak: false, sortOrder: 10 },
+  ];
+
+  const timeSlots = useMemo(() => {
+    if (Array.isArray(timeSlotsData) && timeSlotsData.length > 0) {
+      return timeSlotsData.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    }
+    return DEFAULT_TIME_SLOTS;
+  }, [timeSlotsData]);
+
+  const getTimePosition = (time) => {
+    const [hours, minutes] = time.split(':').map(Number);
+    const firstSlot = timeSlots[0];
+    const lastSlot = timeSlots[timeSlots.length - 1];
+    if (!firstSlot || !lastSlot) {
+      const totalMinutes = (hours - 8) * 60 + minutes;
+      return (totalMinutes / (10 * 60)) * 100;
+    }
+    const [startHours, startMinutes] = firstSlot.startTime.split(':').map(Number);
+    const [endHours, endMinutes] = lastSlot.endTime.split(':').map(Number);
+    const dayStart = startHours * 60 + startMinutes;
+    const dayEnd = endHours * 60 + endMinutes;
+    const dayDuration = dayEnd - dayStart;
+    const currentMinutes = hours * 60 + minutes;
+    if (dayDuration <= 0) return 0;
+    return ((currentMinutes - dayStart) / dayDuration) * 100;
+  };
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -224,6 +264,7 @@ export function TeacherTimetableView() {
               formatTime={formatTime}
               setHoveredId={setHoveredId}
               hoveredId={hoveredId}
+              timeSlots={timeSlots}
             />
           ) : (
             <DailyTimetableView
@@ -238,6 +279,7 @@ export function TeacherTimetableView() {
               setIsResourceModalOpen={setIsResourceModalOpen}
               newMaterial={newMaterial}
               setNewMaterial={setNewMaterial}
+              timeSlots={timeSlots}
             />
           )}
         </div>

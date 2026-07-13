@@ -1,9 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { cn } from '../../lib/utils';
 import { WeeklyClassCard } from '../../components/shared/WeeklyClassCard';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-const HOURS = Array.from({ length: 10 }, (_, i) => i + 8);
 
 export function WeeklyTimetableView({ 
   timetable, 
@@ -11,8 +10,19 @@ export function WeeklyTimetableView({
   getTimePosition, 
   formatTime, 
   setHoveredId, 
-  hoveredId 
+  hoveredId,
+  timeSlots = []
 }) {
+  const hours = useMemo(() => {
+    if (timeSlots.length > 0) {
+      const first = timeSlots[0].startTime.split(':')[0];
+      const last = timeSlots[timeSlots.length - 1].endTime.split(':')[0];
+      const start = parseInt(first, 10) || 8;
+      const end = parseInt(last, 10) || 15;
+      return Array.from({ length: end - start + 1 }, (_, i) => i + start);
+    }
+    return Array.from({ length: 10 }, (_, i) => i + 8);
+  }, [timeSlots]);
   return (
     <div className="h-full flex flex-col p-6 overflow-auto">
         <div className="min-w-[1000px] flex-1 flex flex-col">
@@ -31,7 +41,7 @@ export function WeeklyTimetableView({
           <div className="flex-1 relative mt-4">
             
             <div className="absolute inset-0 flex flex-col pointer-events-none">
-              {HOURS.map(hour => (
+              {hours.map(hour => (
                 <div key={hour} className="flex-1 border-t border-border relative">
                   <span className="absolute -left-16 -top-2.5 text-xs font-black text-text-secondary">
                     {hour.toString().padStart(2, '0')}:00

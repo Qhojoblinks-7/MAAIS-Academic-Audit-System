@@ -19,6 +19,7 @@ import {
   YAxis, 
   Tooltip 
 } from 'recharts';
+import { getDepartmentColor } from '../../../constants/departments';
 
 export function StudentReport({ selectedStudent, reportConfig, setReportConfig }) {
   if (!selectedStudent) return null;
@@ -76,7 +77,7 @@ export function StudentReport({ selectedStudent, reportConfig, setReportConfig }
               <p className="text-success font-black uppercase tracking-wider text-[8px] font-mono">Scholastic Longitudinal Portfolio</p>
               <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                 <span className="px-1.5 py-0.5 bg-surface border border-border rounded text-[8px] font-bold text-muted-foreground font-mono">ID: {selectedStudent.index}</span>
-                <span className="px-1.5 py-0.5 bg-surface border border-border rounded text-[8px] font-bold text-muted-foreground uppercase tracking-wider">{selectedStudent.department} Dept</span>
+                {(() => { const deptStyle = getDepartmentColor(selectedStudent.department || 'General'); return <span className={cn("px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider", deptStyle.light, deptStyle.lightText, deptStyle.border)}>{selectedStudent.department} Dept</span>; })()}
                 <span className="px-1.5 py-0.5 bg-success/10 text-success border border-success/20 rounded text-[8px] font-black uppercase tracking-wider">{selectedStudent.consistencyScore} Performer</span>
               </div>
             </div>

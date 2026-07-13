@@ -13,6 +13,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
 import { useTickets, useUnreadNotifications, useAnalyticsPulse as useAdminAnalyticsPulse, useArchiveStats as useAdminArchiveStats, useAllStudents, useStudentCount, useStudentBoarderStats, useStaffCount, useAllStaff, useApprovals, useResolveApproval, useSystemFreeze, useToggleSystemFreeze, useAllDepartments, useAllSubjects, useAllClasses, useCurriculumMatrix, useAcademicYear, useAcademicYears } from '../../lib/hooks';
+import { getDepartmentColorHex } from '../../constants/departments';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
@@ -55,16 +56,6 @@ const registerNodeProtocols = [
 ];
 
 const broadcastChannels = ['In-App Push', 'Bulk SMS', 'Email'];
-
-const CHART_COLORS = ['#059669', '#0284c7', '#7c3aed', '#db2777', '#ea580c', '#0891b2', '#c026d3', '#eab308', '#16a34a', '#dc2626'];
-
-function getColorForDept(name) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return CHART_COLORS[Math.abs(hash) % CHART_COLORS.length];
-}
 
 export function AdminHome() {
   const { user } = useRole();
@@ -355,7 +346,7 @@ export function AdminHome() {
       data.push({
         name,
         value: avgScore,
-        color: getColorForDept(name),
+        color: getDepartmentColorHex(name),
       });
     });
 

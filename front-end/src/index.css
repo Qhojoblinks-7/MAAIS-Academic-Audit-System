@@ -214,6 +214,18 @@
   --ring: hsl(156 42% 18%);
   --radius: 0.5rem;                      /* Tight clean radius optimized for complex tables */
   
+  /* Department Semantic Color Tokens */
+  --dept-color-0: #10b981;
+  --dept-color-1: #0ea5e9;
+  --dept-color-2: #8b5cf6;
+  --dept-color-3: #ec4899;
+  --dept-color-4: #f97316;
+  --dept-color-5: #06b6d4;
+  --dept-color-6: #d946ef;
+  --dept-color-7: #eab308;
+  --dept-color-8: #16a34a;
+  --dept-color-9: #dc2626;
+
   --text-primary: hsl(156 42% 10%);
   --text-secondary: hsl(156 14% 44%);
 }

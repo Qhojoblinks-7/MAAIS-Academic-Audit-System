@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Calendar, 
@@ -26,16 +26,47 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
-import { useTimetableEntries } from '../../lib/hooks';
+import { useTimetableEntries, useTimeSlots } from '../../lib/hooks';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-const HOURS = Array.from({ length: 10 }, (_, i) => i + 8); // 8 AM to 5 PM
 
 export function CommsView() {
   const { user } = useRole();
   const navigate = useNavigate();
   const timetableQuery = useTimetableEntries();
   const timetableEntries = timetableQuery.data || [];
+  const { data: timeSlotsData = [] } = useTimeSlots();
+
+  const DEFAULT_TIME_SLOTS = [
+    { id: '1', startTime: '08:00', endTime: '08:40', isBreak: false, sortOrder: 1 },
+    { id: '2', startTime: '08:40', endTime: '09:20', isBreak: false, sortOrder: 2 },
+    { id: '3', startTime: '09:20', endTime: '10:00', isBreak: false, sortOrder: 3 },
+    { id: 'break1', startTime: '10:00', endTime: '10:30', isBreak: true, sortOrder: 4 },
+    { id: '4', startTime: '10:30', endTime: '11:10', isBreak: false, sortOrder: 5 },
+    { id: '5', startTime: '11:10', endTime: '11:50', isBreak: false, sortOrder: 6 },
+    { id: '6', startTime: '11:50', endTime: '12:30', isBreak: false, sortOrder: 7 },
+    { id: 'break2', startTime: '12:30', endTime: '13:30', isBreak: true, sortOrder: 8 },
+    { id: '7', startTime: '13:30', endTime: '14:10', isBreak: false, sortOrder: 9 },
+    { id: '8', startTime: '14:10', endTime: '14:50', isBreak: false, sortOrder: 10 },
+  ];
+
+  const timeSlots = useMemo(() => {
+    if (Array.isArray(timeSlotsData) && timeSlotsData.length > 0) {
+      return timeSlotsData.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    }
+    return DEFAULT_TIME_SLOTS;
+  }, [timeSlotsData]);
+
+  const hours = useMemo(() => {
+    if (timeSlots.length > 0) {
+      const first = timeSlots[0].startTime.split(':')[0];
+      const last = timeSlots[timeSlots.length - 1].endTime.split(':')[0];
+      const start = parseInt(first, 10) || 8;
+      const end = parseInt(last, 10) || 15;
+      return Array.from({ length: end - start + 1 }, (_, i) => i + start);
+    }
+    return Array.from({ length: 10 }, (_, i) => i + 8);
+  }, [timeSlots]);
 
   const timetableData = useMemo(() => {
     if (timetableEntries.length > 0) {
@@ -104,8 +135,20 @@ export function CommsView() {
 
   const getTimePosition = (time) => {
     const [hours, minutes] = time.split(':').map(Number);
-    const totalMinutes = (hours - 8) * 60 + minutes;
-    return (totalMinutes / (10 * 60)) * 100;
+    const firstSlot = timeSlots[0];
+    const lastSlot = timeSlots[timeSlots.length - 1];
+    if (!firstSlot || !lastSlot) {
+      const totalMinutes = (hours - 8) * 60 + minutes;
+      return (totalMinutes / (10 * 60)) * 100;
+    }
+    const [startHours, startMinutes] = firstSlot.startTime.split(':').map(Number);
+    const [endHours, endMinutes] = lastSlot.endTime.split(':').map(Number);
+    const dayStart = startHours * 60 + startMinutes;
+    const dayEnd = endHours * 60 + endMinutes;
+    const dayDuration = dayEnd - dayStart;
+    const currentMinutes = hours * 60 + minutes;
+    if (dayDuration <= 0) return 0;
+    return ((currentMinutes - dayStart) / dayDuration) * 100;
   };
 
   return (
@@ -231,7 +274,7 @@ export function CommsView() {
               <div className="flex-1 relative mt-4">
                 {/* Time Indicators */}
                 <div className="absolute inset-0 flex flex-col">
-                  {HOURS.map(hour => (
+                  {hours.map(hour => (
                     <div key={hour} className="flex-1 border-t border-border relative">
                       <span className="absolute -left-16 -top-2.5 text-[10px] font-black text-text-secondary">
                         {hour.toString().padStart(2, '0')}:00

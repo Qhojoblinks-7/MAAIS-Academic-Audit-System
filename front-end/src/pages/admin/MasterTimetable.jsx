@@ -28,20 +28,12 @@ import {
   useDeleteTimetableEntry,
   useBroadcastTimetable,
   useFinalizeTimetable,
+  useTimeSlots,
+  useCreateTimeSlot,
+  useUpdateTimeSlot,
+  useDeleteTimeSlot,
+  useReorderTimeSlots,
 } from '../../lib/hooks';
-
-const TIME_SLOTS = [
-  { id: '1', start: '08:00', end: '08:40', label: 'Period 1' },
-  { id: '2', start: '08:40', end: '09:20', label: 'Period 2' },
-  { id: '3', start: '09:20', end: '10:00', label: 'Period 3' },
-  { id: 'break1', start: '10:00', end: '10:30', label: 'Snack Break' },
-  { id: '4', start: '10:30', end: '11:10', label: 'Period 4' },
-  { id: '5', start: '11:10', end: '11:50', label: 'Period 5' },
-  { id: '6', start: '11:50', end: '12:30', label: 'Period 6' },
-  { id: 'break2', start: '12:30', end: '13:30', label: 'Lunch Break' },
-  { id: '7', start: '13:30', end: '14:10', label: 'Period 7' },
-  { id: '8', start: '14:10', end: '14:50', label: 'Period 8' },
-];
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
@@ -135,6 +127,36 @@ const selectedClass = classOptions.find((c) => c.id === selectedClassId) || clas
   const [schedule, setSchedule] = useState({});
   const [dragOverSlot, setDragOverSlot] = useState(null);
   const [savingSlot, setSavingSlot] = useState(null);
+  const [isManagingSlots, setIsManagingSlots] = useState(false);
+  const [editingSlot, setEditingSlot] = useState(null);
+  const [slotForm, setSlotForm] = useState({ label: '', startTime: '', endTime: '', isBreak: false });
+
+  const timeSlotsQuery = useTimeSlots();
+  const createTimeSlotMutation = useCreateTimeSlot();
+  const updateTimeSlotMutation = useUpdateTimeSlot();
+  const deleteTimeSlotMutation = useDeleteTimeSlot();
+  const reorderTimeSlotsMutation = useReorderTimeSlots();
+
+  const DEFAULT_TIME_SLOTS = [
+    { id: '1', startTime: '08:00', endTime: '08:40', label: 'Period 1', isBreak: false, sortOrder: 1 },
+    { id: '2', startTime: '08:40', endTime: '09:20', label: 'Period 2', isBreak: false, sortOrder: 2 },
+    { id: '3', startTime: '09:20', endTime: '10:00', label: 'Period 3', isBreak: false, sortOrder: 3 },
+    { id: 'break1', startTime: '10:00', endTime: '10:30', label: 'Snack Break', isBreak: true, sortOrder: 4 },
+    { id: '4', startTime: '10:30', endTime: '11:10', label: 'Period 4', isBreak: false, sortOrder: 5 },
+    { id: '5', startTime: '11:10', endTime: '11:50', label: 'Period 5', isBreak: false, sortOrder: 6 },
+    { id: '6', startTime: '11:50', endTime: '12:30', label: 'Period 6', isBreak: false, sortOrder: 7 },
+    { id: 'break2', startTime: '12:30', endTime: '13:30', label: 'Lunch Break', isBreak: true, sortOrder: 8 },
+    { id: '7', startTime: '13:30', endTime: '14:10', label: 'Period 7', isBreak: false, sortOrder: 9 },
+    { id: '8', startTime: '14:10', endTime: '14:50', label: 'Period 8', isBreak: false, sortOrder: 10 },
+  ];
+
+  const TIME_SLOTS = useMemo(() => {
+    const data = timeSlotsQuery.data;
+    if (Array.isArray(data) && data.length > 0) {
+      return data.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    }
+    return DEFAULT_TIME_SLOTS;
+  }, [timeSlotsQuery.data]);
 
   React.useEffect(() => {
     if (classOptions.length > 0 && !selectedClassId) {
@@ -182,7 +204,7 @@ const selectedClass = classOptions.find((c) => c.id === selectedClassId) || clas
     if (!time) return null;
     const normalized = String(time).slice(0, 5);
     const slot = TIME_SLOTS.find(
-      (s) => s.start === normalized || (!s.id.startsWith('break') && s.start === normalized),
+      (s) => s.startTime === normalized && !s.isBreak,
     );
     return slot?.id || null;
   };
@@ -216,14 +238,13 @@ const selectedClass = classOptions.find((c) => c.id === selectedClassId) || clas
     if (!lesson) return;
 
     const [day, slotId] = slotKey.split('-');
-    if (slotId.startsWith('break')) return;
+    const slot = TIME_SLOTS.find((s) => s.id === slotId);
+    if (!slot || slot.isBreak) return;
 
     const dayKey = DAY_MAP[day] || day;
-    const slot = TIME_SLOTS.find((s) => s.id === slotId);
-    if (!slot) return;
 
-    const startTime = slot.start;
-    const endTime = slot.end;
+    const startTime = slot.startTime;
+    const endTime = slot.endTime;
 
     setSavingSlot(`${dayKey}-${slotId}`);
 
@@ -271,6 +292,63 @@ const selectedClass = classOptions.find((c) => c.id === selectedClassId) || clas
     } finally {
       setSavingSlot(null);
     }
+  };
+
+  const handleCreateTimeSlot = async () => {
+    if (!slotForm.label || !slotForm.startTime || !slotForm.endTime) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    try {
+      await createTimeSlotMutation.mutateAsync({
+        ...slotForm,
+        sortOrder: TIME_SLOTS.length,
+      });
+      setSlotForm({ label: '', startTime: '', endTime: '', isBreak: false });
+      setIsManagingSlots(false);
+      toast.success('Time slot created');
+    } catch (err) {
+      toast.error(err?.message || 'Failed to create time slot');
+    }
+  };
+
+  const handleUpdateTimeSlot = async () => {
+    if (!editingSlot) return;
+    try {
+      await updateTimeSlotMutation.mutateAsync({ id: editingSlot.id, ...slotForm });
+      setEditingSlot(null);
+      setSlotForm({ label: '', startTime: '', endTime: '', isBreak: false });
+      setIsManagingSlots(false);
+      toast.success('Time slot updated');
+    } catch (err) {
+      toast.error(err?.message || 'Failed to update time slot');
+    }
+  };
+
+  const handleDeleteTimeSlot = async (id) => {
+    try {
+      await deleteTimeSlotMutation.mutateAsync(id);
+      toast.success('Time slot deleted');
+    } catch (err) {
+      toast.error(err?.message || 'Failed to delete time slot');
+    }
+  };
+
+  const startEditSlot = (slot) => {
+    setEditingSlot(slot);
+    setSlotForm({
+      label: slot.label,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      isBreak: slot.isBreak,
+    });
+    setIsManagingSlots(true);
+  };
+
+  const cancelSlotManagement = () => {
+    setIsManagingSlots(false);
+    setEditingSlot(null);
+    setSlotForm({ label: '', startTime: '', endTime: '', isBreak: false });
   };
 
   const removeLesson = async (slotKey) => {
@@ -373,7 +451,7 @@ const conflicts = useMemo(() => {
       }));
   }, [assignments, currentClassSchedule]);
 
-  const isLoading = trackClassesQuery.isLoading || allClassesQuery.isLoading || trackTimetableQuery.isLoading || allTimetableQuery.isLoading || trackAssignmentsQuery.isLoading || allAssignmentsQuery.isLoading;
+  const isLoading = trackClassesQuery.isLoading || allClassesQuery.isLoading || trackTimetableQuery.isLoading || allTimetableQuery.isLoading || trackAssignmentsQuery.isLoading || allAssignmentsQuery.isLoading || timeSlotsQuery.isLoading;
 
   return (
     <div className="flex flex-col h-full bg-background overflow-hidden">
@@ -426,6 +504,17 @@ const conflicts = useMemo(() => {
           </div>
 
           <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => setIsManagingSlots(!isManagingSlots)}
+              className={cn(
+                'flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all',
+                isManagingSlots
+                  ? 'bg-brand-primary/10 border border-brand-primary text-brand-primary'
+                  : 'bg-surface border border-border text-text-secondary hover:bg-muted',
+              )}
+            >
+              <Clock size={14} /> {isManagingSlots ? 'Cancel Editing' : 'Manage Time Slots'}
+            </button>
             <select
               value={selectedClassId}
               onChange={(e) => {
@@ -545,6 +634,124 @@ const conflicts = useMemo(() => {
           </div>
 
           <div className="xl:col-span-9">
+            {isManagingSlots && (
+              <div className="mb-6">
+                <div className="bg-surface rounded-[2.5rem] border border-border p-8 shadow-sm">
+                  <h3 className="text-[12px] font-black text-text-primary uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                    <Clock size={18} className="text-brand-primary" />
+                    {editingSlot ? 'Edit Time Slot' : 'Create Time Slot'}
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-text-secondary uppercase tracking-widest ml-1">Label</label>
+                      <input
+                        type="text"
+                        value={slotForm.label}
+                        onChange={(e) => setSlotForm((prev) => ({ ...prev, label: e.target.value }))}
+                        placeholder="e.g. Period 1"
+                        className="w-full px-5 py-3 bg-background border border-border rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-brand-primary/5 transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-text-secondary uppercase tracking-widest ml-1">Start Time</label>
+                      <input
+                        type="time"
+                        value={slotForm.startTime}
+                        onChange={(e) => setSlotForm((prev) => ({ ...prev, startTime: e.target.value }))}
+                        className="w-full px-5 py-3 bg-background border border-border rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-brand-primary/5 transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-text-secondary uppercase tracking-widest ml-1">End Time</label>
+                      <input
+                        type="time"
+                        value={slotForm.endTime}
+                        onChange={(e) => setSlotForm((prev) => ({ ...prev, endTime: e.target.value }))}
+                        className="w-full px-5 py-3 bg-background border border-border rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-brand-primary/5 transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-text-secondary uppercase tracking-widest ml-1">Type</label>
+                      <div className="flex p-1 bg-background rounded-xl">
+                        <button
+                          onClick={() => setSlotForm((prev) => ({ ...prev, isBreak: false }))}
+                          className={cn(
+                            'flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                            !slotForm.isBreak ? 'bg-brand-primary text-primary-foreground shadow-sm' : 'text-text-secondary hover:text-text-primary',
+                          )}
+                        >
+                          Period
+                        </button>
+                        <button
+                          onClick={() => setSlotForm((prev) => ({ ...prev, isBreak: true }))}
+                          className={cn(
+                            'flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                            slotForm.isBreak ? 'bg-warning text-primary-foreground shadow-sm' : 'text-text-secondary hover:text-text-primary',
+                          )}
+                        >
+                          Break
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={editingSlot ? handleUpdateTimeSlot : handleCreateTimeSlot}
+                      className="px-8 py-3 bg-brand-primary text-primary-foreground rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-dark transition-all shadow-xl shadow-brand-primary/10"
+                    >
+                      <Save size={14} className="inline mr-2" />
+                      {editingSlot ? 'Update Slot' : 'Create Slot'}
+                    </button>
+                    <button
+                      onClick={cancelSlotManagement}
+                      className="px-8 py-3 bg-surface border border-border text-text-secondary rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-muted transition-all"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+
+                  {!editingSlot && TIME_SLOTS.length > 0 && (
+                    <div className="mt-8">
+                      <h4 className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-4">Current Time Slots</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {TIME_SLOTS.map((slot) => (
+                          <div
+                            key={slot.id}
+                            className={cn(
+                              'p-4 rounded-2xl border flex items-center justify-between',
+                              slot.isBreak ? 'bg-muted/30 border-border' : 'bg-background border-border',
+                            )}
+                          >
+                            <div>
+                              <p className="text-[11px] font-black text-text-primary">{slot.label}</p>
+                              <p className="text-[9px] font-bold text-text-secondary uppercase tracking-wider">
+                                <Clock size={10} className="inline mr-1" />
+                                {slot.startTime} - {slot.endTime}
+                              </p>
+                            </div>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => startEditSlot(slot)}
+                                className="p-2 text-text-secondary hover:text-brand-primary hover:bg-brand-primary/10 rounded-lg transition-all"
+                              >
+                                <Copy size={12} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTimeSlot(slot.id)}
+                                className="p-2 text-text-secondary hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {isFinalized && (
               <div className="mb-6 p-4 bg-warning/10 border border-warning rounded-[2rem] flex items-center gap-3">
                 <AlertTriangle size={18} className="text-warning" />
@@ -579,17 +786,17 @@ const conflicts = useMemo(() => {
                         ))}
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
-                      {TIME_SLOTS.map((slot) => {
-                        const isBreak = slot.id.startsWith('break');
-                        return (
-                          <TableRow key={slot.id} className={cn(isBreak ? 'bg-muted/50' : '')}>
+                     <TableBody>
+                       {TIME_SLOTS.map((slot) => {
+                         const isBreak = slot.isBreak;
+                         return (
+                           <TableRow key={slot.id} className={cn(isBreak ? 'bg-muted/50' : '')}>
                             <TableCell className="px-6 py-8 border-r border-border sticky left-0 z-10 bg-surface">
                               <p className="text-[12px] font-black text-text-primary italic leading-none mb-1">
                                 {slot.label}
                               </p>
                               <div className="flex items-center gap-2 text-[9px] font-black text-text-secondary uppercase">
-                                <Clock size={10} /> {slot.start} - {slot.end}
+                                 <Clock size={10} /> {slot.startTime} - {slot.endTime}
                               </div>
                             </TableCell>
                             {DAYS.map((day) => {
