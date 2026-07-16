@@ -1,4 +1,5 @@
 ﻿import React from "react";
+import { useParams } from "react-router-dom";
 import {
   normalizeDeptFromApi,
   buildInitialDepartments,
@@ -20,6 +21,7 @@ import {
 } from "../../lib/hooks";
 
 export function DepartmentManagement() {
+  const { id: routeDeptId } = useParams();
   const departmentsQuery = useAllDepartments();
   const apiDepartments = departmentsQuery.data || [];
 
@@ -47,6 +49,15 @@ export function DepartmentManagement() {
     if (dept) setSelectedDeptName(dept.name);
   }, []);
 
+  // When navigated from global search (/department/:id), auto-open that department.
+  React.useEffect(() => {
+    if (!routeDeptId) return;
+    const dept = departments.find((d) => d.id === routeDeptId);
+    if (dept && !selectedDeptId) {
+      handleSelectDept(routeDeptId);
+    }
+  }, [routeDeptId, departments, selectedDeptId, handleSelectDept]);
+
   const selectedDept = React.useMemo(() => {
     if (!selectedDeptName) return null;
     return departments.find((d) => d.name === selectedDeptName);
@@ -55,6 +66,23 @@ export function DepartmentManagement() {
   const [activeTab, setActiveTab] = React.useState("staff");
   const { setBreadcrumb } = useBreadcrumb();
 
+  // Breadcrumb: drive it directly from the route param so the department name
+  // shows immediately (even before selection state settles) and we never fall
+  // back to rendering the raw :id segment in the URL trail.
+  React.useEffect(() => {
+    if (routeDeptId) {
+      const dept = departments.find((d) => d.id === routeDeptId);
+      if (dept) {
+        setBreadcrumb([
+          { label: 'Departments', path: '/identity/departments' },
+          { label: dept.name, path: null },
+        ]);
+        return;
+      }
+    }
+    setBreadcrumb([{ label: 'Departments', path: '/identity/departments' }]);
+  }, [routeDeptId, departments, setBreadcrumb]);
+
   React.useEffect(() => {
     if (selectedDept) {
       const tabLabel = activeTab === 'staff' ? selectedDept.name : activeTab === 'classes' ? 'Classes' : activeTab === 'academic' ? 'Academic Profile' : activeTab === 'grading' ? 'Grade Entry' : activeTab;
@@ -62,8 +90,6 @@ export function DepartmentManagement() {
         { label: 'Departments', path: '/identity/departments' },
         { label: tabLabel, path: null },
       ]);
-    } else {
-      setBreadcrumb([{ label: 'Departments', path: '/identity/departments' }]);
     }
   }, [selectedDept, activeTab, setBreadcrumb]);
   const [viewType, setViewType] = React.useState("grid");

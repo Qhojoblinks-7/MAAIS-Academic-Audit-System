@@ -51,6 +51,7 @@ function createRealService() {
             name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.indexNumber || s.id,
             classForm: s.currentClass?.name || '—',
             indexNumber: s.indexNumber || '—',
+            type: 'student',
           }));
         }),
     createMedicalRecord: (studentId, data) =>

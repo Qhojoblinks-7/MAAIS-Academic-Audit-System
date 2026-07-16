@@ -83,6 +83,7 @@ export {
   useDeactivateUser,
   useActiveYear,
   useAllDepartments,
+  useDepartment,
   useAllSubjects,
   useAllClasses,
   useCreateYear,

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { 
   Calendar as CalendarIcon, Grid3X3, ChevronRight, Clock
 } from 'lucide-react';
@@ -9,6 +10,8 @@ import { EventCalendarView } from './EventCalendarView';
 
 export const SchedulingView = () => {
   const [activeTab, setActiveTab] = useState('Timetable');
+  const [searchParams] = useSearchParams();
+  const initialClassId = searchParams.get('class') || '';
 
   return (
     <div className="flex-1 flex flex-col h-screen bg-background overflow-hidden antialiased">
@@ -66,7 +69,7 @@ export const SchedulingView = () => {
             transition={{ duration: 0.15, ease: "easeInOut" }}
             className="w-full h-full flex flex-col"
           >
-            {activeTab === 'Timetable' ? <MasterTimetable /> : <EventCalendarView />}
+            {activeTab === 'Timetable' ? <MasterTimetable initialClassId={initialClassId} /> : <EventCalendarView />}
           </motion.div>
         </AnimatePresence>
       </div>

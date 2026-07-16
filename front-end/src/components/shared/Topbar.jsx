@@ -47,6 +47,7 @@ function BreadcrumbNav({ compact = false }) {
     "identity": "Identity",
     "staff": "Staff Registry",
     "departments": "Departments",
+    "department": "Department",
     "students": "Students",
     "parents": "Parents",
     "system": "System Admin",
@@ -224,20 +225,23 @@ export function Topbar() {
     }
     try {
       const role = user?.role;
-      const calls = [];
-      
+
       if (role === "TEACHER") {
-        calls.push(studentService.searchStudents(searchQuery).catch(() => []));
-        calls.push(adminService.searchParents(searchQuery).catch(() => []));
-      } else if (["HOD", "HEADMASTER", "SUPER_ADMIN"].includes(role)) {
-        calls.push(studentService.searchStudents(searchQuery).catch(() => []));
-        calls.push(adminService.searchTeachers(searchQuery).catch(() => []));
-        calls.push(adminService.searchParents(searchQuery).catch(() => []));
+        const [students, parents] = await Promise.all([
+          studentService.searchStudents(searchQuery).catch(() => []),
+          adminService.searchParents(searchQuery).catch(() => []),
+        ]);
+        setSearchResults([...students, ...parents].slice(0, 20));
+        return;
       }
-      
-      const results = await Promise.all(calls);
-      const merged = results.flat().slice(0, 20);
-      setSearchResults(merged);
+
+      if (["HOD", "ADMIN"].includes(role)) {
+        const results = await adminService.globalSearch(searchQuery).catch(() => []);
+        setSearchResults(results.slice(0, 20));
+        return;
+      }
+
+      setSearchResults([]);
     } catch (e) {
       setSearchResults([]);
     }
@@ -256,14 +260,25 @@ export function Topbar() {
 
   const handleResultClick = (result) => {
     setQuery(""); setIsSearching(false); updateURLSearchParam("");
-    if (result.type === "teacher") {
-      navigate(`/teacher-profile?id=${result.id}`);
-    } else if (result.type === "parent") {
-      navigate("/identity/parents");
-    } else if (result.id) {
-      navigate(`/student-profile?id=${result.id}`);
-    } else {
-      navigate("/grading");
+    switch (result.type) {
+      case "teacher":
+        navigate(`/teacher-profile?id=${result.id}`);
+        break;
+      case "parent":
+        navigate("/identity/parents");
+        break;
+      case "department":
+        navigate(`/department/${result.id}`);
+        break;
+      case "class":
+        navigate(`/timetable?class=${result.id}`);
+        break;
+      case "staff":
+        navigate(`/teacher-profile?id=${result.id}`);
+        break;
+      default:
+        if (result.id) navigate(`/student-profile?id=${result.id}`);
+        else navigate("/grading");
     }
   };
 
@@ -344,15 +359,25 @@ export function Topbar() {
                   <div className="p-1.5 max-h-[280px] overflow-y-auto">
                     {searchResults.length > 0 ? (
                       searchResults.map((result) => {
-                        const isStudent = result.type === 'student';
-                        const isTeacher = result.type === 'teacher';
-                        const Icon = isStudent ? GraduationCap : isTeacher ? UserCheck : Users;
-                        const badgeColor = isStudent ? 'brand' : isTeacher ? 'purple' : 'emerald';
+                        const type = result.type;
+                        const Icon =
+                          type === 'student' ? GraduationCap :
+                          type === 'teacher' || type === 'staff' ? UserCog :
+                          type === 'parent' ? Users :
+                          type === 'department' ? UserCheck :
+                          type === 'class' ? Users : Users;
+                        const badgeColor =
+                          type === 'student' ? 'brand' :
+                          type === 'teacher' || type === 'staff' ? 'purple' :
+                          type === 'department' ? 'amber' :
+                          type === 'class' ? 'sky' : 'emerald';
                         return (
                           <button key={`${result.type}-${result.id}`} type="button" onClick={() => handleResultClick(result)} className="w-full flex items-center gap-2.5 p-2 hover:bg-muted rounded-lg transition-all group text-left">
                             <div className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 border ${
                               badgeColor === 'brand' ? 'bg-brand-secondary/10 text-brand-secondary border-brand-secondary/20' :
                               badgeColor === 'purple' ? 'bg-purple-50 text-purple-600 border-purple-200' :
+                              badgeColor === 'amber' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                              badgeColor === 'sky' ? 'bg-sky-50 text-sky-600 border-sky-200' :
                               'bg-emerald-50 text-emerald-600 border-emerald-200'
                             }`}>
                               <Icon size={13} />
@@ -360,7 +385,7 @@ export function Topbar() {
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-bold text-text-primary truncate group-hover:text-brand-primary">{result.name}</p>
                               <p className="text-[10px] font-bold text-text-secondary uppercase truncate mt-0.5">
-                                {result.classForm} • {isTeacher ? 'Teacher' : isStudent ? `Index: ${result.indexNumber}` : result.indexNumber}
+                                {result.sublabel || result.classForm || result.indexNumber || ''}
                               </p>
                             </div>
                           </button>

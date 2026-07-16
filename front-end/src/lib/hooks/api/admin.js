@@ -165,6 +165,15 @@ export function useAllDepartments() {
   });
 }
 
+export function useDepartment(id) {
+  return useQuery({
+    queryKey: ['admin', 'academic', 'departments', id],
+    queryFn: () => adminApi.getDepartment(id),
+    enabled: Boolean(id),
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
 export function useAllSubjects() {
   return useQuery({
     queryKey: ['admin', 'academic', 'subjects'],

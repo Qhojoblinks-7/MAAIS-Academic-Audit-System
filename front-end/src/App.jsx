@@ -745,6 +745,14 @@ function AppContent() {
               }
             />
             <Route
+              path="/department/:id"
+              element={
+                <RequireRole allowedRoles={["ADMIN"]}>
+                  <DepartmentManagement />
+                </RequireRole>
+              }
+            />
+            <Route
               path="/audit"
               element={
                 <RequireRole allowedRoles={["HOD", "ADMIN"]}>

@@ -289,6 +289,11 @@ function createRealService() {
 
     // ── Admin Settings ─────────────────────────────────────────────────────────
     getAdminSettings: () => request('GET', '/admin/settings'),
+
+    // ── Global Search (Admin / HOD) ─────────────────────────────────────────────
+    globalSearch: (query) =>
+      request('GET', `/users/search${query ? `?q=${encodeURIComponent(query)}` : ''}`)
+        .then((res) => (Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [])),
     updateAdminMfa: (enabled) => request('PATCH', '/admin/settings/mfa', { enabled }),
     toggleMaintenanceMode: (enabled) => request('PATCH', '/admin/settings/maintenance', { enabled }),
     updateAdminCredentials: (body) => request('POST', '/admin/settings/credentials', body),

@@ -61,8 +61,8 @@ const getDeptColor = (subject) => {
   return DEPT_COLORS[deptName] || DEPT_COLORS.default;
 };
 
-export const MasterTimetable = () => {
-  const [selectedClassId, setSelectedClassId] = useState('');
+export const MasterTimetable = ({ initialClassId = '' }) => {
+  const [selectedClassId, setSelectedClassId] = useState(initialClassId);
   const [selectedClassLabel, setSelectedClassLabel] = useState('');
   const [activeTrack, setActiveTrack] = useState('Gold');
   const [isBroadcasted, setIsBroadcasted] = useState(false);

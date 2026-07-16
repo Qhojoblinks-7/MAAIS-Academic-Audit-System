@@ -26,6 +26,7 @@ export const adminApi = {
   activateTerm: (id) => api.patch(`/academic/terms/${id}/activate`),
   createDepartment: (dto) => api.post('/academic/departments', dto),
   getAllDepartments: () => api.get('/academic/departments'),
+  getDepartment: (id) => api.get(`/academic/departments/${id}`),
   createSubject: (dto) => api.post('/academic/subjects', dto),
   getAllSubjects: () => api.get('/academic/subjects'),
   createClass: (dto) => api.post('/academic/classes', dto),
