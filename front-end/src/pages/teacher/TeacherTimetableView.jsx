@@ -101,12 +101,6 @@ export function TeacherTimetableView() {
     return todayClasses.find(e => e.startTime > now);
   };
 
-  const getTimePosition = (time) => {
-    const [hours, minutes] = time.split(':').map(Number);
-    const totalMinutes = (hours - 8) * 60 + minutes;
-    return (totalMinutes / (10 * 60)) * 100;
-  };
-
   const currentPeriod = getCurrentPeriod();
   const nextPeriod = getNextPeriod();
 

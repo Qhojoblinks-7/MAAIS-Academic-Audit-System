@@ -18,14 +18,15 @@ export function TeacherDashboard() {
   const [teacherClasses, setTeacherClasses] = React.useState([]);
 
   const teacherId = user?.profileId || user?.id;
+  const staffProfileId = user?.profileId;
   const ROLLOVER_STORAGE_KEY = `maais_rollover_subjects.${teacherId}`;
   const SESSION_SEEN_KEY = `maais_seen_rollover.${teacherId}`;
 
   const fetchBackendClasses = async () => {
-    if (!teacherId) {
+    if (!staffProfileId) {
       return [];
     }
-    return teacherService.getClasses(teacherId);
+    return teacherService.getClasses(staffProfileId);
   };
 
   React.useEffect(() => {

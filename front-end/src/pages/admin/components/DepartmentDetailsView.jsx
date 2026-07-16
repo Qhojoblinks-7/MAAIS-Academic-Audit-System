@@ -1,5 +1,5 @@
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from 'framer-motion';
 import { StaffTab } from "../StaffTab";
 import { DepartmentTabs } from "../DepartmentTabs";
 
@@ -15,8 +15,8 @@ export function DepartmentDetailsView({
   openTransferModal,
 }) {
   return (
-    <div className="flex-1 overflow-y-auto p-8 lg:p-12 bg-muted/30 scrollbar-hide">
-      <div className="max-w-4xl">
+    <div className="flex-1 overflow-y-auto p-6 bg-muted/30 scrollbar-hide">
+      <div className="max-w-6xl mx-auto w-full">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}

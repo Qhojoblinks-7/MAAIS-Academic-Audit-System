@@ -112,7 +112,7 @@ export function TeacherArchiveView() {
         ]);
 
         const studentData = Array.isArray(vaultResults) ? vaultResults : [];
-        const obsArray = Array.isArray(observations) ? observations : [];
+        const obsArray = Array.isArray(observations?.data) ? observations.data : Array.isArray(observations) ? observations : [];
 
         const classMap = {};
         for (const student of studentData) {

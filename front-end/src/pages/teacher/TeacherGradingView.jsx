@@ -45,7 +45,7 @@ export function TeacherGradingView() {
         return;
       }
       try {
-        const classes = await teacherService.getClasses(user.id || user.profileId);
+         const classes = await teacherService.getClasses(user.profileId || user.id);
         const meta = await teacherService.getGradingStatusMeta();
         const filters = await teacherService.getGradingFilterOptions();
         const subjectConfig = await teacherService.getSubjectConfig().catch(() => []);

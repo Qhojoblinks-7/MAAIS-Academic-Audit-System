@@ -42,6 +42,8 @@ const parseUserProfile = (data, jwtPayload) => {
     departmentName: data?.department?.name || null,
     avatar,
     currentTerm: '2026',
+    mustChangePassword: Boolean(data?.mustChangePassword),
+    passwordChangedAt: data?.passwordChangedAt || null,
   };
 };
 
@@ -165,6 +167,30 @@ export function RoleProvider({ children }) {
     };
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const token = getAuthToken();
+      if (!token) return;
+      const res = await fetch(`${API_BASE_URL}/auth/me`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const payload = (() => {
+        try { return JSON.parse(atob(token.split('.')[1])); }
+        catch { return {}; }
+      })();
+      setUser(parseUserProfile(data, payload));
+    } catch (e) {
+      console.error('refreshUser failed:', e);
+    }
+  }, []);
+
   const logout = useCallback(() => {
     clearAuthToken();
     localStorage.removeItem('refreshToken');
@@ -187,6 +213,24 @@ export function RoleProvider({ children }) {
       const profile = parseUserProfile(credentials.user, payload);
       setUser(profile);
       setIsAuthenticated(true);
+
+      // The login response omits the profile name/photo (the access token only
+      // carries sub/email/role). Fetch the full /auth/me profile so the UI
+      // (e.g. the Topbar) shows the user's real name.
+      fetch(`${API_BASE_URL}/auth/me`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${credentials.token}`,
+        },
+        credentials: 'include',
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data) setUser(parseUserProfile(data, payload));
+        })
+        .catch(() => {});
+
       return true;
     } catch (e) {
       console.error('Token validation failed:', e);
@@ -199,8 +243,9 @@ export function RoleProvider({ children }) {
     setRole: () => {},
     logout,
     login,
+    refreshUser,
     isAuthenticated
-  }), [user, logout, login, isAuthenticated]);
+  }), [user, logout, login, refreshUser, isAuthenticated]);
 
   if (loading) {
     return null;

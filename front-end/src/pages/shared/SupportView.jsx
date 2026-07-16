@@ -28,7 +28,7 @@ export function SupportView() {
 
         const observations = Array.isArray(obs) ? obs : [];
         const gradeIssues = Array.isArray(issues) ? issues : [];
-        const logs = Array.isArray(ticketData) ? ticketData : [];
+        const logs = Array.isArray(ticketData?.data) ? ticketData.data : Array.isArray(ticketData) ? ticketData : [];
 
         const mappedObs = observations.map(o => ({
           id: o.id,

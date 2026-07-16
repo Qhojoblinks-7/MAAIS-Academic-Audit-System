@@ -3,6 +3,8 @@ import { api } from './client';
 export const adminApi = {
   // ── Users / Staff Management ───────────────────────────────────────────────
   createStaff: (dto) => api.post('/users/staff', dto),
+  bulkImportStaff: (staff) => api.post('/users/staff/bulk', { staff }),
+  updateStaff: (id, body) => api.patch(`/users/staff/${id}`, body),
   createStudent: (dto) => api.post('/users/students', dto),
   batchImportStudents: (students) => api.post('/users/students/batch', { students }),
   createParent: (dto) => api.post('/users/parents', dto),

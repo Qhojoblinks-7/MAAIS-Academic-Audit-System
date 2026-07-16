@@ -177,124 +177,166 @@ function normalizeObservationPayload(observation) {
   };
 }
 
-async function request(method, path, body) {
-  console.log(`[TeacherService] ${method} ${path}`, body ? { body } : '');
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers: getHeaders(),
-    credentials: 'include',
-    ...(body != null && method !== 'GET' && method !== 'HEAD' ? { body: JSON.stringify(body) } : {}),
-  });
+const DEFAULT_TIMEOUT = 15000;
+const MAX_RETRIES = 2;
+const RETRYABLE_STATUS = new Set([408, 429, 500, 502, 503, 504]);
+const pendingRequests = new Map();
 
-  if (!res.ok) {
-    let errorBody;
-    try {
-      errorBody = await res.clone().json();
-    } catch {
-      errorBody = await res.text();
-    }
-    const freezeReason = errorBody?.freezeReason;
-    const baseMessage = errorBody?.message || errorBody?.error || `Request failed: ${res.status} ${method} ${path}`;
-    const err = new Error(freezeReason ? `${baseMessage} — ${freezeReason}` : baseMessage);
-    err.status = res.status;
-    err.response = errorBody;
-    console.error(`[TeacherService] ${method} ${path} failed:`, JSON.stringify(errorBody, null, 2));
-    throw err;
+function dedupeKey(method, path, body) {
+  return `${method}:${path}:${JSON.stringify(body ?? null)}`;
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function request(method, path, body) {
+  const url = `${BASE_URL}${path}`;
+  const key = dedupeKey(method, path, body);
+  if (method === 'GET' && pendingRequests.has(key)) {
+    return pendingRequests.get(key);
   }
 
-  if (res.status === 204) return undefined;
-  const data = await res.json();
-  console.log(`[TeacherService] ${method} ${path} succeeded`, data ? JSON.stringify(data, null, 2) : '');
-  return data;
+  const promise = (async () => {
+    let attempt = 0;
+    while (true) {
+      attempt += 1;
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
+        const res = await fetch(url, {
+          method,
+          headers: getHeaders(),
+          credentials: 'include',
+          signal: controller.signal,
+          ...(body != null && method !== 'GET' && method !== 'HEAD' ? { body: JSON.stringify(body) } : {}),
+        });
+        clearTimeout(timer);
+
+        if (!res.ok) {
+          let errorBody;
+          try {
+            errorBody = await res.clone().json();
+          } catch {
+            errorBody = await res.text();
+          }
+          const freezeReason = errorBody?.freezeReason;
+          const baseMessage = errorBody?.message || errorBody?.error || `Request failed: ${res.status} ${method} ${path}`;
+          const err = new Error(freezeReason ? `${baseMessage} — ${freezeReason}` : baseMessage);
+          err.status = res.status;
+          err.response = errorBody;
+          throw err;
+        }
+
+        if (res.status === 204) return undefined;
+        return res.json();
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          throw new Error(`Request timeout: ${method} ${path}`);
+        }
+        if (attempt >= MAX_RETRIES || !RETRYABLE_STATUS.has(error.status)) {
+          throw error;
+        }
+        await delay(1000 * attempt);
+      }
+    }
+  })().finally(() => {
+    if (method === 'GET') pendingRequests.delete(key);
+  });
+
+  if (method === 'GET') {
+    pendingRequests.set(key, promise);
+  }
+
+  return promise;
 }
 
 function createRealService() {
   return {
     getClasses: (teacherId, params = undefined) => {
-      console.log(`[TeacherService] getClasses called with teacherId: ${teacherId}`);
       return request('GET', `/teacher/classes/${teacherId}`, params ? { params } : undefined)
         .then(r => r?.data ?? r);
     },
     getProfile: () => {
-      console.log('[TeacherService] getProfile called');
       return request('GET', '/teacher/profile').then(r => r?.data ?? r);
     },
     getAnalytics: (teacherId) => {
-      console.log(`[TeacherService] getAnalytics called with teacherId: ${teacherId}`);
       return request('GET', `/teacher/classes/${teacherId}/analytics`)
         .then(r => normalizeAnalyticsPayload(r?.data ?? r));
     },
     getObservations: (teacherId, params = {}) => {
-      console.log(`[TeacherService] getObservations called with teacherId: ${teacherId}`);
       return request('GET', `/teacher/classes/${teacherId}/observations`, params ? { params } : undefined)
         .then(r => r?.data ?? r);
     },
     getGradeRevisions: (teacherId) => {
-      console.log(`[TeacherService] getGradeRevisions called`);
       return request('GET', `/teacher/grade-revisions`).then(r => r?.data ?? r);
     },
-    getMissingObservations: () => {
-      console.log('[TeacherService] getMissingObservations called');
-      return request('GET', '/teacher/missing-observations').then((r) => {
-        const data = r?.data ?? r ?? [];
-        return Array.isArray(data) ? data : [];
+    getMissingObservations: (page = 1, limit = 50) => {
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('limit', String(limit));
+      return request('GET', `/teacher/missing-observations?${params.toString()}`).then((r) => {
+        const payload = r?.data ?? r ?? {};
+        return Array.isArray(payload.data) ? payload : { data: [], total: 0, page, limit, pages: 0 };
       });
     },
-    getObservationLogs: () => {
-      console.log('[TeacherService] getObservationLogs called');
-      return request('GET', '/teacher/observations').then((r) => {
-        const data = r?.data ?? r ?? [];
-        return Array.isArray(data) ? data : [];
+    getObservationLogs: (page = 1, limit = 50) => {
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('limit', String(limit));
+      return request('GET', `/teacher/observations?${params.toString()}`).then((r) => {
+        const payload = r?.data ?? r ?? {};
+        return Array.isArray(payload.data) ? payload : { data: [], total: 0, page, limit, pages: 0 };
       });
     },
     getSupportObservations: () => {
-      console.log('[TeacherService] getSupportObservations called');
+
       return request('GET', '/teacher/support/observations').then(r => r?.data ?? r).catch(() => []);
     },
     getGradeIssues: () => {
-      console.log('[TeacherService] getGradeIssues called');
+
       return request('GET', '/teacher/grade-issues').catch(() => []);
     },
     getGradeIssueStatusMeta: () => {
-      console.log('[TeacherService] getGradeIssueStatusMeta called');
+
       return request('GET', '/teacher/grade-issues/meta').catch(() => ({}));
     },
     getTimetable: (teacherId) => {
-      console.log(`[TeacherService] getTimetable called with teacherId: ${teacherId}`);
+
       return request('GET', `/timetable?teacherId=${encodeURIComponent(teacherId)}`)
         .then(r => normalizeTimetableEntries(r?.data ?? r));
     },
     submitGradeRevision: (revisionData) => {
-      console.log('[TeacherService] submitGradeRevision called');
+
       return request('POST', '/teacher/grade-revisions', revisionData).then(r => r?.data ?? r);
     },
     updateGradeRevision: (revisionId, updatedData) => {
-      console.log(`[TeacherService] updateGradeRevision called with revisionId: ${revisionId}`);
+
       return request('PATCH', `/teacher/grade-revisions/${revisionId}`, updatedData).then(r => r?.data ?? r);
     },
     getSettingsClasses: () => {
-      console.log('[TeacherService] getSettingsClasses called');
+
       return request('GET', '/teacher/settings/classes').then(r => r?.data ?? r);
     },
     getNotificationPreferences: () => {
-      console.log('[TeacherService] getNotificationPreferences called');
+
       return request('GET', '/teacher/settings/preferences').then(r => r?.data ?? r);
     },
     updateProfile: (profile) => {
-      console.log('[TeacherService] updateProfile called');
+
       return request('PATCH', '/teacher/profile', profile).then(r => r?.data ?? r);
     },
     submitSupportTicket: (ticketData) => {
-      console.log('[TeacherService] submitSupportTicket called');
+
       return request('POST', '/comms/tickets', ticketData).then(r => r?.data ?? r);
     },
     getGradingStudents: (subject, className) => {
-      console.log(`[TeacherService] getGradingStudents called with subject: ${subject}, class: ${className}`);
+
       return request('GET', `/teacher/grading/students?subject=${encodeURIComponent(subject)}&class=${encodeURIComponent(className)}`)
         .then(r => r?.data ?? r);
     },
     getSubjectConfig: () => {
-      console.log('[TeacherService] getSubjectConfig called');
+
       return request('GET', '/teacher/subject-config').then(r => r?.data ?? r);
     },
     getGradingStatusMeta: () => {

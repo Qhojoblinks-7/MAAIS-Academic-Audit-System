@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from 'framer-motion';
 import {
    ChevronRight,
    X,
@@ -410,13 +410,7 @@ export function DepartmentManagementView({
              key="spawn-modal"
              className="fixed inset-0 z-[600] flex items-center justify-center p-6"
            >
-             <motion.div
-               initial={{ opacity: 0 }}
-               animate={{ opacity: 1 }}
-               exit={{ opacity: 0 }}
-               onClick={closeSpawnModal}
-               className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md"
-             />
+             <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md transition-opacity duration-200 opacity-100" />
              <motion.div
                initial={{ scale: 0.9, opacity: 0, y: 20 }}
                animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -524,13 +518,7 @@ export function DepartmentManagementView({
             key="transfer-modal"
             className="fixed inset-0 z-[600] flex items-center justify-center p-6"
           >
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={closeTransferModal}
-              className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md"
-            />
+            <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md transition-opacity duration-200 opacity-100" />
             <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}

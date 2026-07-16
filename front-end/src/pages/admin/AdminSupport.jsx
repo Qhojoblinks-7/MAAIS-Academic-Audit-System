@@ -102,8 +102,8 @@ export function AdminSupport() {
     { id: 'all', label: 'All', count: supportTickets.length },
     { id: 'OPEN', label: 'Open', count: supportTickets.filter(t => t.status === 'OPEN').length },
     { id: 'IN_PROGRESS', label: 'In Progress', count: supportTickets.filter(t => t.status === 'IN_PROGRESS').length },
-    { id: 'PENDING', label: 'Pending', count: supportTickets.filter(t => t.status === 'PENDING').length },
-    { id: 'CLOSED', label: 'Closed', count: supportTickets.filter(t => t.status === 'CLOSED').length },
+    { id: 'RESOLVED',  label: 'Resolved',  count: supportTickets.filter(t => t.status === 'RESOLVED').length },
+    { id: 'ESCALATED', label: 'Escalated', count: supportTickets.filter(t => t.status === 'ESCALATED').length },
   ];
 
   const handleCreateTicketSubmit = async (formData) => {

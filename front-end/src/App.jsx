@@ -53,8 +53,9 @@ import { useRole } from "./context/RoleContext";
 import { HODProvider } from "./context/HODContext";
 import { BreadcrumbProvider } from "./context/BreadcrumbContext";
 import { RequireRole } from "./components/auth/RequireRole";
+import { PasswordChangeProvider } from "./components/auth/PasswordChangeProvider";
 import { X, Lock } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from 'framer-motion';
 import { ConnectivityBanner } from "./pages/shared/ConnectivityBanner";
 import { useSystemFreeze, useActiveYear } from "./lib/hooks";
 import { Button } from "./components/ui/button";
@@ -95,7 +96,7 @@ function GradingRouteLoader() {
   React.useEffect(() => {
     const interval = setInterval(() => {
       activeYearQuery.refetch();
-    }, 30000);
+    }, 60000);
     return () => clearInterval(interval);
   }, [activeYearQuery]);
 
@@ -193,10 +194,6 @@ function GradingRouteLoader() {
     students.find((s) => s.auditStatus === "MISSING") || students[0] || null;
   const targetStudentId = getTargetStudentId || fallbackStudent?.id || null;
 
-  console.log('[GradingRouteLoader] URL params:', { subject: subjectParam, class: classParam, missingObsId: getMissingObsId, targetStudentId: getTargetStudentId });
-  console.log('[GradingRouteLoader] students count:', students.length, 'student ids:', students.map(s => ({ id: s.id, index: s.index, name: s.name, auditStatus: s.auditStatus })));
-  console.log('[GradingRouteLoader] resolved targetStudentId:', targetStudentId, 'fallbackStudent:', fallbackStudent?.id);
-
   const DEFAULT_CLASS_INFO = {
     id: gradingData.classId || subjectParam,
     subject: subjectParam,
@@ -246,13 +243,7 @@ function Modal({ isOpen, onClose, title, children }) {
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="absolute inset-0 bg-brand-dark/60 backdrop-blur-sm"
-          />
+          <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-sm transition-opacity duration-200 opacity-100" />
           <motion.div
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -359,12 +350,9 @@ function AppContent() {
     };
   }, []);
 
-  console.log('[App] Render - pathname:', location.pathname, 'isLoginPage:', isLoginPage);
-
   const isErrorPage = location.pathname === "/401" || location.pathname === "/403" || location.pathname === "/500";
 
   if (isLoginPage) {
-    console.log('[App] Rendering login page container');
     return (
       <div className="w-full min-h-screen bg-background font-sans antialiased">
         <Suspense fallback={<PageLoader />}>
@@ -976,7 +964,9 @@ export default function App() {
         <TooltipProvider>
           <HODProvider>
             <BreadcrumbProvider>
-              <AppContent />
+              <PasswordChangeProvider>
+                <AppContent />
+              </PasswordChangeProvider>
             </BreadcrumbProvider>
           </HODProvider>
         </TooltipProvider>

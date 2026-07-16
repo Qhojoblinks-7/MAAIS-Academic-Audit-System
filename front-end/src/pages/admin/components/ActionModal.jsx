@@ -17,12 +17,9 @@ export const ActionModal = ({ isOpen, onClose, title, description, actions, foot
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+        <div
           onClick={onClose}
-          className="absolute inset-0 bg-foreground/40 backdrop-blur-xs"
+          class="transition-opacity duration-200 opacity-100 absolute inset-0 bg-foreground/40 backdrop-blur-xs"
         />
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
@@ -65,12 +62,9 @@ export const ConfirmationModal = ({
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+          <div
             onClick={onClose}
-            className="absolute inset-0 bg-foreground/40 backdrop-blur-xs"
+            class="transition-opacity duration-200 opacity-100 absolute inset-0 bg-foreground/40 backdrop-blur-xs"
           />
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}

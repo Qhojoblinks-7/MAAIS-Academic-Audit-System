@@ -75,13 +75,37 @@ export function normalizeDeptFromApi(dept, index) {
     : 'Unassigned';
   const hodId = hodStaff?.id || null;
 
-  const frontendStaff = (dept.staff || []).map(s => ({
-    id: s.id,
-    name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.staffId,
-    role: s.user?.role || 'TEACHER',
-    isHOD: s.user?.role === 'HOD',
-    staffId: s.staffId,
-  }));
+  const frontendStaff = (dept.staff || []).map(s => {
+    const subjects = (s.teachingAssignments || [])
+      .map(a => a.subject)
+      .filter(Boolean)
+      .map(sub => ({ id: sub.id, name: sub.name, code: sub.code }));
+
+    return {
+      id: s.id,
+      name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.staffId,
+      role: s.user?.role || 'TEACHER',
+      isHOD: s.user?.role === 'HOD',
+      staffId: s.staffId,
+      subjects,
+    };
+  });
+
+  const electives = (dept.subjects || [])
+    .filter(s => s.type === 'ELECTIVE')
+    .map(s => ({
+      id: s.id,
+      name: s.name,
+      code: s.code,
+      teachers: (s.teachingAssignments || [])
+        .map(a => a.teacher)
+        .filter(Boolean)
+        .map(t => ({
+          id: t.id,
+          name: `${t.firstName || ''} ${t.lastName || ''}`.trim() || t.staffId,
+          staffId: t.staffId,
+        })),
+    }));
 
   const randomColor = pickRandomColor(dept.id || dept.code || dept.name || String(index));
 
@@ -110,6 +134,7 @@ export function normalizeDeptFromApi(dept, index) {
     dark: randomColor.dark,
     darkText: randomColor.darkText,
     programs: [`${dept.name} Program`],
+    electives,
     staff: frontendStaff,
     checklist,
     _raw: dept,

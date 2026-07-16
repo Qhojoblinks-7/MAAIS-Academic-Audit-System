@@ -24,6 +24,10 @@ export default defineConfig(({ mode }) => {
       },
     },
 
+    optimizeDeps: {
+      exclude: ['framer-motion'],
+    },
+
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',
       proxy: {

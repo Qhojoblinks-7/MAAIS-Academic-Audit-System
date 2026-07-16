@@ -2,6 +2,9 @@ import { getAuthToken } from './auth';
 import { calcRoman } from '../constants/grading';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+const DEFAULT_TIMEOUT = 15000;
+const MAX_RETRIES = 2;
+const RETRYABLE_STATUS = new Set([408, 429, 500, 502, 503, 504]);
 
 function getHeaders() {
   const token = getAuthToken();
@@ -11,37 +14,81 @@ function getHeaders() {
   };
 }
 
-async function request(method, path, body, queryParams) {
+const pendingRequests = new Map();
+
+function dedupeKey(method, path, body, queryParams) {
+  return `${method}:${path}:${JSON.stringify(body ?? null)}:${JSON.stringify(queryParams ?? null)}`;
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function request(method, path, body, queryParams, timeout = DEFAULT_TIMEOUT) {
   const url = new URL(`${BASE_URL}${path}`, window.location.origin);
   if ((method === 'GET' || method === 'HEAD') && queryParams) {
     Object.entries(queryParams).forEach(([key, value]) => {
       if (value != null && value !== '') url.searchParams.set(key, value);
     });
   }
-  const res = await fetch(url.toString(), {
-    method,
-    headers: getHeaders(),
-    credentials: 'include',
-    ...(method !== 'GET' && method !== 'HEAD' && body !== undefined ? { body: JSON.stringify(body) } : {}),
-  });
 
-  if (!res.ok) {
-    let errorBody;
-    try {
-      errorBody = await res.clone().json();
-    } catch {
-      errorBody = await res.text();
-    }
-    const freezeReason = errorBody?.freezeReason;
-    const baseMessage = errorBody?.message || errorBody?.error || `Request failed: ${res.status} ${method} ${path}`;
-    const err = new Error(freezeReason ? `${baseMessage} — ${freezeReason}` : baseMessage);
-    err.status = res.status;
-    err.response = errorBody;
-    throw err;
+  const key = dedupeKey(method, path, body, queryParams);
+  if (method === 'GET' && pendingRequests.has(key)) {
+    return pendingRequests.get(key);
   }
 
-  if (res.status === 204) return undefined;
-  return res.json();
+  const promise = (async () => {
+    let attempt = 0;
+    while (true) {
+      attempt += 1;
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeout);
+        const res = await fetch(url.toString(), {
+          method,
+          headers: getHeaders(),
+          credentials: 'include',
+          signal: controller.signal,
+          ...(method !== 'GET' && method !== 'HEAD' && body !== undefined ? { body: JSON.stringify(body) } : {}),
+        });
+        clearTimeout(timer);
+
+        if (!res.ok) {
+          let errorBody;
+          try {
+            errorBody = await res.clone().json();
+          } catch {
+            errorBody = await res.text();
+          }
+          const freezeReason = errorBody?.freezeReason;
+          const baseMessage = errorBody?.message || errorBody?.error || `Request failed: ${res.status} ${method} ${path}`;
+          const err = new Error(freezeReason ? `${baseMessage} — ${freezeReason}` : baseMessage);
+          err.status = res.status;
+          err.response = errorBody;
+          throw err;
+        }
+
+        if (res.status === 204) return undefined;
+        return res.json();
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          throw new Error(`Request timeout: ${method} ${path}`);
+        }
+        if (attempt >= MAX_RETRIES || !RETRYABLE_STATUS.has(error.status)) {
+          throw error;
+        }
+        await delay(1000 * attempt);
+      }
+    }
+  })().finally(() => {
+    if (method === 'GET') pendingRequests.delete(key);
+  });
+
+  if (method === 'GET') {
+    pendingRequests.set(key, promise);
+  }
+
+  return promise;
 }
 
 export async function requestExport(method, path, body) {

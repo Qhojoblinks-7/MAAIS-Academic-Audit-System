@@ -840,18 +840,25 @@ export function AdminHome() {
               </div>
                <div className="space-y-2">
                 {tickets.filter(t => !removedTicketIds.has(t.id)).slice(0, 5).map((ticket) => {
-                  const isPriority = ticket.status === 'priority';
-                  const isActive = ticket.status === 'active';
-                  const statusLabel = isPriority ? 'Priority' : isActive ? 'Active' : (ticket.status || 'Open');
-                  const statusStyles = isPriority
-                    ? "bg-destructive/10 text-destructive border-destructive/20"
-                    : isActive
-                    ? "bg-brand-primary/5 text-brand-primary border-brand-primary/20"
-                    : "bg-warning/10 text-warning border-warning/20";
-                  const iconBg = isPriority ? "bg-destructive/10 text-destructive" : isActive ? "bg-brand-primary/10 text-brand-primary" : "bg-warning/10 text-warning";
-                  const iconClass = isPriority || isActive ? cn("animate-pulse") : "";
-                  const ticketTitle = ticket.subject || ticket.title || ticket.issue || 'Support Ticket';
-                  const ticketUser = ticket.createdBy?.name || ticket.user || 'User';
+                  const rawStatus = (ticket.status || 'OPEN').toUpperCase();
+                  const STATUS_META = {
+                    OPEN: { label: 'Open', styles: 'bg-warning/10 text-warning border-warning/20', iconBg: 'bg-warning/10 text-warning', pulse: false },
+                    IN_PROGRESS: { label: 'In Progress', styles: 'bg-brand-primary/5 text-brand-primary border-brand-primary/20', iconBg: 'bg-brand-primary/10 text-brand-primary', pulse: true },
+                    RESOLVED: { label: 'Resolved', styles: 'bg-success/10 text-success border-success/20', iconBg: 'bg-success/10 text-success', pulse: false },
+                    ESCALATED: { label: 'Escalated', styles: 'bg-destructive/10 text-destructive border-destructive/20', iconBg: 'bg-destructive/10 text-destructive', pulse: true },
+                  };
+                  const meta = STATUS_META[rawStatus] || STATUS_META.OPEN;
+                  const statusLabel = meta.label;
+                  const statusStyles = meta.styles;
+                  const iconBg = meta.iconBg;
+                  const iconClass = meta.pulse ? cn("animate-pulse") : "";
+                  const ticketTitle = ticket.title || ticket.subject || ticket.issue || 'Support Ticket';
+                  const creator = ticket.createdBy;
+                  const creatorProfile = creator?.staffProfile || creator?.studentProfile;
+                  const creatorName = creatorProfile
+                    ? `${creatorProfile.firstName || ''} ${creatorProfile.lastName || ''}`.trim()
+                    : '';
+                  const ticketUser = creatorName || creator?.email || ticket.user || 'Unknown User';
                   const isRebooting = rebootingNodeId === ticket.id;
                   const isResolving = resolvingTicketId === ticket.id;
                   const isIssuing = issuingTokenId === ticket.id;
@@ -867,7 +874,7 @@ export function AdminHome() {
                         </div>
                         <div className="min-w-0">
                           <p className="text-[11px] font-black text-text-primary truncate tracking-tight">{ticketTitle}</p>
-                          <p className="text-[9px] font-semibold text-text-secondary uppercase tracking-wider truncate">{ticketUser}</p>
+                          <p className="text-[9px] font-semibold text-text-secondary tracking-tight truncate">{ticketUser}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -1272,56 +1279,107 @@ export function AdminHome() {
         )}
       </AnimatePresence>
 
-      {/* Node Diagnosis Modal */}
+      {/* Ticket Details Modal */}
       <AnimatePresence>
-        {selectedTicket && (
+        {selectedTicket && (() => {
+          const creator = selectedTicket.createdBy;
+          const nameFromProfile = (p) => (p ? `${p.firstName || ''} ${p.lastName || ''}`.trim() : '');
+          const reporter =
+            nameFromProfile(selectedTicket.student) ||
+            nameFromProfile(creator?.staffProfile || creator?.studentProfile) ||
+            creator?.email ||
+            selectedTicket.user ||
+            'Unknown User';
+          const subject = selectedTicket.title || selectedTicket.subject || selectedTicket.issue || 'Support Ticket';
+          const description = selectedTicket.description || 'No additional details were provided.';
+          const category = selectedTicket.category || 'General';
+          const rawStatus = (selectedTicket.status || 'OPEN').toUpperCase();
+          const STATUS_LABELS = { OPEN: 'Open', IN_PROGRESS: 'In Progress', RESOLVED: 'Resolved', ESCALATED: 'Escalated' };
+          const STATUS_STYLES = {
+            OPEN: 'bg-warning/10 text-warning border-warning/20',
+            IN_PROGRESS: 'bg-brand-primary/10 text-brand-primary border-brand-primary/20',
+            RESOLVED: 'bg-success/10 text-success border-success/20',
+            ESCALATED: 'bg-destructive/10 text-destructive border-destructive/20',
+          };
+          const rawPriority = (selectedTicket.priority || 'MEDIUM').toUpperCase();
+          const PRIORITY_LABELS = { HIGH: 'High', MEDIUM: 'Medium', LOW: 'Low' };
+          const PRIORITY_STYLES = {
+            HIGH: 'bg-destructive/10 text-destructive border-destructive/20',
+            MEDIUM: 'bg-warning/10 text-warning border-warning/20',
+            LOW: 'bg-muted text-text-secondary border-border',
+          };
+          const fmtDate = (d) => (d ? new Date(d).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—');
+          return (
           <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md" onClick={() => setSelectedTicket(null)} />
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-lg bg-surface rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
-              <div className="p-5 border-b border-border flex justify-between items-center">
-                <div>
-                  <h3 className="text-lg font-black italic font-display text-text-primary">Node Diagnosis</h3>
-                  <p className="text-[8px] font-black uppercase text-text-secondary tracking-wider mt-0.5">Handshake Diagnostics • Ticket #{selectedTicket.id}</p>
+              <div className="p-5 border-b border-border flex justify-between items-start gap-4">
+                <div className="min-w-0">
+                  <h3 className="text-lg font-black italic font-display text-text-primary truncate">{subject}</h3>
+                  <p className="text-[10px] font-semibold text-text-secondary mt-0.5">Reported by {reporter}</p>
                 </div>
-                <button onClick={() => setSelectedTicket(null)} className="p-1.5 text-text-secondary hover:text-text-primary transition-colors">
+                <button onClick={() => setSelectedTicket(null)} className="p-1.5 text-text-secondary hover:text-text-primary transition-colors shrink-0">
                   <X size={16} />
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                <div className="p-3 bg-background rounded-xl border border-border space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Wifi size={14} className="text-brand-primary" />
-                    <p className="text-[10px] font-black uppercase text-text-secondary">System Handshake</p>
-                  </div>
-                  <p className="text-[11px] font-medium text-text-primary">Expired TLS client certificate detected on Node #{selectedTicket.id}. Clock drift sequence mismatch: +340ms.</p>
+                {/* Status / Priority / Category badges */}
+                <div className="flex flex-wrap gap-2">
+                  <span className={cn("px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border", STATUS_STYLES[rawStatus] || STATUS_STYLES.OPEN)}>
+                    {STATUS_LABELS[rawStatus] || rawStatus}
+                  </span>
+                  <span className={cn("px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border", PRIORITY_STYLES[rawPriority] || PRIORITY_STYLES.MEDIUM)}>
+                    {PRIORITY_LABELS[rawPriority] || rawPriority} Priority
+                  </span>
+                  <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border bg-muted text-text-secondary border-border">
+                    {category}
+                  </span>
                 </div>
+
+                {/* Description */}
                 <div className="p-3 bg-background rounded-xl border border-border space-y-2">
                   <div className="flex items-center gap-2">
-                    <AlertCircle size={14} className="text-warning" />
-                    <p className="text-[10px] font-black uppercase text-text-secondary">Diagnostic Log</p>
+                    <AlertCircle size={14} className="text-text-secondary" />
+                    <p className="text-[10px] font-black uppercase text-text-secondary tracking-wider">What they need help with</p>
                   </div>
-                  <p className="text-[11px] font-medium text-text-primary">Subject: {selectedTicket.subject || selectedTicket.title || selectedTicket.issue || 'Support Ticket'}</p>
-                  <p className="text-[11px] font-medium text-text-primary">Reported by: {selectedTicket.createdBy?.name || selectedTicket.user || 'User'}</p>
-                  <p className="text-[11px] font-medium text-text-primary">Status: {selectedTicket.status?.toUpperCase() || 'OPEN'}</p>
+                  <p className="text-[12px] font-medium text-text-primary leading-relaxed whitespace-pre-wrap">{description}</p>
+                </div>
+
+                {/* Details */}
+                <div className="p-3 bg-background rounded-xl border border-border space-y-2.5">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-[10px] font-black uppercase text-text-secondary tracking-wider">Reported by</span>
+                    <span className="text-[11px] font-semibold text-text-primary text-right truncate">{reporter}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-[10px] font-black uppercase text-text-secondary tracking-wider">Submitted</span>
+                    <span className="text-[11px] font-semibold text-text-primary text-right">{fmtDate(selectedTicket.createdAt)}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-[10px] font-black uppercase text-text-secondary tracking-wider">Last updated</span>
+                    <span className="text-[11px] font-semibold text-text-primary text-right">{fmtDate(selectedTicket.updatedAt)}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-[10px] font-black uppercase text-text-secondary tracking-wider">Ticket reference</span>
+                    <span className="text-[10px] font-mono text-text-secondary text-right truncate">#{String(selectedTicket.id).slice(0, 8)}</span>
+                  </div>
                 </div>
               </div>
               <div className="p-5 border-t border-border flex gap-3">
-                <button onClick={() => handleRebootNode(selectedTicket.id)} disabled={rebootingNodeId === selectedTicket.id} className="flex-1 py-3 bg-brand-primary text-primary-foreground rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-brand-primary/90 disabled:opacity-50 flex items-center justify-center gap-2">
-                  {rebootingNodeId === selectedTicket.id && <Loader2 size={14} className="animate-spin" />}
-                  <RefreshCw size={14} /> Reboot Node
+                <button onClick={() => setSelectedTicket(null)} className="flex-1 py-3 bg-muted text-text-primary rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-muted/80 transition-colors">
+                  Close
                 </button>
-                <button onClick={() => handleIssueToken(selectedTicket.id)} disabled={issuingTokenId === selectedTicket.id} className="flex-1 py-3 bg-warning text-primary-foreground rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-warning/90 disabled:opacity-50 flex items-center justify-center gap-2">
-                  {issuingTokenId === selectedTicket.id && <Loader2 size={14} className="animate-spin" />}
-                  <KeyRound size={14} /> Issue Temp Token
-                </button>
-                <button onClick={() => handleMarkResolved(selectedTicket.id)} disabled={resolvingTicketId === selectedTicket.id} className="flex-1 py-3 bg-success text-primary-foreground rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-success/90 disabled:opacity-50 flex items-center justify-center gap-2">
-                  {resolvingTicketId === selectedTicket.id && <Loader2 size={14} className="animate-spin" />}
-                  <CircleCheck size={14} /> Mark Resolved
-                </button>
+                {rawStatus !== 'RESOLVED' && (
+                  <button onClick={() => handleMarkResolved(selectedTicket.id)} disabled={resolvingTicketId === selectedTicket.id} className="flex-1 py-3 bg-success text-primary-foreground rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-success/90 disabled:opacity-50 flex items-center justify-center gap-2">
+                    {resolvingTicketId === selectedTicket.id && <Loader2 size={14} className="animate-spin" />}
+                    <CircleCheck size={14} /> Mark Resolved
+                  </button>
+                )}
               </div>
             </motion.div>
           </div>
-        )}
+          );
+        })()}
       </AnimatePresence>
 
     </div>

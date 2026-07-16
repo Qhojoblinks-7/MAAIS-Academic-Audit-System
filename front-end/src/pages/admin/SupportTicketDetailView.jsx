@@ -46,6 +46,16 @@ export function SupportTicketDetailView() {
     return null;
   }
 
+  const nameFromProfile = (profile) =>
+    profile ? `${profile.firstName || ''} ${profile.lastName || ''}`.trim() : '';
+  const creator = ticket.createdBy;
+  const submittedBy =
+    nameFromProfile(ticket.student) ||
+    nameFromProfile(creator?.staffProfile || creator?.studentProfile) ||
+    creator?.email ||
+    ticket.user ||
+    'Unknown User';
+
   return (
     <div className="flex-1 overflow-y-auto bg-background p-6 scrollbar-hide">
       <div className="max-w-4xl mx-auto">
@@ -74,10 +84,10 @@ export function SupportTicketDetailView() {
                   </div>
                   <div>
                     <p className="text-text-secondary text-sm">Submitted By</p>
-                    <p className="text-2xl font-bold text-text-primary">{ticket.student?.name || ticket.user || 'System'}</p>
+                    <p className="text-2xl font-bold text-text-primary">{submittedBy}</p>
                   </div>
                 </div>
-                <p className="text-text-primary">{ticket.subject || ticket.issue || '—'}</p>
+                <p className="text-text-primary">{ticket.title || ticket.subject || ticket.issue || '—'}</p>
                 <div className="mt-4 flex flex-wrap gap-4 text-sm">
                   <div className="flex items-center gap-2">
                     <Calendar size={16} className="text-text-secondary" />

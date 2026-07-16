@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import {
   ArrowRight, AlertTriangle, CheckCircle2, Search,
   Clock, Calendar, Sparkles, SlidersHorizontal, Inbox,
@@ -17,6 +17,25 @@ import { Textarea } from '../../components/ui/textarea';
 
 const OBS_TYPES = ['Behavioral', 'Academic', 'Lab Safety', 'Collaboration', 'Punctuality'];
 const OBS_COLORS = ['#1D4D4F', '#f59e0b', '#ef4444', '#3b82f6', '#a855f7'];
+
+function normalizeObservation(obs) {
+  const rawDate = obs.updatedAt || obs.createdAt || obs.date;
+  const parsedDate = rawDate ? new Date(rawDate).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+
+  return {
+    id: obs.id,
+    studentId: obs.studentId,
+    student: obs.student || 'Unknown',
+    index: obs.index || '',
+    class: obs.class || 'Unknown Class',
+    teacher: obs.teacher || 'Unknown',
+    hod: obs.hod || 'Unknown',
+    type: obs.type || 'Unknown Subject',
+    status: obs.status || 'Missing',
+    comment: obs.comment || '',
+    date: Number.isNaN(new Date(parsedDate).getTime()) ? new Date().toISOString().slice(0, 10) : parsedDate,
+  };
+}
 
 function ConfirmModal({ isOpen, onConfirm, onCancel, title, message }) {
   return (
@@ -75,63 +94,42 @@ function CreateObsModal({ isOpen, onClose, onSave, editingObs, disabled = false 
 
   const canSave = student.trim() && comment.trim();
 
+  if (!isOpen) return null;
+
   return (
-    <React.Fragment>
-      {isOpen && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-muted/60 backdrop-blur-sm animate-in fade-in"
-          onClick={onClose}
-        />
-        <div
-          className="relative w-full max-w-lg bg-card rounded-3xl shadow-2xl overflow-hidden z-10 animate-in fade-in zoom-in-97 slide-in-from-bottom-4"
-        >
-            <div className="px-8 py-6 border-b border-border flex justify-between items-center">
-              <h3 className="text-lg font-black text-foreground">{editingObs ? 'Edit Observation' : 'New Observation'}</h3>
-              <Button variant="ghost" size="icon" onClick={onClose}><X size={20} /></Button>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-muted/60 backdrop-blur-sm animate-in fade-in" onClick={onClose} />
+      <div className="relative w-full max-w-lg bg-card rounded-3xl shadow-2xl overflow-hidden z-10 animate-in fade-in zoom-in-97 slide-in-from-bottom-4">
+        <div className="px-8 py-6 border-b border-border flex justify-between items-center">
+          <h3 className="text-lg font-black text-foreground">{editingObs ? 'Edit Observation' : 'New Observation'}</h3>
+          <Button variant="ghost" size="icon" onClick={onClose}><X size={20} /></Button>
+        </div>
+        <div className="p-8 space-y-5">
+          {formFields.map((field) => (
+            <div key={field.label}>
+              <label className="block text-xs font-black text-muted-foreground uppercase tracking-widest mb-2">{field.label}</label>
+              {field.type === 'select' ? (
+                <select value={field.value} onChange={(e) => field.onChange(e.target.value)} className="w-full px-5 py-3.5 bg-muted border border-border rounded-xl text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/10">
+                  {field.options?.map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
+              ) : (
+                <Input type="text" placeholder={field.placeholder} value={field.value} onChange={(e) => field.onChange(e.target.value)} className="w-full px-5 py-3.5 font-medium focus:ring-2 focus:ring-brand-primary/10" />
+              )}
             </div>
-             <div className="p-8 space-y-5">
-               {formFields.map((field) => (
-                 <div key={field.label}>
-                   <label className="block text-xs font-black text-muted-foreground uppercase tracking-widest mb-2">{field.label}</label>
-                   {field.type === 'select' ? (
-                     <select value={field.value} onChange={(e) => field.onChange(e.target.value)}
-                       className="w-full px-5 py-3.5 bg-muted border border-border rounded-xl text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/10">
-                       {field.options?.map((o) => <option key={o} value={o}>{o}</option>)}
-                     </select>
-                   ) : (
-                     <Input type="text" placeholder={field.placeholder} value={field.value} onChange={(e) => field.onChange(e.target.value)}
-                       className="w-full px-5 py-3.5 font-medium focus:ring-2 focus:ring-brand-primary/10" />
-                   )}
-                 </div>
-               ))}
-               <div>
-                <label className="block text-xs font-black text-muted-foreground uppercase tracking-widest mb-2">Comment</label>
-                <Textarea
-                  placeholder="Describe the observation in detail…"
-                  rows={4}
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  className="w-full px-5 py-3.5 font-medium resize-none focus:ring-2 focus:ring-brand-primary/10"
-                />
-              </div>
-            </div>
-            <div className="px-8 py-5 border-t border-border flex justify-end gap-3 bg-muted/50">
-              <Button variant="outline" onClick={onClose}>Cancel</Button>
-              <Button
-                onClick={() => canSave && onSave({ ...editingObs, type, student, index, class: className, comment, date: editingObs?.date || new Date().toISOString().slice(0, 10), status: editingObs?.status || 'Active' })}
-                className={cn("font-black uppercase tracking-widest shadow-lg gap-2",
-                  canSave ? 'bg-brand-primary hover:bg-brand-primary/90 text-white' : 'bg-muted text-muted-foreground cursor-not-allowed')}
-                disabled={disabled || !canSave}
-              >
-                <PenLine size={14} /> {editingObs ? 'Save Changes' : 'Save Observation'}
-              </Button>
-            </div>
+          ))}
+          <div>
+            <label className="block text-xs font-black text-muted-foreground uppercase tracking-widest mb-2">Comment</label>
+            <Textarea placeholder="Describe the observation in detail…" rows={4} value={comment} onChange={(e) => setComment(e.target.value)} className="w-full px-5 py-3.5 font-medium resize-none focus:ring-2 focus:ring-brand-primary/10" />
           </div>
         </div>
-      )}
-
-    </React.Fragment>
+        <div className="px-8 py-5 border-t border-border flex justify-end gap-3 bg-muted/50">
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => canSave && onSave({ ...editingObs, type, student, index, class: className, comment, date: editingObs?.date || new Date().toISOString().slice(0, 10), status: editingObs?.status || 'Active' })} className={cn("font-black uppercase tracking-widest shadow-lg gap-2", canSave ? 'bg-brand-primary hover:bg-brand-primary/90 text-white' : 'bg-muted text-muted-foreground cursor-not-allowed')} disabled={disabled || !canSave}>
+            <PenLine size={14} /> {editingObs ? 'Save Changes' : 'Save Observation'}
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -145,6 +143,14 @@ export function TeacherMissingObservations() {
   const [obsTypeFilter, setObsTypeFilter] = useState('All');
   const [missingObservations, setMissingObservations] = useState([]);
   const [loggedObservations, setLoggedObservations] = useState([]);
+  const [missingPage, setMissingPage] = useState(1);
+  const [missingLimit] = useState(20);
+  const [missingTotal, setMissingTotal] = useState(0);
+  const [missingPages, setMissingPages] = useState(0);
+  const [logsPage, setLogsPage] = useState(1);
+  const [logsLimit] = useState(20);
+  const [logsTotal, setLogsTotal] = useState(0);
+  const [logsPages, setLogsPages] = useState(0);
   const [showCreate, setShowCreate] = useState(false);
   const [editingObs, setEditingObs] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -170,67 +176,26 @@ export function TeacherMissingObservations() {
     setBreadcrumb([{ label: 'Compliance Observations', path: '/missing-observations' }, { label: tabLabel, path: null }]);
   }, [activeTab, setBreadcrumb]);
 
-  const normalizeObservation = (obs) => {
-    const rawDate = obs.updatedAt || obs.createdAt || obs.date;
-    const parsedDate = rawDate ? new Date(rawDate).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
-
-    return {
-      id: obs.id,
-      studentId: obs.studentId,
-      student: obs.student || 'Unknown',
-      index: obs.index || '',
-      class: obs.class || 'Unknown Class',
-      teacher: obs.teacher || 'Unknown',
-      hod: obs.hod || 'Unknown',
-      type: obs.type || 'Unknown Subject',
-      status: obs.status || 'Missing',
-      comment: obs.comment || '',
-      date: Number.isNaN(new Date(parsedDate).getTime()) ? new Date().toISOString().slice(0, 10) : parsedDate,
-    };
-  };
-
-  const toObservationArray = (response) => {
-    if (Array.isArray(response)) return response;
-    if (Array.isArray(response?.data)) return response.data;
-    if (Array.isArray(response?.items)) return response.items;
-    if (Array.isArray(response?.observations)) return response.observations;
-    return [];
-  };
-
-  const buildObservationPayload = (obs) => {
-    const payload = {
-      gradeEntryId: obs.id,
-      comment: obs.comment || '',
-      observationText: obs.comment || '',
-    };
-    if (!payload.gradeEntryId) {
-      payload.index = obs.index;
-      payload.class = obs.class;
-      payload.type = obs.type;
-      payload.subject = obs.type;
-      payload.subjectName = obs.type;
-      payload.className = obs.class;
-      payload.studentIndex = obs.index;
-    }
-    return payload;
-  };
-
-  const fetchObservations = async () => {
+  const fetchObservations = useCallback(async () => {
     setError('');
     setIsLoading(true);
 
     try {
       const fetchEndpoint = async (label, getter) => {
         try {
-          return getter ? toObservationArray(await getter()) : [];
+          const result = await getter ? getter() : [];
+          if (result && typeof result === 'object' && !Array.isArray(result) && 'data' in result) {
+            return result;
+          }
+          return Array.isArray(result) ? { data: result, total: result.length, page: 1, limit: 50, pages: 1 } : { data: [], total: 0, page: 1, limit: 50, pages: 0 };
         } catch (err) {
           return { error: `${label}: ${err?.message || 'Request failed'}` };
         }
       };
 
       const [missingResult, logsResult] = await Promise.all([
-        fetchEndpoint('Missing observations', teacherService.getMissingObservations),
-        fetchEndpoint('Observation logs', teacherService.getObservationLogs),
+        fetchEndpoint('Missing observations', () => teacherService.getMissingObservations(missingPage, missingLimit)),
+        fetchEndpoint('Observation logs', () => teacherService.getObservationLogs(logsPage, logsLimit)),
       ]);
 
       const partialErrors = [missingResult, logsResult].filter((result) => result?.error);
@@ -238,15 +203,16 @@ export function TeacherMissingObservations() {
         setError(partialErrors.map((result) => result.error).join('; '));
       }
 
-      const missing = Array.isArray(missingResult) ? missingResult.map(normalizeObservation).filter((obs) => obs.id) : [];
-      const logs = Array.isArray(logsResult) ? logsResult.map(normalizeObservation).filter((obs) => obs.id) : [];
-
-      console.log('[TeacherMissingObservations] fetched missing:', missing.length, missing.slice(0, 2));
-      console.log('[TeacherMissingObservations] fetched logs:', logs.length, logs.slice(0, 2));
+      const missing = Array.isArray(missingResult?.data) ? missingResult.data.map(normalizeObservation).filter((obs) => obs.id) : [];
+      const logs = Array.isArray(logsResult?.data) ? logsResult.data.map(normalizeObservation).filter((obs) => obs.id) : [];
 
       setMissingObservations(missing);
       setLoggedObservations(logs);
-      setMissingObservationCount(missing.length);
+      setMissingObservationCount(missingResult?.total || missing.length);
+      setMissingTotal(missingResult?.total || 0);
+      setMissingPages(missingResult?.pages || 1);
+      setLogsTotal(logsResult?.total || 0);
+      setLogsPages(logsResult?.pages || 1);
     } catch (err) {
       setMissingObservations([]);
       setLoggedObservations([]);
@@ -255,11 +221,16 @@ export function TeacherMissingObservations() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [missingPage, missingLimit, logsPage, logsLimit, normalizeObservation]);
 
   useEffect(() => {
     fetchObservations();
-  }, []);
+  }, [fetchObservations]);
+
+  useEffect(() => {
+    setMissingPage(1);
+    setLogsPage(1);
+  }, [activeTab]);
 
   const sourceObservations = activeTab === 'missing'
     ? missingObservations
@@ -539,9 +510,40 @@ export function TeacherMissingObservations() {
                       );
                     })
                    )}
-               </div>
-            </div>
-          )}
+                </div>
+
+                {!isLoading && (activeTab === 'missing' ? missingTotal > missingLimit : logsTotal > logsLimit) && (
+                  <div className="px-5 py-3 border-t border-border bg-muted/20 flex items-center justify-between shrink-0">
+                    <div className="text-xs font-medium text-secondary">
+                      {activeTab === 'missing' ? (
+                        <>Showing {(missingPage - 1) * missingLimit + 1}–{Math.min(missingPage * missingLimit, missingTotal)} of {missingTotal}</>
+                      ) : (
+                        <>Showing {(logsPage - 1) * logsLimit + 1}–{Math.min(logsPage * logsLimit, logsTotal)} of {logsTotal}</>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => activeTab === 'missing' ? setMissingPage(p => Math.max(1, p - 1)) : setLogsPage(p => Math.max(1, p - 1))}
+                        disabled={(activeTab === 'missing' ? missingPage : logsPage) <= 1}
+                        className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-border bg-surface hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-xs font-bold text-primary">
+                        {activeTab === 'missing' ? missingPage : logsPage} / {activeTab === 'missing' ? missingPages : logsPages}
+                      </span>
+                      <button
+                        onClick={() => activeTab === 'missing' ? setMissingPage(p => Math.min(missingPages, p + 1)) : setLogsPage(p => Math.min(logsPages, p + 1))}
+                        disabled={(activeTab === 'missing' ? missingPage : logsPage) >= (activeTab === 'missing' ? missingPages : logsPages)}
+                        className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-border bg-surface hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
+             </div>
+           )}
         </div>
       </main>
 

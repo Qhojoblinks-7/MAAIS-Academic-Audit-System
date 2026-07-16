@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { User, Save, Fingerprint, Bell } from 'lucide-react';
@@ -125,7 +125,7 @@ export function StudentSettings() {
               <div>
                 <label className="text-[9px] font-black text-text-secondary uppercase tracking-[0.15em] mb-1.5 block">Index Number</label>
                 <div className="px-4 py-3 bg-background border border-border rounded-xl text-sm font-black font-mono text-text-secondary select-all">
-                  {studentData?.student?.indexNumber || '—'}
+                  {studentData?.student?.indexNumber || '�'}
                 </div>
               </div>
               
@@ -133,15 +133,15 @@ export function StudentSettings() {
                 <label className="text-[9px] font-black text-text-secondary uppercase tracking-[0.15em] mb-1.5 block">Current Class</label>
                 <div className="px-4 py-3 bg-background border border-border rounded-xl text-sm font-black text-text-secondary">
                   {studentData?.student?.currentClass ? 
-                    `${studentData?.student?.currentClass?.level?.replace('FORM_', '')} ${studentData?.student?.department?.name || ''} ${studentData?.student?.currentClass?.name?.replace(/^\d+/, '') || ''}`.replace(/\s+/g, ' ').trim() || '—'
-                    : '—'}
+                    `${studentData?.student?.currentClass?.level?.replace('FORM_', '')} ${studentData?.student?.department?.name || ''} ${studentData?.student?.currentClass?.name?.replace(/^\d+/, '') || ''}`.replace(/\s+/g, ' ').trim() || '�'
+                    : '�'}
                 </div>
               </div>
               
               <div>
                 <label className="text-[9px] font-black text-text-secondary uppercase tracking-[0.15em] mb-1.5 block">Program</label>
                 <div className="px-4 py-3 bg-background border border-border rounded-xl text-sm font-black text-text-secondary">
-                  {studentData?.student?.department?.name || '—'}
+                  {studentData?.student?.department?.name || '�'}
                 </div>
               </div>
             </div>

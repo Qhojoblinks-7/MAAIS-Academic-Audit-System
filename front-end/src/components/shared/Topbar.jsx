@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Search, Lock, User as UserIcon, X, ShieldCheck, Menu, Users, GraduationCap, UserCheck, UserCog } from "lucide-react";
+import { Search, Lock, User as UserIcon, X, ShieldCheck, Menu, Users, GraduationCap, UserCheck, UserCog, KeyRound } from "lucide-react";
 import { useRole } from "../../context/RoleContext";
+import { useChangePassword } from "../../components/auth/PasswordChangeProvider";
 import { useLocation, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useUI } from "../../context/UIContext";
 import { useBreadcrumb } from "../../context/BreadcrumbContext";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from "../../lib/utils";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "../ui/breadcrumb";
 import { Input } from "../ui/input";
@@ -161,6 +162,7 @@ function BreadcrumbNav({ compact = false }) {
 
 export function Topbar() {
   const { user, setRole } = useRole();
+  const { openChangePassword } = useChangePassword();
   const { isDraftMode, setIsDraftMode, setMobileMenuOpen } = useUI();
   const location = useLocation();
   const navigate = useNavigate();
@@ -387,6 +389,18 @@ export function Topbar() {
 
         <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-border shrink-0">
           <NotificationBell />
+
+          {user?.mustChangePassword && (
+            <Button
+              size="sm"
+              onClick={openChangePassword}
+              title="Change your password"
+              className="hidden sm:inline-flex h-8 gap-1.5 bg-amber-500 text-amber-950 hover:bg-amber-600"
+            >
+              <KeyRound size={14} />
+              Change password
+            </Button>
+          )}
 
           <div className="hidden sm:flex flex-col text-right min-w-0 max-w-[100px]">
             <p className="text-xs font-bold text-text-primary truncate">{user?.name}</p>

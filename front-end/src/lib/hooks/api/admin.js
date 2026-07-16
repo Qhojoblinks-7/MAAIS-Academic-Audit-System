@@ -60,6 +60,22 @@ export function useCreateStaff() {
   });
 }
 
+export function useBulkImportStaff() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (staff) => adminApi.bulkImportStaff(staff),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'staff'] }),
+  });
+}
+
+export function useUpdateStaff() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }) => adminApi.updateStaff(id, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'staff'] }),
+  });
+}
+
 export function useCreateStudent() {
   const qc = useQueryClient();
   return useMutation({

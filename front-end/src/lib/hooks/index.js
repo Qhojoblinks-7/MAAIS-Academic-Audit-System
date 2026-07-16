@@ -129,6 +129,8 @@ export {
   useCreateBehavior,
   useAdminAuditLogs,
   useResetStaffCredentials,
+  useBulkImportStaff,
+  useUpdateStaff,
   useSystemFreeze,
   useToggleSystemFreeze,
  useLockTerm,

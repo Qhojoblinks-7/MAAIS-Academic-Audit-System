@@ -60,16 +60,25 @@ export function StaffTabContent({
           >
             {/* Staff Profile Node Info */}
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-muted/20 border border-border flex items-center justify-center text-foreground/50 font-black text-[10px] shrink-0 select-none group-hover:bg-success/10 group-hover:text-success transition-colors">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 rounded-lg bg-muted/20 border border-border flex items-center justify-center text-foreground/50 font-black text-[10px] sm:text-[12px] lg:text-[14px] shrink-0 select-none group-hover:bg-success/10 group-hover:text-success transition-colors">
                 {initials}
               </div>
               <div className="min-w-0">
-                <p className="text-[11px] font-bold text-foreground leading-tight truncate">
+                <p className="text-[clamp(12px,1vw+8px,15px)] font-bold text-foreground leading-tight truncate">
                   {member.name}
                 </p>
-                <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider truncate font-mono mt-0.5">
+                <p className="text-[clamp(9px,0.7vw+6px,12px)] font-bold text-muted-foreground uppercase tracking-wider truncate font-mono mt-0.5">
                   {member.role}
                 </p>
+                {member.subjects && member.subjects.length > 0 ? (
+                  <p className="text-[clamp(9px,0.6vw+7px,11px)] font-medium text-muted-foreground truncate mt-1">
+                    Teaches: {member.subjects.map((sub) => sub.name).join(', ')}
+                  </p>
+                ) : (
+                  <p className="text-[clamp(9px,0.6vw+7px,11px)] font-medium text-muted-foreground/70 italic truncate mt-1">
+                    No subjects assigned
+                  </p>
+                )}
               </div>
             </div>
 

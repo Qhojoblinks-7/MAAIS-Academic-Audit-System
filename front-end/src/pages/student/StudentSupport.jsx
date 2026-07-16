@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Scale, QrCode, CheckCircle2, Clock, ArrowRight, X, Star, Send } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -60,7 +60,7 @@ export function StudentSupport() {
               ICT Support Centre
             </h1>
             <p className="text-[9px] sm:text-[10px] font-black text-text-secondary uppercase tracking-widest mt-1 block leading-normal whitespace-normal">
-              Raise tickets • track requests • view resolution history
+              Raise tickets � track requests � view resolution history
             </p>
           </header>
 
