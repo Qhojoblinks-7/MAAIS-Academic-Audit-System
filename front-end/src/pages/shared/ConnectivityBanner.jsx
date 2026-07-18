@@ -70,7 +70,7 @@ export function ConnectivityBanner() {
                   </span>
                   <Wifi size={14} className="text-emerald-400" />
                 </div>
-                <span>Network Stable • Secured handshake with academic engine. Changes are synced instantly in real-time.</span>
+                 <span>Network Stable • Connected to the academic server. Changes are synced instantly in real-time.</span>
                 <div className="flex items-center gap-3 ml-4">
                   <span className="text-[9px] font-mono text-emerald-300/80">{latency ? `${latency}ms` : '—'}</span>
                   <button

@@ -63,10 +63,7 @@ export function DirectMessaging({ userId, userRole, counterpartRole = 'HOD' }) {
     if (!currentUserId) return;
     
     try {
-      // In a real implementation, this would fetch from an API
-      // For now, we'll use mock data or empty array
-      const mockMessages = [];
-      setMessages(mockMessages);
+      setMessages([]);
     } catch (err) {
       console.error('Failed to load direct messages:', err);
       setMessages([]);

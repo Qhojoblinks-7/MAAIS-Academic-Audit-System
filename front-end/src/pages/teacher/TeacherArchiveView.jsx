@@ -158,7 +158,7 @@ export function TeacherArchiveView() {
   }, [teacherId]);
 
   useEffect(() => {
-    const tabLabel = activeSubTab === 'REGISTRY' ? 'Registry' : activeSubTab === 'INTERVENTIONS' ? 'Interventions' : 'Observation Summary';
+    const tabLabel = activeSubTab === 'REGISTRY' ? 'Records' : activeSubTab === 'INTERVENTIONS' ? 'Interventions' : 'Observation Summary';
     const crumbs = [{ label: 'My Teaching Archive', path: '/teacher/archive' }, { label: tabLabel, path: null }];
     if (selectedStudent) {
       crumbs.push({ label: selectedStudent.name, path: null });
@@ -218,7 +218,7 @@ export function TeacherArchiveView() {
         <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-xs z-50 flex items-center justify-center">
           <div className="text-center space-y-3 bg-white p-6 rounded-2xl border shadow-sm">
             <div className="w-6 h-6 border-2 border-slate-900 border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-xs font-bold tracking-widest text-slate-800 uppercase">Syncing Archive Vault...</p>
+            <p className="text-xs font-bold tracking-widest text-slate-800 uppercase">Syncing Academic Archive...</p>
           </div>
         </div>
       )}
@@ -362,7 +362,7 @@ export function TeacherArchiveView() {
                   <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
                     <header className="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
                       <div>
-                        <h4 className="text-xs font-black text-slate-900 uppercase tracking-wide">Cohort Dossiers Vault</h4>
+                        <h4 className="text-xs font-black text-slate-900 uppercase tracking-wide">Cohort Records Archive</h4>
                         <p className="text-xs text-slate-400 font-medium mt-0.5">Read-Only qualitative diaries and finalized transcripts.</p>
                       </div>
                       <div className="text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-lg px-2.5 py-1 shadow-2xs">
@@ -521,7 +521,7 @@ export function TeacherArchiveView() {
                  >
                   <div>
                     <h3 className="text-xs font-black text-slate-900 uppercase tracking-wide">Historical Qualitative Observations</h3>
-                    <p className="text-xs text-slate-400 font-medium mt-0.5">Registry of developmental progress reports and performance logs locked in previous years.</p>
+                    <p className="text-xs text-slate-400 font-medium mt-0.5">Archive of developmental progress reports and performance logs from previous years.</p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

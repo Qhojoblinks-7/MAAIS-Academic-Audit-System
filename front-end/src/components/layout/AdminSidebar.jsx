@@ -67,7 +67,7 @@ export function AdminSidebar() {
   const adminMenu = [
     { 
       icon: LayoutDashboard, 
-      label: 'Pulse', 
+      label: 'Dashboard', 
       id: 'dashboard', 
       path: '/' 
     },
@@ -78,13 +78,13 @@ export function AdminSidebar() {
       subItems: [
         { label: 'Staff Directory', path: '/identity/staff' },
         { label: 'Department Structure', path: '/identity/departments' },
-        { label: 'Student Registry', path: '/identity/students' },
-        { label: 'Parent Registry', path: '/identity/parents' }
+        { label: 'Student Records', path: '/identity/students' },
+        { label: 'Parent Records', path: '/identity/parents' }
       ]
     },
     { 
       icon: Cpu, 
-      label: 'Engine Room', 
+      label: 'Curriculum', 
       id: 'architect', 
       subItems: [
         { label: 'Subject Curriculum', path: '/academic-architect' },
@@ -99,7 +99,7 @@ export function AdminSidebar() {
     },
     { 
       icon: ShieldCheck, 
-      label: 'Vault', 
+      label: 'Administration', 
       id: 'vault', 
       subItems: [
         { label: 'User Permissions', path: '/system' },
@@ -212,7 +212,7 @@ export function AdminSidebar() {
           <button 
             onClick={() => setSupportModalOpen(true)}
             className="p-3 rounded-2xl text-text-secondary hover:bg-surface hover:text-text-primary transition-all duration-200 w-12 h-12 flex items-center justify-center"
-            title="ICT System Help"
+            title="Help & Support"
           >
             <LifeBuoy size={22} />
           </button>
@@ -220,7 +220,7 @@ export function AdminSidebar() {
           <button 
             onClick={() => setSettingsModalOpen(true)}
             className="p-3 rounded-2xl text-text-secondary hover:bg-surface hover:text-text-primary transition-all duration-200 w-12 h-12 flex items-center justify-center"
-            title="System Configuration"
+            title="Settings"
           >
             <Settings size={22} />
           </button>
@@ -305,7 +305,7 @@ export function AdminSidebar() {
                   </div>
                 </div>
                 <div className="bg-muted py-3.5 text-center border-t border-border">
-                  <p className="text-xs font-bold text-text-secondary uppercase tracking-widest opacity-80">Technical Protocol Secure</p>
+                   <p className="text-xs font-bold text-text-secondary uppercase tracking-widest opacity-80">Secure Session</p>
                 </div>
               </Card>
             </motion.div>

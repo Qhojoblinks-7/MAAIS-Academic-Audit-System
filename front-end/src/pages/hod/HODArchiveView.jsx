@@ -132,8 +132,8 @@ export function HODArchiveView() {
   }, [selectedStudentId, vaultSearchResult]);
 
   useEffect(() => {
-    const tabLabel = activeSubTab === 'VAULT' ? 'Vault' : activeSubTab === 'PROMOTION' ? 'Promotion' : 'Compliance';
-    const crumbs = [{ label: 'Department Vault', path: '/hod/archive' }, { label: tabLabel, path: null }];
+    const tabLabel = activeSubTab === 'VAULT' ? 'Archive' : activeSubTab === 'PROMOTION' ? 'Promotion' : 'Compliance';
+    const crumbs = [{ label: 'Department Archive', path: '/hod/archive' }, { label: tabLabel, path: null }];
     if (selectedStudent) {
       crumbs.push({ label: selectedStudent.name, path: null });
     }

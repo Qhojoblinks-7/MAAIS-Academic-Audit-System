@@ -18,7 +18,7 @@ export function BlueprintTreeView({
   onCreateYear,
   onCreateClassroom,
   studentAvatarsByClass = {},
-  programs = ['Science', 'General Arts', 'Business', 'Home Economics', 'Visual Arts']
+  programs = ['Science', 'General Arts', 'Business', 'Home Economics', 'Technical']
 }) {
   const [showYearModal, setShowYearModal] = useState(false);
   const [showClassroomModal, setShowClassroomModal] = useState(false);
@@ -516,7 +516,7 @@ export function BlueprintTreeView({
                             <span className="text-xs font-black uppercase tracking-widest">{program.name}</span>
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">{program.classrooms.length} Structural Nodes</span>
+                            <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">{program.classrooms.length} Classes</span>
                             {expandedPrograms.includes(program.id) ? <ChevronDown size={14} className="text-success/60" /> : <ChevronRight size={14} className="text-muted-foreground" />}
                           </div>
                         </div>
@@ -836,7 +836,7 @@ export function BlueprintTreeView({
                 </div>
               </div>
 
-              <div className="p-8 overflow-y-auto space-y-4 flex-1">
+              <div className="p-8 overflow-y-auto scrollbar-hide space-y-4 flex-1">
                 {restructureData.programs.map((p) => (
                   <div key={p.key} className="rounded-2xl border border-border p-4">
                     <div className="flex items-center justify-between mb-3 gap-3">
@@ -938,7 +938,7 @@ export function BlueprintTreeView({
                 </div>
               </div>
 
-              <div className="p-8 overflow-y-auto space-y-5 flex-1">
+              <div className="p-8 overflow-y-auto scrollbar-hide space-y-5 flex-1">
                 <div>
                   <label className="block text-xs font-bold text-foreground/70 mb-2 uppercase tracking-wider">Destination Classroom Unit</label>
                   <select

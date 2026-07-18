@@ -11,14 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '../../components/molecules';
 import { Card } from '@/components/ui/card';
-
-const mockObservations = [
-  { id: 'o1', student: 'Angela Owusu', index: '001', class: 'SHS 1 Agric B', type: 'Lab Safety', teacher: 'R. Owusu', status: 'Missing', date: '2026-01-15' },
-  { id: 'o2', student: 'Kwame Mensah', index: '002', class: 'SHS 1 Agric B', type: 'Behavioral', teacher: 'M. Baah', status: 'Logged', date: '2026-01-14' },
-  { id: 'o3', student: 'Yaw Boateng', index: '003', class: 'SHS 1 Agric B', type: 'Resource Economy', teacher: 'A. Boateng', status: 'Missing', date: '2026-01-12' },
-  { id: 'o4', student: 'Esi Ansah', index: '004', class: 'SHS 1 Agric B', type: 'Hygienic Practices', teacher: 'E. Aidoo', status: 'Logged', date: '2026-01-10' },
-  { id: 'o5', student: 'Kofi Appiah', index: '005', class: 'SHS 1 Agric B', type: 'Lab Safety', teacher: 'S. K. Mensah', status: 'Missing', date: '2026-01-08' },
-];
+import { useMissingObservations } from '@/lib/hooks';
 
 export function HODMissingObservations() {
   const { setBreadcrumb } = useBreadcrumb();
@@ -27,7 +20,8 @@ export function HODMissingObservations() {
   const [activeTab, setActiveTab] = useState('missing');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Deep-link via URL params: ?student=X or ?index=X or ?tab=X
+  const { data: observations = [], isLoading } = useMissingObservations();
+
   useEffect(() => {
     const urlStudent = searchParams.get('student');
     const urlIndex = searchParams.get('index');
@@ -36,7 +30,6 @@ export function HODMissingObservations() {
     if (urlTab) {
       setActiveTab(urlTab);
     } else if (urlStudent || urlIndex) {
-      // Auto-set activeTab to missing when a student/index is provided
       setActiveTab('missing');
     }
 
@@ -52,15 +45,29 @@ export function HODMissingObservations() {
     setBreadcrumb([{ label: 'Compliance Observations', path: '/missing-observations' }, { label: tabLabel, path: null }]);
   }, [activeTab, setBreadcrumb]);
 
-  // Structured inline data matching compute layer
+  const normalizedObservations = useMemo(() => {
+    return observations.map((obs) => ({
+      id: obs.id,
+      student: `${obs.student?.firstName || ''} ${obs.student?.lastName || ''}`.trim() || 'Unknown',
+      index: obs.student?.indexNumber || '',
+      class: obs.student?.currentClass?.name || 'Unknown Class',
+      type: obs.subject?.name || 'Unknown Subject',
+      teacher: obs.teacher || 'Unknown',
+      status: obs.hasObservation ? 'Logged' : 'Missing',
+      date: obs.updatedAt ? new Date(obs.updatedAt).toISOString().split('T')[0] : '—',
+      studentId: obs.studentId,
+      observationId: obs.id,
+    }));
+  }, [observations]);
+
   const filteredObservations = useMemo(() => {
-    return mockObservations.filter((obs) => {
-      const matchesTab = 
-        activeTab === 'all' ? true : 
-        activeTab === 'missing' ? obs.status === 'Missing' : 
+    return normalizedObservations.filter((obs) => {
+      const matchesTab =
+        activeTab === 'all' ? true :
+        activeTab === 'missing' ? obs.status === 'Missing' :
         obs.status === 'Logged';
 
-      const matchesSearch = 
+      const matchesSearch =
         obs.student.toLowerCase().includes(searchQuery.toLowerCase()) ||
         obs.class.toLowerCase().includes(searchQuery.toLowerCase()) ||
         obs.index.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -68,12 +75,20 @@ export function HODMissingObservations() {
 
       return matchesTab && matchesSearch;
     });
-  }, [activeTab, searchQuery]);
+  }, [normalizedObservations, activeTab, searchQuery]);
 
-  const missingCount = useMemo(() => 
-    mockObservations.filter(o => o.status === 'Missing').length, 
-    []
+  const missingCount = useMemo(() =>
+    normalizedObservations.filter(o => o.status === 'Missing').length,
+    [normalizedObservations]
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-background/50">
+        <div className="text-sm text-muted-foreground">Loading observations...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col min-h-0 w-full h-full bg-background/50 font-sans antialiased overflow-hidden">
@@ -154,7 +169,7 @@ export function HODMissingObservations() {
                 Observation Logs
               </div>
               <span className="text-[11px] font-medium text-muted-foreground">
-                Showing {filteredObservations.length} of {mockObservations.length} logs
+                Showing {filteredObservations.length} of {normalizedObservations.length} logs
               </span>
             </div>
 
@@ -214,7 +229,7 @@ export function HODMissingObservations() {
 
                         {/* RIGHT BOUND BLOCK: STATUS METRICS AND INTERACTIVE CTAS */}
                         <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-3 sm:pt-0 border-border shrink-0">
-                          
+                           
                           <div className="flex items-center gap-3">
                             <span className={cn(
                               "text-[10px] font-bold px-2 py-0.5 rounded border tracking-wide",
@@ -233,9 +248,8 @@ export function HODMissingObservations() {
 
                           <div className="w-8 flex justify-end">
                             {isMissing ? (
-                               // NOTE: HODs resolving observations is debatable — this navigates to grading sheet
-                                <Button
-                                   onClick={() => navigate(`/grading?missing=${obs.id}&studentId=${obs.studentId}&studentName=${encodeURIComponent(obs.student)}&index=${encodeURIComponent(obs.index)}&subject=${encodeURIComponent(obs.type)}&class=${encodeURIComponent(obs.class)}`)}
+                               <Button
+                                  onClick={() => navigate(`/grading?missing=${obs.observationId}&studentId=${obs.studentId}&studentName=${encodeURIComponent(obs.student)}&index=${encodeURIComponent(obs.index)}&subject=${encodeURIComponent(obs.type)}&class=${encodeURIComponent(obs.class)}`)}
                                   variant="outline"
                                   size="sm"
                                   className="p-1.5 transition-transform group-hover:translate-x-0.5"

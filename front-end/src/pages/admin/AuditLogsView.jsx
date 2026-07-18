@@ -112,10 +112,10 @@ export function AuditLogsView() {
               size="sm" 
               className="font-black uppercase tracking-widest text-muted-foreground"
             >
-              Export Registry
+               Export Audit Log
             </Button>
             <Button 
-              onClick={() => alert('Filter nodes functionality coming soon')}
+               onClick={() => alert('Filter records functionality coming soon')}
               variant="default" 
               size="sm" 
               className="font-black uppercase tracking-widest bg-success"
@@ -133,8 +133,8 @@ export function AuditLogsView() {
                 <TableRow className="bg-muted/30 border-b border-border">
                   <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">Timestamp</TableHead>
                   <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">Custodian</TableHead>
-                  <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">Biological Node</TableHead>
-                  <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">Action Protocol</TableHead>
+                  <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">Affected Record</TableHead>
+                  <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">Action Type</TableHead>
                   <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">Delta</TableHead>
                   <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">Justification</TableHead>
                 </TableRow>
@@ -161,7 +161,7 @@ export function AuditLogsView() {
                       </div>
                     </TableCell>
 
-                    {/* Target Node (Student/Subject) */}
+                     {/* Affected Record (Student/Subject) */}
                     <TableCell className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col">
                         <span className="text-[12px] font-black text-foreground tracking-tight">{log.studentName}</span>

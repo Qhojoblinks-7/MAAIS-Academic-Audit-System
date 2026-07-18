@@ -76,11 +76,11 @@ export function DepartmentManagementView({
             <header className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-4">
 <div className="w-12 h-12 bg-brand-primary text-primary-foreground rounded-2xl flex items-center justify-center">
-                   {type === "Registry Transfer" && <ArrowRight size={24} />}
+                    {type === "Transfer" && <ArrowRight size={24} />}
                    {type === "Credential Reset" && <RotateCcw size={24} />}
                    {type === "Audit Trail View" && <Search size={24} />}
                    {type === "Revoke Authority" && <ShieldCheck size={24} />}
-                   {type === "Deep Archive" && <Trash2 size={24} />}
+                    {type === "Deactivate Staff" && <Trash2 size={24} />}
                    {type === "Authorize Template Update" && <FileText size={24} />}
                  </div>
                 <div>
@@ -88,7 +88,7 @@ export function DepartmentManagementView({
                     {type}
                   </h3>
 <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest italic leading-none">
-                     {type === "Authorize Template Update" ? "Target:" : "Node:"} {staffName}
+                      {type === "Authorize Template Update" ? "Target:" : "Staff:"} {staffName}
                    </p>
                 </div>
               </div>
@@ -100,10 +100,11 @@ export function DepartmentManagementView({
               </button>
             </header>
 
-            {type === "Registry Transfer" && (
-              <div className="space-y-6">
-                <p className="text-sm font-medium text-foreground/60 leading-relaxed">
-                  Select the destination cluster for this faculty node. This
+            {type === "Transfer" && (
+
+              <div className="space-y-3">
+                <p className="text-[11px] text-text-secondary leading-relaxed">
+                  Select the destination department for this staff member. This
                   will relocate all associated academic history and current
                   assessment permissions.
                 </p>
@@ -121,7 +122,7 @@ export function DepartmentManagementView({
                             className={`w-1.5 h-6 rounded-full ${d.color}`}
                           />
                           <span className="text-sm font-black italic text-foreground">
-                            {d.name} Cluster
+                            {d.name} Department
                           </span>
                         </div>
                         <ChevronRight
@@ -154,7 +155,7 @@ export function DepartmentManagementView({
                     onClick={performCredentialReset}
                     className="w-full py-4 bg-brand-primary text-primary-foreground font-black rounded-2xl text-xs uppercase tracking-widest hover:bg-brand-primary/90 transition-all shadow-xl shadow-brand-primary/20 cursor-pointer"
                   >
-                    Authorize Reset Protocol
+                     Authorize Password Reset
                   </button>
                 </div>
               </div>
@@ -207,17 +208,17 @@ export function DepartmentManagementView({
                </div>
              )}
 
-             {type === "Deep Archive" && (
+             {type === "Deactivate Staff" && (
                <div className="space-y-8 text-center">
                  <div className="p-6 bg-brand-primary text-primary-foreground rounded-[2rem] text-left">
                    <p className="text-xs font-black text-primary-foreground/40 uppercase tracking-[0.2em] mb-3">
-                     Protocol Implications
+                      What happens next
                    </p>
                    <ul className="space-y-3">
                      {[
                        "Preservation of academic records",
                        "Inactivation of login permissions",
-                       "Node removal from active registry",
+                        "Removal from active staff list",
                      ].map((text, i) => (
                        <li
                          key={i}
@@ -273,7 +274,7 @@ export function DepartmentManagementView({
           </div>
           <div className="bg-muted/30 py-5 text-center border-t border-border">
             <p className="text-xs font-black text-muted-foreground uppercase tracking-[0.25em]">
-              Institutional Protocol: Level 4 Authorized
+               Authorized Administrative Action
             </p>
           </div>
         </motion.div>
@@ -375,11 +376,11 @@ export function DepartmentManagementView({
                   <ul className="space-y-2">
                     <li className="text-xs font-medium text-foreground/50 flex items-center gap-2 italic">
                       <div className="w-1 h-1 rounded-full bg-border" />
-                      validation of Cluster Assessment Matrices
+                       validation of Department Assessment Matrices
                     </li>
                     <li className="text-xs font-medium text-foreground/50 flex items-center gap-2 italic">
                       <div className="w-1 h-1 rounded-full bg-border" />
-                      Registry Certification Authority
+                       Department Administration
                     </li>
                   </ul>
                 </div>
@@ -550,7 +551,7 @@ export function DepartmentManagementView({
 
                 <div className="space-y-6">
                   <p className="text-sm font-medium text-foreground/60 leading-relaxed">
-                    Select a teacher from another department to transfer to this cluster.
+                     Select a teacher from another department to transfer to this team.
                   </p>
 <div className="grid grid-cols-1 gap-3 max-h-80 overflow-y-auto scrollbar-hide">
                     {transferModal?.availableStaff?.map((staff) => (

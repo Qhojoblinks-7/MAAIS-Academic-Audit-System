@@ -44,7 +44,7 @@ function TeacherProfileDetails({ teacher, onClose, onImpersonate, onResetPasswor
           </Button>
         </div>
 
-        {/* Identity Profile Node */}
+        {/* Teacher Profile */}
         <div className="bg-slate-50/80 border border-slate-200/60 rounded-2xl p-6 flex flex-col items-center justify-center relative shadow-3xs">
           <div className="relative mb-4">
             <div className="w-20 h-20 rounded-full bg-indigo-50 border-2 border-indigo-200 text-indigo-700 font-bold flex items-center justify-center text-2xl shadow-3xs">
@@ -239,7 +239,7 @@ export function HODTeachers() {
               <ArrowLeft size={14} />
             </Button>
             <div>
-              <h1 className="text-lg font-bold text-slate-900 tracking-tight">Faculty Registry</h1>
+              <h1 className="text-lg font-bold text-slate-900 tracking-tight">Faculty Directory</h1>
               <p className="text-xs text-slate-500 font-medium mt-0.5">Centralized operations control and authorization mapping matrix</p>
             </div>
           </div>

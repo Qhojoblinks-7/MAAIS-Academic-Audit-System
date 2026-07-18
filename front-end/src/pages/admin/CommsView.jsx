@@ -645,7 +645,7 @@ export function CommsView() {
                       </div>
                       <button className="w-full py-4 bg-brand-primary text-primary-foreground rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-brand-dark transition-all shadow-xl shadow-brand-primary/10 flex items-center justify-center gap-3">
                         <Plus size={16} />
-                        Append to Session Registry
+                         Append to Communication Log
                       </button>
                     </div>
                   </div>

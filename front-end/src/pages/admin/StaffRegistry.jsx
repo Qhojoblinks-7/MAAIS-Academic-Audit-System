@@ -445,9 +445,9 @@ export function StaffRegistry() {
       <header className="px-8 py-6 bg-surface border-b border-border flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-2xl font-black text-text-primary italic font-display tracking-tight leading-none mb-1">
-            Staff Directory
+            Staff Roster
           </h1>
-           <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Institutional Command Registry : {isLoading ? '...' : `${staff.length} Nodes`}</p>
+            <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Faculty &amp; Staff Records : {isLoading ? '...' : `${staff.length} Members`}</p>
         </div>
 
           <div className="flex items-center gap-3">
@@ -483,7 +483,7 @@ export function StaffRegistry() {
           <div className="relative w-96 flex items-center group shrink-0">
             <Search className="absolute left-4 text-text-secondary group-focus-within:text-text-primary transition-colors" size={18} />
             <Input
-              placeholder="Query Registry by Name or Employee ID..."
+              placeholder="Search staff by Name or Employee ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-6 py-3"
@@ -569,7 +569,7 @@ export function StaffRegistry() {
                 className="absolute right-0 mt-2 w-72 bg-surface border border-border rounded-2xl shadow-2xl z-[150] overflow-hidden"
               >
                 <div className="p-4 border-b border-border flex items-center justify-between">
-                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-text-secondary">Filter Registry</p>
+                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-text-secondary">Filter Staff</p>
                   {activeFilterCount > 0 && (
                     <button
                       onClick={() => {
@@ -674,25 +674,25 @@ export function StaffRegistry() {
       </div>
 
       {/* Registry Table */}
-      <div className="flex-1 overflow-auto no-scrollbar scrollbar-hide">
-        <Table containerClassName="overflow-visible">
+      <div className="flex-1 overflow-auto relative scrollbar-hide no-scrollbar">
+          <Table containerClassName="overflow-visible">
           <TableHeader className="sticky top-0 z-10">
             <TableRow className="bg-muted/80 backdrop-blur-md border-b border-border">
               <TableHead className="px-8 py-4 text-left text-[10px] font-black text-text-secondary uppercase tracking-widest">Full Name / ID</TableHead>
               <TableHead className="px-8 py-4 text-left text-[10px] font-black text-text-secondary uppercase tracking-widest">Department</TableHead>
               <TableHead className="px-8 py-4 text-left text-[10px] font-black text-text-secondary uppercase tracking-widest">Job Role</TableHead>
               <TableHead className="px-8 py-4 text-left text-[10px] font-black text-text-secondary uppercase tracking-widest">Assignments</TableHead>
-              <TableHead className="px-8 py-4 text-left text-[10px] font-black text-text-secondary uppercase tracking-widest">Registry Status</TableHead>
-              <TableHead className="px-8 py-4 text-right text-[10px] font-black text-text-secondary uppercase tracking-widest">Operations</TableHead>
+              <TableHead className="px-8 py-4 text-left text-[10px] font-black text-text-secondary uppercase tracking-widest">Employment Status</TableHead>
+              <TableHead className="px-8 py-4 text-right text-[10px] font-black text-text-secondary uppercase tracking-widest">Actions</TableHead>
             </TableRow>
 </TableHeader>
            <TableBody>
              {displayStaff.map((staff) => (
-               <TableRow
-                 key={staff.id} 
-                 onClick={() => setSelectedStaff(staff)}
-                 className="group hover:bg-muted/50 transition-colors cursor-pointer"
-               >
+                 <TableRow
+                  key={staff.id} 
+                  onClick={() => setSelectedStaff(staff)}
+                  className="group bg-surface hover:bg-muted/50 transition-colors cursor-pointer"
+                >
                  <TableCell className="px-8 py-5">
                    <div className="flex items-center gap-4">
                      <div className="w-10 h-10 rounded-[0.75rem] bg-muted flex items-center justify-center text-text-primary font-bold text-sm border border-border group-hover:bg-surface transition-colors uppercase select-none">
@@ -805,7 +805,7 @@ export function StaffRegistry() {
                            >
                               <div className="p-2 border-b border-border">
                                 <p className="text-[8px] font-black uppercase tracking-[0.2em] text-text-secondary px-3 py-1">
-                                  {transferStaffId === staff.id ? 'Transfer To Department' : 'Advanced Node Operations'}
+                                   {transferStaffId === staff.id ? 'Transfer To Department' : 'Advanced Staff Actions'}
                                 </p>
                               </div>
 
@@ -837,7 +837,7 @@ export function StaffRegistry() {
                                       className="w-full flex items-center gap-3 px-4 py-2.5 text-[11px] font-bold text-text-secondary hover:text-brand-primary hover:bg-brand-primary/10 rounded-xl transition-all text-left"
                                     >
                                       <ArrowRight size={14} />
-                                      Registry Transfer
+                                       Department Transfer
                                     </button>
                                   </div>
                                   <div className="p-1.5 bg-muted border-t border-border italic">
@@ -846,7 +846,7 @@ export function StaffRegistry() {
                                       className="w-full flex items-center gap-3 px-4 py-2.5 text-[11px] font-bold text-text-secondary hover:text-text-primary rounded-xl transition-all text-left"
                                     >
                                       <Trash2 size={14} />
-                                      Deep Archive Node
+                                       Deactivate Staff Member
                                     </button>
                                   </div>
                                 </>
@@ -932,10 +932,10 @@ export function StaffRegistry() {
 
               {/* Profile Body */}
                <div className="flex-1 overflow-y-auto p-8 space-y-10 no-scrollbar scrollbar-hide">
-                {/* Status Command */}
+                 {/* Status Overview */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-5 bg-muted border border-border rounded-3xl">
-                    <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mb-3">Registry Standing</p>
+                    <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mb-3">Employment Status</p>
                     <div className="flex items-center gap-2">
                        <div className={cn(
                         "w-2 h-2 rounded-full",
@@ -947,7 +947,7 @@ export function StaffRegistry() {
                     </div>
                   </div>
                   <div className="p-5 bg-muted border border-border rounded-3xl">
-                    <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mb-3">Institutional Node</p>
+                    <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mb-3">Department</p>
                     <span className="text-[14px] font-black text-text-primary tracking-tight">{selectedStaff.department}</span>
                   </div>
                 </div>
@@ -956,7 +956,7 @@ export function StaffRegistry() {
                 <section>
                   <h4 className="text-[10px] font-black text-text-primary uppercase tracking-[0.25em] mb-6 flex items-center gap-3">
                     <div className="w-6 h-[1px] bg-muted" />
-                    Contact Protocol
+                     Contact Details
                   </h4>
                   <div className="space-y-4">
                     <div className="p-5 bg-surface border border-border rounded-3xl shadow-sm hover:border-border transition-all group">
@@ -988,7 +988,7 @@ export function StaffRegistry() {
                 <section>
                   <h4 className="text-[10px] font-black text-text-primary uppercase tracking-[0.25em] mb-6 flex items-center gap-3">
                     <div className="w-6 h-[1px] bg-muted" />
-                    Security Procedures
+                    Security Settings
                   </h4>
                   <div className="p-6 bg-brand-dark rounded-[2rem] shadow-xl shadow-brand-dark/10">
                     <div className="flex items-center gap-4 mb-6">
@@ -996,8 +996,8 @@ export function StaffRegistry() {
                         <Lock size={22} />
                       </div>
                       <div>
-                        <h5 className="text-primary-foreground text-sm font-black tracking-tight leading-none mb-1">Access Protocol Hub</h5>
-                        <p className="text-[10px] text-primary-foreground/40 font-bold uppercase tracking-widest">Node ID: {selectedStaff.id}</p>
+                        <h5 className="text-primary-foreground text-sm font-black tracking-tight leading-none mb-1">Account Access</h5>
+                        <p className="text-[10px] text-primary-foreground/40 font-bold uppercase tracking-widest">Staff ID: {selectedStaff.id}</p>
                       </div>
                     </div>
                     
@@ -1060,7 +1060,7 @@ export function StaffRegistry() {
                     </button>
 
                     <p className="text-[9px] text-primary-foreground/30 text-center mt-4 font-medium leading-relaxed italic">
-                      This action will terminate all active sessions and invalidate the current biological handshake.
+                      This action will sign the staff member out of all devices and invalidate their current password.
                     </p>
                   </div>
                 </section>
@@ -1068,8 +1068,8 @@ export function StaffRegistry() {
 
               {/* Panel Footer */}
               <div className="p-8 bg-muted border-t border-border shrink-0">
-                <button className="w-full py-4 bg-surface border border-border text-text-primary rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-muted transition-all flex items-center justify-center gap-3">
-                  Commit Registry Updates
+                  <button className="w-full py-4 bg-surface border border-border text-text-primary rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-muted transition-all flex items-center justify-center gap-3">
+                  Save Staff Changes
                 </button>
               </div>
             </motion.div>
@@ -1101,8 +1101,8 @@ export function StaffRegistry() {
                        <Pencil size={24} />
                      </div>
                      <div>
-                       <h3 className="text-xl font-black italic font-display text-text-primary leading-none mb-1">Edit Staff Node</h3>
-                       <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Update Registry Information</p>
+                        <h3 className="text-xl font-black italic font-display text-text-primary leading-none mb-1">Edit Staff</h3>
+                        <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Update Staff Information</p>
                      </div>
                    </div>
                    <button onClick={() => setSelectedEditStaff(null)} className="p-2 text-muted hover:text-text-primary transition-all">
@@ -1192,7 +1192,7 @@ export function StaffRegistry() {
                        </select>
                      </div>
                      <div>
-                       <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mb-2">Registry Standing</p>
+                        <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mb-2">Account Status</p>
                        <select
                          value={editForm.isActive ? 'Active' : 'Inactive'}
                          onChange={(e) => setEditForm({ ...editForm, isActive: e.target.value === 'Active' })}
@@ -1356,8 +1356,8 @@ export function StaffRegistry() {
                        <UserPlus size={24} />
                      </div>
                      <div>
-                       <h3 className="text-xl font-black italic font-display text-text-primary leading-none mb-1">Onboard Staff Node</h3>
-                       <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Institutional Registry Registration</p>
+                        <h3 className="text-xl font-black italic font-display text-text-primary leading-none mb-1">Add Staff Member</h3>
+                        <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Register New Staff</p>
                      </div>
                    </div>
                    <button onClick={() => setShowOnboardModal(false)} className="p-2 text-muted hover:text-text-primary transition-all">
@@ -1448,7 +1448,7 @@ export function StaffRegistry() {
                        onClick={handleOnboardSubmit}
                        className="flex-1 py-4 bg-brand-dark text-primary-foreground font-black rounded-2xl text-[11px] uppercase tracking-widest hover:bg-brand-dark transition-all shadow-lg shadow-brand-dark/10"
                      >
-                       Register Node
+                        Register Staff
                      </button>
                    </div>
                  </div>

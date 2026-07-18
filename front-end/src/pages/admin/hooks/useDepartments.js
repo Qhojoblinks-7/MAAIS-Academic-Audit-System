@@ -142,7 +142,7 @@ export function normalizeDeptFromApi(dept, index) {
 }
 
 export function buildInitialDepartments() {
-  const names = ['Science', 'Mathematics', 'Languages', 'Business', 'General Arts', 'Visual Arts', 'Home Economics', 'Technical'];
+  const names = ['Science', 'Mathematics', 'Languages', 'Business', 'General Arts', 'Home Economics', 'Technical'];
   const normalized = names.slice(0, 4).map((name, index) => {
     const fallbackStaff = [
       { id: `STF-${String(index + 1).padStart(3, '0')}`, name: `HOD ${index + 1}`, role: 'HOD', isHOD: true },
@@ -164,10 +164,6 @@ export function buildDistribution(depts) {
     teachers: dept.teacherCount,
     hex: dept.hex,
   }));
-
-  if (distributionData.length < 5) {
-    distributionData.push({ name: 'Vocational', teachers: Math.floor(Math.random() * 15) + 5, hex: '#64748b' });
-  }
 
   return distributionData;
 }

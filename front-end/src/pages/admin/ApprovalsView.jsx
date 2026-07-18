@@ -8,13 +8,12 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
-import { initialPendingApprovals } from './data/mockDashboard';
 
 export function ApprovalsView() {
   const { user } = useRole();
   const navigate = useNavigate();
   
-  const [approvals, setApprovals] = React.useState(initialPendingApprovals);
+  const [approvals, setApprovals] = React.useState([]);
   const [filter, setFilter] = React.useState('all');
   const [searchTerm, setSearchTerm] = React.useState('');
   

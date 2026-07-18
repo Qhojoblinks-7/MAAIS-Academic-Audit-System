@@ -114,11 +114,12 @@ export function AdminSettings() {
             </div>
           </section>
 
-          {/* Global Protocols */}
+          {/* General Settings */}
+
           <section className="bg-surface rounded-[2.5rem] border border-border shadow-sm overflow-hidden">
             <div className="p-6 border-b border-border bg-muted/30 flex items-center gap-3">
               <Zap className="text-warning" size={20} />
-              <h2 className="text-[11px] font-black text-text-primary uppercase tracking-widest">Global Protocol Management</h2>
+              <h2 className="text-[11px] font-black text-text-primary uppercase tracking-widest">General Settings</h2>
             </div>
             <div className="p-8 space-y-6">
               <div className="flex items-center justify-between p-6 bg-destructive/5 rounded-3xl border border-destructive/20 group transition-all hover:bg-destructive/10">
@@ -171,11 +172,12 @@ export function AdminSettings() {
             </div>
           </section>
 
-          {/* Security Node Audit */}
+          {/* Security Audit */}
+
           <section className="bg-surface rounded-[2.5rem] border border-border shadow-sm overflow-hidden">
             <div className="p-6 border-b border-border bg-muted/30 flex items-center gap-3">
               <Lock className="text-text-primary" size={20} />
-              <h2 className="text-[11px] font-black text-text-primary uppercase tracking-widest">Administrative Vault</h2>
+              <h2 className="text-[11px] font-black text-text-primary uppercase tracking-widest">Administrator Settings</h2>
             </div>
             <div className="p-8">
                <div className="mb-6">
@@ -210,7 +212,7 @@ export function AdminSettings() {
         <footer className="mt-16 text-center pb-20">
           <p className="text-[10px] font-black text-muted uppercase tracking-[0.3em] flex items-center justify-center gap-3">
             <ShieldCheck size={14} className="text-success" />
-            MAAIS Core Protocol 8.4.2 • Admin Auth Node 001
+            MAAIS Academic System 8.4.2 • Admin Account 001
           </p>
         </footer>
       </div>

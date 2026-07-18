@@ -44,15 +44,15 @@ function Sparkline({ color }) {
 }
 
 const fabActions = [
-  { label: 'Register Node', icon: 'UserPlus', color: 'bg-surface text-text-primary', hover: 'hover:bg-muted' },
-  { label: 'Broadcast Pulse', icon: 'Radio', color: 'bg-surface text-text-primary', hover: 'hover:bg-muted' },
+  { label: 'Add Member', icon: 'UserPlus', color: 'bg-surface text-text-primary', hover: 'hover:bg-muted' },
+  { label: 'Send Announcement', icon: 'Radio', color: 'bg-surface text-text-primary', hover: 'hover:bg-muted' },
   { label: 'Emergency Freeze', icon: 'Lock', color: 'bg-destructive text-primary-foreground', hover: 'hover:bg-destructive/90' },
 ];
 
-const registerNodeProtocols = [
-  { label: 'Student Protocol', desc: 'Initialize profile data', icon: 'GraduationCap', path: '/identity/students' },
-  { label: 'Faculty Protocol', desc: 'Provision access rights', icon: 'UserPlus', path: '/identity/staff' },
-  { label: 'Guardian Protocol', desc: 'Link household nodes', icon: 'Users', path: '/identity/parents' }
+const addMemberActions = [
+  { label: 'Student', desc: 'Create student profile', icon: 'GraduationCap', path: '/identity/students' },
+  { label: 'Teacher / Staff', desc: 'Create staff account', icon: 'UserPlus', path: '/identity/staff' },
+  { label: 'Parent / Guardian', desc: 'Link parent accounts', icon: 'Users', path: '/identity/parents' }
 ];
 
 const broadcastChannels = ['In-App Push', 'Bulk SMS', 'Email'];
@@ -194,7 +194,8 @@ export function AdminHome() {
   const ticketsLoading = ticketsQuery.isLoading;
   const approvalsQuery = useApprovals({ status: 'pending' });
   const resolveApprovalMutation = useResolveApproval();
-  const approvals = (approvalsQuery.data || []).map(approval => ({
+  const allApprovals = (approvalsQuery.data || []);
+  const approvals = allApprovals.map(approval => ({
     ...approval,
     teacher: approval.teacherName || 'Unknown Teacher',
     time: new Date(approval.requestedAt || approval.createdAt || Date.now()).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
@@ -370,8 +371,8 @@ export function AdminHome() {
   // FAB Trigger Pipeline
   const executeAction = (action) => {
     if (action === 'Emergency Freeze') setActiveAction('freeze');
-    else if (action === 'Register Node') setActiveAction('register');
-    else if (action === 'Broadcast Pulse') setActiveAction('broadcast');
+    else if (action === 'Add Member') setActiveAction('register');
+    else if (action === 'Send Announcement') setActiveAction('broadcast');
     setFabOpen(false);
   };
 
@@ -414,7 +415,7 @@ export function AdminHome() {
         break;
       case 'reject':
         resolveApprovalMutation.mutate({ id, dto: { status: 'rejected' } });
-        pushLog(`TERMINAL REJECT: Approval entry by ${teacher} rejected and logged to registry.`, 'security');
+        pushLog(`TERMINAL REJECT: Approval entry by ${teacher} rejected and logged to the audit record.`, 'security');
         toast.success('Entry rejected and logged');
         break;
       default:
@@ -436,15 +437,15 @@ export function AdminHome() {
     setShowQueueManager(false);
   };
 
-  const openNodeDiagnosis = (ticket) => {
+  const openTicketDetails = (ticket) => {
     setSelectedTicket(ticket);
   };
 
-  const handleRebootNode = async (ticketId) => {
+  const handleReopenTicket = async (ticketId) => {
     setRebootingNodeId(ticketId);
     await new Promise(r => setTimeout(r, 2000));
-    pushLog(`Node Reboot: Ticket #${ticketId} node reboot sequence completed successfully.`, 'system');
-    toast.success('Node reboot complete');
+    pushLog(`Ticket #${ticketId} reopened and reassigned successfully.`, 'system');
+    toast.success('Ticket reopened');
     setRebootingNodeId(null);
     setSelectedTicket(null);
   };
@@ -458,14 +459,14 @@ export function AdminHome() {
     }).catch(() => {
       toast.success(`Temp token generated: ${token}`);
     });
-    pushLog(`Temp Token Issued: Ticket #${ticketId} received category-specific passcode.`, 'security');
+      pushLog(`Access code issued: Ticket #${ticketId} received category-specific passcode.`, 'security');
     setIssuingTokenId(null);
   };
 
   const handleMarkResolved = async (ticketId) => {
     setResolvingTicketId(ticketId);
     await new Promise(r => setTimeout(r, 600));
-    pushLog(`Ticket #${ticketId} marked RESOLVED. Synchronization event appended to audit feed.`, 'system');
+    pushLog(`Ticket #${ticketId} marked RESOLVED. Event appended to the activity log.`, 'system');
     toast.success('Ticket marked resolved');
     setRemovedTicketIds(prev => new Set(prev).add(ticketId));
     setResolvingTicketId(null);
@@ -480,7 +481,7 @@ export function AdminHome() {
       return;
     }
     const tabLabel = activeMemoTab.charAt(0).toUpperCase() + activeMemoTab.slice(1);
-    pushLog(`Memo Dispatched: ${tabLabel} memo broadcast to faculty endpoints.`, 'comm');
+    pushLog(`Memo Dispatched: ${tabLabel} memo sent to faculty.`, 'comm');
     toast.success(`${tabLabel} memo dispatched`);
   };
 
@@ -493,14 +494,14 @@ export function AdminHome() {
     });
   };
 
-  // Global Pulse Core Execution Pipeline
+  // Announcement broadcast pipeline
   const handleFireBroadcast = () => {
     if (!broadcastPayload.trim()) return;
 
     const pulseLog = {
       id: String(Date.now()),
       time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-      event: `Global Pulse emitted via [${selectedChannel}]: "${broadcastPayload.slice(0, 35)}..."`,
+      event: `Announcement sent via [${selectedChannel}]: "${broadcastPayload.slice(0, 35)}..."`,
       type: 'comm'
     };
     
@@ -713,11 +714,11 @@ export function AdminHome() {
               </div>
             </section>
 
-             {/* Registry Activity Feed */}
-             <section className="bg-brand-dark rounded-2xl p-5 shadow-md relative overflow-hidden flex flex-col">
-               <div className="flex items-center justify-between mb-4">
-                 <div>
-                   <h3 className="text-[11px] font-black text-primary-foreground uppercase tracking-wider">Registry Activity Feed</h3>
+              {/* Activity Feed */}
+              <section className="bg-brand-dark rounded-2xl p-5 shadow-md relative overflow-hidden flex flex-col">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-[11px] font-black text-primary-foreground uppercase tracking-wider">Recent Activity</h3>
                    <p className="text-[9px] font-semibold text-text-secondary uppercase tracking-widest mt-0.5">Live Audit Trail</p>
                  </div>
                  <Link to="/audit/extended" className="text-[8px] font-black text-text-secondary uppercase tracking-wider hover:text-primary-foreground transition-all">View Extended</Link>
@@ -758,7 +759,7 @@ export function AdminHome() {
                       No Approvals in Queue
                     </motion.p>
                   ) : (
-                    approvals.map((req) => {
+                    approvals.slice(0, 3).map((req) => {
                       const meta = approvalMeta[req.id] || {};
                       return (
                       <motion.div 
@@ -823,7 +824,7 @@ export function AdminHome() {
                 onClick={() => setShowQueueManager(true)}
                 className="w-full mt-4 py-2 border border-dashed border-border rounded-xl text-[8px] font-black text-text-secondary uppercase tracking-wider hover:bg-background transition-all"
               >
-                Queue Manager (8+)
+                Queue Manager ({approvals.length})
               </button>
             </div>
 
@@ -865,7 +866,7 @@ export function AdminHome() {
                   return (
                     <div 
                       key={ticket.id} 
-                      onClick={() => openNodeDiagnosis(ticket)}
+                      onClick={() => openTicketDetails(ticket)}
                       className="flex items-center justify-between p-2.5 bg-background/60 rounded-xl border border-border hover:border-warning/20 transition-all group/ticket cursor-pointer"
                     >
                       <div className="flex gap-3 items-center min-w-0">
@@ -981,11 +982,11 @@ export function AdminHome() {
            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
               <div className="absolute inset-0 bg-brand-dark/40 backdrop-blur-xs" onClick={() => setActiveAction(null)} />
               <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-sm bg-surface rounded-2xl shadow-xl p-6">
-                <h3 className="text-lg font-black italic font-display text-text-primary">Register New Node</h3>
-                <p className="text-[8px] font-black uppercase text-text-secondary tracking-wider mb-5">Identity Provisioning Protocol</p>
-                
-                 <div className="grid grid-cols-1 gap-2.5">
-                   {registerNodeProtocols.map((p, i) => {
+                 <h3 className="text-lg font-black italic font-display text-text-primary">Add New Member</h3>
+                 <p className="text-[8px] font-black uppercase text-text-secondary tracking-wider mb-5">Create Staff or Student Account</p>
+                 
+                  <div className="grid grid-cols-1 gap-2.5">
+                    {addMemberActions.map((p, i) => {
                      const iconMap = { GraduationCap, UserPlus, Users };
                      const Icon = iconMap[p.icon] || UserPlus;
                      return (
@@ -1019,8 +1020,8 @@ export function AdminHome() {
               <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-md bg-surface rounded-2xl shadow-xl overflow-hidden">
                 <div className="p-5 bg-brand-dark text-primary-foreground flex justify-between items-center">
                   <div>
-                    <h3 className="text-xl font-black italic font-display">Broadcast Pulse</h3>
-                    <p className="text-[8px] font-black uppercase text-primary-foreground/50 tracking-wider mt-0.5">Omni-Channel Channels</p>
+                     <h3 className="text-xl font-black italic font-display">Send Announcement</h3>
+                     <p className="text-[8px] font-black uppercase text-primary-foreground/50 tracking-wider mt-0.5">Notify via Channel</p>
                   </div>
                   <X size={18} className="cursor-pointer hover:text-destructive transition-all" onClick={() => setActiveAction(null)} />
                 </div>
@@ -1044,7 +1045,7 @@ export function AdminHome() {
                      </div>
                   </div>
                    <div className="space-y-2">
-                     <label className="text-[8px] font-black uppercase text-text-secondary tracking-wider ml-1">Payload Message Core</label>
+                      <label className="text-[8px] font-black uppercase text-text-secondary tracking-wider ml-1">Message</label>
                      <Textarea 
                        value={broadcastPayload}
                        onChange={(e) => setBroadcastPayload(e.target.value)}
@@ -1060,7 +1061,7 @@ export function AdminHome() {
                        broadcastPayload.trim() ? "bg-brand-dark text-primary-foreground" : "bg-border text-text-secondary"
                      )}
                    >
-                     <Radio size={14} className={cn(broadcastPayload.trim() && "animate-pulse")} /> Initiate Global Pulse
+                      <Radio size={14} className={cn(broadcastPayload.trim() && "animate-pulse")} /> Send Announcement
                    </Button>
                 </div>
              </motion.div>
@@ -1118,7 +1119,7 @@ export function AdminHome() {
                               const freezeLog = {
                                 id: String(Date.now()),
                                 time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-                                event: `CRITICAL STATUS ALTERED: Grade entry ${!isFreezeActive ? 'SUSPENDED/FROZEN' : 'RESTORED/UNFROZEN'}.`,
+                                 event: `Grade entry ${!isFreezeActive ? 'LOCKED (system frozen)' : 'UNLOCKED (system restored)'}.`,
                                 type: 'security'
                               };
                               setActivities(prev => [freezeLog, ...prev]);
@@ -1144,7 +1145,7 @@ export function AdminHome() {
          )}
       </AnimatePresence>
 
-      {/* Configure Academic Node Modal */}
+       {/* Configure Academic Period Modal */}
       <AnimatePresence>
         {showConfigModal && (
           <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
@@ -1152,8 +1153,8 @@ export function AdminHome() {
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-sm bg-surface rounded-2xl shadow-xl p-6">
               <div className="flex items-center justify-between mb-5">
                 <div>
-                  <h3 className="text-lg font-black italic font-display text-text-primary">Configure Academic Node</h3>
-                  <p className="text-[8px] font-black uppercase text-text-secondary tracking-wider mt-0.5">System-Wide Contextual Tracking</p>
+                 <h3 className="text-lg font-black italic font-display text-text-primary">Configure Academic Period</h3>
+                   <p className="text-[8px] font-black uppercase text-text-secondary tracking-wider mt-0.5">Year, Term &amp; Level Filters</p>
                 </div>
                 <button onClick={() => setShowConfigModal(false)} className="p-1.5 text-text-secondary hover:text-text-primary transition-colors">
                   <X size={16} />
@@ -1243,26 +1244,40 @@ export function AdminHome() {
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-2xl bg-surface rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
               <div className="p-5 border-b border-border flex justify-between items-center">
                 <div>
-                  <h3 className="text-lg font-black italic font-display text-text-primary">Queue Manager</h3>
-                  <p className="text-[8px] font-black uppercase text-text-secondary tracking-wider mt-0.5">Bulk Authorization Protocol</p>
+                   <h3 className="text-lg font-black italic font-display text-text-primary">Queue Manager</h3>
+                   <p className="text-[8px] font-black uppercase text-text-secondary tracking-wider mt-0.5">Bulk Approval Actions</p>
                 </div>
                 <button onClick={() => setShowQueueManager(false)} className="p-1.5 text-text-secondary hover:text-text-primary transition-colors">
                   <X size={16} />
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto p-5 space-y-3">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="p-3 bg-background/60 rounded-xl border border-border flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-black text-text-primary">Seed Approval #{i + 1}</p>
-                      <p className="text-[10px] font-bold text-text-secondary">Index #{1000 + i} • Grade Change Request</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => { toast.success(`Approval #${i + 1} granted`); pushLog(`Approval #${i + 1} granted by Admin.`, 'system'); }} className="px-3 py-1.5 bg-success text-primary-foreground rounded-lg text-[9px] font-black uppercase">Grant</button>
-                      <button onClick={() => { toast.success(`Approval #${i + 1} aborted`); pushLog(`Approval #${i + 1} aborted by Admin.`, 'security'); }} className="px-3 py-1.5 bg-surface border border-border text-text-secondary rounded-lg text-[9px] font-black uppercase hover:text-destructive hover:border-destructive/30">Abort</button>
-                    </div>
-                  </div>
-                ))}
+                {approvals.length === 0 ? (
+                  <p className="text-center text-[10px] py-6 font-bold text-text-secondary uppercase tracking-wider">
+                    No Approvals in Queue
+                  </p>
+                ) : (
+                  approvals.map((req) => {
+                    const meta = approvalMeta[req.id] || {};
+                    return (
+                      <div key={req.id} className="p-3 bg-background/60 rounded-xl border border-border flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className="text-xs font-black text-text-primary truncate leading-none">{req.teacher}</p>
+                            {meta.highPriority && <span className="px-1 py-0.5 bg-destructive text-primary-foreground text-[8px] font-black uppercase rounded">High Priority</span>}
+                            {meta.escalated && <Flag size={10} className="text-destructive" />}
+                            {meta.deferred && <span className="px-1 py-0.5 bg-warning/10 text-warning text-[8px] font-black uppercase rounded">Deferred</span>}
+                          </div>
+                          <p className="text-[10px] font-bold text-text-secondary truncate mt-1">{req.time} • {req.detail}</p>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <button onClick={() => handleResolveApproval(req.id, 'grant', req.teacher)} className="px-3 py-1.5 bg-success text-primary-foreground rounded-lg text-[9px] font-black uppercase">Grant</button>
+                          <button onClick={() => handleResolveApproval(req.id, 'abort', req.teacher)} className="px-3 py-1.5 bg-surface border border-border text-text-secondary rounded-lg text-[9px] font-black uppercase hover:text-destructive hover:border-destructive/30">Abort</button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
               <div className="p-5 border-t border-border flex gap-3">
                 <button onClick={() => handleBulkAction('grant')} disabled={bulkActionLoading} className="flex-1 py-3 bg-success text-primary-foreground rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-success/90 disabled:opacity-50 flex items-center justify-center gap-2">

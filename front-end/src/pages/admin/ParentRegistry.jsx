@@ -239,8 +239,9 @@ export const ParentRegistry = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-black text-text-primary italic font-display tracking-tight leading-none">
-              Institutional Household Management
+            Guardian Network
             </h1>
+            <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Household Contact Records : {isLoading ? '...' : `${parents.length} Guardians`}</p>
           </div>
            <div className="flex items-center gap-3">
               <Button onClick={() => setIsPTAHubOpen(true)} className="flex items-center gap-2 px-5 py-2.5">
@@ -271,21 +272,20 @@ export const ParentRegistry = () => {
           </div>
       </div>
 
-       <div className="flex-1 overflow-y-auto p-8 relative scrollbar-hide">
-        <div className="bg-surface rounded-[2.5rem] border border-border shadow-sm overflow-hidden">
-          <Table>
+        <div className="flex-1 overflow-y-auto relative scrollbar-hide">
+          <Table containerClassName="overflow-visible">
             <TableHeader>
               <TableRow className="bg-muted/80 border-b border-border">
-                <TableHead className="px-8 py-5 text-[10px] font-black text-text-secondary uppercase tracking-widest">Guardian / Household</TableHead>
-                <TableHead className="px-6 py-5 text-[10px] font-black text-text-secondary uppercase tracking-widest">Linked Wards</TableHead>
-                <TableHead className="px-6 py-5 text-[10px] font-black text-text-secondary uppercase tracking-widest">Communication Status</TableHead>
-                <TableHead className="px-6 py-5 text-[10px] font-black text-text-secondary uppercase tracking-widest text-center">Ward Finance</TableHead>
-                <TableHead className="px-8 py-5 text-[10px] font-black text-text-secondary uppercase tracking-widest text-right">Actions</TableHead>
+               <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest">Guardian / Household</TableHead>
+                <TableHead className="px-6 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest">Linked Wards</TableHead>
+                <TableHead className="px-6 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest">Communication Status</TableHead>
+                <TableHead className="px-6 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest text-center">Ward Finance</TableHead>
+                <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredParents.map((parent) => (
-                <TableRow key={parent.id} className="group hover:bg-muted cursor-pointer transition-all" onClick={() => setSelectedParentId(parent.id)}>
+                <TableRow key={parent.id} className="group bg-surface hover:bg-muted cursor-pointer transition-all" onClick={() => setSelectedParentId(parent.id)}>
                   <TableCell className="px-8 py-5">
                     <div className="flex items-center gap-4">
                        <div className={cn(
@@ -351,7 +351,6 @@ export const ParentRegistry = () => {
             </TableBody>
           </Table>
         </div>
-      </div>
 
       {/* Side Profile Drawer */}
       <AnimatePresence>

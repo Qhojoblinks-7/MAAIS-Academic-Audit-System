@@ -349,7 +349,7 @@ onExecutePromotion={() => {
                     <Database size={32} />
                   </div>
                   <div>
-                    <h1 className="text-3xl font-black text-text-primary tracking-tighter">The Vault</h1>
+                     <h1 className="text-3xl font-black text-text-primary tracking-tighter">Academic Archive</h1>
                     <div className="flex items-center gap-3">
                       <p className="text-xs font-black text-brand-primary uppercase tracking-widest bg-brand-primary/10 px-2 py-0.5 rounded">Historical Archive v4.2</p>
                       <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
@@ -773,7 +773,7 @@ onClick={() => {
                       <p className="text-3xl font-black text-brand-primary italic tracking-tighter">Top 15%</p>
                    </div>
                    <div className="bg-brand-primary p-8 rounded-3xl border border-brand-primary text-primary-foreground shadow-2xl">
-                      <p className="text-[9px] font-black text-success uppercase tracking-widest mb-1">Vault Registry</p>
+                       <p className="text-[9px] font-black text-success uppercase tracking-widest mb-1">Archive Records</p>
                       <p className="text-lg font-black italic tracking-tighter">MAAIS-V5-OK</p>
                    </div>
                 </div>

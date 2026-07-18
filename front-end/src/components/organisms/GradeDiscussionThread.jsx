@@ -13,25 +13,7 @@ export function GradeDiscussionThread({ subjectId, studentId, sender = 'Teacher'
     const loadMessages = async () => {
       try {
         setIsLoading(true);
-        // In a real implementation, this would fetch from an API
-        // For now, we'll use mock data
-        const mockMessages = [
-          {
-            id: 'msg1',
-            content: 'I noticed the SBA score seems low for this term. Could you provide more details on the continuous assessment?',
-            sender: 'HOD',
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-            read: true
-          },
-          {
-            id: 'msg2',
-            content: 'The SBA includes practical attendance (10 marks), project work (15 marks), and class exercises (5 marks). The student missed 2 practical sessions and submitted the project late.',
-            sender: 'Teacher',
-            timestamp: new Date(Date.now() - 90 * 60 * 1000),
-            read: true
-          }
-        ];
-        setMessages(mockMessages);
+        setMessages([]);
       } catch (err) {
         console.error('Failed to load discussion messages:', err);
       } finally {
@@ -41,7 +23,6 @@ export function GradeDiscussionThread({ subjectId, studentId, sender = 'Teacher'
 
     loadMessages();
 
-    // Listen for new messages via event bus
     const handleNewMessage = (data) => {
       if (data.subjectId === subjectId && data.studentId === studentId) {
         setMessages(prev => [...prev, {

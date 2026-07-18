@@ -44,6 +44,7 @@
   --color-brand-primary: var(--brand-primary);
   --color-brand-secondary: var(--brand-secondary);
   --color-brand-dark: var(--brand-dark);
+  --color-brand-charcoal: var(--brand-charcoal);
 
   /* Primary alias — shadcn/ui primitives (button, badge, avatar, progress, …) use `bg-primary`/`text-primary` */
   --color-primary: var(--brand-primary);
@@ -187,6 +188,7 @@
   --brand-primary: hsl(156 42% 18%);     /* Core Forest Green (#1A3F2F) */
   --brand-secondary: hsl(38 92% 56%);    /* Vibrant Academic Yellow/Gold (#F3A623) */
   --brand-dark: hsl(156 45% 12%);        /* Sidebar / High-contrast layout anchor */
+  --brand-charcoal: hsl(0 0% 13%);       /* Charcoal Black (#222222) */
 
   /* Standard shadcn semantic slots mapping directly to system layers */
   --primary: hsl(156 42% 18%);

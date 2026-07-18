@@ -49,9 +49,9 @@ const DEPT_COLORS = {
   Science: 'bg-brand-primary',
   'General Arts': 'bg-brand-secondary',
   Business: 'bg-warning',
-  Vocational: 'bg-success',
-  HomeEconomics: 'bg-destructive',
-  'Visual Arts': 'bg-warning',
+  'Home Economics': 'bg-success',
+  Technical: 'bg-success',
+  Languages: 'bg-brand-primary',
   default: 'bg-muted',
 };
 

@@ -32,9 +32,9 @@ React.useEffect(() => {
   // Root Navigation Matrix
   const navItems = [
     { icon: LayoutDashboard, label: 'Pulse (Dashboard)', id: 'dashboard', path: '/', roles: ['TEACHER', 'HOD', 'ADMIN', 'STUDENT'] },
-    { icon: Users, label: 'Staff Registry', id: 'staff', path: '/identity/staff', roles: ['ADMIN'] },
-    { icon: Users, label: 'Student Registry', id: 'students', path: '/identity/students', roles: ['ADMIN'] },
-    { icon: Users, label: 'Parent Registry', id: 'parents', path: '/identity/parents', roles: ['ADMIN'] },
+    { icon: Users, label: 'Staff Directory', id: 'staff', path: '/identity/staff', roles: ['ADMIN'] },
+    { icon: Users, label: 'Student Records', id: 'students', path: '/identity/students', roles: ['ADMIN'] },
+    { icon: Users, label: 'Parent Records', id: 'parents', path: '/identity/parents', roles: ['ADMIN'] },
     { icon: Cpu, label: 'Academic Blueprint', id: 'architect', path: '/academic-architect', roles: ['ADMIN'] },
     { icon: GraduationCap, label: 'Grading Rules', id: 'grading-admin', path: '/grading', roles: ['ADMIN'] },
     { icon: Calendar, label: 'Timetable', id: 'timetable', path: '/timetable', roles: ['TEACHER', 'STUDENT', 'ADMIN'] },
@@ -49,7 +49,7 @@ React.useEffect(() => {
     { icon: GraduationCap, label: 'Teacher Hub', id: 'teacher-dashboard', path: '/teacher-dashboard', roles: ['TEACHER'] },
     { icon: Database, label: 'Archive', id: 'archive', path: '/archive', roles: ['TEACHER', 'HOD'] },
     { icon: ShieldCheck, label: 'Certification', id: 'certification', path: '/certification', roles: ['HOD'] },
-    { icon: Users, label: 'Student Registry', id: 'students-mobile', path: '/identity/students', roles: ['HOD'] },
+    { icon: Users, label: 'Student Records', id: 'students-mobile', path: '/identity/students', roles: ['HOD'] },
   ];
 
 // Section Tabs for deep-linking Student data views without losing query identifiers
@@ -101,7 +101,7 @@ const handleLogout = () => {
                 </div>
                 <div>
                    <p className="text-sm font-black text-foreground tracking-tight">MAAIS</p>
-                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none">Security Node</p>
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none">Account Security</p>
                 </div>
               </div>
               <button
@@ -114,7 +114,7 @@ const handleLogout = () => {
               </button>
             </div>
 
-            {/* Scrollable Navigation Nodes */}
+            {/* Scrollable Navigation */}
             <div className="flex-1 overflow-y-auto py-6 px-4 overscroll-contain">
               <nav className="space-y-1">
                 {filteredItems.map((item) => {

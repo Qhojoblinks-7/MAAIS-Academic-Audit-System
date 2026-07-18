@@ -7,15 +7,13 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
-import { initialPendingApprovals } from './data/mockDashboard';
 
 export function ApprovalInspectView() {
   const { user } = useRole();
   const navigate = useNavigate();
   const { id } = useParams();
   
-  // Find the approval by ID
-  const approval = initialPendingApprovals.find(a => a.id === id);
+  const [approval, setApproval] = React.useState(null);
   
   if (!approval) {
     navigate('/approvals/all');

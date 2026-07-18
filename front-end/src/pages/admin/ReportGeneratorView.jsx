@@ -77,7 +77,7 @@ export const ReportGeneratorView = () => {
               onClick={() => setShowSealModal(true)}
               className="flex items-center gap-2 px-6 py-3 bg-surface border border-border rounded-2xl text-[10px] font-black uppercase tracking-widest text-text-secondary hover:bg-muted transition-all font-sans shadow-sm"
              >
-                <StampIcon size={14} /> Digital Seal Registry
+                 <StampIcon size={14} /> Digital Seal Settings
              </button>
              <button 
               onClick={handleCompile}
@@ -158,7 +158,7 @@ export const ReportGeneratorView = () => {
                   <div>
                     <h3 className="text-[13px] font-black text-text-primary uppercase tracking-[0.2em] flex items-center gap-2">
                       <Layers size={18} className="text-success" />
-                      Compilation Registry
+                       Compilation Queue
                     </h3>
                     <p className="text-[9px] font-bold text-text-secondary mt-1 uppercase tracking-widest">Selected: {selectedForm} • {selectedClass}</p>
                   </div>
@@ -359,7 +359,7 @@ export const ReportGeneratorView = () => {
                   </button>
                </div>
                
-               <h3 className="text-3xl font-black italic font-display text-text-primary mb-2">Digital Seal Registry</h3>
+                <h3 className="text-3xl font-black italic font-display text-text-primary mb-2">Digital Seal Settings</h3>
                <p className="text-text-secondary font-medium leading-relaxed text-[13px] mb-8">
                  Upload high-resolution scans of the official school stamp and executive signatures. These will be overlaid on all cryptographically signed reports.
                </p>
@@ -386,7 +386,7 @@ export const ReportGeneratorView = () => {
                     onClick={() => setShowSealModal(false)}
                     className="flex-1 py-5 bg-brand-dark text-primary-foreground rounded-[2rem] text-[11px] font-black uppercase tracking-widest shadow-xl shadow-brand-dark/20 hover:bg-brand-dark transition-all"
                   >
-                    Update Registry
+                     Update Settings
                   </button>
                </div>
             </motion.div>

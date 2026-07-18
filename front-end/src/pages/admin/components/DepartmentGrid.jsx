@@ -54,8 +54,8 @@ export function DepartmentGrid({ departments, viewType, setViewType, setSelected
                 viewType === 'list' ? "bg-surface text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground/80"
               )}
             >
-              <List size={12} />
-              Registry
+               <List size={12} />
+               Staff
             </button>
           </div>
           <button 
@@ -120,7 +120,7 @@ export function DepartmentGrid({ departments, viewType, setViewType, setSelected
                           </div>
                           <div>
                             <p className="text-xs font-black text-foreground uppercase tracking-widest leading-none mb-0.5">{dept.teacherCount} Teachers</p>
-                            <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest leading-none">Active Staff Nodes</p>
+                             <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest leading-none">Active Staff</p>
                           </div>
                         </div>
                         <ArrowRight size={14} className="text-border group-hover:text-foreground group-hover:translate-x-1 transition-all" />
@@ -210,7 +210,7 @@ export function DepartmentGrid({ departments, viewType, setViewType, setSelected
                         if (active && payload && payload.length) {
                           return (
                             <div className="bg-brand-primary text-primary-foreground px-3 py-2 rounded-lg text-xs font-black uppercase tracking-widest shadow-2xl ring-1 ring-surface/10">
-                              {payload[0].value} Staff Nodes
+                               {payload[0].value} Staff
                             </div>
                           );
                         }
@@ -234,7 +234,7 @@ export function DepartmentGrid({ departments, viewType, setViewType, setSelected
               </h4>
               <div className="space-y-4">
                 {[
-                  { name: 'Technical Stream', depts: ['Mathematics', 'Vocational'], color: 'text-brand-primary', bg: 'bg-brand-primary/10' },
+                   { name: 'Technical Stream', depts: ['Mathematics', 'Technical'], color: 'text-brand-primary', bg: 'bg-brand-primary/10' },
                   { name: 'Medical Path', depts: ['Science', 'Languages'], color: 'text-destructive', bg: 'bg-destructive/5' },
                   { name: 'Global Commerce', depts: ['Business', 'Math', 'Languages'], color: 'text-warning', bg: 'bg-warning/10' },
                 ].map((mapping, i) => (

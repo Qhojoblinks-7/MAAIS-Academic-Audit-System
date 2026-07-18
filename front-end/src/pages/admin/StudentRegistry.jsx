@@ -19,7 +19,6 @@ import {
   XAxis, YAxis, Tooltip, 
   LineChart as ReLineChart, Line, CartesianGrid
 } from 'recharts';
-import { PROGRAMS, HOUSES, BATCHES } from './data';
 import {
   Table,
   TableHeader,
@@ -156,7 +155,7 @@ const StudentDossier = ({
                   {[
                     { label: 'Index Number', value: student.indexNumber },
                     { label: 'Date of Birth', value: student.dob ? new Date(student.dob).toLocaleDateString() : 'N/A' },
-                    { label: 'Program Node', value: student.program },
+                    { label: 'Program', value: student.program },
                   ].map((item, i) => (
                     <div key={i} className="flex justify-between items-center py-3 border-b border-border">
                       <span className="text-[11px] font-bold text-text-secondary uppercase tracking-tight">{item.label}</span>
@@ -171,7 +170,7 @@ const StudentDossier = ({
                   {[
                     { label: 'Placement Aggregate', value: student.beceAggregate || 'N/A' },
                     { label: 'Primary Residency', value: student.beceResidency || 'N/A' },
-                    { label: 'Placement Protocol', value: student.placementType || 'N/A' },
+                    { label: 'Placement', value: student.placementType || 'N/A' },
                   ].map((item, i) => (
                     <div key={i} className="flex justify-between items-center py-3 border-b border-border">
                       <span className="text-[11px] font-bold text-text-secondary uppercase tracking-tight">{item.label}</span>
@@ -572,6 +571,7 @@ export const StudentRegistry = () => {
     }
   };
 
+  const PROGRAMS = ['Science', 'General Arts', 'Business', 'Home Economics', 'Technical'];
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProgram, setSelectedProgram] = useState('All');
   const [viewMode, setViewMode] = useState('Academic');
@@ -604,13 +604,23 @@ export const StudentRegistry = () => {
       ? Math.round(grades.reduce((sum, g) => sum + (g.totalScore || g.score || 0), 0) / grades.length) 
       : 0;
     const baseAtRisk = avgGrade < 50;
+    const rawClass = s.currentClass?.name || s.department?.name || '';
+    const classProgram = (() => {
+      const n = rawClass.toLowerCase();
+      if (n.includes('science')) return 'Science';
+      if (n.includes('arts') && !n.includes('visual')) return 'General Arts';
+      if (n.includes('bus')) return 'Business';
+      if (n.includes('home')) return 'Home Economics';
+      if (n.includes('technical')) return 'Technical';
+      return 'General';
+    })();
     return {
       id: s.id || s.userId,
       name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.user?.email || 'Unknown',
       indexNumber: s.indexNumber,
       dob: s.dateOfBirth,
-      program: s.currentClass?.name || s.department?.name || 'General',
-      currentClassId: s.currentClassId,
+      currentClass: rawClass || 'Unassigned',
+      program: classProgram,
       averageGrade: avgGrade,
       atRisk: studentAtRisk[s.id] ?? baseAtRisk,
       fundingStatus: studentFunding[s.id] || s.feesStatus || 'Free SHS',
@@ -810,8 +820,9 @@ export const StudentRegistry = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-black text-text-primary italic font-display tracking-tight leading-none">
-              Institutional Population Intelligence
+            Student Enrolment
             </h1>
+            <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Learner Population Records : {isLoading ? '...' : `${students.length} Enrolled`}</p>
           </div>
             <div className="flex items-center gap-3">
               <button 
@@ -846,7 +857,7 @@ export const StudentRegistry = () => {
                 <FileText size={16} /> Bulk Reports
               </button>
               <button onClick={() => setIsBatchUploading(true)} className="flex items-center gap-2 px-5 py-2.5 bg-muted text-text-primary border border-border rounded-xl text-[10px] font-black uppercase tracking-widest">
-                <FileUp size={16} /> CSSPS Upload
+                <Users size={16} /> Bulk Registry
               </button>
               <button onClick={() => setIsPromoting(true)} className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-primary-foreground rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-brand-primary/20">
                 <TrendingUp size={16} /> Promotion Engine
@@ -918,21 +929,21 @@ export const StudentRegistry = () => {
           </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-8 relative scrollbar-hide">
-        <Card>
+      <div className="flex-1 overflow-y-auto relative scrollbar-hide">
           <Table containerClassName="overflow-visible">
             <TableHeader>
                 <TableRow className="bg-muted/80 border-b border-border">
-                  <TableHead className="px-8 py-5 text-[10px] font-black text-text-secondary uppercase tracking-widest">Index / Name</TableHead>
-                  <TableHead className="px-6 py-5 text-[10px] font-black text-text-secondary uppercase tracking-widest">Program</TableHead>
-                  <TableHead className="px-6 py-5 text-[10px] font-black text-text-secondary uppercase tracking-widest text-center">Performance</TableHead>
-                  <TableHead className="px-6 py-5 text-[10px] font-black text-text-secondary uppercase tracking-widest">Guardian</TableHead>
-                  <TableHead className="px-8 py-5 text-[10px] font-black text-text-secondary uppercase tracking-widest text-right">Protocol</TableHead>
+                  <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest">Index / Name</TableHead>
+                  <TableHead className="px-6 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest">Class</TableHead>
+                  <TableHead className="px-6 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest">Program</TableHead>
+                  <TableHead className="px-6 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest text-center">Performance</TableHead>
+                  <TableHead className="px-6 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest">Guardian</TableHead>
+                  <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest text-right">Action</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
               {filteredStudents.map((stu) => (
-                <TableRow key={stu.id} className="group hover:bg-muted cursor-pointer transition-all" onClick={() => setSelectedStudentId(stu.id)}>
+                <TableRow key={stu.id} className="group bg-surface hover:bg-muted cursor-pointer transition-all" onClick={() => setSelectedStudentId(stu.id)}>
                   <TableCell className="px-8 py-5">
                     <div className="flex items-center gap-4">
                        <div className="w-11 h-11 bg-muted rounded-xl flex items-center justify-center text-text-secondary group-hover:bg-brand-dark group-hover:text-primary-foreground transition-all"><GraduationCap size={18} /></div>
@@ -941,6 +952,9 @@ export const StudentRegistry = () => {
                           <p className="text-[10px] font-black uppercase tracking-widest text-text-secondary">{stu.indexNumber}</p>
                        </div>
                     </div>
+                  </TableCell>
+                  <TableCell className="px-6 py-5">
+                     <span className="text-[12px] font-black text-text-primary">{stu.currentClass}</span>
                   </TableCell>
                   <TableCell className="px-6 py-5">
                      <span className="text-[12px] font-black text-text-primary">{stu.program}</span>
@@ -984,8 +998,7 @@ export const StudentRegistry = () => {
               ))}
             </TableBody>
            </Table>
-         </Card>
-       </div>
+        </div>
 
       <AnimatePresence>
         {selectedStudent && (

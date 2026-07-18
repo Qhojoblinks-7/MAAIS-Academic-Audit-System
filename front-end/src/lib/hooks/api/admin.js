@@ -289,6 +289,17 @@ export function useCreateSubject() {
   });
 }
 
+export function useUpdateSubject() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, dto }) => adminApi.updateSubject(id, dto),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'academic'] });
+      qc.invalidateQueries({ queryKey: ['timetable'] });
+    },
+  });
+}
+
 export function useCreateClass() {
   const qc = useQueryClient();
   return useMutation({
@@ -681,6 +692,7 @@ export function useApprovals(query = {}) {
     queryKey: ['admin', 'approvals', query],
     queryFn: () => adminApi.getApprovals(query),
     staleTime: 1000 * 30,
+    refetchInterval: 1000 * 30,
   });
 }
 

@@ -228,7 +228,7 @@ export function DepartmentManagement() {
       setAlertState({
         isOpen: true,
         title: 'Department Spawned',
-        message: `${spawnForm.name} department created successfully.${spawnForm.hodName.trim() ? ` Initial cluster of 3 staff profiles generated.` : ''}`,
+        message: `${spawnForm.name} department created successfully.${spawnForm.hodName.trim() ? ` Initial team of 3 staff profiles generated.` : ''}`,
         type: 'success',
       });
     } catch (error) {
@@ -254,10 +254,10 @@ export function DepartmentManagement() {
         fromDeptId: selectedDeptId,
         toDeptId,
       });
-      setAlertState({ isOpen: true, title: 'Registry Transfer', message: `Staff "${staffName}" transferred to ${departments.find((d) => d.id === toDeptId)?.name} cluster.`, type: 'success' });
+      setAlertState({ isOpen: true, title: 'Transfer', message: `Staff "${staffName}" transferred to the ${departments.find((d) => d.id === toDeptId)?.name} department.`, type: 'success' });
       setActiveOperation(null);
     } catch (error) {
-      setAlertState({ isOpen: true, title: 'Transfer Failed', message: error?.response?.data?.message || 'Registry transfer failed.', type: 'danger' });
+      setAlertState({ isOpen: true, title: 'Transfer Failed', message: error?.response?.data?.message || 'Transfer failed.', type: 'danger' });
     }
   };
 
@@ -286,7 +286,7 @@ export function DepartmentManagement() {
     const { staffId, staffName } = activeOperation;
     try {
       await deactivateMutation.mutateAsync(staffId);
-      setAlertState({ isOpen: true, title: 'Deep Archive', message: `Staff "${staffName}" archived. Account deactivated.`, type: 'warning' });
+      setAlertState({ isOpen: true, title: 'Deactivate Staff', message: `Staff "${staffName}" has been deactivated and removed from active records.`, type: 'warning' });
       setActiveOperation(null);
     } catch (error) {
       setAlertState({ isOpen: true, title: 'Archive Failed', message: error?.response?.data?.message || 'Archive operation failed.', type: 'danger' });

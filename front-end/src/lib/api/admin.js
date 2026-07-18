@@ -29,6 +29,7 @@ export const adminApi = {
   getDepartment: (id) => api.get(`/academic/departments/${id}`),
   createSubject: (dto) => api.post('/academic/subjects', dto),
   getAllSubjects: () => api.get('/academic/subjects'),
+  updateSubject: (id, dto) => api.patch(`/academic/subjects/${id}`, dto),
   createClass: (dto) => api.post('/academic/classes', dto),
   updateClass: (id, dto) => api.patch(`/academic/classes/${id}`, dto),
   deleteClass: (id) => api.delete(`/academic/classes/${id}`),

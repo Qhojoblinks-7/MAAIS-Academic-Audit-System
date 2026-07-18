@@ -149,12 +149,12 @@ export function StaffTabContent({
                     >
                       <div className="p-1 border-b border-border bg-muted/20">
                         <p className="text-[7.5px] font-black uppercase tracking-wider text-muted-foreground px-2 py-0.5 font-mono">
-                          System Operational Protocol
+                          Staff Actions
                         </p>
                       </div>
 <div className="p-1 space-y-0.5">
 {[
-                            { label: 'Registry Transfer', icon: ArrowRight, color: 'hover:text-brand-primary hover:bg-brand-primary/10', isDeptLevel: false },
+                            { label: 'Transfer', icon: ArrowRight, color: 'hover:text-brand-primary hover:bg-brand-primary/10', isDeptLevel: false },
                             { label: 'Credential Reset', icon: RotateCcw, color: 'hover:text-warning hover:bg-warning/10', isDeptLevel: false },
                             { label: 'Audit Trail View', icon: Search, color: 'hover:text-brand-primary hover:bg-brand-primary/10', isDeptLevel: true },
                             { label: 'Revoke Authority', icon: ShieldCheck, color: 'hover:text-destructive hover:bg-destructive/5', isDeptLevel: false },
@@ -183,12 +183,12 @@ export function StaffTabContent({
 <button 
                            onClick={(e) => {
                              e.stopPropagation();
-                             handleNodeOperation('Deep Archive', member.id, member.name, dept.id);
+                             handleNodeOperation('Deactivate Staff', member.id, member.name, dept.id);
                            }}
                            className="w-full flex items-center gap-2 px-2 py-1.5 text-[10px] font-bold text-muted-foreground hover:text-destructive hover:bg-destructive/5 rounded-lg transition-all text-left cursor-pointer"
                          >
                            <Trash2 size={11} className="shrink-0" />
-                           <span className="truncate">Deep Archive</span>
+                            <span className="truncate">Deactivate Staff</span>
                          </button>
                       </div>
                     </motion.div>
@@ -204,7 +204,7 @@ export function StaffTabContent({
        {dept.id && onAddTeacher && (
          <button onClick={onAddTeacher} className="w-full h-8 px-3 border border-dashed border-border rounded-xl text-[8.5px] font-bold text-muted-foreground hover:text-foreground/80 hover:border-border hover:bg-muted/20 uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 mt-1 cursor-pointer group">
            <Plus size={11} className="shrink-0 transition-transform group-hover:rotate-90" />
-           <span className="truncate">Transfer Teacher to Cluster</span>
+            <span className="truncate">Transfer Teacher to Department</span>
          </button>
        )}
     </div>

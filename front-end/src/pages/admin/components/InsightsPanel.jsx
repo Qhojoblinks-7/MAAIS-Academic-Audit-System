@@ -5,7 +5,7 @@ import { EmptyState } from "../../../components/molecules";
 export function InsightsPanel({ onStructuralExport, insightsStats }) {
   return (
     <div className="xl:col-span-4 space-y-8 sticky top-8">
-      <div className="bg-brand-primary rounded-[2.5rem] p-8 text-primary-foreground shadow-xl shadow-brand-primary/10">
+      <div className="bg-brand-charcoal rounded-[2.5rem] p-8 text-primary-foreground shadow-xl shadow-brand-charcoal/10">
         <h3 className="text-xs font-black uppercase tracking-[0.25em] mb-8 text-primary-foreground/60">Load Distribution Matrix</h3>
         <div className="space-y-6">
           <div className="bg-surface/5 p-6 rounded-3xl border border-surface/10">

@@ -39,7 +39,7 @@ export function DepartmentDetailsHeader({ selectedDept, onBack, onExport, onFree
         <div className="flex items-center gap-4">
           <button onClick={onBack} className="p-2.5 bg-primary-foreground/10 hover:bg-primary-foreground/20 rounded-xl transition-all shadow-lg backdrop-blur-md flex items-center gap-2">
             <ChevronLeft size={16} />
-            <span className="text-[9px] font-black uppercase tracking-widest">Back to Registry</span>
+            <span className="text-[9px] font-black uppercase tracking-widest">Back to Departments</span>
           </button>
           <div className="hidden sm:flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-primary-foreground/50">
             <BookOpen size={12} />
@@ -90,9 +90,9 @@ export function DepartmentDetailsHeader({ selectedDept, onBack, onExport, onFree
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <button onClick={() => setActiveTab('staff')} className={cn("text-[9px] font-black uppercase tracking-widest transition-all px-3 py-1.5 rounded-lg cursor-pointer", activeTab === 'staff' ? "text-primary-foreground bg-primary-foreground/15" : "text-primary-foreground/60 hover:text-primary-foreground bg-primary-foreground/5 hover:bg-primary-foreground/10")}>Faculty Registry</button>
-          <button onClick={() => setActiveTab('grading')} className={cn("text-[9px] font-black uppercase tracking-widest transition-all px-3 py-1.5 rounded-lg cursor-pointer", activeTab === 'grading' ? "text-primary-foreground bg-primary-foreground/15" : "text-primary-foreground/60 hover:text-primary-foreground bg-primary-foreground/5 hover:bg-primary-foreground/10")}>Grading Protocol</button>
-          <button onClick={() => setActiveTab('vault')} className={cn("text-[9px] font-black uppercase tracking-widest transition-all px-3 py-1.5 rounded-lg cursor-pointer", activeTab === 'vault' ? "text-primary-foreground bg-primary-foreground/15" : "text-primary-foreground/60 hover:text-primary-foreground bg-primary-foreground/5 hover:bg-primary-foreground/10")}>Minutes Vault</button>
+          <button onClick={() => setActiveTab('staff')} className={cn("text-[9px] font-black uppercase tracking-widest transition-all px-3 py-1.5 rounded-lg cursor-pointer", activeTab === 'staff' ? "text-primary-foreground bg-primary-foreground/15" : "text-primary-foreground/60 hover:text-primary-foreground bg-primary-foreground/5 hover:bg-primary-foreground/10")}>Faculty</button>
+          <button onClick={() => setActiveTab('grading')} className={cn("text-[9px] font-black uppercase tracking-widest transition-all px-3 py-1.5 rounded-lg cursor-pointer", activeTab === 'grading' ? "text-primary-foreground bg-primary-foreground/15" : "text-primary-foreground/60 hover:text-primary-foreground bg-primary-foreground/5 hover:bg-primary-foreground/10")}>Grading</button>
+          <button onClick={() => setActiveTab('vault')} className={cn("text-[9px] font-black uppercase tracking-widest transition-all px-3 py-1.5 rounded-lg cursor-pointer", activeTab === 'vault' ? "text-primary-foreground bg-primary-foreground/15" : "text-primary-foreground/60 hover:text-primary-foreground bg-primary-foreground/5 hover:bg-primary-foreground/10")}>Minutes</button>
         </div>
       </div>
     </div>

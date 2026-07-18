@@ -202,7 +202,7 @@ export function ClassLockExport({ pipeline, activeClassId, onSelect }) {
               >
                 <div className="px-5 py-4 border-b border-border bg-muted flex items-center justify-between gap-4">
                   <div>
-                    <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider">Export Node Configuration</h3>
+                     <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider">Export Settings</h3>
                     <p className="text-[11px] text-text-secondary font-medium mt-0.5">Target: <span className="text-text-primary font-bold">{selectedClass.className}</span></p>
                   </div>
                   <div className="flex items-center gap-1.5">

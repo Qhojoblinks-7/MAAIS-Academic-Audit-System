@@ -9,7 +9,7 @@ This document maps each Functional Requirement (FR) and Non-Functional Requireme
 ### FR1: Role-Based Access Control (RBAC)
 **Requirement:** The system shall provide distinct interfaces for System Admins, HODs, Teachers, and Students.
 
-**Implementation Status:** ✅ COMPLETE
+**Implementation StAatus:** ✅ COMPLETE
 
 **What was built:**
 - Four distinct role-based dashboards with dedicated sidebars:

@@ -87,7 +87,7 @@ export const SchedulingView = () => {
                  <span className="text-[8px] font-black text-primary-foreground/50 uppercase tracking-widest">Double Track (Gold) Context</span>
               </div>
            </div>
-           <p className="text-[8px] font-black text-primary-foreground/20 uppercase tracking-[0.2em]">Institutional Intelligence v2.0</p>
+            <p className="text-[8px] font-black text-primary-foreground/20 uppercase tracking-[0.2em]">Academic Scheduling v2.0</p>
         </div>
       </footer>
     </div>

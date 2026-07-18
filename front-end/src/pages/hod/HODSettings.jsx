@@ -148,7 +148,7 @@ return (
       <div className="flex-1 overflow-auto p-6 lg:p-8">
         <div className="max-w-3xl mx-auto space-y-6">
           
-          {/* Dashboard Control Node Identification Bar */}
+          {/* Department Info Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-5">
             <div>
               <h1 className="text-xl font-bold text-foreground tracking-tight">System Configuration</h1>

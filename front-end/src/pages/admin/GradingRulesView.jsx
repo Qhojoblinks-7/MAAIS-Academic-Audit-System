@@ -272,7 +272,7 @@ const handleAuditTrailClick = () => {
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h1 className="text-3xl font-black italic font-display text-text-primary tracking-tight leading-none">
-              The Grading Protocol
+              The Grading Rules
             </h1>
             <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.3em] mt-3">
               Standardized Assessment Logic & WAEC Calibration
@@ -574,61 +574,61 @@ const handleAuditTrailClick = () => {
 
           {/* 3. The "Final Seal" (Validation Lock) */}
           <div className="space-y-8">
-            <section className="bg-brand-dark rounded-[2.5rem] p-10 text-primary-foreground shadow-2xl relative overflow-hidden">
-               <div className="absolute -bottom-10 -right-10 opacity-10">
-                 <Lock size={200} />
-               </div>
+            <section className="bg-brand-charcoal rounded-[2.5rem] p-10 text-primary-foreground shadow-2xl relative overflow-hidden">
+                 <div className="absolute -bottom-10 -right-10 opacity-10 text-primary-foreground pointer-events-none">
+                  <Lock size={200} />
+                </div>
                
-                <div className="relative z-10">
-                  <div className="flex items-start justify-between mb-8">
-                    <div className="w-16 h-16 bg-surface/10 backdrop-blur-xl border border-primary-foreground/20 rounded-[1.5rem] flex items-center justify-center">
-                      {isTermFinalized ? <Lock className="text-destructive" size={32} /> : <Unlock className="text-brand-primary" size={32} />}
-                    </div>
-                    <span className={cn(
-                      "text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-lg border",
-                      isTermFinalized 
-                        ? "bg-destructive/20 text-destructive border-destructive/30 animate-pulse" 
-                        : "bg-brand-primary/20 text-brand-primary border-brand-primary/30"
-                    )}>
-                      {isTermFinalized ? 'TERM LOCKED' : 'TERM UNLOCKED'}
-                    </span>
-                  </div>
-                  
-                  <h3 className="text-2xl font-black text-primary-foreground italic font-display tracking-tight leading-none mb-3">Terminal Validation Lock</h3>
-                  <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest leading-relaxed mb-10">
-                    {isTermFinalized 
-                      ? 'Grading is suspended. No teacher can modify marks. Use Emergency Unlock to restore access.' 
-                      : 'Encrypt and freeze the database for report generation. Once locked, no teacher can modify marks.'}
-                  </p>
-                 
-                 <div className="space-y-6 mb-12">
-                   <div className="flex justify-between items-end">
-                      <label className="text-[9px] font-black text-text-secondary uppercase tracking-[0.2em] block mb-3">Submission Deadline</label>
-                      <span className={cn(
-                        "text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md mb-2",
-                        getTimeRemaining() === 'DEADLINE PASSED' ? "bg-destructive text-primary-foreground" : "bg-brand-primary text-primary-foreground"
-                      )}>
-                        {getTimeRemaining()}
-                      </span>
+                 <div className="relative z-10">
+                   <div className="flex items-start justify-between mb-8">
+                     <div className="w-16 h-16 bg-primary-foreground/10 backdrop-blur-xl border border-primary-foreground/20 rounded-[1.5rem] flex items-center justify-center">
+                       {isTermFinalized ? <Lock className="text-primary-foreground" size={32} /> : <Unlock className="text-primary-foreground/80" size={32} />}
+                     </div>
+                     <span className={cn(
+                       "text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-lg border",
+                       isTermFinalized 
+                         ? "bg-destructive/25 text-destructive border-destructive/40 animate-pulse" 
+                         : "bg-primary-foreground/15 text-primary-foreground border-primary-foreground/30"
+                     )}>
+                       {isTermFinalized ? 'TERM LOCKED' : 'TERM UNLOCKED'}
+                     </span>
                    </div>
+                   
+                   <h3 className="text-2xl font-black text-primary-foreground italic font-display tracking-tight leading-none mb-3">Terminal Validation Lock</h3>
+                   <p className="text-[10px] font-bold text-primary-foreground/70 uppercase tracking-widest leading-relaxed mb-10">
+                     {isTermFinalized 
+                       ? 'Grading is suspended. No teacher can modify marks. Use Emergency Unlock to restore access.' 
+                       : 'Encrypt and freeze the database for report generation. Once locked, no teacher can modify marks.'}
+                   </p>
+                 
+                  <div className="space-y-6 mb-12">
+                    <div className="flex justify-between items-end">
+                       <label className="text-[9px] font-black text-primary-foreground/60 uppercase tracking-[0.2em] block mb-3">Submission Deadline</label>
+                       <span className={cn(
+                         "text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md mb-2",
+                         getTimeRemaining() === 'DEADLINE PASSED' ? "bg-destructive text-primary-foreground" : "bg-primary-foreground text-brand-charcoal"
+                       )}>
+                         {getTimeRemaining()}
+                       </span>
+                    </div>
                    <div className="grid grid-cols-2 gap-4">
                      <div className="relative">
-                        <input 
-                          type="date" 
-                          value={deadlineDate}
-                          disabled={isTermFinalized}
-                          onChange={(e) => setDeadlineDate(e.target.value)}
-                          className="w-full bg-primary-foreground/5 border border-primary-foreground/10 rounded-2xl px-5 py-4 text-xs font-black italic font-display outline-none focus:ring-2 focus:ring-primary-foreground/20 transition-all active:bg-primary-foreground/10"
-                        />
+                         <input 
+                           type="date" 
+                           value={deadlineDate}
+                           disabled={isTermFinalized}
+                           onChange={(e) => setDeadlineDate(e.target.value)}
+                           className="w-full bg-surface border border-primary-foreground/15 rounded-2xl px-5 py-4 text-xs font-black italic font-display text-foreground outline-none focus:ring-2 focus:ring-primary-foreground/30 transition-all"
+                         />
                      </div>
                      <div className="relative">
-                        <input 
-                          type="time" 
-                          value={deadlineTime}
-                          disabled={isTermFinalized}
-                          onChange={(e) => setDeadlineTime(e.target.value)}
-                          className="w-full bg-primary-foreground/5 border border-primary-foreground/10 rounded-2xl px-5 py-4 text-xs font-black italic font-display outline-none focus:ring-2 focus:ring-primary-foreground/20 transition-all active:bg-primary-foreground/10"
-                        />
+                         <input 
+                           type="time" 
+                           value={deadlineTime}
+                           disabled={isTermFinalized}
+                           onChange={(e) => setDeadlineTime(e.target.value)}
+                           className="w-full bg-surface border border-primary-foreground/15 rounded-2xl px-5 py-4 text-xs font-black italic font-display text-foreground outline-none focus:ring-2 focus:ring-primary-foreground/30 transition-all"
+                         />
                      </div>
                    </div>
                  </div>

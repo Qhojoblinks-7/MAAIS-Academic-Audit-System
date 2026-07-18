@@ -13,27 +13,36 @@ import {
   TableRow,
   TableCell,
 } from '../../components/ui/table';
-
-const mockTimetable = Array.from({ length: 7 }, (_, i) => {
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-  return {
-    day: days[i] || 'Monday',
-    periods: [
-      { id: 'p1', subject: 'General Agric', class: 'SHS 1A', venue: 'Lab 1', type: 'REGULAR' },
-      { id: 'p2', subject: 'Biology', class: 'SHS 2A', venue: 'Lab 2', type: 'REGULAR' },
-      { id: 'p3', subject: '-', class: '-', venue: '-', type: 'FREE' },
-      { id: 'p4', subject: 'Home Econ', class: 'SHS 3B', venue: 'Cookery Lab', type: 'REGULAR' },
-      { id: 'p5', subject: 'Physics', class: 'SHS 3A', venue: 'Science Block', type: 'REGULAR' },
-      { id: 'p6', subject: 'Study Hall', class: 'SHS 2B', venue: 'Library', type: 'FREE' },
-      { id: 'p7', subject: 'Substitution', class: 'SHS 1E', venue: 'Class B4', type: 'SUBSTITUTION' },
-      { id: 'p8', subject: 'Gen. Arts', class: 'SHS 2A', venue: 'Hall', type: 'LAB' },
-    ],
-  };
-});
+import { useTimetableEntries } from '@/lib/hooks';
 
 export function Timetable() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = React.useState('grid');
+
+  const { data: timetableEntries = [], isLoading } = useTimetableEntries();
+
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+  const dayEntries = days.map(day => ({
+    day,
+    periods: timetableEntries
+      .filter(entry => entry.dayOfWeek === day.toUpperCase())
+      .map(entry => ({
+        id: entry.id,
+        subject: entry.subject?.name || '—',
+        class: entry.classSection?.name || '—',
+        venue: entry.room || '—',
+        type: 'REGULAR',
+        teacher: entry.teacher ? `${entry.teacher.firstName || ''} ${entry.teacher.lastName || ''}`.trim() : '',
+      })),
+  }));
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 overflow-y-auto bg-[#F9F9F7] p-8 lg:p-12">
+        <div className="text-sm text-muted-foreground">Loading timetable...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#F9F9F7] p-8 lg:p-12">
@@ -62,46 +71,61 @@ export function Timetable() {
           ))}
         </div>
 
-<div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-x-auto">
-          <Table className="min-w-[900px]">
-            <TableHeader>
-              <TableRow className="bg-gray-50/50">
-                <TableHead className="px-4 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest border-r border-gray-100 min-w-[110px]">Time</TableHead>
-                {mockTimetable.map((d) => (
-                  <TableHead key={d.day} className="px-2 py-4 text-[10px] font-black text-gray-900 uppercase tracking-widest text-center whitespace-nowrap">{d.day}</TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody className="divide-y divide-gray-50">
-              {mockTimetable[0]?.periods.map((period, pIdx) => (
-                <TableRow key={period.id}>
-                  <TableCell className="px-4 py-4 text-[10px] font-black text-gray-900 uppercase tracking-widest border-r border-gray-100 whitespace-nowrap">P{pIdx + 1}</TableCell>
-                  {mockTimetable.map((day, dIdx) => {
-                    const entry = day.periods[pIdx];
-                    const typeColor = entry.type === 'SUBSTITUTION' ? 'bg-amber-50 border-amber-200 text-amber-800' :
-                                    entry.type === 'LAB' ? 'bg-purple-50 border-purple-200 text-purple-800' :
-                                    entry.type === 'FREE' ? 'bg-gray-50 border-gray-200 text-gray-400' :
-                                    'bg-white border-gray-200 text-gray-900';
-                    return (
-                      <TableCell key={dIdx} className="px-2 py-2 text-center align-middle">
-                        <div className={cn("px-2 py-2.5 rounded-xl border text-[10px] font-black transition-all cursor-pointer hover:shadow-md", typeColor)}>
-                          {entry.subject !== '-' ? (
-                            <>
-                              <p className="truncate">{entry.subject}</p>
-                              <p className="text-[8px] font-bold uppercase tracking-widest mt-0.5">{entry.class}</p>
-                            </>
-                          ) : (
-                            <p className="font-bold italic">Free</p>
-                          )}
-                        </div>
-                      </TableCell>
-                    );
-                  })}
+        {timetableEntries.length === 0 ? (
+          <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-12 text-center">
+            <p className="text-sm text-gray-500">No timetable entries found. Seed the database or create entries.</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-x-auto">
+            <Table className="min-w-[900px]">
+              <TableHeader>
+                <TableRow className="bg-gray-50/50">
+                  <TableHead className="px-4 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest border-r border-gray-100 min-w-[110px]">Time</TableHead>
+                  {days.map((d) => (
+                    <TableHead key={d} className="px-2 py-4 text-[10px] font-black text-gray-900 uppercase tracking-widest text-center whitespace-nowrap">{d}</TableHead>
+                  ))}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody className="divide-y divide-gray-50">
+                {Array.from({ length: Math.max(...dayEntries.map(d => d.periods.length)) }, (_, pIdx) => (
+                  <TableRow key={pIdx}>
+                    <TableCell className="px-4 py-4 text-[10px] font-black text-gray-900 uppercase tracking-widest border-r border-gray-100 whitespace-nowrap">P{pIdx + 1}</TableCell>
+                    {dayEntries.map((day, dIdx) => {
+                      const entry = day.periods[pIdx];
+                      if (!entry) {
+                        return (
+                          <TableCell key={dIdx} className="px-2 py-2 text-center align-middle">
+                            <div className={cn("px-2 py-2.5 rounded-xl border text-[10px] font-black transition-all", "bg-gray-50 border-gray-200 text-gray-400")}>
+                              <p className="font-bold italic">Free</p>
+                            </div>
+                          </TableCell>
+                        );
+                      }
+                      const typeColor = entry.type === 'SUBSTITUTION' ? 'bg-amber-50 border-amber-200 text-amber-800' :
+                                      entry.type === 'LAB' ? 'bg-purple-50 border-purple-200 text-purple-800' :
+                                      entry.type === 'FREE' ? 'bg-gray-50 border-gray-200 text-gray-400' :
+                                      'bg-white border-gray-200 text-gray-900';
+                      return (
+                        <TableCell key={dIdx} className="px-2 py-2 text-center align-middle">
+                          <div className={cn("px-2 py-2.5 rounded-xl border text-[10px] font-black transition-all cursor-pointer hover:shadow-md", typeColor)}>
+                            {entry.subject !== '—' ? (
+                              <>
+                                <p className="truncate">{entry.subject}</p>
+                                <p className="text-[8px] font-bold uppercase tracking-widest mt-0.5">{entry.class}</p>
+                              </>
+                            ) : (
+                              <p className="font-bold italic">Free</p>
+                            )}
+                          </div>
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </div>
     </div>
   );

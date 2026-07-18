@@ -23,7 +23,7 @@ export function SettingsView() {
               <Settings size={28} />
             </div>
             <div>
-              <h1 className="text-[28px] md:text-[34px] font-black text-gray-900 tracking-tighter leading-none italic font-display uppercase">System Vault</h1>
+              <h1 className="text-[28px] md:text-[34px] font-black text-gray-900 tracking-tighter leading-none italic font-display uppercase">Account Settings</h1>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Core protocols · identity · communications config</p>
             </div>
           </div>
@@ -34,7 +34,7 @@ export function SettingsView() {
           <section className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-gray-50 bg-gray-50/30 flex items-center gap-3">
               <Fingerprint className="text-gray-900" size={20} />
-              <h2 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">Identity &amp; Access Node</h2>
+              <h2 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">Identity &amp; Access</h2>
             </div>
             <div className="p-8 space-y-4">
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
@@ -151,7 +151,7 @@ export function SettingsView() {
               <h2 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">Local Server Log (Last 8 Lines)</h2>
             </div>
             <div className="p-8 font-mono text-[10px] text-gray-500 space-y-1 leading-relaxed">
-              <p><span className="text-emerald-600 font-black">[INFO]</span>  MAAIS Core 2.4.1 · Node 22.x · Port 3000</p>
+              <p><span className="text-emerald-600 font-black">[INFO]</span>  MAAIS Core 2.4.1 · Runtime 22.x · Port 3000</p>
               <p><span className="text-emerald-600 font-black">[INFO]</span>  Connected to localStorage adapter · 3 schemas loaded</p>
               <p><span className="text-amber-600 font-black">[WARN]</span>  express module loaded — Dev-only server detected</p>
               <p><span className="text-emerald-600 font-black">[INFO]</span>  Connected to SQLite primary database · schema v6</p>

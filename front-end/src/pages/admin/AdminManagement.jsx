@@ -7,7 +7,7 @@ import { StaffRegistry } from './StaffRegistry';
 const iconMap = { Users };
 
 const ADMIN_TABS = [
-  { id: 'registry', label: 'Staff Registry', icon: 'Users' },
+  { id: 'registry', label: 'Staff Directory', icon: 'Users' },
 ];
 
 export function AdminManagement() {

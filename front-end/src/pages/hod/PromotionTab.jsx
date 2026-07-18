@@ -104,7 +104,7 @@ export function PromotionTab({
 
         {/* Narrative Operational Warning Context */}
         <p className="text-xs text-muted-foreground font-medium leading-relaxed">
-          Executing the Promotion Cycle permanently finalizes the current term's grades, seals student outcomes, and dispatches the senior class (SHS 3) into <strong>"The Vault of Historical Archives"</strong>. It also promotes SHS 1 to SHS 2 and SHS 2 to SHS 3, completely setting the slate clean for the next active academic session.
+          Executing the Promotion Cycle permanently finalizes the current term's grades, seals student outcomes, and moves the senior class (SHS 3) into <strong>"The Historical Archive"</strong>. It also promotes SHS 1 to SHS 2 and SHS 2 to SHS 3, completely setting the slate clean for the next active academic session.
         </p>
 
         {/* Promotion Metrics Operational Block */}

@@ -9,6 +9,7 @@ import {
   useRemoveCurriculumMapping,
   useBulkUpsertCurriculum,
   useDeployCurriculum,
+  useUpdateSubject,
 } from '../../../lib/hooks';
 
 export function CurriculumMatrixView({ displaySubjects: initialSubjects, displayClasses: initialClasses, academicYearId }) {
@@ -28,6 +29,7 @@ export function CurriculumMatrixView({ displaySubjects: initialSubjects, display
   const removeMutation = useRemoveCurriculumMapping();
   const bulkUpsertMutation = useBulkUpsertCurriculum();
   const deployMutation = useDeployCurriculum();
+  const updateSubjectMutation = useUpdateSubject();
 
   const backendAssignments = useMemo(() => {
     const map = {};
@@ -58,7 +60,7 @@ export function CurriculumMatrixView({ displaySubjects: initialSubjects, display
     if (name.includes('arts') && !name.includes('visual')) return 'General Arts';
     if (name.includes('bus')) return 'Business';
     if (name.includes('home')) return 'Home Economics';
-    if (name.includes('visual')) return 'Visual Arts';
+    if (name.includes('technical')) return 'Technical';
     return '';
   };
 
@@ -171,6 +173,23 @@ export function CurriculumMatrixView({ displaySubjects: initialSubjects, display
     }
   }, [subjectStates, classes, toggleSubjectAssignment, persistAssignment, matrixQuery]);
 
+  const handleCreditHoursChange = useCallback((subjectId, value) => {
+    const parsed = Math.max(0, parseInt(value, 10) || 0);
+    setSubjectStates(prev => {
+      if (!prev[subjectId]) return prev;
+      return {
+        ...prev,
+        [subjectId]: { ...prev[subjectId], cerditHours: parsed, creditHours: parsed },
+      };
+    });
+    updateSubjectMutation.mutate(
+      { id: subjectId, dto: { creditHours: parsed } },
+      {
+        onError: (err) => toast.error(`Failed to update credit hours: ${err?.message || 'Unknown error'}`),
+      }
+    );
+  }, [updateSubjectMutation]);
+
   const autoSyncCore = useCallback(() => {
     setSubjectStates(prev => {
       const updated = { ...prev };
@@ -267,7 +286,7 @@ export function CurriculumMatrixView({ displaySubjects: initialSubjects, display
     let totalCredits = 0;
     let assignedCount = 0;
     filteredSubjects.forEach(sub => {
-      totalCredits += sub.creditHours || 0;
+      totalCredits += subjectStates[sub.id]?.creditHours ?? sub.creditHours ?? 0;
       Object.values(subjectStates[sub.id]?.assignments || {}).forEach(assigned => {
         if (assigned) assignedCount += 1;
       });
@@ -312,24 +331,9 @@ export function CurriculumMatrixView({ displaySubjects: initialSubjects, display
               </button>
             </div>
           </div>
-
-          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide mt-6">
-            {activeYearGroups.map((f, i) => (
-              <button
-                key={i}
-                onClick={() => setActiveFilters(prev => ({ ...prev, yearGroup: f }))}
-                className={cn(
-                  "px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shrink-0 whitespace-nowrap",
-                  activeFilters.yearGroup === f ? "bg-brand-primary text-primary-foreground shadow-lg" : "bg-muted/30 text-muted-foreground border border-border hover:bg-muted/50"
-                )}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
         </div>
 
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto scrollbar-hide">
           <Table className="min-w-[1200px]">
             <TableHeader className="sticky top-0 z-20 bg-muted/30 border-b border-border">
               <TableRow>
@@ -347,8 +351,8 @@ export function CurriculumMatrixView({ displaySubjects: initialSubjects, display
               {filteredSubjects.map((sub) => {
                 const state = subjectStates[sub.id];
                 return (
-                  <TableRow key={sub.id} className="group hover:bg-muted/50">
-                    <TableCell className="px-8 py-5 border-r border-border bg-surface sticky left-0 z-10 group-hover:bg-muted/30 shadow-[5px_0_15px_rgba(0,0,0,0.02)]">
+                  <TableRow key={sub.id} className="group">
+                    <TableCell className="px-8 py-5 border-r border-border bg-surface sticky left-0 z-10 group-hover:bg-surface shadow-[5px_0_15px_rgba(0,0,0,0.02)]">
                       <div className="flex items-center gap-4">
                         <div className={cn(
                           "w-8 h-8 rounded-lg flex items-center justify-center shadow-sm",
@@ -362,9 +366,15 @@ export function CurriculumMatrixView({ displaySubjects: initialSubjects, display
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="px-6 py-5 text-center border-r border-border">
+                    <TableCell className="px-6 py-5 text-center border-r border-border hover:bg-muted/50 transition-colors">
                       <div className="flex items-center justify-center gap-1.5">
-                        <span className="text-sm font-black italic font-display text-foreground">{sub.creditHours}</span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={sub.creditHours ?? 0}
+                          onChange={(e) => handleCreditHoursChange(sub.id, e.target.value)}
+                          className="w-12 text-center text-sm font-black italic font-display text-foreground bg-muted/30 border border-border rounded-lg py-1 outline-none focus:ring-2 focus:ring-brand-primary/30 transition-all"
+                        />
                         <Clock size={10} className="text-muted-foreground" />
                       </div>
                     </TableCell>
@@ -374,7 +384,7 @@ export function CurriculumMatrixView({ displaySubjects: initialSubjects, display
 
                       return (
                         <TableCell key={cls.id} className={cn(
-                          "px-4 py-5 text-center border-r border-border transition-colors",
+                          "px-4 py-5 text-center border-r border-border transition-colors hover:bg-muted/50",
                           core ? "bg-success/10" : ""
                         )}>
                           <div className="flex items-center justify-center">

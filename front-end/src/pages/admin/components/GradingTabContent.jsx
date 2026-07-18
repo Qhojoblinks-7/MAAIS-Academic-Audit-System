@@ -199,7 +199,7 @@ export function GradingTabContent({ dept, handleNodeOperation }) {
                       {rule.label}
                     </p>
                     <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider font-mono mt-0.5">
-                      SBA Sub-Weighting Protocol
+                       SBA Sub-Weighting Setting
                     </p>
                   </div>
                   <div

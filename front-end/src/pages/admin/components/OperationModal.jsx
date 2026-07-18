@@ -51,11 +51,11 @@ export function OperationModal({
           <header className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3 min-w-0">
                <div className="w-9 h-9 bg-brand-primary text-primary-foreground rounded-lg flex items-center justify-center shrink-0">
-                 {type === 'Registry Transfer' && <ArrowRight size={16} />}
+                  {type === 'Transfer' && <ArrowRight size={16} />}
                  {type === 'Credential Reset' && <RotateCcw size={16} />}
                  {type === 'Audit Trail View' && <Search size={16} />}
                  {type === 'Revoke Authority' && <ShieldCheck size={16} />}
-                 {type === 'Deep Archive' && <Trash2 size={16} />}
+                  {type === 'Deactivate Staff' && <Trash2 size={16} />}
                  {type === 'Add Teacher' && <Plus size={16} />}
                  {type === 'Authorize Template Update' && <FileText size={16} />}
                </div>
@@ -64,7 +64,7 @@ export function OperationModal({
                   {type}
                 </h3>
                 <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider truncate font-mono mt-0.5">
-                  {type === 'Add Teacher' ? `Target: ${staffName}` : `Node: ${staffName}`}
+                  {type === 'Add Teacher' ? `Target: ${staffName}` : `Staff: ${staffName}`}
                 </p>
               </div>
             </div>
@@ -76,10 +76,10 @@ export function OperationModal({
             </button>
           </header>
 
-          {type === 'Registry Transfer' && (
+          {type === 'Transfer' && (
             <div className="space-y-4">
               <p className="text-xs font-medium text-foreground/50 leading-normal">
-                Select the destination cluster for this faculty node to relocate all associated history and current assessment permissions.
+                Select the destination department for this staff member to relocate all associated history and current assessment permissions.
               </p>
               <div className="grid grid-cols-1 gap-1.5 max-h-[220px] overflow-y-auto pr-0.5 custom-scrollbar">
                 {departments.filter(d => d.id !== selectedDeptId).map(d => (
@@ -91,7 +91,7 @@ export function OperationModal({
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className={cn("w-1 h-4 rounded-full shrink-0", d.color)} />
                       <span className="text-xs font-bold italic text-foreground truncate">
-                        {d.name} Cluster
+                        {d.name} Department
                       </span>
                     </div>
                     <ChevronRight size={14} className="text-muted-foreground group-hover:text-foreground transition-all shrink-0" />
@@ -105,7 +105,7 @@ export function OperationModal({
             <div className="space-y-4">
               <div className="p-3 bg-warning/10 rounded-xl border border-warning/20">
                 <p className="text-xs font-medium text-warning leading-normal">
-                  This will invalidate current session tokens and generate a temporary institutional access key for <span className="font-black italic underline">{staffName}</span>.
+                   This will end the current session and generate a temporary password for <span className="font-black italic underline">{staffName}</span>.
                 </p>
               </div>
               <div className="space-y-2">
@@ -114,7 +114,7 @@ export function OperationModal({
                    onClick={onCredentialReset}
                    className="w-full py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-primary-foreground font-bold rounded-xl text-xs uppercase tracking-wider transition-all shadow-sm"
                  >
-                   Authorize Reset Protocol
+                    Authorize Password Reset
                  </button>
               </div>
             </div>
@@ -125,7 +125,7 @@ export function OperationModal({
               <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-0.5">
                 {[
                   { action: 'Mark Validation', time: '2 hours ago', status: 'Success' },
-                  { action: 'Registry Entry', time: 'Yesterday, 14:20', status: 'Verified' },
+                   { action: 'Profile Created', time: 'Yesterday, 14:20', status: 'Verified' },
                   { action: 'Login Attempt', time: 'Oct 22, 09:12', status: 'Authenticated' },
                 ].map((log, i) => (
                   <div key={i} className="flex items-start gap-2.5 p-2.5 bg-muted/30 border border-border/50 rounded-xl">
@@ -138,7 +138,7 @@ export function OperationModal({
                 ))}
               </div>
               <button className="w-full py-2.5 border border-border text-foreground/80 font-bold rounded-xl text-xs uppercase tracking-wider hover:bg-muted/30 transition-all">
-                Generate Full Forensic Report
+                 Generate Full Activity Report
               </button>
             </div>
           )}
@@ -155,12 +155,12 @@ export function OperationModal({
             </div>
           )}
 
-          {type === 'Deep Archive' && (
+          {type === 'Deactivate Staff' && (
             <div className="space-y-4 text-center">
                <div className="p-3 bg-brand-primary text-primary-foreground rounded-xl text-left">
-                 <p className="text-[8px] font-black text-primary-foreground/40 uppercase tracking-wider font-mono mb-2">Protocol Implications</p>
-                 <ul className="space-y-1.5">
-                   {['Preservation of academic records', 'Inactivation of login permissions', 'Node removal from active registry'].map((text, i) => (
+                <p className="text-[8px] font-black text-primary-foreground/40 uppercase tracking-wider font-mono mb-2">What happens next</p>
+                  <ul className="space-y-1.5">
+                    {['Preservation of academic records', 'Deactivation of login access', 'Removal from active staff list'].map((text, i) => (
                      <li key={i} className="flex items-center gap-2 text-xs font-bold italic text-muted-foreground">
                        <ShieldCheck size={12} className="text-success shrink-0" />
                        <span className="truncate">{text}</span>
@@ -170,7 +170,7 @@ export function OperationModal({
                </div>
                <div className="flex gap-2">
                  <button onClick={() => setActiveOperation(null)} className="flex-1 py-2.5 bg-muted/40 text-foreground/80 font-bold rounded-xl text-xs uppercase tracking-wider transition-all">Abort</button>
-                 <button onClick={onDeepArchive} className="flex-1 py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-primary-foreground font-bold rounded-xl text-xs uppercase tracking-wider transition-all">Initiate Archive</button>
+                  <button onClick={onDeepArchive} className="flex-1 py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-primary-foreground font-bold rounded-xl text-xs uppercase tracking-wider transition-all">Deactivate Staff Member</button>
                </div>
             </div>
           )}
@@ -178,12 +178,12 @@ export function OperationModal({
            {type === 'Add Teacher' && (
              <div className="space-y-4">
                <p className="text-xs font-medium text-foreground/50 leading-normal">
-                 Select a source cluster to import a faculty member. Teachers from other departments will be transferred to {staffName}.
+                  Select a source department to import a staff member. Teachers from other departments will be transferred to {staffName}.
                </p>
                <div className="grid grid-cols-1 gap-1.5 max-h-[220px] overflow-y-auto pr-0.5">
                  {departments.filter(d => d.id !== selectedDeptId && d.staff?.length > 0).map(d => (
                    <div key={d.id} className="border border-border rounded-xl p-2">
-                     <p className="text-xs font-black text-muted-foreground uppercase tracking-wider mb-1">{d.name} Cluster</p>
+                      <p className="text-xs font-black text-muted-foreground uppercase tracking-wider mb-1">{d.name} Department</p>
                      <div className="space-y-1">
                        {d.staff.map(member => (
                          <button key={member.id} onClick={() => onAddTeacher && onAddTeacher(d.id, member)} className="w-full flex items-center justify-between px-2 py-1.5 text-left text-xs font-bold text-foreground/60 hover:bg-muted/30 rounded-lg transition-all">
@@ -220,7 +220,7 @@ export function OperationModal({
         </div>
 
         <div className="bg-muted/30 py-2.5 text-center border-t border-border">
-           <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest font-mono">Institutional Protocol: L4 Auth</p>
+           <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest font-mono">Authorized Administrative Action</p>
         </div>
       </motion.div>
     </div>

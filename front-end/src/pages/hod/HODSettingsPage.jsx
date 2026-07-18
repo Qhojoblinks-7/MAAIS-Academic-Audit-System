@@ -217,7 +217,7 @@ export function HODSettingsPage() {
     { category: 'Profile',  field: 'Name',     action: 'Updated', date: '2026-05-10', actor: 'HOD' },
     { category: 'Notifications', field: 'Grading Alerts', action: 'Enabled', date: '2026-05-01', actor: 'System' },
     { category: 'Security', field: 'MFA',      action: 'Disabled', date: '2026-04-20', actor: 'HOD' },
-    { category: 'Department', field: 'Department', action: 'Created', date: '2026-01-15', actor: 'Registry' },
+    { category: 'Department', field: 'Department', action: 'Created', date: '2026-01-15', actor: 'Admin' },
   ];
 
   const filteredProfileChanges = recentProfileFields.filter(change => {
@@ -579,7 +579,7 @@ export function HODSettingsPage() {
                               )}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-xs font-bold text-gray-900 truncate">{session.device || session.userAgent || 'Remote Access Node'}</p>
+                              <p className="text-xs font-bold text-gray-900 truncate">                                {session.device || session.userAgent || 'Remote Session'}</p>
                               <p className="text-[10px] text-gray-400 font-mono mt-0.5 truncate">
                                 {session.ip || '0.0.0.0'} · Heartbeat: {session.lastActive || session.createdAt || 'Instant'}
                               </p>

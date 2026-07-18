@@ -56,7 +56,7 @@ export function AcademicArchitect() {
       id: y.id || `Y${idx}`,
       name: y.label || y.name,
       programs: Object.entries(programsMap).map(([name, cls]) => ({
-        id: cls[0].id,
+        id: `${y.id || `Y${idx}`}__${name}`,
         name,
         classrooms: cls.map(c => ({
           id: c.id,
@@ -84,11 +84,12 @@ export function AcademicArchitect() {
         if (!programsMap[progName]) programsMap[progName] = [];
         programsMap[progName].push(c);
       });
+      const yearId = `${groupYearId || 'SHS'}-${idx}`;
       return {
-        id: groupYearId || `SHS-${idx}`,
+        id: yearId,
         name: levelName,
         programs: Object.entries(programsMap).map(([name, cls]) => ({
-          id: cls[0].id,
+          id: `${yearId}__${name}`,
           name,
           classrooms: cls.map(c => ({
             id: c.id,
@@ -120,11 +121,12 @@ export function AcademicArchitect() {
         if (!programsMap[progName]) programsMap[progName] = [];
         programsMap[progName].push(c);
       });
+      const yearId = `${groupYearId || 'SHS'}-${idx}`;
       return {
-        id: groupYearId || `SHS-${idx}`,
+        id: yearId,
         name: levelName,
         programs: Object.entries(programsMap).map(([name, cls]) => ({
-          id: cls[0].id,
+          id: `${yearId}__${name}`,
           name,
           classrooms: cls.map(c => ({
             id: c.id,
@@ -162,7 +164,7 @@ export function AcademicArchitect() {
     if (name.includes('arts') && !name.includes('visual')) return 'General Arts';
     if (name.includes('bus')) return 'Business';
     if (name.includes('home')) return 'Home Economics';
-    if (name.includes('visual')) return 'Visual Arts';
+    if (name.includes('technical')) return 'Technical';
     return 'General';
   };
 
@@ -216,7 +218,7 @@ export function AcademicArchitect() {
 
   const createYearMutation = useCreateYear();
   const createClassMutation = useCreateClass();
-  const PROGRAMS = ['Science', 'General Arts', 'Business', 'Home Economics', 'Visual Arts'];
+  const PROGRAMS = ['Science', 'General Arts', 'Business', 'Home Economics', 'Technical'];
 
   const handleCreateYear = useCallback(async ({ name, programs }) => {
     await createYearMutation.mutateAsync({
@@ -298,7 +300,7 @@ export function AcademicArchitect() {
       </header>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto p-8 relative">
+      <div className="flex-1 overflow-y-auto p-8 relative scrollbar-hide">
         <div className="max-w-7xl mx-auto space-y-8">
           {activeTab === 'Blueprint' ? (
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
