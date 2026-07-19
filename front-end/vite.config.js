@@ -29,7 +29,23 @@ export default defineConfig(({ mode }) => {
     },
 
     server: {
-      hmr: process.env.DISABLE_HMR !== 'true',
+      host: true, // listen on all addresses (equivalent to --host=0.0.0.0)
+      strictPort: true, // fail loudly if 5173 is taken instead of silently starting a 2nd server (breaks HMR)
+      hmr:
+        process.env.DISABLE_HMR === 'true'
+          ? false
+          : {
+              // Force the browser HMR client to connect to localhost instead of 0.0.0.0,
+              // which fails silently when the server is bound to 0.0.0.0.
+              host: 'localhost',
+              protocol: 'ws',
+              port: 5173,
+            },
+      watch: {
+        // Windows file-system events can be unreliable; polling guarantees saves are detected.
+        usePolling: true,
+        interval: 100,
+      },
       proxy: {
         '/api/v1': {
           target: env.VITE_API_URL || 'http://localhost:3000',

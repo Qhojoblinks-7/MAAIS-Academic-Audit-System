@@ -16,7 +16,8 @@ export function TeacherGradingView() {
   const { user } = useRole();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState('All');
+  const [selectedClassFilter, setSelectedClassFilter] = useState('');
+  const [selectedSubjectFilter, setSelectedSubjectFilter] = useState('');
   const [gradingClasses, setGradingClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -24,7 +25,6 @@ export function TeacherGradingView() {
   const [selectedSubject, setSelectedSubject] = useState('');
   const [gradingStudents, setGradingStudents] = useState([]);
   const [statusMeta, setStatusMeta] = useState({});
-  const [filterOptions, setFilterOptions] = useState([]);
   const [dynamicSubjectConfig, setDynamicSubjectConfig] = useState({});
 
   const activeYearQuery = useActiveYear();
@@ -47,9 +47,8 @@ export function TeacherGradingView() {
       try {
          const classes = await teacherService.getClasses(user.profileId || user.id);
         const meta = await teacherService.getGradingStatusMeta();
-        const filters = await teacherService.getGradingFilterOptions();
         const subjectConfig = await teacherService.getSubjectConfig().catch(() => []);
-        
+
         const configMap = {};
         if (Array.isArray(subjectConfig)) {
           subjectConfig.forEach((s) => {
@@ -66,11 +65,26 @@ export function TeacherGradingView() {
             }
           });
         }
-        
+
+        const statusMetaMap = {};
+        const statusColors = (meta?.colors) || {
+          COMPLETE: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+          'IN PROGRESS': 'bg-blue-50 text-blue-700 border-blue-200',
+          'NOT STARTED': 'bg-amber-50 text-amber-700 border-amber-200',
+        };
+        const statusDots = {
+          COMPLETE: 'bg-emerald-500',
+          'IN PROGRESS': 'bg-blue-500',
+          'NOT STARTED': 'bg-amber-500',
+        };
+        ['COMPLETE', 'IN PROGRESS', 'NOT STARTED'].forEach((s) => {
+          const color = statusColors[s] || 'bg-muted text-muted-foreground border-border';
+          statusMetaMap[s] = { badge: color, dot: statusDots[s] || 'bg-muted' };
+        });
+
         setGradingClasses(classes || []);
-        setStatusMeta(meta || {});
-        setFilterOptions(filters || {});
-        setDynamicSubjectConfig(configMap);
+        setStatusMeta(statusMetaMap);
+        console.log('[TeacherGradingView] getClasses result:', classes, 'sample:', Array.isArray(classes) ? classes[0] : null);
         console.log('[TeacherGradingView] Dynamic subject configs loaded:', Object.keys(configMap).length, configMap);
       } catch (err) {
         setError('Failed to load grading data');
@@ -84,11 +98,20 @@ export function TeacherGradingView() {
 
   const subjectConfig = useMemo(() => ({ ...SUBJECT_CONFIG, ...dynamicSubjectConfig }), [dynamicSubjectConfig]);
 
+  const uniqueClasses = useMemo(() => {
+    if (!Array.isArray(gradingClasses)) return [];
+    const classes = [...new Set(gradingClasses.map(c => c.className).filter(Boolean))];
+    return classes.sort();
+  }, [gradingClasses]);
+
   const uniqueSubjects = useMemo(() => {
     if (!Array.isArray(gradingClasses)) return [];
-    const subjects = [...new Set(gradingClasses.map(c => c.subject).filter(Boolean))];
+    const pool = selectedClassFilter === ''
+      ? gradingClasses
+      : gradingClasses.filter(c => c.className === selectedClassFilter);
+    const subjects = [...new Set(pool.map(c => c.subject).filter(Boolean))];
     return subjects.sort();
-  }, [gradingClasses]);
+  }, [gradingClasses, selectedClassFilter]);
 
   const availableClasses = useMemo(() => {
     if (!Array.isArray(gradingClasses)) return [];
@@ -108,9 +131,9 @@ export function TeacherGradingView() {
     const matchesSearch =
       c.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.className.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = activeFilter === 'All' || c.status === activeFilter;
-    const matchesSubject = !selectedSubject || c.subject === selectedSubject;
-    return matchesSearch && matchesFilter && matchesSubject;
+    const matchesClass = selectedClassFilter === '' || c.className === selectedClassFilter;
+    const matchesSubject = selectedSubjectFilter === '' || c.subject === selectedSubjectFilter;
+    return matchesSearch && matchesClass && matchesSubject;
   });
 
   const statCards = [
@@ -123,8 +146,12 @@ export function TeacherGradingView() {
   /* ── Class selection: no route change, just state ── */
   const handleSelectClass = useCallback(async (cls) => {
     setSelectedClass(cls);
+    if (cls?.className) {
+      setSelectedClassFilter(cls.className);
+    }
     if (cls?.subject) {
       setSelectedSubject(cls.subject);
+      setSelectedSubjectFilter(cls.subject);
     }
     const students = await teacherService.getGradingStudents(cls.subject, cls.className);
     setGradingStudents(students || []);
@@ -155,6 +182,8 @@ export function TeacherGradingView() {
 
   const handleCloseSheet = useCallback(() => {
     setSelectedClass(null);
+    setSelectedClassFilter('');
+    setSelectedSubjectFilter('');
     setGradingStudents([]);
   }, []);
 
@@ -248,32 +277,47 @@ export function TeacherGradingView() {
             </div>
           </div>
 
-          {/* Filter + Search */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={15} />
-              <Input
-                type="text"
-                placeholder="Search by subject or class..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl text-sm font-medium text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/10 shadow-sm"
-              />
-            </div>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {filterOptions.map((f) => (
-                <Button
-                  key={f}
-                  variant={activeFilter === f ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setActiveFilter(f)}
-                  className="text-xs font-black uppercase tracking-widest"
-                >
-                  {f}
-                </Button>
-              ))}
-            </div>
-          </div>
+           {/* Filter + Search */}
+           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">
+             <div className="relative flex-1">
+               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={15} />
+               <Input
+                 type="text"
+                 placeholder="Search by subject or class..."
+                 value={searchQuery}
+                 onChange={(e) => setSearchQuery(e.target.value)}
+                 className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl text-sm font-medium text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/10 shadow-sm"
+               />
+             </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="relative">
+                  <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" size={14} />
+                    <select
+                      value={selectedClassFilter}
+                      onChange={(e) => setSelectedClassFilter(e.target.value)}
+                      className="appearance-none pl-9 pr-8 py-2.5 bg-card border border-border rounded-xl text-xs font-black uppercase tracking-widest text-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/10 cursor-pointer"
+                    >
+                      <option value="">All Classes</option>
+                      {uniqueClasses.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                </div>
+                <div className="relative">
+                  <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" size={14} />
+                    <select
+                      value={selectedSubjectFilter}
+                      onChange={(e) => setSelectedSubjectFilter(e.target.value)}
+                      className="appearance-none pl-9 pr-8 py-2.5 bg-card border border-border rounded-xl text-xs font-black uppercase tracking-widest text-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/10 cursor-pointer"
+                    >
+                      <option value="">All Subjects</option>
+                      {uniqueSubjects.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                </div>
+              </div>
+           </div>
 
           {/* Class sheets table */}
           <Card className="rounded-[2rem] border border-border shadow-sm overflow-hidden">

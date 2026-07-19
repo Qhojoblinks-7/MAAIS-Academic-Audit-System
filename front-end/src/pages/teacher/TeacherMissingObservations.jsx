@@ -14,6 +14,14 @@ import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '../../components/ui/table';
 
 const OBS_TYPES = ['Behavioral', 'Academic', 'Lab Safety', 'Collaboration', 'Punctuality'];
 const OBS_COLORS = ['#1D4D4F', '#f59e0b', '#ef4444', '#3b82f6', '#a855f7'];
@@ -377,8 +385,8 @@ export function TeacherMissingObservations() {
         </div>
       </section>
 
-      <main className="flex-1 overflow-y-auto p-6 lg:p-8 min-h-0">
-        <div className="max-w-6xl mx-auto">
+      <main className="flex-1 overflow-y-auto min-h-0">
+        <div className="max-w-6xl mx-auto px-8 py-8">
           {isLoading && (
              <div className="flex items-center justify-center py-16 px-4 text-center bg-surface rounded-2xl border border-border animate-in fade-in">
               <p className="text-xs font-medium text-secondary">Syncing observation records from MAAIS backend…</p>
@@ -391,8 +399,8 @@ export function TeacherMissingObservations() {
             </div>
           )}
 
-          {!isLoading && (
-            <div className="bg-surface rounded-2xl border border-border shadow-sm overflow-hidden flex flex-col">
+           {!isLoading && (
+            <div className="flex-1 overflow-y-auto relative scrollbar-hide">
               <div className="px-5 py-4 border-b border-border bg-muted/30 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2 text-xs font-bold text-secondary uppercase tracking-wider font-mono">
                   <SlidersHorizontal size={13} /> Observation Logs
@@ -402,70 +410,79 @@ export function TeacherMissingObservations() {
                 </span>
               </div>
 
-               <div className="divide-y divide-border min-h-0">
-                   {filteredObservations.length === 0 ? (
-                     <div
-                       key="empty-state"
-                       className="flex flex-col items-center justify-center py-16 px-4 text-center bg-surface animate-in fade-in"
-                     >
-                      <EmptyState context="comments" variant="compact" />
-                    </div>
-                  ) : (
-                    filteredObservations.map((obs, idx) => {
+               <div className="overflow-x-auto min-h-0">
+                 {filteredObservations.length === 0 ? (
+                  <div
+                    key="empty-state"
+                    className="flex flex-col items-center justify-center py-16 px-4 text-center bg-surface animate-in fade-in"
+                  >
+                   <EmptyState context="comments" variant="compact" />
+                 </div>
+               ) : (
+                <Table containerClassName="overflow-visible">
+                  <TableHeader>
+                    <TableRow className="bg-muted/80 border-b border-border">
+                      <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest">Student / Index</TableHead>
+                      <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest">Class</TableHead>
+                      <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest">Instructor / HOD</TableHead>
+                      <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest">Type</TableHead>
+                      <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest">Comment</TableHead>
+                      <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest text-center">Status</TableHead>
+                      <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest text-center">Date</TableHead>
+                      <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredObservations.map((obs, idx) => {
                       const isMissing = obs.status === 'Missing';
                       const tc = obsTypeColor(obs.type);
                       return (
-                         <div
-                           key={obs.id}
-                           style={{ animationDelay: `${idx * 20}ms` }}
-                           className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-muted/40 transition-colors group animate-in fade-in slide-in-from-bottom-2"
-                         >
-                          <div className="flex items-start gap-3.5 min-w-0">
+                        <TableRow
+                          key={obs.id}
+                          style={{ animationDelay: `${idx * 20}ms` }}
+                          className="bg-surface hover:bg-muted cursor-pointer transition-all group animate-in fade-in slide-in-from-bottom-2"
+                        >
+                          <TableCell className="px-8 py-5">
                             <div className={cn(
-                              "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border mt-0.5 shadow-sm",
+                              "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border mt-0.5 shadow-sm float-left mr-3",
                               isMissing ? "bg-warning/10 border-warning/20 text-warning" : "bg-success/10 border-success/20 text-success"
                             )}>
                               {isMissing ? <AlertTriangle size={15} /> : <CheckCircle2 size={15} />}
                             </div>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm font-bold text-primary truncate tracking-tight">{obs.student}</p>
-                                <span className="text-xs font-medium font-mono text-secondary bg-muted px-1.5 py-0.5 rounded border border-border shrink-0">
-                                  {obs.index}
-                                </span>
-                              </div>
-                              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-secondary mt-1">
-                                <span className="font-semibold text-primary">{obs.class}</span>
-                                <span className="text-border">•</span>
-                                <span>Instructed by {obs.teacher}</span>
-                                <span className="text-border">•</span>
-                                <span className="text-primary font-semibold">HOD: {obs.hod}</span>
-                                <span className="text-border hidden md:inline">•</span>
-                                <span className="inline-flex px-2 py-0.5 rounded border text-xs font-black uppercase tracking-widest text-primary" style={{color: tc }}>{obs.type}</span>
-                              </div>
-                              {obs.comment && (
-                                <p className="text-xs font-medium text-muted-foreground italic mt-1.5 truncate max-w-md">
-                                  "{obs.comment}"
-                                </p>
-                              )}
+                            <p className="text-sm font-bold text-primary truncate tracking-tight">{obs.student}</p>
+                            <span className="text-xs font-medium font-mono text-secondary bg-muted px-1.5 py-0.5 rounded border border-border">
+                              {obs.index}
+                            </span>
+                          </TableCell>
+                          <TableCell className="px-8 py-5">
+                            <span className="font-semibold text-primary">{obs.class}</span>
+                          </TableCell>
+                          <TableCell className="px-8 py-5 text-xs text-secondary">
+                            <div>Instructed by {obs.teacher}</div>
+                            <div className="text-primary font-semibold">HOD: {obs.hod}</div>
+                          </TableCell>
+                          <TableCell className="px-8 py-5">
+                            <span className="inline-flex px-2 py-0.5 rounded border text-xs font-black uppercase tracking-widest text-primary" style={{color: tc }}>{obs.type}</span>
+                          </TableCell>
+                          <TableCell className="px-8 py-5 text-xs font-medium text-muted-foreground italic truncate max-w-xs">
+                            {obs.comment ? `"${obs.comment}"` : '—'}
+                          </TableCell>
+                          <TableCell className="px-8 py-5 text-center">
+                            <span className={cn(
+                              "text-xs font-bold px-2 py-0.5 rounded border tracking-wide",
+                              isMissing ? "bg-warning/10 text-warning border-warning/20" : "bg-success/10 text-success border-success/20"
+                            )}>
+                              {obs.status}
+                            </span>
+                          </TableCell>
+                          <TableCell className="px-8 py-5 text-center">
+                            <div className="flex items-center justify-center gap-1.5 text-secondary text-xs font-mono">
+                              <Calendar size={12} />
+                              <span>{obs.date}</span>
                             </div>
-                          </div>
-
-                          <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-3 sm:pt-0 border-border shrink-0">
-                            <div className="flex items-center gap-3">
-                              <span className={cn(
-                                "text-xs font-bold px-2 py-0.5 rounded border tracking-wide",
-                                isMissing ? "bg-warning/10 text-warning border-warning/20" : "bg-success/10 text-success border-success/20"
-                              )}>
-                                {obs.status}
-                              </span>
-                              <div className="flex items-center gap-1.5 text-secondary text-xs font-mono">
-                                <Calendar size={12} />
-                                <span>{obs.date}</span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-1">
+                          </TableCell>
+                          <TableCell className="px-8 py-5 text-right">
+                            <div className="flex items-center justify-end gap-1">
                                {isMissing ? (
                                 <button
                                   onClick={() => {
@@ -503,14 +520,17 @@ export function TeacherMissingObservations() {
                                     <Trash2 size={14} />
                                   </button>
                                 </>
-                              )}
+                               )}
                             </div>
-                          </div>
-                        </div>
+                          </TableCell>
+                        </TableRow>
                       );
-                    })
-                   )}
-                </div>
+                    })}
+                  </TableBody>
+                </Table>
+               )}
+               </div>
+
 
                 {!isLoading && (activeTab === 'missing' ? missingTotal > missingLimit : logsTotal > logsLimit) && (
                   <div className="px-5 py-3 border-t border-border bg-muted/20 flex items-center justify-between shrink-0">

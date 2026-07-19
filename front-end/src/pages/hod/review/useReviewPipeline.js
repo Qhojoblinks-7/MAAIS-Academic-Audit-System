@@ -17,6 +17,7 @@ import { hodService } from '@/services/hodService';
 import { auditTrail } from '@/services/auditTrailService';
 import { eventBus } from '@/services/eventBus';
 import { notification } from '@/services/notificationService';
+import { toast } from '@/components/ui/toast';
 import { isResolvedStatus } from './shared';
 
 export function useReviewPipeline() {
@@ -81,6 +82,15 @@ export function useReviewPipeline() {
   );
 
   // ── Lock / Unlock class matrix ──────────────────────────────────────────
+  const optimisticClassStatus = (clsId, status) => {
+    qc.setQueryData(['hod', 'department-progress', {}], (old = []) => {
+      if (!Array.isArray(old)) return old;
+      return old.map((cls) =>
+        cls?.id === clsId ? { ...cls, status, submissionPct: status === 'LOCKED' ? 100 : cls.submissionPct } : cls,
+      );
+    });
+  };
+
   const handleLock = useCallback(
     async (clsId) => {
       if (!clsId) return;
@@ -99,14 +109,17 @@ export function useReviewPipeline() {
           await auditTrail.logChange('class_term', clsId, oldVal, newVal, 'Term locked by HOD');
         }
         if (eventBus?.emit) eventBus.emit('term-locked', { classId: clsId });
+        optimisticClassStatus(clsId, 'LOCKED');
+        toast.success('Class matrix locked successfully');
         refreshAll();
       } catch (e) {
         console.error('Lock failed:', e);
+        toast.error(`Lock failed: ${e?.message || 'Please try again.'}`);
       } finally {
         setLocking(null);
       }
     },
-    [lockMutation, refreshAll],
+    [lockMutation, refreshAll, qc],
   );
 
   const handleUnlock = useCallback(
@@ -127,14 +140,17 @@ export function useReviewPipeline() {
           await auditTrail.logChange('class_term', clsId, oldVal, newVal, 'Term unlocked by HOD');
         }
         if (eventBus?.emit) eventBus.emit('term-unlocked', { classId: clsId });
+        optimisticClassStatus(clsId, 'PENDING');
+        toast.success('Class matrix unlocked successfully');
         refreshAll();
       } catch (e) {
         console.error('Unlock failed:', e);
+        toast.error(`Unlock failed: ${e?.message || 'Please try again.'}`);
       } finally {
         setLocking(null);
       }
     },
-    [unlockMutation, refreshAll],
+    [unlockMutation, refreshAll, qc],
   );
 
   const handleExport = useCallback(
@@ -145,6 +161,7 @@ export function useReviewPipeline() {
       const checks = Array.isArray(cls?.checks) ? cls.checks.filter(Boolean) : [];
       const failCount = checks.length - checks.filter((c) => c.pass).length;
       if (failCount > 0) {
+        toast.error('Cannot export: validation checks are failing.');
         return { error: 'checks' };
       }
       setExporting(clsId);
@@ -153,8 +170,10 @@ export function useReviewPipeline() {
         if (auditTrail?.logChange) {
           await auditTrail.logChange('class_term', clsId, {}, { exported: true }, 'WAEC CSV export');
         }
+        toast.success('WAEC CSV exported successfully');
         return { ok: true };
       } catch (e) {
+        toast.error(`Export failed: ${e?.message || 'Please try again.'}`);
         return { error: e?.message || 'Failed to export' };
       } finally {
         setExporting(null);
@@ -166,6 +185,12 @@ export function useReviewPipeline() {
   // ── Term seal / release ─────────────────────────────────────────────────
   const doLockTerm = useCallback(async () => {
     if (!activeTermId) return;
+    const previousLockedTerms = qc.getQueryData(['hod', 'locked-terms']) || [];
+    qc.setQueryData(['hod', 'locked-terms'], (old = []) => {
+      if (!Array.isArray(old)) return old;
+      if (old.some((t) => t.id === activeTermId)) return old;
+      return [...old, { id: activeTermId }];
+    });
     try {
       const oldVal =
         typeof auditTrail?.captureSnapshot === 'function'
@@ -180,14 +205,22 @@ export function useReviewPipeline() {
         await auditTrail.logChange('term', activeTermId, oldVal, newVal, 'Term locked by HOD');
       }
       if (eventBus?.emit) eventBus.emit('term-locked', { termId: activeTermId });
+      toast.success('Term sealed successfully. Teachers can no longer modify grades.');
       refreshAll();
     } catch (e) {
+      qc.setQueryData(['hod', 'locked-terms'], previousLockedTerms);
       console.error('Term lock failed:', e);
+      toast.error(`Failed to seal term: ${e?.message || 'Please try again.'}`);
     }
-  }, [activeTermId, lockTermMutation, refreshAll]);
+  }, [activeTermId, lockTermMutation, refreshAll, qc]);
 
   const doUnlockTerm = useCallback(async () => {
     if (!activeTermId) return;
+    const previousLockedTerms = qc.getQueryData(['hod', 'locked-terms']) || [];
+    qc.setQueryData(['hod', 'locked-terms'], (old = []) => {
+      if (!Array.isArray(old)) return old;
+      return old.filter((t) => t.id !== activeTermId);
+    });
     try {
       const oldVal =
         typeof auditTrail?.captureSnapshot === 'function'
@@ -202,11 +235,14 @@ export function useReviewPipeline() {
         await auditTrail.logChange('term', activeTermId, oldVal, newVal, 'Term unlocked by HOD');
       }
       if (eventBus?.emit) eventBus.emit('term-unlocked', { termId: activeTermId });
+      toast.success('Term released. Teachers can now modify grades.');
       refreshAll();
     } catch (e) {
+      qc.setQueryData(['hod', 'locked-terms'], previousLockedTerms);
       console.error('Term unlock failed:', e);
+      toast.error(`Failed to release term: ${e?.message || 'Please try again.'}`);
     }
-  }, [activeTermId, unlockTermMutation, refreshAll]);
+  }, [activeTermId, unlockTermMutation, refreshAll, qc]);
 
   // ── HOD request revision on a class ─────────────────────────────────────
   const openRevision = useCallback((cls) => {
@@ -231,7 +267,9 @@ export function useReviewPipeline() {
       setRevisionModal(null);
       setRevisionText('');
       refetchRevisions();
+      toast.success('Revision request submitted successfully');
     } catch (e) {
+      toast.error(`Failed to request revision: ${e?.message || 'Please try again.'}`);
       return { error: e?.message || 'Failed to request revision' };
     } finally {
       setRevisionSubmitting(false);

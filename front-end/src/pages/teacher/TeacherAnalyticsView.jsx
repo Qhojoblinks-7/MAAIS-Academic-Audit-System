@@ -13,6 +13,14 @@ import { useNavigate } from 'react-router-dom';
 import { useRole } from '../../context/RoleContext';
 import { teacherService } from '../../services';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../../components/ui/tooltip';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '../../components/ui/table';
 
 const OBS_TYPES_MODULE = ['Behavioral', 'Academic', 'Lab Safety', 'Collaboration', 'Punctuality'];
 const OBS_COLORS_MODULE = ['#1D4D4F', '#f59e0b', '#ef4444', '#3b82f6', '#a855f7'];
@@ -177,20 +185,20 @@ export function TeacherAnalyticsView() {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex-1 overflow-y-auto bg-background p-6 md:p-8 lg:p-10 select-none">
-        <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div className="flex-1 flex flex-col bg-muted overflow-hidden relative">
 
-          <header className="mb-8 border-b border-border pb-6">
-            <h1 className="text-2xl font-black text-primary tracking-tight leading-none">
+          <header className="px-8 py-6 bg-surface border-b border-border shrink-0">
+            <h1 className="text-2xl font-black text-text-primary italic font-display tracking-tight leading-none">
               Performance Analytics
             </h1>
-            <p className="text-xs font-black text-secondary uppercase tracking-widest mt-2 flex items-center gap-1.5">
-              <Eye size={10} className="text-secondary" />
+            <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] mt-2 flex items-center gap-1.5">
+              <Eye size={10} className="text-text-secondary" />
               Grade Insights · Observation Trends · At-Risk Flags
             </p>
           </header>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="flex-1 overflow-y-auto relative scrollbar-hide">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 px-8 pt-8">
             {statCards.map((s, i) => (
               <div
                 key={s.label}
@@ -209,7 +217,7 @@ export function TeacherAnalyticsView() {
             ))}
           </div>
 
-          <div className="flex bg-surface rounded-2xl border border-border shadow-sm p-1 mb-6 w-fit">
+          <div className="flex bg-surface rounded-2xl border border-border shadow-sm p-1 mb-6 w-fit mx-8">
             {tabs.map((t) => (
               <Tooltip key={t.id}>
                 <TooltipTrigger asChild>
@@ -236,7 +244,7 @@ export function TeacherAnalyticsView() {
           </div>
 
             {activeTab === 'overview' && (
-              <div className="space-y-6 animate-in fade-in">
+              <div className="space-y-6 animate-in fade-in px-8 pb-8">
                 <div className="bg-surface rounded-[2rem] border border-border shadow-sm p-6 lg:p-8">
                   <h3 className="text-xs font-black text-primary uppercase tracking-widest mb-5 flex items-center gap-2">
                     <TrendingUp size={14} className="text-secondary" />
@@ -345,7 +353,7 @@ export function TeacherAnalyticsView() {
 
             {activeTab === 'observations' && (
               <div
-                className="space-y-4 animate-in fade-in"
+                className="space-y-4 animate-in fade-in px-8 pb-8"
               >
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="relative flex-1">
@@ -374,48 +382,53 @@ export function TeacherAnalyticsView() {
                   </div>
                 </div>
 
-                <div className="bg-surface rounded-[2rem] border border-border shadow-sm overflow-hidden">
-                  <div className="px-6 py-4 border-b border-border bg-muted/30 flex items-center gap-3">
-                    <Activity size={14} className="text-secondary" />
-                    <span className="text-xs font-black text-secondary uppercase tracking-widest">
-                      Observations · {filteredObs.length} record{filteredObs.length !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-
-                  <div className="divide-y divide-border">
+                <div className="flex-1 overflow-y-auto relative scrollbar-hide">
+                  <Table containerClassName="overflow-visible">
+                    <TableHeader>
+                      <TableRow className="bg-muted/80 border-b border-border">
+                        <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest">Student</TableHead>
+                        <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest">Type</TableHead>
+                        <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest">Class / Index</TableHead>
+                        <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest">Comment</TableHead>
+                        <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest text-right">Date</TableHead>
+                        <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest text-center">Status</TableHead>
+                        <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest text-right">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {filteredObs.map((o, i) => {
                         const typeIdx = OBS_TYPES_MODULE.indexOf(o.type);
                         const typeColor = OBS_COLORS_MODULE[typeIdx] || '#1D4D4F';
                         return (
-                          <div
+                          <TableRow
                             key={o.id}
                             style={{ animationDelay: `${i * 30}ms` }}
-                            className="px-6 py-4 grid grid-cols-12 gap-3 items-center hover:bg-muted/40 transition-all animate-in fade-in slide-in-from-bottom-2"
+                            className="bg-surface hover:bg-muted cursor-pointer transition-all animate-in fade-in slide-in-from-bottom-2"
                           >
-                            <div className="col-span-2 font-black text-sm text-primary truncate">{o.student}</div>
+                            <TableCell className="px-8 py-5 font-black text-sm text-primary truncate">{o.student}</TableCell>
 
-                            <div className="col-span-2">
+                            <TableCell className="px-8 py-5">
                               <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-widest text-surface" style={{ backgroundColor: typeColor }}>{o.type}</span>
-                            </div>
+                            </TableCell>
 
-                            <div className="col-span-2">
+                            <TableCell className="px-8 py-5">
                               <p className="text-xs font-bold text-primary truncate">{o.class}</p>
                               <p className="text-xs font-black text-secondary">Idx. {o.index}</p>
-                            </div>
+                            </TableCell>
 
-                            <div className="col-span-3 text-xs font-medium text-secondary italic truncate">"{o.comment}"</div>
+                            <TableCell className="px-8 py-5 text-xs font-medium text-secondary italic truncate max-w-xs">"{o.comment}"</TableCell>
 
-                            <div className="col-span-1 text-right text-xs font-bold text-secondary whitespace-nowrap">{o.date}</div>
+                            <TableCell className="px-8 py-5 text-right text-xs font-bold text-secondary whitespace-nowrap">{o.date}</TableCell>
 
-                            <div className="col-span-1 text-center">
+                            <TableCell className="px-8 py-5 text-center">
                               {o.status === 'Active'
                                 ? <span className="inline-flex items-center gap-1 text-xs font-black px-2.5 py-1 rounded-xl bg-success/10 text-success border border-success/20 uppercase tracking-widest">
                                     <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" /> Active
                                   </span>
                                 : <span className="inline-flex text-xs font-black px-2.5 py-1 rounded-xl bg-muted text-secondary border border-border uppercase tracking-widest">Resolved</span>}
-                            </div>
+                            </TableCell>
 
-                            <div className="col-span-1 flex items-center justify-end gap-1">
+                            <TableCell className="px-8 py-5 text-right">
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <button onClick={() => navigate(`/grading?subject=${o.type}&class=${encodeURIComponent(o.class)}`)} className="p-1.5 hover:bg-brand-primary/10 rounded-lg transition-all text-secondary hover:text-brand-primary">
@@ -424,24 +437,27 @@ export function TeacherAnalyticsView() {
                                 </TooltipTrigger>
                                 <TooltipContent side="top" sideOffset={8}>View class grading sheet</TooltipContent>
                               </Tooltip>
-                            </div>
-                          </div>
+                            </TableCell>
+                          </TableRow>
                         );
                       })}
 
-                    {filteredObs.length === 0 && (
-                      <div className="py-16 text-center text-muted-foreground text-sm font-medium uppercase tracking-tight">
-                        No observations match your filters.
-                      </div>
-                    )}
-                  </div>
+                      {filteredObs.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={7} className="px-8 py-16 text-center text-muted-foreground text-sm font-medium uppercase tracking-tight">
+                            No observations match your filters.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
             )}
 
             {activeTab === 'students' && (
               <div
-                className="space-y-4 animate-in fade-in"
+                className="space-y-4 animate-in fade-in px-8 pb-8"
               >
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="bg-surface p-4 rounded-2xl border border-border shadow-sm">
@@ -473,87 +489,85 @@ export function TeacherAnalyticsView() {
                   />
                 </div>
 
-                <div className="bg-surface rounded-[2rem] border border-border shadow-sm overflow-hidden">
-                  <div className="px-6 py-4 border-b border-border bg-muted/30 flex items-center gap-3">
-                    <Users size={14} className="text-secondary" />
-                    <span className="text-xs font-black text-secondary uppercase tracking-widest">
-                      Student Performance · {filteredStudents.length} entries
-                    </span>
-                  </div>
+                <div className="flex-1 overflow-y-auto relative scrollbar-hide">
+                  <Table containerClassName="overflow-visible">
+                    <TableHeader>
+                      <TableRow className="bg-muted/80 border-b border-border">
+                        <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest">Student</TableHead>
+                        <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest text-center">Score</TableHead>
+                        <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest text-center">Grade</TableHead>
+                        <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest text-right">Δ Trend</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredStudents.map((s, i) => {
+                        const grade = getGradeBand(s.score);
+                        const gradeDef = gradeConfig.find(g => g.label === grade);
+                        const isAtRisk = s.score < 60;
+                        const isTop = s.score >= 80;
+                        const scoreColor = isAtRisk ? 'text-danger' : isTop ? 'text-success' : 'text-primary';
+                        const trendColor = s.trendUp ? 'text-success' : s.trend === '–' ? 'text-secondary' : 'text-danger';
 
-                  <div className="px-6 py-2.5 border-b border-border bg-muted grid grid-cols-5 gap-3 text-xs font-black text-secondary uppercase tracking-widest">
-                    <span className="col-span-2">Student</span>
-                    <span className="text-center">Score</span>
-                    <span className="text-center">Grade</span>
-                    <span className="text-right">Δ Trend</span>
-                  </div>
+                        return (
+                          <TableRow
+                            key={s.student}
+                            style={{ animationDelay: `${i * 20}ms` }}
+                            className="bg-surface hover:bg-muted cursor-pointer transition-all animate-in fade-in slide-in-from-bottom-2"
+                          >
+                            <TableCell className="px-8 py-5">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className={cn(
+                                  "w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 border",
+                                  isAtRisk ? 'bg-danger/10 text-danger border-danger/20' : isTop ? 'bg-success/10 text-success border-success/20' : 'bg-muted text-primary border-border'
+                                )}>
+                                  {isAtRisk ? '!' : isTop ? '★' : s.student.charAt(0)}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-xs font-black text-primary truncate">{s.student}</p>
+                                  <p className="text-xs font-bold text-secondary">{isAtRisk ? '⚠ Needs intervention' : 'On track'}</p>
+                                </div>
+                              </div>
+                            </TableCell>
 
-                  <div className="divide-y divide-border">
-                    {filteredStudents.map((s, i) => {
-                      const grade = getGradeBand(s.score);
-                      const gradeDef = gradeConfig.find(g => g.label === grade);
-                      const isAtRisk = s.score < 60;
-                      const isTop = s.score >= 80;
-                      const scoreColor = isAtRisk ? 'text-danger' : isTop ? 'text-success' : 'text-primary';
-                      const trendColor = s.trendUp ? 'text-success' : s.trend === '–' ? 'text-secondary' : 'text-danger';
+                            <TableCell className="px-8 py-5 text-center">
+                              <p className={cn("text-base font-black", scoreColor)}>{s.score}</p>
+                            </TableCell>
 
-                      return (
-                        <div
-                          key={s.student}
-                          style={{ animationDelay: `${i * 20}ms` }}
-                          className="px-6 py-3.5 grid grid-cols-5 gap-3 items-center hover:bg-muted/40 transition-all animate-in fade-in slide-in-from-bottom-2"
-                        >
-                          <div className="col-span-2 flex items-center gap-3 min-w-0">
-                            <div className={cn(
-                              "w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 border",
-                              isAtRisk ? 'bg-danger/10 text-danger border-danger/20' : isTop ? 'bg-success/10 text-success border-success/20' : 'bg-muted text-primary border-border'
-                            )}>
-                              {isAtRisk ? '!' : isTop ? '★' : s.student.charAt(0)}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-xs font-black text-primary truncate">{s.student}</p>
-                              <p className="text-xs font-bold text-secondary">{isAtRisk ? '⚠ Needs intervention' : 'On track'}</p>
-                            </div>
-                          </div>
+                            <TableCell className="px-8 py-5 text-center">
+                              <span
+                                className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-widest text-surface"
+                                style={{ backgroundColor: gradeDef?.color || '#64748b' }}
+                              >
+                                {grade}
+                              </span>
+                            </TableCell>
 
-                          <div className="text-center">
-                            <p className={cn("text-base font-black", scoreColor)}>{s.score}</p>
-                          </div>
-
-                          <div className="text-center">
-                            <span
-                              className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-widest text-surface"
-                              style={{ backgroundColor: gradeDef?.color || '#64748b' }}
-                            >
-                              {grade}
-                            </span>
-                          </div>
-
-                          <div className="text-right">
-                            <span className={cn("text-xs font-black", trendColor)}>{s.trendUp ? '↑' : s.trend === '–' ? '–' : '↓'} {s.trend}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                            <TableCell className="px-8 py-5 text-right">
+                              <span className={cn("text-xs font-black", trendColor)}>{s.trendUp ? '↑' : s.trend === '–' ? '–' : '↓'} {s.trend}</span>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
                 </div>
 
-                <div className="bg-danger/10 border border-danger/20 rounded-2xl p-5 flex items-start gap-4">
-                  <div className="w-10 h-10 bg-danger rounded-xl flex items-center justify-center text-surface shrink-0 mt-0.5">
-                    <AlertTriangle size={18} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-black text-danger uppercase tracking-widest mb-1">At-Risk Alert</p>
-                    <p className="text-xs font-medium text-danger leading-relaxed">
-                      {studentScores.filter(s => (s.score || 0) < 60).map(s => s.student).join(', ') || 'None'} — Score below 60 threshold.
-                      <span className="font-black"> Schedule intervention.</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
+                 <div className="bg-danger/10 border border-danger/20 rounded-2xl p-5 flex items-start gap-4">
+                   <div className="w-10 h-10 bg-danger rounded-xl flex items-center justify-center text-surface shrink-0 mt-0.5">
+                     <AlertTriangle size={18} />
+                   </div>
+                   <div>
+                     <p className="text-xs font-black text-danger uppercase tracking-widest mb-1">At-Risk Alert</p>
+                     <p className="text-xs font-medium text-danger leading-relaxed">
+                       {studentScores.filter(s => (s.score || 0) < 60).map(s => s.student).join(', ') || 'None'} — Score below 60 threshold.
+                       <span className="font-black"> Schedule intervention.</span>
+                     </p>
+                   </div>
+                 </div>
+                 </div>
             )}
+          </div>
         </div>
-      </div>
     </TooltipProvider>
   );
 }

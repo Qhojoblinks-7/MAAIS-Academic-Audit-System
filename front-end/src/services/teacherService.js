@@ -397,6 +397,10 @@ function createRealService() {
       console.log(`[TeacherService] getStudentBehavior called with studentId: ${studentId}`);
       return request('GET', `/students/${studentId}/behavior`).then(r => r?.data ?? r);
     },
+    getStudentBehaviorBatch: (studentIds) => {
+      console.log(`[TeacherService] getStudentBehaviorBatch called with ${studentIds?.length || 0} studentIds`);
+      return request('POST', '/students/behavior/batch', { studentIds }).then(r => r?.data ?? r);
+    },
     createBehavior: (studentId, data) => {
       console.log(`[TeacherService] createBehavior called for studentId: ${studentId}`);
       return request('POST', `/students/${studentId}/behavior`, data).then(r => r?.data ?? r);

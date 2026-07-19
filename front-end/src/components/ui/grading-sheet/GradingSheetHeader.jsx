@@ -58,7 +58,7 @@ export function GradingSheetHeader({
       <div className="flex items-center gap-2 overflow-x-auto pb-1 flex-nowrap">
         <select
           value={selectedSubject || ''}
-          onChange={onSubjectChange}
+          onChange={onSubjectChange || (() => {})}
           className="min-w-[100px] lg:min-w-[120px] px-2 lg:px-3 py-1.5 lg:py-2 bg-white border-2 border-border rounded-lg text-[10px] lg:text-xs font-bold text-text-primary uppercase tracking-wider shadow-sm"
         >
           <option value="">All Subjects</option>
@@ -69,7 +69,7 @@ export function GradingSheetHeader({
 
         <select
           value={selectedClass?.id || ''}
-          onChange={onClassChange}
+          onChange={onClassChange || (() => {})}
           className="min-w-[100px] lg:min-w-[120px] px-2 lg:px-3 py-1.5 lg:py-2 bg-white border-2 border-border rounded-lg text-[10px] lg:text-xs font-bold text-text-primary uppercase tracking-wider shadow-sm"
         >
           <option value="">All Classes</option>

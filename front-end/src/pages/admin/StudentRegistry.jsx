@@ -685,6 +685,7 @@ export const StudentRegistry = () => {
     switch (action) {
       case 'dossier':
         setSelectedStudentId(studentId);
+        toast.info('Opening student dossier...');
         break;
       case 'toggle-risk':
         setStudentAtRisk(prev => {
@@ -708,6 +709,7 @@ export const StudentRegistry = () => {
       case 'purge':
         executeSensitiveAction('delete-student');
         setSelectedStudentId(studentId);
+        toast.warning('Administrative authorization required to purge record');
         break;
       default:
         break;
@@ -873,8 +875,8 @@ export const StudentRegistry = () => {
               <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" />
               <Input placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-12 pr-6 py-3" />
             </div>
-            <Select value={selectedProgram} onValueChange={(e) => setSelectedProgram(e.target.value)} className="w-full">
-              <SelectTrigger>
+            <Select value={selectedProgram} onValueChange={(value) => setSelectedProgram(value)}>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="All Programs" />
               </SelectTrigger>
               <SelectContent>

@@ -235,30 +235,32 @@ export function useGradingSheetLogic({
       const ratingsMap = {};
       const commentMap = {};
 
-      for (const student of students) {
-        try {
-          const data = await teacherService.getStudentBehavior(student.id);
-          if (cancelled) return;
-          const logs = Array.isArray(data?.logs) ? data.logs : [];
+      try {
+        const studentIds = students.map(s => s.id);
+        const data = await teacherService.getStudentBehaviorBatch(studentIds);
+        if (cancelled) return;
+
+        const entries = Array.isArray(data?.byStudent) ? data.byStudent : [];
+        for (const entry of entries) {
+          const logs = Array.isArray(entry?.logs) ? entry.logs : [];
           const latest = logs[0];
+          if (!latest) continue;
 
-          if (latest) {
-            const ratings = {};
-            if (latest.punctuality) ratings.lab_safety = latest.punctuality;
-            if (latest.attendance) ratings.behavioral = latest.attendance;
-            if (latest.attitude) ratings.resource_economy = latest.attitude;
-            if (latest.conduct) ratings.hygienic_practices = latest.conduct;
+          const ratings = {};
+          if (latest.punctuality) ratings.lab_safety = latest.punctuality;
+          if (latest.attendance) ratings.behavioral = latest.attendance;
+          if (latest.attitude) ratings.resource_economy = latest.attitude;
+          if (latest.conduct) ratings.hygienic_practices = latest.conduct;
 
-            if (Object.keys(ratings).length > 0) {
-              ratingsMap[student.id] = ratings;
-            }
-            if (latest.remarks) {
-              commentMap[student.id] = latest.remarks;
-            }
+          if (Object.keys(ratings).length > 0) {
+            ratingsMap[entry.studentId] = ratings;
           }
-        } catch (err) {
-          console.error(`[GradingSheet] Failed to fetch behavior for ${student.id}:`, err);
+          if (latest.remarks) {
+            commentMap[entry.studentId] = latest.remarks;
+          }
         }
+      } catch (err) {
+        console.error('[GradingSheet] Failed to fetch behavior batch:', err);
       }
 
       if (!cancelled) {
