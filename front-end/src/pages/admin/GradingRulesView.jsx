@@ -495,8 +495,8 @@ const handleAuditTrailClick = () => {
                      <HelpCircle size={18} />
                    </button>
                 </div>
-                <div className="overflow-visible">
-                   <Table containerClassName="overflow-visible">
+                 <div className="overflow-visible">
+                    <Table>
                     <TableHeader>
                       <TableRow className="bg-muted border-b border-border">
                          <TableHead className="px-10 py-5 text-[10px] font-black text-text-secondary uppercase tracking-widest">Score Range (%)</TableHead>

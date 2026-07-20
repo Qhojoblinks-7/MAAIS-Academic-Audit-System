@@ -14,6 +14,7 @@ the screen, and tick the box if it behaves as described.
 - If something does NOT match, write it in the Remarks column and tell the technical team.
 
 
+
 ---
 
 ## PART A — Getting In and the Main Screen

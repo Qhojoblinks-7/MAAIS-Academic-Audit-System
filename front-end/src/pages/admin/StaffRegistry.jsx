@@ -696,7 +696,7 @@ export function StaffRegistry() {
 
       {/* Registry Table */}
       <div className="flex-1 overflow-auto relative scrollbar-hide no-scrollbar">
-          <Table containerClassName="overflow-visible">
+          <Table>
           <TableHeader className="sticky top-0 z-10">
             <TableRow className="bg-muted/80 backdrop-blur-md border-b border-border">
               <TableHead className="px-8 py-4 text-left text-[10px] font-black text-text-secondary uppercase tracking-widest">Full Name / ID</TableHead>

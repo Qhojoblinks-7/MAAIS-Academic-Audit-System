@@ -419,7 +419,7 @@ export function TeacherMissingObservations() {
                    <EmptyState context="comments" variant="compact" />
                  </div>
                ) : (
-                <Table containerClassName="overflow-visible">
+                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/80 border-b border-border">
                       <TableHead className="px-8 py-4 text-[10px] font-black text-text-secondary uppercase tracking-widest">Student / Index</TableHead>

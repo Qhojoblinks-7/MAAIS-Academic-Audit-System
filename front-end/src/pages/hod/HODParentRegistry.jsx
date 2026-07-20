@@ -222,7 +222,7 @@ export function HODParentRegistry() {
       </div>
 
       <div className="flex-1 overflow-y-auto relative scrollbar-hide">
-        <Table containerClassName="overflow-visible">
+        <Table>
           <TableHeader>
             <TableRow className="bg-muted/80 border-b border-border">
               <TableHead className="px-6 py-3 text-[10px] font-black text-text-secondary uppercase tracking-widest">Guardian / Household</TableHead>
