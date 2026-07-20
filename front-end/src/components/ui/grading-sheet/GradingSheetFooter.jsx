@@ -33,12 +33,6 @@ export function GradingSheetFooter({
       </div>
       
       <div className="flex items-center gap-3">
-        <div className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded-lg leading-relaxed">
-          <span className="font-bold">WAEC STP:</span> 30% SBA + 70% Exam = 100%
-          &nbsp;|&nbsp;
-          <span className="font-bold">Grades (A1–F9):</span>
-          A1(≥75) B2(70) B3(65) C4(60) C5(55) C6(50) D7(45) E8(40) F9(&lt;40)
-        </div>
         
          <button
            onClick={onSaveDraft}

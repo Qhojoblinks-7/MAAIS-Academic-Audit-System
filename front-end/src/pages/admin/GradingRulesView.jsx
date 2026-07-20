@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
 import { useUI } from '../../context/UIContext';
 import { useNavigate } from 'react-router-dom';
-import { useActiveYear, useLockTerm, useUnlockTerm, useComplianceWarnings, useTermSummary, useAllClasses, useUpdateGradingRules, useAllDepartments } from '../../lib/hooks';
+import { useActiveYear, useActivateTerm, useDeactivateTerm, useComplianceWarnings, useTermSummary, useAllClasses, useUpdateGradingRules, useAllDepartments, useGradingRules } from '../../lib/hooks';
 import {
   Table,
   TableHeader,
@@ -61,18 +61,31 @@ const [showSealConfirm, setShowSealConfirm] = useState(false);
     const navigate = useNavigate();
 
     const activeYearQuery = useActiveYear();
-    const lockTermMutation = useLockTerm();
-    const unlockTermMutation = useUnlockTerm();
+    const activateTermMutation = useActivateTerm();
+    const deactivateTermMutation = useDeactivateTerm();
     const updateGradingRulesMutation = useUpdateGradingRules();
     const departmentsQuery = useAllDepartments();
     const complianceQuery = useComplianceWarnings();
 
     const departments = departmentsQuery.data || [];
     const activeTerm = activeYearQuery.data?.terms?.find(t => t.isActive);
+    const targetTerm = activeTerm || activeYearQuery.data?.terms?.[0];
 
-    const termSummaryQuery = useTermSummary(activeTerm?.id);
+    const termSummaryQuery = useTermSummary(targetTerm?.id);
+    const gradingRulesQuery = useGradingRules(targetTerm?.id);
 
-useEffect(() => {
+    const parseDeadlineToLocal = (iso) => {
+      if (!iso) return null;
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return null;
+      const pad = (n) => String(n).padStart(2, '0');
+      return {
+        date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+        time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
+      };
+    };
+
+ useEffect(() => {
        setInitialState({
          caWeight,
          examWeight,
@@ -84,6 +97,20 @@ useEffect(() => {
          deadlineTime
        });
      }, []);
+
+    useEffect(() => {
+      console.log('[GradingRules] full data:', gradingRulesQuery.data);
+      const persisted = gradingRulesQuery.data?.submissionDeadline;
+      console.log('[GradingRules] loading deadline:', persisted, 'isSuccess:', gradingRulesQuery.isSuccess, 'termId:', targetTerm?.id);
+      if (gradingRulesQuery.isSuccess && persisted) {
+        const parsed = parseDeadlineToLocal(persisted);
+        console.log('[GradingRules] parsed deadline:', parsed);
+        if (parsed) {
+          setDeadlineDate(parsed.date);
+          setDeadlineTime(parsed.time);
+        }
+      }
+    }, [gradingRulesQuery.isSuccess, gradingRulesQuery.data, targetTerm?.id]);
 
     const handleWeightChange = (value) => {
       setCaWeight(value);
@@ -129,22 +156,21 @@ const handleAuditTrailClick = () => {
       }
     };
 
- const handleCommitChanges = async () => {
-      if (isTermFinalized) {
-        toast.info('Unlock the term first before committing changes.');
-        return;
-      }
-
+  const handleCommitChanges = async () => {
       try {
-        const submissionDeadline = `${deadlineDate}T${deadlineTime}:00`;
+        const [y, m, d] = deadlineDate.split('-').map(Number);
+        const [hh, mm] = deadlineTime.split(':').map(Number);
+        const localDate = new Date(y, m - 1, d, hh, mm, 0, 0);
+        const submissionDeadline = localDate.toISOString();
 
         const payload = {
-          termId: activeTerm?.id,
+          termId: targetTerm?.id,
           caWeight,
           examWeight,
           normalizationEnabled,
           submissionDeadline,
         };
+        console.log('[GradingRules] committing payload:', payload);
 
         await updateGradingRulesMutation.mutateAsync(payload);
 
@@ -205,64 +231,71 @@ const handleAuditTrailClick = () => {
                exit={{ scale: 0.9, opacity: 0, y: 20 }}
                className="relative w-full max-w-md bg-surface rounded-[2.5rem] p-10 shadow-3xl overflow-hidden border border-border"
              >
-                <div className="absolute top-0 left-0 w-full h-1.5 bg-destructive" />
-                <div className="w-20 h-20 bg-destructive/10 rounded-[2rem] flex items-center justify-center mb-8 mx-auto">
-                    <ShieldAlert size={40} className="text-destructive" />
-                </div>
-                
-                <h3 className="text-2xl font-black text-text-primary text-center italic font-display mb-4">Execute Final Seal?</h3>
-                <p className="text-text-secondary text-center text-sm font-medium leading-relaxed mb-8">
-                  This action will <span className="font-black text-destructive">permanently freeze</span> all marks and assessments for this term. Publication protocols will trigger immediately.
-                </p>
-
-                 <div className="space-y-4 mb-10">
-                    <div className="p-4 bg-muted rounded-2xl border border-border">
-                       <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-1">Target Term</p>
-                       <p className="text-sm font-black text-text-primary">
-                         {termSummaryQuery.isLoading ? 'Loading...' : termSummaryQuery.data?.termLabel || '�'}
-                       </p>
-                    </div>
-                    <div className="p-4 bg-muted rounded-2xl border border-border">
-                       <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-1">Impact Radius</p>
-                       <p className="text-sm font-black text-text-primary">
-                         {termSummaryQuery.isLoading
-                           ? 'Loading...'
-                           : `${termSummaryQuery.data?.studentCount?.toLocaleString() ?? '�'} Students & ${termSummaryQuery.data?.gradeEntryCount?.toLocaleString() ?? '�'} Grade Entries`}
-                       </p>
-                    </div>
+                 <div className="absolute top-0 left-0 w-full h-1.5 bg-brand-primary" />
+                 <div className="w-20 h-20 bg-brand-primary/10 rounded-[2rem] flex items-center justify-center mb-8 mx-auto">
+                     <ShieldAlert size={40} className="text-brand-primary" />
                  </div>
+                 
+                 <h3 className="text-2xl font-black text-text-primary text-center italic font-display mb-4">Begin Semester?</h3>
+                 <p className="text-text-secondary text-center text-sm font-medium leading-relaxed mb-8">
+                   This action will <span className="font-black text-brand-primary">activate the term</span> and officially begin the semester. Teachers will be able to enter grades, and the countdown timer will start.
+                 </p>
 
-                <div className="flex gap-4">
-                   <button 
-                     onClick={() => setShowSealConfirm(false)}
-                     className="flex-1 py-4 text-[11px] font-black uppercase tracking-widest text-text-secondary hover:text-text-primary transition-colors"
-                   >
-                     Abort
-                   </button>
-                     <button 
-                       onClick={() => {
-                         if (activeTerm?.id) {
-                           lockTermMutation.mutate(activeTerm.id, {
-                             onSuccess: () => {
-                               setIsTermFinalized(true);
-                               setShowSealConfirm(false);
-                               toast.success('Term sealed successfully. Grading is now locked.');
-                             },
-                             onError: (error) => {
-                               const reason = error?.response?.data?.freezeReason || error?.message || 'Please try again.';
-                               toast.error(`Failed to seal term: ${reason}`);
-                             },
-                           });
-                         } else {
-                           setIsTermFinalized(true);
-                           setShowSealConfirm(false);
-                         }
-                       }}
-                      className="flex-1 py-4 bg-destructive text-primary-foreground rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-destructive/20 hover:bg-destructive transition-all"
+                  <div className="space-y-4 mb-10">
+                     <div className="p-4 bg-muted rounded-2xl border border-border">
+                        <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-1">Target Term</p>
+                          <p className="text-sm font-black text-text-primary">
+                            {termSummaryQuery.isLoading
+                              ? 'Loading...'
+                              : termSummaryQuery.isError
+                                ? 'Unavailable'
+                                : termSummaryQuery.data?.termLabel || targetTerm?.termNumber || 'Active Term'}
+                          </p>
+                     </div>
+                      <div className="p-4 bg-muted rounded-2xl border border-border">
+                         <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-1">Impact Radius</p>
+                          <p className="text-sm font-black text-text-primary">
+                            {termSummaryQuery.isLoading
+                              ? 'Loading...'
+                              : termSummaryQuery.isError
+                                ? 'Unavailable'
+                                : `${termSummaryQuery.data?.studentCount != null ? termSummaryQuery.data.studentCount.toLocaleString() : '—'} Students & ${termSummaryQuery.data?.gradeEntryCount != null ? termSummaryQuery.data.gradeEntryCount.toLocaleString() : '—'} Grade Entries`}
+                          </p>
+                      </div>
+                  </div>
+
+                 <div className="flex gap-4">
+                    <button 
+                      onClick={() => setShowSealConfirm(false)}
+                      className="flex-1 py-4 text-[11px] font-black uppercase tracking-widest text-text-secondary hover:text-text-primary transition-colors"
                     >
-                      {lockTermMutation.isPending ? 'Sealing...' : 'Finalize Term'}
+                      Cancel
                     </button>
-                </div>
+                      <button 
+                        onClick={() => {
+                          if (targetTerm?.id) {
+                            activateTermMutation.mutate(targetTerm.id, {
+                              onSuccess: () => {
+                                setIsTermFinalized(true);
+                                setShowSealConfirm(false);
+                                toast.success('Term activated. Semester has begun. Teachers can now enter grades.');
+                              },
+                              onError: (error) => {
+                                const reason = error?.response?.data?.freezeReason || error?.message || 'Please try again.';
+                                toast.error(`Failed to activate term: ${reason}`);
+                              },
+                            });
+                          } else {
+                            setIsTermFinalized(true);
+                            setShowSealConfirm(false);
+                            toast.success('Term activated. Semester has begun.');
+                          }
+                        }}
+                       className="flex-1 py-4 bg-brand-primary text-primary-foreground rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-brand-primary/20 hover:bg-brand-primary transition-all"
+                     >
+                       {activateTermMutation.isPending ? 'Activating...' : 'Begin Semester'}
+                     </button>
+                 </div>
              </motion.div>
           </div>
         )}
@@ -285,14 +318,13 @@ const handleAuditTrailClick = () => {
               >
                 <History size={14} /> Audit Trail
               </button>
-              {!isTermFinalized && (
-                <button 
-                  onClick={handleCommitChanges}
-                  className="flex items-center gap-2 px-8 py-3 bg-brand-dark text-primary-foreground rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-dark/20 hover:bg-brand-dark transition-all"
-                >
-                  <Save size={14} /> Commit Changes
-                </button>
-              )}
+              <button 
+                onClick={handleCommitChanges}
+                disabled={!targetTerm?.id}
+                className="flex items-center gap-2 px-8 py-3 bg-brand-dark text-primary-foreground rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-dark/20 hover:bg-brand-dark transition-all disabled:opacity-50 disabled:pointer-events-none"
+              >
+                <Save size={14} /> Commit Changes
+              </button>
           </div>
         </header>
 
@@ -580,26 +612,26 @@ const handleAuditTrailClick = () => {
                 </div>
                
                  <div className="relative z-10">
-                   <div className="flex items-start justify-between mb-8">
-                     <div className="w-16 h-16 bg-primary-foreground/10 backdrop-blur-xl border border-primary-foreground/20 rounded-[1.5rem] flex items-center justify-center">
-                       {isTermFinalized ? <Lock className="text-primary-foreground" size={32} /> : <Unlock className="text-primary-foreground/80" size={32} />}
-                     </div>
-                     <span className={cn(
-                       "text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-lg border",
-                       isTermFinalized 
-                         ? "bg-destructive/25 text-destructive border-destructive/40 animate-pulse" 
-                         : "bg-primary-foreground/15 text-primary-foreground border-primary-foreground/30"
-                     )}>
-                       {isTermFinalized ? 'TERM LOCKED' : 'TERM UNLOCKED'}
-                     </span>
-                   </div>
+                    <div className="flex items-start justify-between mb-8">
+                      <div className="w-16 h-16 bg-primary-foreground/10 backdrop-blur-xl border border-primary-foreground/20 rounded-[1.5rem] flex items-center justify-center">
+                        {isTermFinalized ? <Lock className="text-primary-foreground" size={32} /> : <Unlock className="text-primary-foreground/80" size={32} />}
+                      </div>
+                      <span className={cn(
+                        "text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-lg border",
+                        isTermFinalized 
+                          ? "bg-brand-primary/25 text-brand-primary border-brand-primary/40" 
+                          : "bg-primary-foreground/15 text-primary-foreground border-primary-foreground/30"
+                      )}>
+                        {isTermFinalized ? 'TERM ACTIVE' : 'TERM UNSEALED'}
+                      </span>
+                    </div>
                    
-                   <h3 className="text-2xl font-black text-primary-foreground italic font-display tracking-tight leading-none mb-3">Terminal Validation Lock</h3>
-                   <p className="text-[10px] font-bold text-primary-foreground/70 uppercase tracking-widest leading-relaxed mb-10">
-                     {isTermFinalized 
-                       ? 'Grading is suspended. No teacher can modify marks. Use Emergency Unlock to restore access.' 
-                       : 'Encrypt and freeze the database for report generation. Once locked, no teacher can modify marks.'}
-                   </p>
+                    <h3 className="text-2xl font-black text-primary-foreground italic font-display tracking-tight leading-none mb-3">Terminal Validation Lock</h3>
+                    <p className="text-[10px] font-bold text-primary-foreground/70 uppercase tracking-widest leading-relaxed mb-10">
+                      {isTermFinalized 
+                        ? 'Semester is active. Teachers can enter grades. Use Emergency Unlock to pause the term if changes are needed.' 
+                        : 'Activate the term to begin the semester. Teachers will be able to enter grades once the term is active.'}
+                    </p>
                  
                   <div className="space-y-6 mb-12">
                     <div className="flex justify-between items-end">
@@ -612,65 +644,63 @@ const handleAuditTrailClick = () => {
                        </span>
                     </div>
                    <div className="grid grid-cols-2 gap-4">
-                     <div className="relative">
-                         <input 
-                           type="date" 
-                           value={deadlineDate}
-                           disabled={isTermFinalized}
-                           onChange={(e) => setDeadlineDate(e.target.value)}
-                           className="w-full bg-surface border border-primary-foreground/15 rounded-2xl px-5 py-4 text-xs font-black italic font-display text-foreground outline-none focus:ring-2 focus:ring-primary-foreground/30 transition-all"
-                         />
-                     </div>
-                     <div className="relative">
-                         <input 
-                           type="time" 
-                           value={deadlineTime}
-                           disabled={isTermFinalized}
-                           onChange={(e) => setDeadlineTime(e.target.value)}
-                           className="w-full bg-surface border border-primary-foreground/15 rounded-2xl px-5 py-4 text-xs font-black italic font-display text-foreground outline-none focus:ring-2 focus:ring-primary-foreground/30 transition-all"
-                         />
-                     </div>
+                      <div className="relative">
+                          <input 
+                            type="date" 
+                            value={deadlineDate}
+                            onChange={(e) => setDeadlineDate(e.target.value)}
+                            className="w-full bg-surface border border-primary-foreground/15 rounded-2xl px-5 py-4 text-xs font-black italic font-display text-foreground outline-none focus:ring-2 focus:ring-primary-foreground/30 transition-all"
+                          />
+                      </div>
+                      <div className="relative">
+                          <input 
+                            type="time" 
+                            value={deadlineTime}
+                            onChange={(e) => setDeadlineTime(e.target.value)}
+                            className="w-full bg-surface border border-primary-foreground/15 rounded-2xl px-5 py-4 text-xs font-black italic font-display text-foreground outline-none focus:ring-2 focus:ring-primary-foreground/30 transition-all"
+                          />
+                      </div>
                    </div>
                  </div>
 
-                  <button 
-                   onClick={() => {
-                      if (isTermFinalized) {
-                        if (activeTerm?.id) {
-                          unlockTermMutation.mutate(activeTerm.id, {
-                            onSuccess: () => {
-                              setIsTermFinalized(false);
-                              toast.success('Term unlocked. Teachers can now modify grades.');
-                            },
-                            onError: (error) => {
-                              const reason = error?.response?.data?.freezeReason || error?.message || 'Please try again.';
-                              toast.error(`Failed to unlock term: ${reason}`);
-                            },
-                          });
-                        } else {
-                          setIsTermFinalized(false);
-                          toast.success('Term unlocked. Teachers can now modify grades.');
-                        }
-                      } else {
-                        setShowSealConfirm(true);
-                      }
-                    }}
-                  className={cn(
-                    "w-full py-5 rounded-[2rem] text-[11px] font-black uppercase tracking-widest transition-all shadow-2xl flex items-center justify-center gap-3",
-                    isTermFinalized 
-                      ? "bg-destructive text-primary-foreground shadow-destructive/40" 
-                      : "bg-brand-primary text-primary-foreground shadow-brand-primary/40"
+                   <button 
+                    onClick={() => {
+                       if (isTermFinalized) {
+                         if (targetTerm?.id) {
+                           deactivateTermMutation.mutate(targetTerm.id, {
+                             onSuccess: () => {
+                               setIsTermFinalized(false);
+                               toast.success('Term deactivated. Semester is paused. Teachers cannot enter grades.');
+                             },
+                             onError: (error) => {
+                               const reason = error?.response?.data?.freezeReason || error?.message || 'Please try again.';
+                               toast.error(`Failed to deactivate term: ${reason}`);
+                             },
+                           });
+                         } else {
+                           setIsTermFinalized(false);
+                           toast.success('Term deactivated. Semester is paused.');
+                         }
+                       } else {
+                         setShowSealConfirm(true);
+                       }
+                     }}
+                   className={cn(
+                     "w-full py-5 rounded-[2rem] text-[11px] font-black uppercase tracking-widest transition-all shadow-2xl flex items-center justify-center gap-3",
+                     isTermFinalized 
+                       ? "bg-destructive text-primary-foreground shadow-destructive/40" 
+                       : "bg-brand-primary text-primary-foreground shadow-brand-primary/40"
+                   )}
+                  >
+                     {isTermFinalized ? <Unlock size={16} /> : <Lock size={16} />}
+                     {isTermFinalized ? 'Emergency Unlock Portal' : `Apply Final Seal (Lock ${TERM_DISPLAY[targetTerm?.termNumber] || targetTerm?.termNumber || 'Term'})`}
+                  </button>
+                  
+                  {isTermFinalized && (
+                    <p className="text-[9px] font-black text-brand-primary uppercase tracking-widest text-center mt-6 animate-pulse">
+                      Semester is Active — Teachers can enter grades
+                    </p>
                   )}
-                 >
-                    {isTermFinalized ? <Unlock size={16} /> : <Lock size={16} />}
-                    {isTermFinalized ? 'Emergency Unlock Portal' : `Apply Final Seal (Lock ${TERM_DISPLAY[activeTerm?.termNumber] || activeTerm?.termNumber || 'Term'})`}
-                 </button>
-                 
-                 {isTermFinalized && (
-                   <p className="text-[9px] font-black text-destructive uppercase tracking-widest text-center mt-6 animate-pulse">
-                     Database is currently Read-Only
-                   </p>
-                 )}
                </div>
             </section>
 

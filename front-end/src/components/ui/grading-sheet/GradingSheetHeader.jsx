@@ -61,7 +61,6 @@ export function GradingSheetHeader({
           onChange={onSubjectChange || (() => {})}
           className="min-w-[100px] lg:min-w-[120px] px-2 lg:px-3 py-1.5 lg:py-2 bg-white border-2 border-border rounded-lg text-[10px] lg:text-xs font-bold text-text-primary uppercase tracking-wider shadow-sm"
         >
-          <option value="">All Subjects</option>
           {(uniqueSubjects || []).map((s) => (
             <option key={s} value={s}>{s}</option>
           ))}
@@ -72,7 +71,6 @@ export function GradingSheetHeader({
           onChange={onClassChange || (() => {})}
           className="min-w-[100px] lg:min-w-[120px] px-2 lg:px-3 py-1.5 lg:py-2 bg-white border-2 border-border rounded-lg text-[10px] lg:text-xs font-bold text-text-primary uppercase tracking-wider shadow-sm"
         >
-          <option value="">All Classes</option>
           {(availableClasses || []).map((c) => (
             <option key={c.id} value={c.id}>{c.className}</option>
           ))}

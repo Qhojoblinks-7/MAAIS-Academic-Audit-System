@@ -134,14 +134,19 @@ export function AdminHome() {
     return match?.id || resolvedYear?.id || null;
   }, [configForm.academicYear, academicYears, resolvedYear]);
 
+  const selectedYear = React.useMemo(() => {
+    if (!configForm.academicYear || !academicYears.length) return resolvedYear;
+    return academicYears.find(y => y.label === configForm.academicYear) || resolvedYear;
+  }, [configForm.academicYear, academicYears, resolvedYear]);
+
   const curriculumMatrixQuery = useCurriculumMatrix(selectedAcademicYearId);
 
   const selectedTermId = React.useMemo(() => {
-    if (!configForm.term || !resolvedYear?.terms?.length) return activeTerm?.id || null;
+    if (!configForm.term || !selectedYear?.terms?.length) return activeTerm?.id || null;
     const formatted = configForm.term.replace('T', 'TERM_');
-    const match = resolvedYear.terms.find(t => `T${t.termNumber.replace('TERM_', '')}` === configForm.term);
+    const match = selectedYear.terms.find(t => `T${t.termNumber.replace('TERM_', '')}` === configForm.term);
     return match?.id || activeTerm?.id || null;
-  }, [configForm.term, resolvedYear, activeTerm]);
+  }, [configForm.term, selectedYear, activeTerm]);
 
   const selectedLevel = configForm.level;
 
@@ -174,6 +179,8 @@ export function AdminHome() {
 
   const activeYearLabel = formatYearLabel(resolvedYear?.label);
   const activeTermLabel = formatTermLabel(activeTerm?.termNumber);
+  const displayYearLabel = configForm.academicYear ? formatYearLabel(configForm.academicYear) : activeYearLabel;
+  const displayTermLabel = configForm.term || activeTermLabel;
 
   const departments = departmentsQuery.data || [];
   const subjects = subjectsQuery.data || [];
@@ -559,7 +566,7 @@ export function AdminHome() {
               className="px-3 py-1.5 bg-brand-dark text-primary-foreground rounded-xl flex items-center gap-2 shadow-md hover:bg-brand-dark/90 transition-all cursor-pointer"
             >
               <Calendar size={12} className="text-text-secondary" />
-              <span className="text-[9px] font-black tracking-wider uppercase">{activeYearLabel || 'No Year'} Academic • {activeTermLabel || '—'}</span>
+              <span className="text-[9px] font-black tracking-wider uppercase">{displayYearLabel || 'No Year'} Academic • {displayTermLabel || '—'}</span>
               <div className="px-1.5 py-0.5 bg-brand-dark rounded text-[8px] font-black tracking-normal">{configForm.level}</div>
               <Settings2 size={10} className="text-text-secondary ml-1" />
             </button>
@@ -1204,7 +1211,7 @@ export function AdminHome() {
                       onChange={(e) => setConfigForm({ ...configForm, term: e.target.value })}
                       className="w-full px-3 py-2.5 bg-surface border border-border rounded-xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-brand-primary/10"
                     >
-                      {(activeYear?.terms && activeYear.terms.length > 0)
+                       {(selectedYear?.terms && selectedYear.terms.length > 0)
                         ? activeYear.terms.map(t => (
                             <option key={t.id} value={formatTermLabel(t.termNumber)}>{formatTermLabel(t.termNumber)}</option>
                           ))

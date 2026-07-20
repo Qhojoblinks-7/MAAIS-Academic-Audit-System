@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, Percent, AlertTriangle, Users, ShieldCheck, RefreshCw, TrendingUp } from 'lucide-react';
+import { BookOpen, Percent, AlertTriangle, Users, ShieldCheck, RefreshCw, TrendingUp, GraduationCap } from 'lucide-react';
 import { useRole } from '../../context/RoleContext';
 import { useHOD } from '../../context/HODContext';
 import { TeacherSubmissionMatrix } from '../../components/organisms/DashboardOrganisms';
@@ -258,8 +258,34 @@ export function HODDashboard() {
                   <Users size={20} />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-foreground">Manage Teachers</p>
+                  <p className="text-sm font-bold text-foreground">Faculty Directory</p>
                   <p className="text-xs text-muted-foreground">View department staff</p>
+                </div>
+              </Link>
+
+              <Link
+                to="/hod/students"
+                className="bg-surface p-4 rounded-xl border border-border/60 shadow-sm hover:shadow-md transition-all flex items-center gap-4"
+              >
+                <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center text-foreground border border-border shrink-0">
+                  <GraduationCap size={20} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-foreground">Student Registry</p>
+                  <p className="text-xs text-muted-foreground">Enrolment & academic records</p>
+                </div>
+              </Link>
+
+              <Link
+                to="/hod/parents"
+                className="bg-surface p-4 rounded-xl border border-border/60 shadow-sm hover:shadow-md transition-all flex items-center gap-4"
+              >
+                <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center text-foreground border border-border shrink-0">
+                  <Users size={20} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-foreground">Guardian Network</p>
+                  <p className="text-xs text-muted-foreground">Parent contacts & communications</p>
                 </div>
               </Link>
 

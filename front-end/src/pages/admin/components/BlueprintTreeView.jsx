@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../../lib/utils';
 import { School, Layers, Users, AlertTriangle, ChevronRight, ChevronDown, MoreVertical, Plus, X, TrendingUp, Settings2, Archive, UserPlus, Ruler, Home, Trash2, Loader2, Check } from 'lucide-react';
 import { toast } from '../../../components/ui/toast.tsx';
-import { usePromoteLevel, useArchiveYear, useTransferStudents, useUpdateClassCapacity, useRebalanceHouses, useDissolveClass, useUpdateClass, useAllStudents } from '../../../lib/hooks';
+import { usePromoteLevel, useArchiveYear, useTransferStudents, useUpdateClassCapacity, useRebalanceHouses, useDissolveClass, useUpdateClass, useAllStudents, useCreateYear, useActivateYear, useGetAcademicYears, useCreateClass } from '../../../lib/hooks';
 import { ConfirmationDialog } from '../../../components/molecules/ConfirmationDialog';
 
 const HOUSES = ['Guggisberg', 'Aggrey', 'Nkrumah'];
@@ -15,15 +15,22 @@ export function BlueprintTreeView({
   expandedPrograms, 
   toggleYear, 
   toggleProgram,
-  onCreateYear,
   onCreateClassroom,
   studentAvatarsByClass = {},
-  programs = ['Science', 'General Arts', 'Business', 'Home Economics', 'Technical']
+  programs = ['Science', 'General Arts', 'Business', 'Home Economics', 'Technical'],
+  activeYear = null,
 }) {
   const [showYearModal, setShowYearModal] = useState(false);
   const [showClassroomModal, setShowClassroomModal] = useState(false);
-  const [yearForm, setYearForm] = useState({ name: '', selectedPrograms: [] });
-  const [classroomForm, setClassroomForm] = useState({ name: '', capacity: 45, initialStudents: 0 });
+  const [yearForm, setYearForm] = useState({
+    label: '',
+    startDate: '',
+    endDate: '',
+    termSystem: 'THREE_TERMS',
+    levels: ['FORM_1', 'FORM_2', 'FORM_3'],
+    createTrackClasses: true,
+  });
+  const [classroomForm, setClassroomForm] = useState({ name: '', capacity: 45, initialStudents: 0, track: '' });
   const [selectedProgramForClassroom, setSelectedProgramForClassroom] = useState(null);
   const [openKebabYearId, setOpenKebabYearId] = useState(null);
   const [openKebabClassroomId, setOpenKebabClassroomId] = useState(null);
@@ -47,7 +54,10 @@ export function BlueprintTreeView({
   const updateClassCapacityMutation = useUpdateClassCapacity();
   const rebalanceHousesMutation = useRebalanceHouses();
   const dissolveClassMutation = useDissolveClass();
-  const updateClassMutation = useUpdateClass();
+  const createYearMutation = useCreateYear();
+  const activateYearMutation = useActivateYear();
+  const yearsQuery = useGetAcademicYears();
+  const createClassMutation = useCreateClass();
 
   useEffect(() => {
     const closeMenus = () => {
@@ -371,24 +381,69 @@ export function BlueprintTreeView({
   };
 
   const handleAddYear = async () => {
-    if (!yearForm.name.trim()) {
-      toast.error('Year Group name is required');
+    if (!yearForm.label.trim()) {
+      toast.error('Academic year name is required (e.g. 2026/2027)');
       return;
     }
-    if (yearForm.selectedPrograms.length === 0) {
-      toast.error('Select at least one program');
+    if (!yearForm.startDate || !yearForm.endDate) {
+      toast.error('Please set the start and end dates');
+      return;
+    }
+    if (new Date(yearForm.endDate) <= new Date(yearForm.startDate)) {
+      toast.error('End date must be after the start date');
       return;
     }
     try {
-      await onCreateYear({
-        name: yearForm.name,
-        programs: yearForm.selectedPrograms
+      const created = await createYearMutation.mutateAsync({
+        label: yearForm.label.trim(),
+        startDate: yearForm.startDate,
+        endDate: yearForm.endDate,
+        termSystem: yearForm.termSystem,
       });
-      setYearForm({ name: '', selectedPrograms: [] });
+      const yearId = created?.id || created?.data?.id;
+      let activatedYear = created;
+      if (yearId) {
+        activatedYear = await activateYearMutation.mutateAsync(yearId);
+        qc.setQueryData(['academic', 'years', 'active'], activatedYear);
+        qc.setQueryData(['admin', 'academic', 'activeYear'], activatedYear);
+        qc.invalidateQueries({ queryKey: ['archive', 'academic-years'] });
+        qc.invalidateQueries({ queryKey: ['admin', 'academic', 'years'] });
+      }
+
+      const levelLabels = { FORM_1: 'SHS 1', FORM_2: 'SHS 2', FORM_3: 'SHS 3' };
+      const selectedLevels = yearForm.levels.length
+        ? yearForm.levels
+        : ['FORM_1', 'FORM_2', 'FORM_3'];
+      let classCount = 0;
+      for (const level of selectedLevels) {
+        if (yearForm.createTrackClasses) {
+          for (const track of ['Gold', 'Green']) {
+            await createClassMutation.mutateAsync({
+              name: `${levelLabels[level].replace('SHS ', '')}${track === 'Gold' ? 'A' : 'B'}`,
+              level,
+              capacity: 45,
+              program: '',
+              track,
+            });
+            classCount += 1;
+          }
+        } else {
+          await createClassMutation.mutateAsync({
+            name: `${levelLabels[level].replace('SHS ', '')}`,
+            level,
+            capacity: 45,
+            program: '',
+          });
+          classCount += 1;
+        }
+      }
+
+      setYearForm({ label: '', startDate: '', endDate: '', termSystem: 'THREE_TERMS', levels: ['FORM_1', 'FORM_2', 'FORM_3'], createTrackClasses: true });
       setShowYearModal(false);
-      toast.success('Year Group created successfully');
+      const systemLabel = yearForm.termSystem === 'TWO_SEMESTERS' ? '2 Semesters' : '3 Terms';
+      toast.success(`Academic year created with ${systemLabel} and ${classCount} class(es) and set active`);
     } catch (err) {
-      toast.error(`Failed to create Year Group: ${err.message || 'Unknown error'}`);
+      toast.error(`Failed to create academic year: ${err?.message || 'Unknown error'}`);
     }
   };
 
@@ -415,9 +470,10 @@ export function BlueprintTreeView({
         capacity: parseInt(classroomForm.capacity) || 45,
         studentsCount: total,
         houseDistribution: houseDist,
-        programId: selectedProgramForClassroom.id
+        programId: selectedProgramForClassroom.id,
+        track: classroomForm.track || undefined,
       });
-      setClassroomForm({ name: '', capacity: 45, initialStudents: 0 });
+      setClassroomForm({ name: '', capacity: 45, initialStudents: 0, track: '' });
       setSelectedProgramForClassroom(null);
       setShowClassroomModal(false);
       toast.success('Classroom Unit created successfully');
@@ -442,12 +498,17 @@ export function BlueprintTreeView({
           <div>
             <h3 className="text-xs font-black text-foreground uppercase tracking-[0.25em]">Institutional Blueprint</h3>
             <p className="text-[9px] font-medium text-muted-foreground mt-1 uppercase tracking-widest italic">Physical & Logical Entity Tree</p>
+            {activeYear?.label && (
+              <p className="text-[10px] font-black text-brand-primary mt-1 uppercase tracking-widest">
+                Active Academic Year: {activeYear.label}
+              </p>
+            )}
           </div>
           <button 
             onClick={() => setShowYearModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-brand-primary/20"
           >
-            <Plus size={14} /> Add Year Group
+            <Plus size={14} /> New Academic Year
           </button>
         </div>
 
@@ -667,66 +728,152 @@ export function BlueprintTreeView({
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               className="relative w-full max-w-md bg-surface rounded-[2.5rem] shadow-2xl overflow-hidden"
             >
-              <div className="p-10">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-black italic font-display text-foreground">Add Year Group</h3>
-                  <button onClick={() => setShowYearModal(false)} className="p-2 text-muted-foreground hover:text-foreground transition-all">
-                    <X size={24} />
-                  </button>
-                </div>
-                <form onSubmit={(e) => { e.preventDefault(); handleAddYear(); }} className="space-y-6">
-                  <div>
-                    <label className="block text-xs font-bold text-foreground/70 mb-2">Year Group Name</label>
-                    <input
-                      type="text"
-                      value={yearForm.name}
-                      onChange={(e) => setYearForm({ ...yearForm, name: e.target.value })}
-                      className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent text-foreground outline-none transition-all"
-                      placeholder="e.g., SHS 4"
-                      required
-                    />
+                <div className="p-10">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-black italic font-display text-foreground">New Academic Year</h3>
+                    <button onClick={() => setShowYearModal(false)} className="p-2 text-muted-foreground hover:text-foreground transition-all">
+                      <X size={24} />
+                    </button>
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-foreground/70 mb-3">Select Programs</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {programs.map((prog) => (
-                        <label key={prog} className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={yearForm.selectedPrograms.includes(prog)}
-                            onChange={(e) => {
-                              const checked = e.target.checked;
-                              setYearForm(prev => ({
-                                ...prev,
-                                selectedPrograms: checked
-                                  ? [...prev.selectedPrograms, prog]
-                                  : prev.selectedPrograms.filter(p => p !== prog)
-                              }));
-                            }}
-                            className="w-4 h-4 rounded border-border focus:ring-2 focus:ring-brand-primary"
-                          />
-                          <span className="text-xs font-bold text-foreground/80">{prog}</span>
-                        </label>
-                      ))}
+                  <form onSubmit={(e) => { e.preventDefault(); handleAddYear(); }} className="space-y-5">
+                    <div>
+                      <label className="block text-xs font-bold text-foreground/70 mb-2">Academic Year Name</label>
+                      <input
+                        type="text"
+                        value={yearForm.label}
+                        onChange={(e) => setYearForm({ ...yearForm, label: e.target.value })}
+                        className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent text-foreground outline-none transition-all"
+                        placeholder="e.g., 2026/2027"
+                        required
+                      />
                     </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowYearModal(false)}
-                      className="flex-1 px-5 py-3 bg-muted/30 text-foreground font-black rounded-xl border border-border hover:bg-muted/50 transition-all"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="flex-1 px-5 py-3 bg-success text-primary-foreground font-black rounded-xl hover:bg-success/80 transition-all shadow-lg shadow-success/20"
-                    >
-                      Create Level
-                    </button>
-                  </div>
-                </form>
-              </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-foreground/70 mb-2">Start Date</label>
+                        <input
+                          type="date"
+                          value={yearForm.startDate}
+                          onChange={(e) => setYearForm({ ...yearForm, startDate: e.target.value })}
+                          className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent text-foreground outline-none transition-all"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-foreground/70 mb-2">End Date</label>
+                        <input
+                          type="date"
+                          value={yearForm.endDate}
+                          onChange={(e) => setYearForm({ ...yearForm, endDate: e.target.value })}
+                          className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent text-foreground outline-none transition-all"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-foreground/70 mb-2">Split the year into</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setYearForm({ ...yearForm, termSystem: 'THREE_TERMS' })}
+                          className={cn(
+                            "px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest border transition-all",
+                            yearForm.termSystem === 'THREE_TERMS'
+                              ? "bg-brand-primary text-primary-foreground border-brand-primary"
+                              : "bg-muted/30 text-foreground border-border hover:bg-muted/50"
+                          )}
+                        >
+                          3 Terms
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setYearForm({ ...yearForm, termSystem: 'TWO_SEMESTERS' })}
+                          className={cn(
+                            "px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest border transition-all",
+                            yearForm.termSystem === 'TWO_SEMESTERS'
+                              ? "bg-brand-primary text-primary-foreground border-brand-primary"
+                              : "bg-muted/30 text-foreground border-border hover:bg-muted/50"
+                          )}
+                        >
+                          2 Semesters
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-2 italic">
+                        {yearForm.termSystem === 'TWO_SEMESTERS'
+                          ? 'The year will be divided into Semester 1 and Semester 2.'
+                          : 'The year will be divided into Term 1, Term 2 and Term 3.'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-foreground/70 mb-2">School Levels to Create</label>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          { value: 'FORM_1', label: 'SHS 1' },
+                          { value: 'FORM_2', label: 'SHS 2' },
+                          { value: 'FORM_3', label: 'SHS 3' },
+                        ].map((lvl) => {
+                          const active = yearForm.levels.includes(lvl.value);
+                          return (
+                            <button
+                              key={lvl.value}
+                              type="button"
+                              onClick={() =>
+                                setYearForm((prev) => ({
+                                  ...prev,
+                                  levels: active
+                                    ? prev.levels.filter((l) => l !== lvl.value)
+                                    : [...prev.levels, lvl.value],
+                                }))
+                              }
+                              className={cn(
+                                "px-3 py-3 rounded-xl text-xs font-black uppercase tracking-widest border transition-all",
+                                active
+                                  ? "bg-brand-primary text-primary-foreground border-brand-primary"
+                                  : "bg-muted/30 text-foreground border-border hover:bg-muted/50"
+                              )}
+                            >
+                              {lvl.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between bg-muted/30 rounded-xl px-4 py-3">
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-widest text-foreground">Create Gold &amp; Green classes</p>
+                        <p className="text-[10px] text-muted-foreground mt-1">Each level gets a Gold class (A) and a Green class (B).</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setYearForm((prev) => ({ ...prev, createTrackClasses: !prev.createTrackClasses }))}
+                        className={cn(
+                          "w-14 h-8 rounded-full transition-all relative shrink-0",
+                          yearForm.createTrackClasses ? "bg-brand-primary" : "bg-muted"
+                        )}
+                      >
+                        <span className={cn(
+                          "absolute top-1 w-6 h-6 rounded-full bg-white transition-all",
+                          yearForm.createTrackClasses ? "left-7" : "left-1"
+                        )} />
+                      </button>
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowYearModal(false)}
+                        className="flex-1 px-5 py-3 bg-muted/30 text-foreground font-black rounded-xl border border-border hover:bg-muted/50 transition-all"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={createYearMutation.isPending || activateYearMutation.isPending}
+                        className="flex-1 px-5 py-3 bg-success text-primary-foreground font-black rounded-xl hover:bg-success/80 transition-all shadow-lg shadow-success/20 disabled:opacity-60"
+                      >
+                        {createYearMutation.isPending ? 'Creating…' : 'Create Year'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
             </motion.div>
           </div>
         )}
@@ -786,6 +933,47 @@ export function BlueprintTreeView({
                       className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent text-foreground outline-none transition-all"
                       defaultValue={0}
                     />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-foreground/70 mb-2">Track</label>
+                    <div className="grid grid-cols-3 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setClassroomForm({ ...classroomForm, track: '' })}
+                        className={cn(
+                          "px-3 py-3 rounded-xl text-xs font-black uppercase tracking-widest border transition-all",
+                          !classroomForm.track
+                            ? "bg-brand-primary text-primary-foreground border-brand-primary"
+                            : "bg-muted/30 text-foreground border-border hover:bg-muted/50"
+                        )}
+                      >
+                        None
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setClassroomForm({ ...classroomForm, track: 'Gold' })}
+                        className={cn(
+                          "px-3 py-3 rounded-xl text-xs font-black uppercase tracking-widest border transition-all",
+                          classroomForm.track === 'Gold'
+                            ? "bg-amber-500 text-white border-amber-500"
+                            : "bg-muted/30 text-foreground border-border hover:bg-muted/50"
+                        )}
+                      >
+                        Gold
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setClassroomForm({ ...classroomForm, track: 'Green' })}
+                        className={cn(
+                          "px-3 py-3 rounded-xl text-xs font-black uppercase tracking-widest border transition-all",
+                          classroomForm.track === 'Green'
+                            ? "bg-emerald-600 text-white border-emerald-600"
+                            : "bg-muted/30 text-foreground border-border hover:bg-muted/50"
+                        )}
+                      >
+                        Green
+                      </button>
+                    </div>
                   </div>
                   <div className="flex gap-3">
                     <button

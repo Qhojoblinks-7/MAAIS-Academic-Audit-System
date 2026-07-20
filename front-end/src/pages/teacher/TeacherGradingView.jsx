@@ -9,6 +9,7 @@ import { Card } from '../../components/ui/card';
 import { NotificationBell } from '../../components/shared/NotificationBell';
 import { useTeacherSubjectConfig, useActiveYear } from '../../lib/hooks';
 import { SUBJECT_CONFIG } from '../../constants/subjectConfig';
+import { formatFormNumber } from '../../lib/types';
 
 export { SUBJECT_CONFIG };
 
@@ -46,8 +47,8 @@ export function TeacherGradingView() {
       }
       try {
          const classes = await teacherService.getClasses(user.profileId || user.id);
-        const meta = await teacherService.getGradingStatusMeta();
-        const subjectConfig = await teacherService.getSubjectConfig().catch(() => []);
+         const meta = await teacherService.getGradingStatusMeta();
+         const subjectConfig = await teacherService.getSubjectConfig().catch(() => []);
 
         const configMap = {};
         if (Array.isArray(subjectConfig)) {
@@ -84,7 +85,6 @@ export function TeacherGradingView() {
 
         setGradingClasses(classes || []);
         setStatusMeta(statusMetaMap);
-        console.log('[TeacherGradingView] getClasses result:', classes, 'sample:', Array.isArray(classes) ? classes[0] : null);
         console.log('[TeacherGradingView] Dynamic subject configs loaded:', Object.keys(configMap).length, configMap);
       } catch (err) {
         setError('Failed to load grading data');
@@ -101,31 +101,30 @@ export function TeacherGradingView() {
   const uniqueClasses = useMemo(() => {
     if (!Array.isArray(gradingClasses)) return [];
     const classes = [...new Set(gradingClasses.map(c => c.className).filter(Boolean))];
-    return classes.sort();
-  }, [gradingClasses]);
+    const sorted = classes.sort();
+    if (!selectedClassFilter) return sorted;
+    return [selectedClassFilter, ...sorted.filter(c => c !== selectedClassFilter)];
+  }, [gradingClasses, selectedClassFilter]);
 
   const uniqueSubjects = useMemo(() => {
     if (!Array.isArray(gradingClasses)) return [];
-    const pool = selectedClassFilter === ''
-      ? gradingClasses
-      : gradingClasses.filter(c => c.className === selectedClassFilter);
+    const pool = selectedClass?.classId
+      ? gradingClasses.filter(c => c.classId === selectedClass.classId)
+      : selectedClassFilter
+        ? gradingClasses.filter(c => c.className === selectedClassFilter)
+        : gradingClasses;
     const subjects = [...new Set(pool.map(c => c.subject).filter(Boolean))];
-    return subjects.sort();
-  }, [gradingClasses, selectedClassFilter]);
+    const sorted = subjects.sort();
+    if (!selectedSubjectFilter) return sorted.length ? sorted : [...new Set(gradingClasses.map(c => c.subject).filter(Boolean))].sort();
+    return [selectedSubjectFilter, ...sorted.filter(s => s !== selectedSubjectFilter)];
+  }, [gradingClasses, selectedClass, selectedClassFilter, selectedSubjectFilter]);
 
   const availableClasses = useMemo(() => {
     if (!Array.isArray(gradingClasses)) return [];
-    if (!selectedSubject) return gradingClasses;
-    return gradingClasses.filter(c => c.subject === selectedSubject);
-  }, [gradingClasses, selectedSubject]);
-
-  /* ── Filtered class list ── */
-  const totalStudents = gradingClasses.reduce((sum, c) => sum + (c.studentCount || 0), 0);
-  const avgProgress = gradingClasses.length > 0
-    ? Math.round(gradingClasses.reduce((sum, c) => sum + (c.progress || 0), 0) / gradingClasses.length)
-    : 0;
-  const completedCount = gradingClasses.filter(c => (c.progress || 0) === 100).length;
-  const pendingCount = gradingClasses.filter(c => (c.progress || 0) < 100).length;
+    if (!selectedClass) return gradingClasses;
+    const rest = gradingClasses.filter(c => c.id !== selectedClass.id);
+    return rest.length ? [selectedClass, ...rest] : gradingClasses;
+   }, [gradingClasses, selectedClass]);
 
   const filtered = gradingClasses.filter((c) => {
     const matchesSearch =
@@ -136,28 +135,39 @@ export function TeacherGradingView() {
     return matchesSearch && matchesClass && matchesSubject;
   });
 
+  /* ── Filtered class list ── */
+  const totalStudents = filtered.reduce((sum, c) => sum + (c.studentCount || 0), 0);
+  const avgProgress = filtered.length > 0
+    ? Math.round(filtered.reduce((sum, c) => sum + (c.progress || 0), 0) / filtered.length)
+    : 0;
+  const completedCount = filtered.filter(c => (c.progress || 0) === 100).length;
+  const pendingCount = filtered.filter(c => (c.progress || 0) < 100).length;
+
   const statCards = [
-    { label: 'Assigned Classes', value: gradingClasses.length, icon: BookOpen, color: 'bg-muted text-muted-foreground border-border' },
+    { label: 'Assigned Classes', value: filtered.length, icon: BookOpen, color: 'bg-muted text-muted-foreground border-border' },
     { label: 'Average Progress', value: `${avgProgress}%`, icon: Percent, color: 'bg-success/10 text-success border-success/20' },
-    { label: 'Class Graded', value: `${completedCount}/${gradingClasses.length}`, icon: Star, color: 'bg-brand-secondary/10 text-brand-secondary border-brand-secondary/20' },
+    { label: 'Class Graded', value: `${completedCount}/${filtered.length}`, icon: Star, color: 'bg-brand-secondary/10 text-brand-secondary border-brand-secondary/20' },
     { label: 'Total Students', value: totalStudents, icon: GraduationCap, color: 'bg-muted text-muted-foreground border-border' },
   ];
 
   /* ── Class selection: no route change, just state ── */
-  const handleSelectClass = useCallback(async (cls) => {
-    setSelectedClass(cls);
-    if (cls?.className) {
-      setSelectedClassFilter(cls.className);
-    }
-    if (cls?.subject) {
-      setSelectedSubject(cls.subject);
-      setSelectedSubjectFilter(cls.subject);
-    }
-    const students = await teacherService.getGradingStudents(cls.subject, cls.className);
+  const fetchGradingStudents = useCallback(async (subject, className) => {
+    const students = await teacherService.getGradingStudents(subject || '', className || '');
     setGradingStudents(students || []);
   }, []);
 
-  const handleSubjectChange = useCallback((e) => {
+  const handleSelectClass = useCallback(async (cls) => {
+    if (!cls) {
+      setSelectedClass(null);
+      setGradingStudents([]);
+      return;
+    }
+    setSelectedClass(cls);
+    setSelectedSubject(cls.subject);
+    await fetchGradingStudents(cls.subject, cls.className);
+  }, [fetchGradingStudents]);
+
+  const handleSubjectChange = useCallback(async (e) => {
     const subject = e.target.value;
     setSelectedSubject(subject);
     if (!subject) {
@@ -167,8 +177,20 @@ export function TeacherGradingView() {
     }
     const firstMatch = gradingClasses.find(c => c.subject === subject);
     if (firstMatch) {
-      handleSelectClass(firstMatch);
+      await fetchGradingStudents(firstMatch.subject, firstMatch.className);
+      setSelectedClass(firstMatch);
     }
+  }, [gradingClasses, fetchGradingStudents]);
+
+  const handleClassChange = useCallback(async (e) => {
+    const classId = e.target.value;
+    const cls = gradingClasses.find(c => c.id === classId);
+    if (!cls) {
+      setSelectedClass(null);
+      setGradingStudents([]);
+      return;
+    }
+    await handleSelectClass(cls);
   }, [gradingClasses, handleSelectClass]);
 
   useEffect(() => {
@@ -182,8 +204,6 @@ export function TeacherGradingView() {
 
   const handleCloseSheet = useCallback(() => {
     setSelectedClass(null);
-    setSelectedClassFilter('');
-    setSelectedSubjectFilter('');
     setGradingStudents([]);
   }, []);
 
@@ -207,10 +227,9 @@ export function TeacherGradingView() {
     );
   }
 
-/* ── Two-panel layout: list (no selection) or list+embed (class selected) ── */
-  return (
+ /* ── Two-panel layout: list (no selection) or list+embed (class selected) ── */
+   return (
     <div className="flex-1 flex overflow-hidden bg-background">
-      {/* ── LEFT PANEL: Class list ── */}
        <div
          className={cn(
            "flex-1 overflow-y-auto p-6 md:p-8 lg:p-10 select-none transition-all duration-300",
@@ -404,29 +423,29 @@ export function TeacherGradingView() {
                   <BookOpen size={14} className="text-brand-primary" />
                   <div>
                     <p className="text-xs font-black text-foreground leading-none">{selectedClass.subject}</p>
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                      {selectedClass.className}
-                      <span className="mx-1.5 text-border">|</span>
-                      <span className="text-success">{selectedClass.department || 'GENERAL'}</span>
-                      <span className="mx-1.5 text-border">|</span>
-                      <span className="text-brand-secondary">{selectedClass.level || 'SHS 1'}</span>
-                    </p>
+                     <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                       {selectedClass.className}
+                       <span className="mx-1.5 text-border">|</span>
+                       <span className="text-success">{selectedClass.department || 'GENERAL'}</span>
+                       <span className="mx-1.5 text-border">|</span>
+                       <span className="text-brand-secondary">{formatFormNumber(selectedClass.level) || '1'}</span>
+                     </p>
                   </div>
                 </div>
               </div>
 
             {/* GradingSheet — fully controlled by this container */}
             <div className="flex-1 overflow-hidden">
-               <GradingSheet
-                 classInfo={{
-                   id: selectedClass.id,
-                   subject: selectedClass.subject,
-                   className: selectedClass.className,
-                   programme: selectedClass.department || 'GENERAL',
-                   studentCount: selectedClass.studentCount,
-                   form: selectedClass.level || 'SHS 1',
-                   academicYear: '2025/2026',
-                 }}
+                <GradingSheet
+                  classInfo={{
+                    id: selectedClass.id,
+                    subject: selectedClass.subject,
+                    className: selectedClass.className,
+                    programme: selectedClass.department || 'GENERAL',
+                    studentCount: selectedClass.studentCount,
+                    form: formatFormNumber(selectedClass.level) || '1',
+                    academicYear: '2025/2026',
+                  }}
                  teacherId={user?.id || user?.staffId}
                  students={gradingStudents}
                  subjectConfig={subjectConfig}

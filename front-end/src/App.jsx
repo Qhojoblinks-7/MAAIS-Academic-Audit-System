@@ -32,11 +32,11 @@ import {
   HODDashboard, HODAudit, HODInterventions, HODReview, HODSettings,
   HODSettingsPage, HODSupportPage, HODTeachers, HODAnalytics, HODArchiveView,
   HODArchiveDetailView, HODMissingObservations, Unauthorized, BroadsheetGenerator,
-  HODCertification,
-  TeacherDashboard, TeacherTimetableView, TeacherSettings, TeacherSupport,
-  TeacherArchiveView, TeacherArchiveDetailView, TeacherGradingView,
-  TeacherAnalyticsView, TeacherMissingObservations, TeacherRevisionsFeed,
-  MobileTimetableView,
+  HODCertification, HODStudentRegistry, HODParentRegistry,
+   TeacherDashboard, TeacherTimetableView, TeacherSettings, TeacherSupport,
+   TeacherArchiveView, TeacherArchiveDetailView, TeacherGradingView,
+   TeacherAnalyticsView, TeacherMissingObservations, TeacherRevisionsFeed,
+   TeacherStudents, MobileTimetableView,
   StudentPortal, StudentSettings, StudentSupport, StudentTimetable, StudentProfile,
   GradingSheet, HOD_JourneyHistoryAudit, TeacherProfile, NotificationsPage,
 } from "./router/lazyPages";
@@ -60,6 +60,7 @@ import { ConnectivityBanner } from "./pages/shared/ConnectivityBanner";
 import { useSystemFreeze, useActiveYear } from "./lib/hooks";
 import { Button } from "./components/ui/button";
 import { cn } from "./lib/utils";
+import { formatFormNumber } from "./lib/types";
 
 // Helper Component for Dynamic Missing Observations Layout
 function RoleBasedMissingObservations() {
@@ -88,6 +89,9 @@ function GradingRouteLoader() {
   const [gradingData, setGradingData] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
+  const [teacherClasses, setTeacherClasses] = React.useState([]);
+  const [selectedSubject, setSelectedSubject] = React.useState(subjectParam || "");
+  const [selectedClass, setSelectedClass] = React.useState(null);
 
   const activeYearQuery = useActiveYear();
   const activeTerm = activeYearQuery.data?.terms?.find(t => t.isActive);
@@ -165,6 +169,139 @@ function GradingRouteLoader() {
     };
   }, [subjectParam, classParam]);
 
+  React.useEffect(() => {
+    let cancelled = false;
+    const fetchTeacherClasses = async () => {
+      if (!user?.id) return;
+      try {
+        const teacherId = user.profileId || user.id;
+        const classes = await teacherService.getClasses(teacherId);
+        if (!cancelled) {
+          setTeacherClasses(classes || []);
+          if (!selectedClass && classes?.length > 0) {
+            const match = classes.find(c => c.subject === subjectParam && c.className === classParam);
+            setSelectedClass(match || classes[0]);
+          }
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error("[GradingRouteLoader] failed to load teacher classes:", err);
+        }
+      }
+    };
+    fetchTeacherClasses();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, user?.profileId, subjectParam, classParam]);
+
+  React.useEffect(() => {
+    setSelectedSubject(subjectParam || "");
+  }, [subjectParam]);
+
+  React.useEffect(() => {
+    if (!classParam) {
+      setSelectedClass(null);
+      return;
+    }
+    const match = teacherClasses.find(c => c.className === classParam);
+    if (match) {
+      setSelectedClass(match);
+    }
+  }, [classParam, teacherClasses]);
+
+  React.useEffect(() => {
+    if (!selectedClass || !gradingData) return;
+    if (selectedClass.id === gradingData.classId) return;
+    
+    let cancelled = false;
+    const fetchStudentsForClass = async () => {
+      if (!user?.id) return;
+      try {
+        const gradingIds = await gradingService.getGradingIds(
+          selectedClass.subject,
+          selectedClass.className,
+        );
+        if (cancelled) return;
+        const [students, subjectConfigResult] = await Promise.all([
+          gradingService.getStudentsForGrading({
+            subjectId: gradingIds?.subjectId,
+            classId: gradingIds?.classId,
+            termId: gradingIds?.termId,
+          }),
+          teacherService.getSubjectConfig().catch(() => ({})),
+        ]);
+        if (cancelled) return;
+
+        const subjectConfigMap = { ...SUBJECT_CONFIG };
+        if (Array.isArray(subjectConfigResult)) {
+          subjectConfigResult.forEach((s) => {
+            if (!subjectConfigMap[s.name]) {
+              subjectConfigMap[s.name] = {
+                sections: s.type === 'CORE' ? ['Sec A (40)', 'Sec B (60)'] : ['Practical (40)', 'Theory (60)'],
+                maxRaw: 100,
+                sectionCount: 2,
+                hasPractical: s.type === 'ELECTIVE',
+                practicalMarks: 0,
+                sbaLabel: 'SBA (30%)',
+                examLabel: 'Exam (70%)',
+              };
+            }
+          });
+        }
+
+        setGradingData({
+          students: students || [],
+          subjectConfig: subjectConfigMap,
+          subjectId: gradingIds?.subjectId,
+          classId: gradingIds?.classId,
+          termId: gradingIds?.termId,
+        });
+      } catch (err) {
+        if (!cancelled) {
+          console.error("[GradingRouteLoader] failed to fetch students for class:", err);
+        }
+      }
+    };
+    fetchStudentsForClass();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedClass?.id, gradingData?.classId, user?.id]);
+
+  const uniqueSubjects = React.useMemo(() => {
+    if (!Array.isArray(teacherClasses)) return [];
+    const subjects = [...new Set(teacherClasses.map(c => c.subject).filter(Boolean))];
+    return subjects.sort();
+  }, [teacherClasses]);
+
+  const availableClasses = React.useMemo(() => {
+    if (!Array.isArray(teacherClasses)) return [];
+    if (!selectedSubject) return teacherClasses;
+    return teacherClasses.filter(c => c.subject === selectedSubject);
+  }, [teacherClasses, selectedSubject]);
+
+  const handleSubjectChange = React.useCallback((e) => {
+    const subject = e.target.value;
+    setSelectedSubject(subject);
+    if (!subject) {
+      setSelectedClass(null);
+      return;
+    }
+    const firstMatch = teacherClasses.find(c => c.subject === subject);
+    if (firstMatch) {
+      setSelectedClass(firstMatch);
+    }
+  }, [teacherClasses]);
+
+  const handleClassChange = React.useCallback((e) => {
+    const classId = e.target.value;
+    const cls = teacherClasses.find(c => c.id === classId);
+    if (cls) {
+      setSelectedClass(cls);
+    }
+  }, [teacherClasses]);
+
   if (loading) {
     return (
       <div className="flex-1 overflow-y-auto bg-background p-6 md:p-8 lg:p-10">
@@ -189,47 +326,54 @@ function GradingRouteLoader() {
     );
   }
 
-  const { students, subjectConfig } = gradingData;
-  const fallbackStudent =
-    students.find((s) => s.auditStatus === "MISSING") || students[0] || null;
-  const targetStudentId = getTargetStudentId || fallbackStudent?.id || null;
+   const { students, subjectConfig } = gradingData;
+   const targetStudentId = getTargetStudentId || null;
 
-  const DEFAULT_CLASS_INFO = {
-    id: gradingData.classId || subjectParam,
-    subject: subjectParam,
-    className: classParam,
-    programme: "AGRICULTURE",
-    studentCount: students.length,
-    form: "SHS 1",
-    academicYear: "2025/2026",
-  };
+    const DEFAULT_CLASS_INFO = {
+      id: selectedClass ? selectedClass.id : (gradingData.classId || subjectParam),
+      subject: selectedSubject || subjectParam,
+      className: selectedClass ? selectedClass.className : classParam,
+      programme: selectedClass ? (selectedClass.department || 'GENERAL') : "AGRICULTURE",
+      studentCount: students.length,
+      form: selectedClass ? formatFormNumber(selectedClass.level) : "1",
+      academicYear: "2025/2026",
+    };
 
-  const STP_RULES = [
-    { check: (s) => s.final > 100, message: "Final score exceeds 100%" },
-    { check: (s) => s.sba > 30, message: "SBA exceeds 30% limit" },
-    { check: (s) => s.exam > 70, message: "Exam exceeds 70% limit" },
-    {
-      check: (s) => s.auditStatus === "MISSING",
-      message: "Missing behavioral observations",
-    },
-  ];
+   const STP_RULES = [
+     { check: (s) => s.final > 100, message: "Final score exceeds 100%" },
+     { check: (s) => s.sba > 30, message: "SBA exceeds 30% limit" },
+     { check: (s) => s.exam > 70, message: "Exam exceeds 70% limit" },
+     {
+       check: (s) => s.auditStatus === "MISSING",
+       message: "Missing behavioral observations",
+     },
+   ];
 
-  return (
-    <GradingSheet
-      classInfo={DEFAULT_CLASS_INFO}
-      teacherId={user?.id || user?.staffId}
-      students={students}
-      subjectConfig={subjectConfig}
-      stpRules={STP_RULES}
-      isTermFinalized={isTermFinalized}
-      missingObsId={getMissingObsId}
-      targetStudentId={targetStudentId}
-      targetStudentName={getTargetStudentName}
-      targetStudentIndex={getTargetStudentIndex}
-      noAssignmentWarning={!students.length && !!getTargetStudentId}
-      isAtRisk={isAtRisk}
-    />
-  );
+   return (
+     <GradingSheet
+       classInfo={DEFAULT_CLASS_INFO}
+       teacherId={user?.id || user?.staffId}
+       students={students}
+       subjectConfig={subjectConfig}
+       stpRules={STP_RULES}
+       isTermFinalized={isTermFinalized}
+       missingObsId={getMissingObsId}
+       targetStudentId={targetStudentId}
+       targetStudentName={getTargetStudentName}
+       targetStudentIndex={getTargetStudentIndex}
+       noAssignmentWarning={!students.length && !!getTargetStudentId}
+       isAtRisk={isAtRisk}
+       selectedSubject={selectedSubject}
+       selectedClass={selectedClass}
+       availableClasses={availableClasses}
+       uniqueSubjects={uniqueSubjects}
+       onSubjectChange={handleSubjectChange}
+       onClassChange={(e) => {
+         const cls = availableClasses.find(c => c.id === e.target.value);
+         if (cls) setSelectedClass(cls);
+       }}
+     />
+   );
 }
 
 // Standalone Grading Context Wrapper
@@ -585,6 +729,14 @@ function AppContent() {
               }
             />
             <Route
+              path="/teacher/students"
+              element={
+                <RequireRole allowedRoles={["TEACHER"]}>
+                  <TeacherStudents />
+                </RequireRole>
+              }
+            />
+            <Route
               path="/archive/teacher/:id"
               element={
                 <RequireRole allowedRoles={["TEACHER"]}>
@@ -639,6 +791,22 @@ function AppContent() {
               element={
                 <RequireRole allowedRoles={["HOD"]}>
                   <HODTeachers />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/hod/students"
+              element={
+                <RequireRole allowedRoles={["HOD"]}>
+                  <HODStudentRegistry />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/hod/parents"
+              element={
+                <RequireRole allowedRoles={["HOD"]}>
+                  <HODParentRegistry />
                 </RequireRole>
               }
             />

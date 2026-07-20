@@ -178,6 +178,7 @@ function normalizeObservationPayload(observation) {
 }
 
 const DEFAULT_TIMEOUT = 15000;
+const BULK_TIMEOUT = 60000;
 const MAX_RETRIES = 2;
 const RETRYABLE_STATUS = new Set([408, 429, 500, 502, 503, 504]);
 const pendingRequests = new Map();
@@ -190,7 +191,7 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function request(method, path, body) {
+async function request(method, path, body, timeout = DEFAULT_TIMEOUT) {
   const url = `${BASE_URL}${path}`;
   const key = dedupeKey(method, path, body);
   if (method === 'GET' && pendingRequests.has(key)) {
@@ -203,7 +204,7 @@ async function request(method, path, body) {
       attempt += 1;
       try {
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
+        const timer = setTimeout(() => controller.abort(), timeout);
         const res = await fetch(url, {
           method,
           headers: getHeaders(),
@@ -353,23 +354,18 @@ function createRealService() {
         .then(r => r?.data ?? r ?? {});
     },
     bulkUpsertGradeEntries: (entries) => {
-      console.log(`[TeacherService] bulkUpsertGradeEntries called with ${entries?.length || 0} entries`);
-      const validatedEntries = entries?.map((e, i) => {
-        const entry = {
-          studentId: e.studentId,
-          subjectId: e.subjectId,
-          termId: e.termId,
-          classScore: e.classScore,
-          examScore: e.examScore,
-          remark: e.remark,
-          hasObservation: e.hasObservation,
-          observationText: e.observationText
-        };
-        console.log(`[TeacherService] Entry ${i}: studentId=${e.studentId}, subjectId=${e.subjectId}, termId=${e.termId}, classScore=${e.classScore}, examScore=${e.examScore}`);
-        return entry;
-      });
-      console.log('[TeacherService] bulkUpsertGradeEntries payload:', JSON.stringify(validatedEntries, null, 2));
-      return request('POST', '/grading/entries/bulk', { entries: validatedEntries }).then(r => r?.data ?? r);
+      const validatedEntries = entries?.map((e) => ({
+        studentId: e.studentId,
+        subjectId: e.subjectId,
+        termId: e.termId,
+        classScore: e.classScore,
+        examScore: e.examScore,
+        remark: e.remark,
+        hasObservation: e.hasObservation,
+        observationText: e.observationText,
+      }));
+      return request('POST', '/grading/entries/bulk', { entries: validatedEntries }, BULK_TIMEOUT)
+        .then(r => r?.data ?? r);
     },
     createObservation: (observation) => {
       console.log('[TeacherService] createObservation called');
@@ -416,6 +412,27 @@ function createRealService() {
             classForm: t.department?.name || 'Staff',
             indexNumber: t.staffId || '—',
             type: 'teacher',
+          }));
+        });
+    },
+    getStudents: (query = '') => {
+      console.log(`[TeacherService] getStudents called with query: ${query || ''}`);
+      return request('GET', `/teacher/students${query ? `?search=${encodeURIComponent(query)}` : ''}`, undefined, BULK_TIMEOUT)
+        .then((res) => {
+          const data = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+          return data.map((s) => ({
+            id: s.id,
+            name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.indexNumber || s.id,
+            email: s.user?.email || '',
+            indexNumber: s.indexNumber || '—',
+            className: s.currentClass?.name || 'Unassigned',
+            classSection: s.currentClass,
+            department: s.department,
+            isActive: s.user?.isActive ?? true,
+            lastLoginAt: s.user?.lastLoginAt,
+            grades: s.grades || [],
+            parentLinks: s.parentLinks || [],
+            type: 'student',
           }));
         });
     },

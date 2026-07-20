@@ -27,7 +27,9 @@ import {
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { useStudentBehavior, useStudentInterventions } from '@/lib/hooks/api/admin';
+import { useSearchVault } from '@/lib/hooks/api/archive';
+import { useArchivedDepartmentData } from '@/lib/hooks/api/hod';
+import { useParams } from 'react-router-dom';
 
 const getWAECGrade = (score) => {
   if (score >= 80) return { grade: 'A1', color: 'bg-muted text-foreground border-border font-bold' };
@@ -45,10 +47,10 @@ function mapBehaviorToObservation(raw) {
   if (!raw) return null;
   return {
     id: raw.id,
-    type: raw.behaviorType || 'Observation',
+    type: 'Conduct Record',
     date: raw.createdAt ? new Date(raw.createdAt).toISOString().slice(0, 10) : '',
-    comment: raw.observationText || raw.comment || '',
-    teacherName: raw.teacher?.name || raw.teacherName || 'Instructor',
+    comment: raw.remarks || 'No remarks recorded',
+    teacherName: raw.recordedBy ? `${raw.recordedBy.firstName || ''} ${raw.recordedBy.lastName || ''}`.trim() || 'System' : 'System',
   };
 }
 
@@ -56,15 +58,14 @@ function mapIntervention(raw) {
   if (!raw) return null;
   return {
     id: raw.id,
-    term: raw.term?.academicYear?.label || raw.termLabel || '—',
-    reason: raw.triggerReason || raw.reason || raw.title || 'Performance flagged',
-    action: raw.actionTaken || raw.action || 'Remedial coaching assigned',
-    outcome: raw.outcomeNote || raw.outcome || 'In progress',
+    term: 'Performance Alert',
+    reason: `Grade drop detected: ${raw.previousAverage != null ? raw.previousAverage.toFixed(1) : '—'}% → ${raw.currentAverage != null ? raw.currentAverage.toFixed(1) : '—'}%`,
+    action: `Intervention initiated • Drop: ${raw.dropPercentage != null ? raw.dropPercentage.toFixed(1) : '—'}%`,
+    outcome: raw.status || 'In progress',
   };
 }
 
 export function HODArchiveDetailView({ student, onBack }) {
-  const studentId = student?.id;
   const [showToast, setShowToast] = useState(null);
   const [mounted, setMounted] = useState(false);
 
@@ -75,36 +76,86 @@ export function HODArchiveDetailView({ student, onBack }) {
     setTimeout(() => setShowToast(null), 3000);
   };
 
-  const {
-    data: behaviorData = { logs: [], traits: null },
-    isLoading: behaviorLoading,
-    error: behaviorError,
-  } = useStudentBehavior(studentId);
+  const { id: urlStudentId } = useParams();
+  const { data: archivedData = [] } = useArchivedDepartmentData();
+  const { data: vaultSearchResult } = useSearchVault(student ? { id: student.id, detailed: true } : (urlStudentId ? { id: urlStudentId, detailed: true } : {}));
 
-  const {
-    data: interventionData = [],
-    isLoading: interventionLoading,
-    error: interventionError,
-  } = useStudentInterventions(studentId);
-
-  const isLoading = (behaviorLoading || interventionLoading) && mounted;
-  const hasError = behaviorError || interventionError;
+  const resolvedStudent = useMemo(() => {
+    if (student && student.grades) return student;
+    if (vaultSearchResult?.[0]) {
+      const raw = vaultSearchResult[0];
+      const reportCards = raw.reportCards || [];
+      const history = reportCards.map(rc => ({
+        term: rc.term?.academicYear?.label || '—',
+        finalGrade: rc.averageScore || 0,
+      }));
+      return {
+        id: raw.id,
+        name: raw.name || `${raw.firstName || ''} ${raw.lastName || ''}`,
+        index: raw.indexNumber || '',
+        graduationYear: raw.graduationYear || '',
+        currentClass: raw.currentClass?.name || '',
+        department: raw.department?.name || '',
+        history,
+        grades: raw.grades || [],
+        behaviors: raw.behaviors || [],
+        interventions: raw.interventionAlerts || [],
+      };
+    }
+    if (student && archivedData.length > 0) {
+      const raw = archivedData.find(s => s.id === student.id);
+      if (raw) {
+        const reportCards = raw.reportCards || [];
+        const history = reportCards.map(rc => ({
+          term: rc.term?.academicYear?.label || '—',
+          finalGrade: rc.averageScore || 0,
+        }));
+        return {
+          ...student,
+          history,
+          grades: raw.grades || [],
+          behaviors: raw.behaviors || [],
+          interventions: raw.interventionAlerts || [],
+        };
+      }
+    }
+    return student;
+  }, [student, vaultSearchResult, archivedData]);
 
   const observations = useMemo(
-    () => (Array.isArray(behaviorData?.logs) ? behaviorData.logs : []).map(mapBehaviorToObservation).filter(Boolean),
-    [behaviorData],
+    () => (resolvedStudent?.behaviors || []).map(mapBehaviorToObservation).filter(Boolean),
+    [resolvedStudent],
   );
 
   const interventions = useMemo(
-    () => (interventionData || []).map(mapIntervention).filter(Boolean),
-    [interventionData],
+    () => (resolvedStudent?.interventions || []).map(mapIntervention).filter(Boolean),
+    [resolvedStudent],
   );
 
-  const history = student?.history || [];
+  const history = resolvedStudent?.history || [];
   const scores = history.map((h) => h.finalGrade || 0);
   const averageGpa =
     scores.length > 0 ? (scores.reduce((acc, s) => acc + s, 0) / scores.length).toFixed(1) : 'No Terms';
   const highestTerminal = scores.length > 0 ? Math.max(...scores) : 'N/A';
+
+  const gradesByTerm = useMemo(() => {
+    const map = new Map();
+    (resolvedStudent?.grades || []).forEach(g => {
+      const termLabel = g.term?.academicYear?.label || 'Unknown Term';
+      if (!map.has(termLabel)) map.set(termLabel, []);
+      map.get(termLabel).push({
+        subject: g.subject?.name || 'Unknown',
+        classScore: g.classScore ?? 0,
+        examScore: g.examScore ?? 0,
+        totalScore: g.totalScore ?? 0,
+        grade: g.grade || 'F9',
+      });
+    });
+    return Array.from(map.entries()).map(([term, grades]) => ({
+      term,
+      grades: grades.sort((a, b) => a.subject.localeCompare(b.subject)),
+    }));
+  }, [resolvedStudent]);
 
   const handleExportTranscript = async () => {
     triggerToast('Generating official transcript PDF...');
@@ -410,7 +461,7 @@ export function HODArchiveDetailView({ student, onBack }) {
             </div>
           </header>
 
-          {history.length === 0 ? (
+          {gradesByTerm.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 bg-card border border-border/60 rounded-[2.5rem] shadow-sm text-center w-full">
               <FileText size={32} className="text-muted-foreground mb-2 font-sans" />
               <p className="text-xs font-black text-foreground uppercase tracking-widest">No Terminal Assessment Dossiers</p>
@@ -418,18 +469,21 @@ export function HODArchiveDetailView({ student, onBack }) {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {history.map((term, tIdx) => {
-                const baseGrade = term.finalGrade || 70;
+              {gradesByTerm.map((termGroup, tIdx) => {
+                const termGrades = termGroup.grades;
+                const termAvg = termGrades.length > 0
+                  ? (termGrades.reduce((a, b) => a + b.totalScore, 0) / termGrades.length).toFixed(1)
+                  : '0.0';
                 return (
-                  <Card key={term.term} className="rounded-3xl overflow-hidden flex flex-col">
+                  <Card key={termGroup.term} className="rounded-3xl overflow-hidden flex flex-col">
                     <div className="bg-muted px-6 py-4.5 border-b border-border flex justify-between items-center">
                       <div className="flex items-center gap-3 font-sans">
                         <div className="w-8 h-8 bg-foreground rounded-lg flex items-center justify-center text-background text-xs font-black">
                           {tIdx + 1}
                         </div>
                         <div>
-                          <h4 className="text-[12px] font-black text-foreground uppercase tracking-wider">{term.term} Journal</h4>
-                          <p className="text-[8px] font-bold text-muted-foreground uppercase">HOD Cleared</p>
+                          <h4 className="text-[12px] font-black text-foreground uppercase tracking-wider">{termGroup.term} Journal</h4>
+                          <p className="text-[8px] font-bold text-muted-foreground uppercase">{termGrades.length} Subjects</p>
                         </div>
                       </div>
                       <span className="text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border bg-success/10 text-success border-success/20">
@@ -449,24 +503,15 @@ export function HODArchiveDetailView({ student, onBack }) {
                           </TableRow>
                         </TableHeader>
                         <TableBody className="divide-y divide-muted/50">
-                          {[
-                            'Core Mathematics',
-                            'English Language',
-                            'Integrated Science',
-                            'Social Studies',
-                            'Elective Subject 1',
-                            'Elective Subject 2',
-                          ].map((subj, sIdx) => {
-                            const classScore = Math.round((baseGrade * 0.3) + (sIdx % 2 === 0 ? 1 : -3));
-                            const examScore = Math.round((baseGrade * 0.7) + (sIdx % 3 === 0 ? -1 : 3));
-                            const totalScore = Math.min(100, Math.max(0, classScore + examScore));
+                          {termGrades.map((g, sIdx) => {
+                            const totalScore = Math.min(100, Math.max(0, (g.classScore || 0) + (g.examScore || 0)));
                             const calculatedGrade = getWAECGrade(totalScore);
 
                             return (
-                              <TableRow key={subj} className="hover:bg-muted/50 transition-all text-[11px] font-medium text-muted-foreground">
-                                <TableCell className="py-3 pl-2 font-semibold text-foreground leading-tight">{subj}</TableCell>
-                                <TableCell className="py-3 text-center font-mono text-muted-foreground">{classScore}</TableCell>
-                                <TableCell className="py-3 text-center font-mono text-muted-foreground">{examScore}</TableCell>
+                              <TableRow key={sIdx} className="hover:bg-muted/50 transition-all text-[11px] font-medium text-muted-foreground">
+                                <TableCell className="py-3 pl-2 font-semibold text-foreground leading-tight">{g.subject}</TableCell>
+                                <TableCell className="py-3 text-center font-mono text-muted-foreground">{g.classScore ?? 0}</TableCell>
+                                <TableCell className="py-3 text-center font-mono text-muted-foreground">{g.examScore ?? 0}</TableCell>
                                 <TableCell className="py-3 text-center">
                                   <span className={cn('px-2 py-0.5 text-[9px] rounded-md font-bold border', calculatedGrade.color)}>
                                     {calculatedGrade.grade}
@@ -484,21 +529,12 @@ export function HODArchiveDetailView({ student, onBack }) {
 
                     <div className="bg-muted/30 border-t border-border p-4.5 flex items-center justify-between text-muted-foreground text-xs mt-auto">
                       <div>
-                        <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Behavior Rating:</span>
-                        <span className="ml-1 text-foreground font-extrabold">
-                          {Array.from({ length: 5 }).map((_, idx) => (
-                            <span
-                              key={idx}
-                              className={cn('text-base leading-none', idx < (term.behaviorRating || 3) ? 'text-foreground' : 'text-muted')}
-                            >
-                              ★
-                            </span>
-                          ))}
-                        </span>
+                        <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Term Average</span>
+                        <span className="ml-1 text-foreground font-extrabold">{termAvg}%</span>
                       </div>
                       <div className="text-right">
-                        <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest block leading-none">Journal Average</span>
-                        <span className="text-sm font-black text-foreground italic font-mono mt-0.5 block">{term.finalGrade}%</span>
+                        <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest block leading-none">Subjects</span>
+                        <span className="text-sm font-black text-foreground italic font-mono mt-0.5 block">{termGrades.length}</span>
                       </div>
                     </div>
                   </Card>
@@ -525,7 +561,7 @@ export function HODArchiveDetailView({ student, onBack }) {
               </header>
 
               <div className="space-y-4">
-                {(mounted && !isLoading && observations.length > 0)
+                {observations.length > 0
                   ? observations.map((obs) => (
                       <div key={obs.id} className="p-5 bg-muted/60 border-l-4 border-foreground border-y border-r border-border rounded-r-2xl">
                         <div className="flex justify-between items-center mb-1.5">
@@ -536,11 +572,7 @@ export function HODArchiveDetailView({ student, onBack }) {
                         <p className="text-[8px] font-black text-muted-foreground mt-2 uppercase tracking-wide font-sans">— Signed: Instructor {obs.teacherName}</p>
                       </div>
                     ))
-                  : !mounted || isLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="animate-spin text-muted-foreground" size={20} />
-                    </div>
-                  ) : (
+                  : (
                     <p className="text-xs text-muted-foreground text-center italic py-8 font-sans">No qualitative academic observation observations logged for this record cycle.</p>
                   )}
               </div>
@@ -566,7 +598,7 @@ export function HODArchiveDetailView({ student, onBack }) {
               </header>
 
               <div className="space-y-4">
-                {(mounted && !isLoading && interventions.length > 0)
+                {interventions.length > 0
                   ? interventions.map((int) => (
                       <Card key={int.id} className="bg-muted/60 border border-border p-6 rounded-2xl flex flex-col justify-between hover:border-border transition-all font-sans">
                         <div>
@@ -583,11 +615,7 @@ export function HODArchiveDetailView({ student, onBack }) {
                         </div>
                       </Card>
                     ))
-                  : !mounted || isLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="animate-spin text-muted-foreground" size={20} />
-                    </div>
-                  ) : (
+                  : (
                     <p className="text-xs text-muted-foreground text-center italic py-8 font-sans">No specific developmental interventions recorded for this student.</p>
                   )}
               </div>

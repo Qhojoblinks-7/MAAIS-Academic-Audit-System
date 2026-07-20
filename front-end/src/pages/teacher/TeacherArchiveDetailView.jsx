@@ -413,6 +413,27 @@ const handleExportTranscript = async () => {
   const averageGpa = scores.length > 0 ? (scores.reduce((acc, s) => acc + s, 0) / scores.length).toFixed(1) : 'No Terms';
   const highestTerminal = scores.length > 0 ? Math.max(...scores) : 'N/A';
 
+  const gradesByTerm = React.useMemo(() => {
+    const map = new Map();
+    (student.grades || []).forEach(g => {
+      const termLabel = g.term?.academicYear?.label
+        ? `${g.term.academicYear.label} ${g.term.termNumber?.replace('TERM_', 'Term ') || ''}`
+        : (g.term?.id || 'Recorded Term');
+      if (!map.has(termLabel)) map.set(termLabel, []);
+      map.get(termLabel).push({
+        subject: g.subject?.name || 'Unknown',
+        classScore: g.classScore ?? 0,
+        examScore: g.examScore ?? 0,
+        totalScore: g.totalScore ?? 0,
+        grade: g.grade || 'F9',
+      });
+    });
+    return Array.from(map.entries()).map(([term, grades]) => ({
+      term,
+      grades: grades.sort((a, b) => a.subject.localeCompare(b.subject)),
+    }));
+  }, [student.grades]);
+
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50/40 relative no-scrollbar pb-24 h-full">
       {/* Dynamic Toast Alerts */}
@@ -586,12 +607,12 @@ const handleExportTranscript = async () => {
               <FileText size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest font-sans">2. Terminal Assessment Sheets Archive (General Agric Scope)</h3>
-              <p className="text-xs font-bold text-slate-400 uppercase">Scoped instructor ledger: Displaying performance data specific to General Agric streams</p>
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest font-sans">2. Terminal Assessment Sheets Archive</h3>
+              <p className="text-xs font-bold text-slate-400 uppercase">Longitudinal grade breakdowns across all cycles</p>
             </div>
           </header>
 
-          {student.history.length === 0 ? (
+          {gradesByTerm.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 bg-white border border-slate-200/60 rounded-[2.5rem] shadow-sm text-center w-full">
               <FileText size={32} className="text-slate-300 mb-2 font-sans" />
               <p className="text-xs font-black text-slate-800 uppercase tracking-widest">No Terminal Assessment Dossiers</p>
@@ -599,100 +620,86 @@ const handleExportTranscript = async () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {student.history.map((term, tIdx) => (
-                <div key={term.term} className="bg-white rounded-3xl border border-slate-200/60 overflow-hidden flex flex-col shadow-sm">
-                  
-                  {/* Upper bar */}
-                  <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-md">
-                        {tIdx + 1}
+              {gradesByTerm.map((termGroup, tIdx) => {
+                const termGrades = termGroup.grades;
+                const termAvg = termGrades.length > 0
+                  ? (termGrades.reduce((a, b) => a + b.totalScore, 0) / termGrades.length).toFixed(1)
+                  : '0.0';
+                return (
+                  <div key={termGroup.term} className="bg-white rounded-3xl border border-slate-200/60 overflow-hidden flex flex-col shadow-sm">
+                    <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-md">
+                          {tIdx + 1}
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">{termGroup.term} Journal</h4>
+                          <p className="text-xs font-bold text-slate-400 uppercase">{termGrades.length} Subjects</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">{term.term} Journal</h4>
-                        <p className="text-xs font-bold text-slate-400 uppercase">Phase verified</p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded-full border bg-emerald-50 text-emerald-800 border-emerald-100">
-                      Sealed Record
-                    </span>
-                  </div>
-
-                  {/* Subject Grade Table */}
-                  <div className="p-4 overflow-x-auto no-scrollbar">
-                    <table className="w-full text-left min-w-[280px]">
-                      <thead>
-                        <tr className="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
-                          <th className="pb-3 pl-2">Subject</th>
-                          <th className="pb-3 text-center">Class (30)</th>
-                          <th className="pb-3 text-center">Exam (70)</th>
-                          <th className="pb-3 text-center">Grade</th>
-                          <th className="pb-3 text-right pr-2 font-black italic">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-50">
-                        {['General Agric (Theory)', 'General Agric (Practical)'].map((subj, sIdx) => {
-                          const baseGrade = term.finalGrade || 70;
-                          const classScore = Math.round((baseGrade * 0.3) + (sIdx % 2 === 0 ? 1 : -3));
-                          const examScore = Math.round((baseGrade * 0.7) + (sIdx % 3 === 0 ? -1 : 3));
-                          const totalScore = Math.min(100, Math.max(0, classScore + examScore));
-                          const calculatedGrade = getWAECGrade(totalScore);
-
-                          return (
-                            <tr key={subj} className="hover:bg-slate-50/50 transition-all text-xs font-medium text-slate-600">
-                              <td className="py-3 pl-2 font-semibold text-slate-800 leading-tight">
-                                {subj}
-                              </td>
-                              <td className="py-3 text-center font-mono text-slate-500">
-                                {classScore}
-                              </td>
-                              <td className="py-3 text-center font-mono text-slate-500">
-                                {examScore}
-                              </td>
-                              <td className="py-3 text-center">
-                                <span className={cn(
-                                  "px-2 py-0.5 text-xs rounded-md border",
-                                  calculatedGrade.color
-                                )}>
-                                  {calculatedGrade.grade}
-                                </span>
-                              </td>
-                              <td className="py-3 text-right pr-2 font-extrabold font-mono text-slate-900">
-                                {totalScore}%
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Term Aggregate Summary Footer */}
-                  <div className="bg-slate-50/30 border-t border-slate-100 p-4.5 flex items-center justify-between text-slate-500 text-xs mt-auto">
-                    <div>
-                      <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Behavior Rating:</span>
-                      <span className="ml-1 text-slate-800 font-extrabold">
-                        {Array.from({ length: 5 }).map((_, idx) => (
-                          <span 
-                            key={idx} 
-                            className={cn(
-                              "text-base leading-none", 
-                              idx < (term.behaviorRating || 3) ? "text-slate-900" : "text-slate-200"
-                            )}
-                          >
-                            ★
-                          </span>
-                        ))}
+                      <span className="text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded-full border bg-emerald-50 text-emerald-800 border-emerald-100">
+                        Sealed Record
                       </span>
                     </div>
-                    <div className="text-right">
-                      <span className="text-xs font-black text-slate-400 uppercase tracking-widest block leading-none">Journal Average</span>
-                      <span className="text-sm font-black text-slate-900 italic font-mono mt-0.5 block">{term.finalGrade}%</span>
+
+                    <div className="p-4 overflow-x-auto no-scrollbar">
+                      <table className="w-full text-left min-w-[280px]">
+                        <thead>
+                          <tr className="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                            <th className="pb-3 pl-2">Subject</th>
+                            <th className="pb-3 text-center">Class (30)</th>
+                            <th className="pb-3 text-center">Exam (70)</th>
+                            <th className="pb-3 text-center">Grade</th>
+                            <th className="pb-3 text-right pr-2 font-black italic">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                          {termGrades.map((g, sIdx) => {
+                            const totalScore = Math.min(100, Math.max(0, (g.classScore || 0) + (g.examScore || 0)));
+                            const calculatedGrade = getWAECGrade(totalScore);
+
+                            return (
+                              <tr key={sIdx} className="hover:bg-slate-50/50 transition-all text-xs font-medium text-slate-600">
+                                <td className="py-3 pl-2 font-semibold text-slate-800 leading-tight">
+                                  {g.subject}
+                                </td>
+                                <td className="py-3 text-center font-mono text-slate-500">
+                                  {g.classScore ?? 0}
+                                </td>
+                                <td className="py-3 text-center font-mono text-slate-500">
+                                  {g.examScore ?? 0}
+                                </td>
+                                <td className="py-3 text-center">
+                                  <span className={cn(
+                                    "px-2 py-0.5 text-xs rounded-md border",
+                                    calculatedGrade.color
+                                  )}>
+                                    {calculatedGrade.grade}
+                                  </span>
+                                </td>
+                                <td className="py-3 text-right pr-2 font-extrabold font-mono text-slate-900">
+                                  {totalScore}%
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="bg-slate-50/30 border-t border-slate-100 p-4.5 flex items-center justify-between text-slate-500 text-xs mt-auto">
+                      <div>
+                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Term Average</span>
+                        <span className="ml-1 text-slate-800 font-extrabold">{termAvg}%</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest block leading-none">Subjects</span>
+                        <span className="text-sm font-black text-slate-900 italic font-mono mt-0.5 block">{termGrades.length}</span>
+                      </div>
                     </div>
                   </div>
-
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>

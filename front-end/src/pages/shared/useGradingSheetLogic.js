@@ -15,6 +15,7 @@ import { toast } from '../../components/ui/toast';
 import { teacherService } from '../../services/teacherService';
 import { gradingApi } from '../../lib/api/grading';
 import { useSystemFreeze } from '../../lib/hooks';
+import { friendlyErrorMessage } from '../../lib/api/errorMessage';
 
 /**
  * useGradingSheetLogic — single custom hook owning all GradingSheet state.
@@ -298,13 +299,19 @@ export function useGradingSheetLogic({
   );
 
   const persistGradesToBackend = useCallback(
-    async (entriesPayload) => {
+    async (entriesPayload, studentIdsToSave) => {
       if (!backendReady || !entriesPayload || entriesPayload.length === 0) return null;
       const cleaned = entriesPayload
         .map(mapStudentToBackendEntry)
         .filter((e) => e.studentId && e.subjectId && e.termId);
       if (cleaned.length === 0) return null;
-      const result = await teacherService.bulkUpsertGradeEntries(cleaned);
+
+      const entries = studentIdsToSave
+        ? cleaned.filter(e => studentIdsToSave.includes(e.studentId))
+        : cleaned;
+
+      if (entries.length === 0) return null;
+      const result = await teacherService.bulkUpsertGradeEntries(entries);
 
       if (result && Array.isArray(result)) {
         const entryMap = new Map(result.map((e) => [e.studentId, e.id]));
@@ -378,43 +385,50 @@ export function useGradingSheetLogic({
   const [stpValidating, setStpValidating] = useState(false);
   const autosaveTimerRef = useRef(null);
   const autosaveMountedRef = useRef(false);
+  const dirtyStudentIdsRef = useRef(new Set());
 
-  useEffect(() => {
-    if (!autosaveMountedRef.current) {
-      autosaveMountedRef.current = true;
-      return;
-    }
-    if (!backendReady || !students?.length) return;
-    if (students.every(s => s.isLocked)) {
-      setAutosaveStatus('locked');
-      return;
-    }
+  const markStudentDirty = useCallback((studentId) => {
+    dirtyStudentIdsRef.current.add(studentId);
+  }, []);
 
-    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+  const clearDirtyStudents = useCallback(() => {
+    dirtyStudentIdsRef.current.clear();
+  }, []);
 
-    setAutosaveStatus('saving');
-    autosaveTimerRef.current = setTimeout(async () => {
-      try {
-        await persistGradesToBackend(students);
-        setAutosaveStatus('saved');
-        setLastSavedAt(new Date());
-        toast.success('Auto-saved');
-        setTimeout(() => setAutosaveStatus('idle'), 2000);
-      } catch (e) {
-        setAutosaveStatus('error');
-        if (e?.status === 403 || /Grade entry is locked/i.test(e?.message || '')) {
-          toast.error('Grade entries are locked. Contact HOD to request an unlock.');
-        } else {
-          toast.error('Auto-save failed: ' + (e?.message || 'Unknown error'));
+   useEffect(() => {
+     if (!autosaveMountedRef.current) {
+       autosaveMountedRef.current = true;
+       return;
+     }
+     if (!backendReady || !students?.length) return;
+     if (students.every(s => s.isLocked)) {
+       setAutosaveStatus('locked');
+       return;
+     }
+
+     if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+
+     setAutosaveStatus('saving');
+     autosaveTimerRef.current = setTimeout(async () => {
+       try {
+         const dirtyIds = Array.from(dirtyStudentIdsRef.current);
+         await persistGradesToBackend(students, dirtyIds.length > 0 ? dirtyIds : undefined);
+         dirtyStudentIdsRef.current.clear();
+         setAutosaveStatus('saved');
+         setLastSavedAt(new Date());
+         toast.success('Auto-saved');
+         setTimeout(() => setAutosaveStatus('idle'), 2000);
+        } catch (e) {
+          setAutosaveStatus('error');
+          toast.error(friendlyErrorMessage(e, 'Auto-save failed. Your changes are kept locally and will retry.'));
+          triggerFreezeRefetch();
         }
-        triggerFreezeRefetch();
-      }
-    }, 1000);
+     }, 1000);
 
-    return () => {
-      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
-    };
-  }, [students, backendReady, persistGradesToBackend]);
+     return () => {
+       if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+     };
+   }, [students, backendReady, persistGradesToBackend]);
 
   // ── 5-minute bulk draft sync ────────────────────────────────────────────────
   const bulkIntervalRef = useRef(null);
@@ -423,15 +437,14 @@ export function useGradingSheetLogic({
     if (!backendReady || !students?.length) return;
 
     bulkIntervalRef.current = setInterval(async () => {
+      const dirtyIds = Array.from(dirtyStudentIdsRef.current);
+      if (dirtyIds.length === 0) return;
       try {
-        await persistGradesToBackend(students);
+        await persistGradesToBackend(students, dirtyIds);
+        dirtyStudentIdsRef.current.clear();
         toast.success('Bulk draft synced');
       } catch (e) {
-        if (e?.status === 403 || /Grade entry is locked/i.test(e?.message || '')) {
-          toast.error('Bulk sync skipped: grade entries are locked. Contact HOD to unlock.');
-        } else {
-          console.error('Bulk draft submission failed:', e);
-        }
+        toast.error(friendlyErrorMessage(e, 'Bulk sync failed. Your changes are kept locally.'));
         triggerFreezeRefetch();
       }
     }, 300000);
@@ -517,11 +530,12 @@ export function useGradingSheetLogic({
       }
     }
 
+    markStudentDirty(studentId);
     setStudents(prev =>
       prev.map(s => s.id === studentId ? calculateScores({ ...s, [field]: numValue }, field) : s)
     );
     if ((DISPLAY_CLASS_INFO?.sectionFieldNames || ['secA', 'secB', 'secC']).includes(field)) setTempMark('');
-  }, [isTermFinalized, students, showJustificationPopup, submissionStatus, calculateScores]);
+  }, [isTermFinalized, students, showJustificationPopup, submissionStatus, calculateScores, markStudentDirty]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   const fieldMap = { sba: 'classScore', exam: 'examScore', remark: 'remark' };
@@ -553,6 +567,7 @@ export function useGradingSheetLogic({
       justification,
     });
 
+    markStudentDirty(studentToUpdate);
     setShowJustificationPopup(false);
     setJustification('');
     setFieldToUpdate(null);
@@ -570,7 +585,8 @@ export function useGradingSheetLogic({
     const runCheck = async () => {
       try {
         if (backendReady) {
-          await persistGradesToBackend(students);
+          await persistGradesToBackend(students, Array.from(dirtyStudentIdsRef.current));
+          dirtyStudentIdsRef.current.clear();
         }
         const errors = stpRules
           .filter(rule => students.some(s => rule.check?.(s)))
@@ -605,6 +621,7 @@ runCheck();
     }
     persistGradesToBackend(students)
       .then(() => {
+        clearDirtyStudents();
         toast.success('Draft saved successfully');
       })
       .catch((err) => {
@@ -613,7 +630,7 @@ runCheck();
         toast.error('Failed to save draft');
         triggerFreezeRefetch();
       });
-  }, [isTermFinalized, teacherId, classInfo, students, backendReady, idResolutionError, persistGradesToBackend, notification, toast, triggerFreezeRefetch]);
+  }, [isTermFinalized, teacherId, classInfo, students, backendReady, idResolutionError, persistGradesToBackend, notification, toast, triggerFreezeRefetch, clearDirtyStudents]);
 
   const handleSubmitToHOD = useCallback(() => {
     if (isTermFinalized || missingCount > 0) return;
@@ -638,6 +655,7 @@ runCheck();
     }
     persistGradesToBackend(students)
       .then(() => {
+        clearDirtyStudents();
         toast.success('Submitted to HOD');
         if (teacherId) {
           notification.sendHODAlert(
@@ -660,7 +678,7 @@ runCheck();
         toast.error('Failed to submit to HOD');
         triggerFreezeRefetch();
       });
-  }, [isTermFinalized, missingCount, teacherId, classInfo, students, backendReady, persistGradesToBackend, notification, toast, triggerFreezeRefetch]);
+  }, [isTermFinalized, missingCount, teacherId, classInfo, students, backendReady, persistGradesToBackend, notification, toast, triggerFreezeRefetch, clearDirtyStudents]);
 
   const handleRequestRevision = useCallback(() => {
     if (isTermFinalized) return;

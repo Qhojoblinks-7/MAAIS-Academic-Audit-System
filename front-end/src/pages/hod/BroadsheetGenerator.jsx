@@ -47,7 +47,7 @@ export function BroadsheetGenerator() {
     isLoading,
     error,
     refetch,
-  } = useArchivedDepartmentData();
+  } = useArchivedDepartmentData({ mode: 'current' });
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [compileError, setCompileError] = useState(null);

@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   BarChart3,
   ChevronRight,
+  Users,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
@@ -102,6 +103,12 @@ export function TeacherSidebar() {
       path: '/missing-observations',
       badge: missingObservationCount || 0,
       badgeColor: 'bg-amber-500',
+    },
+    {
+      icon: Users,
+      label: 'Students',
+      id: 'students',
+      path: '/teacher/students',
     },
     {
       icon: BarChart3,

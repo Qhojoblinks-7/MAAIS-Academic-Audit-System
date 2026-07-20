@@ -38,7 +38,7 @@ import {
   SelectItem,
   SelectValue
 } from '../../components/ui/select';
-import { useAllParents, useCreateParent } from '../../lib/hooks';
+import { useAllParents, useCreateParent, useAllStudents } from '../../lib/hooks';
 
 // --- Components ---
 
@@ -186,6 +186,7 @@ const ParentProfile = ({ parent, onClose }) => {
 
 export const ParentRegistry = () => {
   const { data: parents = [], isLoading, error } = useAllParents();
+  const { data: students = [] } = useAllStudents();
   const createParentMutation = useCreateParent();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedParentId, setSelectedParentId] = useState(null);
@@ -199,6 +200,8 @@ export const ParentRegistry = () => {
     email: '',
     occupation: '',
   });
+  const [studentSearch, setStudentSearch] = useState('');
+  const [selectedStudentIds, setSelectedStudentIds] = useState([]);
 
   const selectedParent = useMemo(() => 
     parents.find(p => p.id === selectedParentId),
@@ -225,9 +228,12 @@ export const ParentRegistry = () => {
         phone: newParentForm.phone,
         email: newParentForm.email,
         occupation: newParentForm.occupation,
+        studentIds: selectedStudentIds,
       });
       setIsCreateModalOpen(false);
       setNewParentForm({ firstName: '', lastName: '', phone: '', email: '', occupation: '' });
+      setSelectedStudentIds([]);
+      setStudentSearch('');
     } catch (err) {
       alert('Failed to create parent: ' + (err.message || err));
     }
@@ -551,6 +557,71 @@ export const ParentRegistry = () => {
                   <label className="text-[10px] font-black uppercase text-text-secondary tracking-widest ml-1">Occupation</label>
                   <Input value={newParentForm.occupation} onChange={(e) => setNewParentForm({ ...newParentForm, occupation: e.target.value })} className="w-full" placeholder="Trader" />
                 </div>
+
+                <div className="border-t border-border pt-5">
+                  <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-3">Link Wards</p>
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="Search students by name or index number..."
+                      value={studentSearch}
+                      onChange={(e) => setStudentSearch(e.target.value)}
+                      className="w-full"
+                    />
+                    {studentSearch && (
+                      <div className="bg-muted border border-border rounded-xl max-h-40 overflow-y-auto">
+                        {students
+                          .filter(s => {
+                            const name = `${s.firstName || ''} ${s.lastName || ''}`.toLowerCase();
+                            const index = (s.indexNumber || '').toLowerCase();
+                            const q = studentSearch.toLowerCase();
+                            return !selectedStudentIds.includes(s.id) && (name.includes(q) || index.includes(q));
+                          })
+                          .slice(0, 8)
+                          .map(s => (
+                            <button
+                              key={s.id}
+                              onClick={() => {
+                                setSelectedStudentIds(prev => [...prev, s.id]);
+                                setStudentSearch('');
+                              }}
+                              className="w-full text-left px-4 py-2.5 hover:bg-surface transition-all flex items-center justify-between border-b border-border last:border-0"
+                            >
+                              <div>
+                                <p className="text-[11px] font-bold text-text-primary">{s.firstName} {s.lastName}</p>
+                                <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest">{s.indexNumber}</p>
+                              </div>
+                              <Plus size={14} className="text-brand-primary" />
+                            </button>
+                          ))}
+                        {students.filter(s => {
+                          const name = `${s.firstName || ''} ${s.lastName || ''}`.toLowerCase();
+                          const index = (s.indexNumber || '').toLowerCase();
+                          const q = studentSearch.toLowerCase();
+                          return !selectedStudentIds.includes(s.id) && (name.includes(q) || index.includes(q));
+                        }).length === 0 && (
+                          <p className="text-[10px] text-text-secondary px-4 py-3 italic">No matching students found</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  {selectedStudentIds.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {selectedStudentIds.map(id => {
+                        const s = students.find(st => st.id === id);
+                        if (!s) return null;
+                        return (
+                          <span key={id} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-primary/10 text-brand-primary rounded-lg text-[10px] font-black border border-brand-primary/20">
+                            {s.firstName} {s.lastName}
+                            <button onClick={() => setSelectedStudentIds(prev => prev.filter(pid => pid !== id))} className="hover:text-destructive transition-all">
+                              <X size={12} />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex gap-4 pt-4">
                   <button onClick={() => setIsCreateModalOpen(false)} className="flex-1 py-4 bg-muted rounded-[2rem] text-[11px] font-black uppercase tracking-widest hover:bg-muted transition-all">Cancel</button>
                   <button onClick={handleCreateParent} disabled={createParentMutation.isPending} className="flex-1 py-4 bg-brand-dark text-primary-foreground rounded-[2rem] text-[11px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3">

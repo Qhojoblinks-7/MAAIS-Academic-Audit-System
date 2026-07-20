@@ -54,6 +54,8 @@ export const HODMissingObservations = l(() => import('../pages/hod/HODMissingObs
 export const Unauthorized = l(() => import('../pages/hod/Unauthorized'), 'Unauthorized');
 export const BroadsheetGenerator = l(() => import('../pages/hod/BroadsheetGenerator'), 'BroadsheetGenerator');
 export const HODCertification = l(() => import('../pages/hod/HODCertification'), 'HODCertification');
+export const HODStudentRegistry = l(() => import('../pages/hod/HODStudentRegistry'), 'HODStudentRegistry');
+export const HODParentRegistry = l(() => import('../pages/hod/HODParentRegistry'), 'HODParentRegistry');
 
 // ── Teacher ─────────────────────────────────────────────────────────────────
 export const TeacherDashboard = l(() => import('../pages/teacher/TeacherDashboard'), 'TeacherDashboard');
@@ -66,6 +68,7 @@ export const TeacherGradingView = l(() => import('../pages/teacher/TeacherGradin
 export const TeacherAnalyticsView = l(() => import('../pages/teacher/TeacherAnalyticsView'), 'TeacherAnalyticsView');
 export const TeacherMissingObservations = l(() => import('../pages/teacher/TeacherMissingObservations'), 'TeacherMissingObservations');
 export const TeacherRevisionsFeed = l(() => import('../pages/teacher/TeacherRevisionsFeed'), 'TeacherRevisionsFeed');
+export const TeacherStudents = l(() => import('../pages/teacher/TeacherStudents'), 'TeacherStudents');
 export const MobileTimetableView = l(() => import('../pages/teacher/MobileTimetableView'), 'MobileTimetableView');
 
 // ── Student ──────────────────────────────────────────────────────────────────

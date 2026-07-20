@@ -101,7 +101,7 @@ export function HODArchiveView() {
   const {
     data: vaultSearchResult,
     isLoading: vaultDetailLoading,
-  } = useSearchVault(selectedStudentId ? { indexNumber: selectedStudentId } : {});
+  } = useSearchVault(selectedStudent ? { id: selectedStudent.id, detailed: true } : {});
 
   useEffect(() => {
     if (selectedStudentId && vaultSearchResult) {
@@ -124,8 +124,9 @@ export function HODArchiveView() {
           hodComment: '',
           finalWassce: 'Pending',
           history,
-          observations: [],
-          interventions: [],
+          grades: raw.grades || [],
+          behaviors: raw.behaviors || [],
+          interventions: raw.interventionAlerts || [],
         });
       }
     }

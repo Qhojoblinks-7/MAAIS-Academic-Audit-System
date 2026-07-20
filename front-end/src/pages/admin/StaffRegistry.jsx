@@ -338,7 +338,7 @@ export function StaffRegistry() {
   };
 
   const downloadSampleCsv = () => {
-    const header = 'firstName,lastName,middleName,email,phone,staffId,role,gender,departmentId';
+    const header = 'firstName,lastName,middleName,email,phone,staffId,role,gender,departmentName';
     const example = 'Ama,Owusu,Abena,ama.owusu@mandoshts.edu.gh,+233244000001,TCH-001,TEACHER,MALE,Science\nKofi,Mensah,,kofi.mensah@mandoshts.edu.gh,+233244000002,HOD-001,HOD,MALE,Mathematics';
     const blob = new Blob([`${header}\n${example}`], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -376,6 +376,8 @@ export function StaffRegistry() {
     'department id': 'departmentId',
     'dept': 'departmentId',
     'dept id': 'departmentId',
+    departmentname: 'departmentName',
+    'department name': 'departmentName',
   };
 
   const ROLE_VALUES = ['TEACHER', 'HOD', 'HEADMASTER', 'SUPER_ADMIN'];
@@ -423,6 +425,7 @@ export function StaffRegistry() {
       phone: rec.phone || '',
       staffId: rec.staffId || '',
       departmentId: rec.departmentId || '',
+      departmentName: rec.departmentName || '',
       role: ROLE_VALUES.includes(role) ? role : 'TEACHER',
       gender: GENDER_VALUES.includes(gender) ? gender : 'MALE',
     };
@@ -1250,8 +1253,8 @@ export function StaffRegistry() {
                        <Users size={24} />
                      </div>
                      <div>
-                      <h3 className="text-xl font-black italic font-display text-text-primary leading-none mb-1">Bulk Onboard Staff</h3>
-                      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Upload a CSV or paste rows</p>
+                       <h3 className="text-xl font-black italic font-display text-text-primary leading-none mb-1">Bulk Onboard Staff</h3>
+                       <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Default password: Staff@123! Users change it on first login.</p>
                     </div>
                   </div>
                   <button onClick={() => setShowBulkModal(false)} className="p-2 text-muted hover:text-text-primary transition-all">
@@ -1261,7 +1264,7 @@ export function StaffRegistry() {
 
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <p className="text-[10px] font-medium text-text-secondary">
-                    Columns: <code className="font-mono bg-muted px-1 rounded">firstName, lastName, email, staffId, role, gender, departmentId</code>
+                    Columns: <code className="font-mono bg-muted px-1 rounded">firstName, lastName, email, phone, staffId, role, gender, departmentName</code>
                   </p>
                   <button
                     onClick={downloadSampleCsv}
@@ -1291,7 +1294,7 @@ export function StaffRegistry() {
                 <Textarea
                   value={bulkText}
                   onChange={(e) => { setBulkText(e.target.value); setBulkFileName(''); }}
-                  placeholder={'firstName,lastName,email,staffId,role,gender,departmentId\nAma,Owusu,ama.owusu@mandoshts.edu.gh,TCH-001,TEACHER,MALE,Science\nKofi,Mensah,kofi.mensah@mandoshts.edu.gh,HOD-001,HOD,MALE,Mathematics'}
+                  placeholder={'firstName,lastName,email,phone,staffId,role,gender,departmentName\nAma,Owusu,ama.owusu@mandoshts.edu.gh,+233244000001,TCH-001,TEACHER,MALE,Science\nKofi,Mensah,kofi.mensah@mandoshts.edu.gh,+233244000002,HOD-001,HOD,MALE,Mathematics'}
                   className="w-full h-40 px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-mono text-text-primary focus:outline-none focus:ring-4 focus:ring-border resize-none"
                 />
 
@@ -1435,22 +1438,24 @@ export function StaffRegistry() {
                           ))}
                         </select>
                       </div>
-                   </div>
+                    </div>
 
-                   <div className="flex gap-3 pt-4">
-                     <button 
-                       onClick={() => setShowOnboardModal(false)}
-                       className="flex-1 py-4 bg-muted text-text-primary font-black rounded-2xl text-[11px] uppercase tracking-widest border border-border hover:bg-muted transition-all"
-                     >
-                       Cancel
-                     </button>
-                     <button 
-                       onClick={handleOnboardSubmit}
-                       className="flex-1 py-4 bg-brand-dark text-primary-foreground font-black rounded-2xl text-[11px] uppercase tracking-widest hover:bg-brand-dark transition-all shadow-lg shadow-brand-dark/10"
-                     >
-                        Register Staff
-                     </button>
-                   </div>
+                    <p className="text-[10px] text-text-secondary">Default password: Staff@123! Staff will be prompted to change it on first login.</p>
+
+                    <div className="flex gap-3 pt-4">
+                      <button 
+                        onClick={() => setShowOnboardModal(false)}
+                        className="flex-1 py-4 bg-muted text-text-primary font-black rounded-2xl text-[11px] uppercase tracking-widest border border-border hover:bg-muted transition-all"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        onClick={handleOnboardSubmit}
+                        className="flex-1 py-4 bg-brand-dark text-primary-foreground font-black rounded-2xl text-[11px] uppercase tracking-widest hover:bg-brand-dark transition-all shadow-lg shadow-brand-dark/10"
+                      >
+                         Register Staff
+                      </button>
+                    </div>
                  </div>
                </div>
              </motion.div>

@@ -206,6 +206,14 @@ export function useCreateYear() {
   });
 }
 
+export function useGetAcademicYears() {
+  return useQuery({
+    queryKey: ['admin', 'academic', 'years'],
+    queryFn: () => adminApi.getAcademicYears().then((r) => r?.data ?? r),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
 export function useActivateYear() {
   const qc = useQueryClient();
   return useMutation({
@@ -226,6 +234,14 @@ export function useActivateTerm() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id) => adminApi.activateTerm(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'academic'] }),
+  });
+}
+
+export function useDeactivateTerm() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => adminApi.deactivateTerm(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'academic'] }),
   });
 }

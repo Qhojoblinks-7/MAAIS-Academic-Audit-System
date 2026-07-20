@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { GradingRulesView } from './GradingRulesView';
-import { useAllDepartments, useAllSubjects, useAllClasses, useAllStudents, useClassesWithStudents, useAcademicYears as useAdminAcademicYears, useCreateYear, useCreateClass } from '../../lib/hooks';
+import { useAllDepartments, useAllSubjects, useAllClasses, useAllStudents, useClassesWithStudents, useAcademicYears as useAdminAcademicYears, useActiveYear, useCreateClass } from '../../lib/hooks';
 import { BlueprintTreeView } from './components/BlueprintTreeView';
 import { InsightsPanel } from './components/InsightsPanel';
 import { CurriculumMatrixView } from './components/CurriculumMatrixView';
@@ -32,6 +32,9 @@ export function AcademicArchitect() {
 
   const activeYearId = (years.find(y => y.isActive) || years[0])?.id;
   const groupYearId = activeYearId || null;
+
+  const activeYearQuery = useActiveYear();
+  const activeYear = activeYearQuery.data;
 
 
   const studentAvatarsByClass = useMemo(() => {
@@ -216,18 +219,10 @@ export function AcademicArchitect() {
     setExpandedPrograms(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]);
   };
 
-  const createYearMutation = useCreateYear();
   const createClassMutation = useCreateClass();
   const PROGRAMS = ['Science', 'General Arts', 'Business', 'Home Economics', 'Technical'];
 
-  const handleCreateYear = useCallback(async ({ name, programs }) => {
-    await createYearMutation.mutateAsync({
-      label: name,
-      programs: programs
-    });
-  }, [createYearMutation]);
-
-  const handleCreateClassroom = useCallback(async ({ name, capacity, studentsCount, houseDistribution, programId }) => {
+  const handleCreateClassroom = useCallback(async ({ name, capacity, studentsCount, houseDistribution, programId, track }) => {
     const program = selectedProgramForClassroom?.name || '';
     const yearGroup = effectiveDisplayYears.find(y => y.programs.some(p => p.id === programId))?.name || '';
     const levelMap = { 'Form 1': 'FORM_1', 'Form 2': 'FORM_2', 'Form 3': 'FORM_3', 'SHS 1': 'FORM_1', 'SHS 2': 'FORM_2', 'SHS 3': 'FORM_3' };
@@ -236,7 +231,8 @@ export function AcademicArchitect() {
       name,
       capacity,
       level: levelEnum,
-      program
+      program,
+      track
     });
   }, [createClassMutation, effectiveDisplayYears, selectedProgramForClassroom?.name]);
 
@@ -310,9 +306,9 @@ export function AcademicArchitect() {
                   expandedPrograms={expandedPrograms}
                   toggleYear={toggleYear}
                   toggleProgram={toggleProgram}
-                  onCreateYear={handleCreateYear}
                   onCreateClassroom={handleCreateClassroom}
                   studentAvatarsByClass={studentAvatarsByClass}
+                  activeYear={activeYear}
                 />
               <InsightsPanel onStructuralExport={handleStructuralExport} insightsStats={insightsStats} />
             </div>

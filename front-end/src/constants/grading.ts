@@ -40,18 +40,18 @@ export const DEFAULT_CLASS_INFO = {
 
 /** Default STP validation rules */
 export const DEFAULT_STP_RULES = [
-  { check: (s) => s.final > 100, message: 'Final score exceeds 100%' },
-  { check: (s) => s.sba > 30, message: 'SBA exceeds 30% limit' },
-  { check: (s) => s.exam > 70, message: 'Exam exceeds 70% limit' },
-  { check: (s) => s.auditStatus === 'MISSING', message: 'Missing behavioral observations' },
+  { check: (s: any) => s.final > 100, message: 'Final score exceeds 100%' },
+  { check: (s: any) => s.sba > 30, message: 'SBA exceeds 30% limit' },
+  { check: (s: any) => s.exam > 70, message: 'Exam exceeds 70% limit' },
+  { check: (s: any) => s.auditStatus === 'MISSING', message: 'Missing behavioral observations' },
 ];
 
 /**
  * WAEC STP grade → Roman numeral mapping per SAD.txt §77.
  * A1→I, B2→II, B3→III, C4→IV, C5→V, C6→VI, D7→VII, E8→VIII, F9→IX
  */
-export const calcRoman = (grade) => {
-  const romanMap = {
+export const calcRoman = (grade: string) => {
+  const romanMap: Record<string, string> = {
     'A1': 'I', 'B2': 'II', 'B3': 'III', 'C4': 'IV',
     'C5': 'V', 'C6': 'VI', 'D7': 'VII', 'E8': 'VIII', 'F9': 'IX'
   };
@@ -63,7 +63,7 @@ export const calcRoman = (grade) => {
  * WAEC STP §6 — handles paper-numbered, sec-letter, and plain-English formats
  * used across WASSCE core and technical programmes.
  */
-export const getSectionFieldName = (label, index) => {
+export const getSectionFieldName = (label: string, index: number) => {
   const l = (label || '').toLowerCase().trim();
   if (/^marking[\s\-]?out?/.test(l))       return 'secA';
   if (/^assembly/.test(l))                  return 'secB';
@@ -93,7 +93,7 @@ export const getSectionFieldName = (label, index) => {
  * WAEC Subject Code Mapping per subject-code-30.csv
  * Maps subject names to official WAEC subject codes for STP uploads.
  */
-export const WAEC_SUBJECT_CODES = {
+export const WAEC_SUBJECT_CODES: Record<string, string> = {
   'Commerce': '103',
   'Financial Accounting': '104',
   'Marketing': '112',
@@ -133,7 +133,7 @@ export const WAEC_SUBJECT_CODES = {
 /**
  * Get WAEC subject code by subject name. Returns fallback code for unknown subjects.
  */
-export const getSubjectCode = (subjectName) => {
+export const getSubjectCode = (subjectName: string) => {
   return WAEC_SUBJECT_CODES[subjectName] || '000';
 };
 
@@ -141,7 +141,7 @@ export const getSubjectCode = (subjectName) => {
  * Split full name into surname and other names for WAEC STP format.
  * Returns { surname, otherNames } tuple.
  */
-export const splitName = (fullName) => {
+export const splitName = (fullName: string) => {
   if (!fullName) return { surname: '', otherNames: '' };
   const parts = fullName.trim().split(/\s+/);
   return {

@@ -306,54 +306,56 @@ const getOrdinal = (num) => {
   return `${num}${suffix}`;
 };
 
-module.exports = {
-  // Type-like constants for runtime checks
-  ROLES: {
-    ADMIN: 'ADMIN',
-    HOD: 'HOD',
-    TEACHER: 'TEACHER',
-    STUDENT: 'STUDENT',
-  },
-  GENDERS: { MALE: 'MALE', FEMALE: 'FEMALE' },
-  SUBJECT_TYPES: { CORE: 'CORE', ELECTIVE: 'ELECTIVE' },
-  GRADE_REMARKS: {
-    EXCELLENT: 'EXCELLENT',
-    VERY_GOOD: 'VERY_GOOD',
-    GOOD: 'GOOD',
-    CREDIT: 'CREDIT',
-    PASS: 'PASS',
-    WEAK_PASS: 'WEAK_PASS',
-    FAILURE: 'FAILURE',
-  },
-  TERM_NUMBERS: { 
-    TERM_1: 'TERM_1', 
-    TERM_2: 'TERM_2', 
-    TERM_3: 'TERM_3',
-    SEMESTER_1: 'SEMESTER_1',
-    SEMESTER_2: 'SEMESTER_2',
-  },
-  TERM_SYSTEMS: {
-    THREE_TERMS: 'THREE_TERMS',
-    TWO_SEMESTERS: 'TWO_SEMESTERS',
-  },
-  CLASS_LEVELS: { FORM_1: 'Form 1', FORM_2: 'Form 2', FORM_3: 'Form 3' },
-  PROMOTION_STATUSES: {
-    PROMOTED: 'PROMOTED',
-    REPEATED: 'REPEATED',
-    GRADUATED: 'GRADUATED',
-    WITHDRAWN: 'WITHDRAWN',
-  },
-  DOCUMENT_TYPES: { REPORT_CARD: 'REPORT_CARD', TRANSCRIPT: 'TRANSCRIPT' },
-  NOTIFICATION_CHANNELS: { APP: 'APP', SMS: 'SMS', EMAIL: 'EMAIL' },
-  AUDIT_ACTIONS: {
-    CREATE: 'CREATE',
-    UPDATE: 'UPDATE',
-    DELETE: 'DELETE',
-    LOCK: 'LOCK',
-    UNLOCK: 'UNLOCK',
-    PROMOTE: 'PROMOTE',
-    GRADE_CORRECTION: 'GRADE_CORRECTION',
-  },
-  formatTermNumber,
-  getOrdinal,
+export const ROLES = {
+  ADMIN: 'ADMIN',
+  HOD: 'HOD',
+  TEACHER: 'TEACHER',
+  STUDENT: 'STUDENT',
 };
+export const GENDERS = { MALE: 'MALE', FEMALE: 'FEMALE' };
+export const SUBJECT_TYPES = { CORE: 'CORE', ELECTIVE: 'ELECTIVE' };
+export const GRADE_REMARKS = {
+  EXCELLENT: 'EXCELLENT',
+  VERY_GOOD: 'VERY_GOOD',
+  GOOD: 'GOOD',
+  CREDIT: 'CREDIT',
+  PASS: 'PASS',
+  WEAK_PASS: 'WEAK_PASS',
+  FAILURE: 'FAILURE',
+};
+export const TERM_NUMBERS = { 
+  TERM_1: 'TERM_1', 
+  TERM_2: 'TERM_2', 
+  TERM_3: 'TERM_3',
+  SEMESTER_1: 'SEMESTER_1',
+  SEMESTER_2: 'SEMESTER_2',
+};
+export const TERM_SYSTEMS = {
+  THREE_TERMS: 'THREE_TERMS',
+  TWO_SEMESTERS: 'TWO_SEMESTERS',
+};
+export const CLASS_LEVELS = { FORM_1: 'Form 1', FORM_2: 'Form 2', FORM_3: 'Form 3' };
+export const formatClassLevel = (level) => CLASS_LEVELS[level] || level || 'SHS 1';
+export const formatFormNumber = (level) => {
+  if (!level) return '1';
+  const match = String(level).match(/(\d+)/);
+  return match ? match[1] : '1';
+};
+export const PROMOTION_STATUSES = {
+  PROMOTED: 'PROMOTED',
+  REPEATED: 'REPEATED',
+  GRADUATED: 'GRADUATED',
+  WITHDRAWN: 'WITHDRAWN',
+};
+export const DOCUMENT_TYPES = { REPORT_CARD: 'REPORT_CARD', TRANSCRIPT: 'TRANSCRIPT' };
+export const NOTIFICATION_CHANNELS = { APP: 'APP', SMS: 'SMS', EMAIL: 'EMAIL' };
+export const AUDIT_ACTIONS = {
+  CREATE: 'CREATE',
+  UPDATE: 'UPDATE',
+  DELETE: 'DELETE',
+  LOCK: 'LOCK',
+  UNLOCK: 'UNLOCK',
+  PROMOTE: 'PROMOTE',
+  GRADE_CORRECTION: 'GRADE_CORRECTION',
+};
+export { formatTermNumber, getOrdinal };

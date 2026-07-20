@@ -48,9 +48,9 @@ const buildHistoryFromGrades = (grades) => {
   }));
 };
 
-const getStudentObservations = (studentName, observations) => {
+const getStudentObservations = (studentId, observations) => {
   return (observations || [])
-    .filter(o => o.student?.toLowerCase() === studentName?.toLowerCase())
+    .filter(o => o.studentId === studentId)
     .map((o, idx) => ({
       id: o.id || idx,
       type: o.type,
@@ -138,8 +138,9 @@ export function TeacherArchiveView() {
             finalWassce: getStudentWASSCE(student.grades),
             graduationYear: getGraduationYear(student.promotions, student.archivedAt),
             history,
+            grades: student.grades || [],
             interventions: [],
-            observations: getStudentObservations(fullName, obsArray),
+            observations: getStudentObservations(student.id, obsArray),
             hodComment: null,
             consistencyScore: getStudentConsistencyScore(history)
           });

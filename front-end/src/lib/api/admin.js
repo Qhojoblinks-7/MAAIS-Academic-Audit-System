@@ -24,6 +24,7 @@ export const adminApi = {
   getActiveYear: () => api.get('/academic/years/active'),
   createTerm: (dto) => api.post('/academic/terms', dto),
   activateTerm: (id) => api.patch(`/academic/terms/${id}/activate`),
+  deactivateTerm: (id) => api.patch(`/academic/terms/${id}/deactivate`),
   createDepartment: (dto) => api.post('/academic/departments', dto),
   getAllDepartments: () => api.get('/academic/departments'),
   getDepartment: (id) => api.get(`/academic/departments/${id}`),

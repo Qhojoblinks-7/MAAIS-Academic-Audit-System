@@ -1,8 +1,22 @@
+import { getAuthToken } from '../auth';
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 const DEFAULT_TIMEOUT = 15000;
 const MAX_RETRIES = 2;
 const RETRYABLE_STATUS = new Set([408, 429, 500, 502, 503, 504]);
 const pendingRequests = new Map();
+
+function getHeaders() {
+  const token = getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+interface RequestError extends Error {
+  status?: number;
+}
 
 function dedupeKey(method: string, path: string, body: unknown) {
   return `${method}:${path}:${JSON.stringify(body ?? null)}`;
@@ -39,8 +53,8 @@ async function request(method: string, path: string, body?: unknown) {
           let errorMessage = `Request failed: ${res.status} ${method} ${path}`;
           try {
             const errorBody = await res.clone().json();
-            const freezeReason = errorBody?.freezeReason;
-            const baseMessage = errorBody?.message || errorBody?.error || errorMessage;
+            const freezeReason = (errorBody as any)?.freezeReason;
+            const baseMessage = (errorBody as any)?.message || (errorBody as any)?.error || errorMessage;
             errorMessage = freezeReason ? `${baseMessage} — ${freezeReason}` : baseMessage;
           } catch {
             const errorText = await res.text();
@@ -48,7 +62,7 @@ async function request(method: string, path: string, body?: unknown) {
               errorMessage = `API endpoint not found (${res.status})`;
             }
           }
-          const err = new Error(errorMessage);
+          const err: RequestError = new Error(errorMessage);
           err.status = res.status;
           throw err;
         }
@@ -60,10 +74,10 @@ async function request(method: string, path: string, body?: unknown) {
         }
         return res.json();
       } catch (error) {
-        if (error.name === 'AbortError') {
+        if ((error as any)?.name === 'AbortError') {
           throw new Error(`Request timeout: ${method} ${path}`);
         }
-        if (attempt >= MAX_RETRIES || !RETRYABLE_STATUS.has((error as any).status)) {
+        if (attempt >= MAX_RETRIES || !RETRYABLE_STATUS.has((error as RequestError).status as number)) {
           throw error;
         }
         await delay(1000 * attempt);
@@ -81,31 +95,31 @@ async function request(method: string, path: string, body?: unknown) {
 }
 
 export const studentApi = {
-  getPortalData: (studentId) =>
+  getPortalData: (studentId: string) =>
     request('GET', `/portal/students/${studentId}/portal-data`),
 
-  getStudentGrades: (studentId, termId) =>
+  getStudentGrades: (studentId: string, termId: string) =>
     request('GET', `/grading/students/${studentId}/terms/${termId}`),
 
-  createTicket: (data) =>
+  createTicket: (data: unknown) =>
     request('POST', `/comms/tickets`, data),
 
   getMyTickets: () =>
     request('GET', `/comms/tickets/my`),
 
-  getNotifications: (studentId) =>
+  getNotifications: (studentId: string) =>
     request('GET', `/comms/notifications/${studentId}`),
 
-  markNotificationRead: (notificationId) =>
+  markNotificationRead: (notificationId: string) =>
     request('PATCH', `/comms/notifications/${notificationId}/read`),
 
-  getBehavior: (studentId) =>
+  getBehavior: (studentId: string) =>
     request('GET', `/students/${studentId}/behavior`),
 
-  getInterventions: (studentId) =>
+  getInterventions: (studentId: string) =>
     request('GET', `/students/${studentId}/interventions`),
 
-  getClassTimetable: (classId) =>
+  getClassTimetable: (classId: string) =>
     request('GET', `/timetable/class/${classId}`),
 };
 

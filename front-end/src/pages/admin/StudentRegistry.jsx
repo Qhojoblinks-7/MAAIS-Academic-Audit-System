@@ -136,8 +136,36 @@ const StudentDossier = ({
                               )}>
                                 {letterGrade}
                               </span>
-                           </div>
+                     </div>
+
+                     <div className="border-t border-border pt-4 mt-2">
+                       <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-3">Parent / Guardian (optional)</p>
+                       <div className="grid grid-cols-2 gap-4">
+                         <div>
+                           <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Parent First Name</label>
+                           <input value={newStudent.parentFirstName} onChange={(e) => setNewStudent({...newStudent, parentFirstName: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold" placeholder="First name" />
                          </div>
+                         <div>
+                           <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Parent Last Name</label>
+                           <input value={newStudent.parentLastName} onChange={(e) => setNewStudent({...newStudent, parentLastName: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold" placeholder="Last name" />
+                         </div>
+                       </div>
+                       <div className="grid grid-cols-2 gap-4 mt-3">
+                         <div>
+                           <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Parent Phone</label>
+                           <input value={newStudent.parentPhone} onChange={(e) => setNewStudent({...newStudent, parentPhone: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold" placeholder="+233 24 000 0000" />
+                         </div>
+                         <div>
+                           <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Relationship</label>
+                           <select value={newStudent.parentRelationship} onChange={(e) => setNewStudent({...newStudent, parentRelationship: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold">
+                             <option value="Guardian">Guardian</option>
+                             <option value="Father">Father</option>
+                             <option value="Mother">Mother</option>
+                           </select>
+                         </div>
+                       </div>
+                     </div>
+                   </div>
                        );
                     })
                   :                   <EmptyState context="students" variant="compact" />
@@ -584,7 +612,8 @@ export const StudentRegistry = () => {
   const [showReverification, setShowReverification] = useState({ active: false, action: null });
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newStudent, setNewStudent] = useState({
-    firstName: '', lastName: '', indexNumber: '', gender: 'MALE', dateOfBirth: '', email: '', classId: '',
+    firstName: '', lastName: '', indexNumber: '', gender: 'MALE', dateOfBirth: '', residentialStatus: 'DAY', classId: '',
+    parentFirstName: '', parentLastName: '', parentPhone: '', parentEmail: '', parentRelationship: 'Guardian',
   });
   const [creatingStudent, setCreatingStudent] = useState(false);
   const [openKebabId, setOpenKebabId] = useState(null);
@@ -726,10 +755,16 @@ export const StudentRegistry = () => {
     try {
       await createStudentMutation.mutateAsync({
         ...newStudent,
+        isBoarder: newStudent.residentialStatus === 'BOARDING',
         password: 'Student@123!',
+        parentFirstName: newStudent.parentFirstName,
+        parentLastName: newStudent.parentLastName,
+        parentPhone: newStudent.parentPhone,
+        parentEmail: newStudent.parentEmail,
+        parentRelationship: newStudent.parentRelationship,
       });
       setShowCreateForm(false);
-      setNewStudent({ firstName: '', lastName: '', indexNumber: '', gender: 'MALE', dateOfBirth: '', email: '', classId: '' });
+      setNewStudent({ firstName: '', lastName: '', indexNumber: '', gender: 'MALE', dateOfBirth: '', residentialStatus: 'DAY', classId: '', parentFirstName: '', parentLastName: '', parentPhone: '', parentEmail: '', parentRelationship: 'Guardian' });
       toast.success('Student registered successfully');
     } catch (err) {
       toast.error(`Registration failed: ${err.message || 'Unknown error'}`);
@@ -740,15 +775,57 @@ export const StudentRegistry = () => {
 
   // CSSPS Upload handlers
   const parseCsvContent = (content) => {
-    const lines = content.split('\n').filter(l => l.trim());
-    if (lines.length < 2) return [];
-    
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, '_'));
-    return lines.slice(1).map(line => {
-      const values = line.split(',').map(v => v.trim());
+    const rows = [];
+    let currentRow = [];
+    let currentField = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < content.length; i++) {
+      const char = content[i];
+
+      if (inQuotes) {
+        if (char === '"') {
+          if (content[i + 1] === '"') {
+            currentField += '"';
+            i++;
+          } else {
+            inQuotes = false;
+          }
+        } else {
+          currentField += char;
+        }
+      } else {
+        if (char === '"') {
+          inQuotes = true;
+        } else if (char === ',') {
+          currentRow.push(currentField.trim());
+          currentField = '';
+        } else if (char === '\n' || char === '\r') {
+          currentRow.push(currentField.trim());
+          if (currentRow.some(f => f !== '')) {
+            rows.push(currentRow);
+          }
+          currentRow = [];
+          currentField = '';
+          if (char === '\r' && content[i + 1] === '\n') i++;
+        } else {
+          currentField += char;
+        }
+      }
+    }
+
+    currentRow.push(currentField.trim());
+    if (currentRow.some(f => f !== '')) {
+      rows.push(currentRow);
+    }
+
+    if (rows.length < 2) return [];
+
+    const headers = rows[0].map(h => h.toLowerCase().replace(/\s+/g, '_'));
+    return rows.slice(1).map(row => {
       const record = {};
       headers.forEach((h, i) => {
-        record[h] = values[i] || '';
+        record[h] = row[i] || '';
       });
       return record;
     }).filter(r => r.index_number || r.first_name || r.last_name);
@@ -801,14 +878,27 @@ export const StudentRegistry = () => {
       middleName: record.middle_name || record.middleName || '',
       gender: (record.gender || 'MALE').toUpperCase(),
       dateOfBirth: record.date_of_birth || record.dob || record.dateOfBirth,
-      password: 'Student@123!',
+      currentClassId: record.currentclassid || record.currentClassId || '',
+      departmentId: record.departmentid || record.departmentId || '',
+      className: record.classname || record.className || '',
+      departmentName: record.departmentname || record.departmentName || '',
+      parentFirstName: record.parentfirstname || record.parentFirstName || '',
+      parentLastName: record.parentlastname || record.parentLastName || '',
+      parentPhone: record.parentphone || record.parentPhone || '',
+      parentEmail: record.parentemail || record.parentEmail || '',
+      parentRelationship: record.parentrelationship || record.parentRelationship || 'Guardian',
+      isBoarder: (record.residential_status || record.isBoarder || '').toUpperCase() === 'BOARDING',
     }));
     
     try {
       const result = await batchImportMutation.mutateAsync(students);
       setImportResults(result);
       setCsspsPreview([]);
-      toast.success(`Imported ${result.success} students successfully`);
+      if (result.failed === 0) {
+        toast.success(`Imported ${result.success} students successfully`);
+      } else {
+        toast.warning(`Imported ${result.success} students, ${result.failed} failed`);
+      }
     } catch (err) {
       toast.error(`Import failed: ${err.message || 'Unknown error'}`);
     } finally {
@@ -1051,27 +1141,44 @@ export const StudentRegistry = () => {
                    <div className="w-24 h-24 bg-brand-primary/10 text-brand-primary rounded-[2.5rem] flex items-center justify-center mx-auto mb-10"><FileUp size={48} /></div>
                    <h3 className="text-3xl font-black italic font-display text-text-primary mb-4">CSSPS Batch Intake</h3>
                    
-                   <div className="mb-6">
-                     <input
-                       type="file"
-                       accept=".csv,.xlsx,.xls"
-                       onChange={handleCssFileChange}
-                       className="hidden"
-                       id="cssps-file-input"
-                     />
-                     <label
-                       htmlFor="cssps-file-input"
-                       className="border-4 border-dashed border-border rounded-[2.5rem] py-16 mb-6 hover:bg-muted cursor-pointer flex flex-col items-center justify-center"
-                     >
-                       <p className="text-[11px] font-black uppercase tracking-widest text-text-secondary mb-2">Drop CSSPS File Here</p>
-                       <p className="text-[10px] text-muted">CSV/Excel formats supported</p>
-                       {csspsFile && (
-                         <p className="mt-3 text-[12px] font-black text-brand-primary">
-                           {csspsFile.name}
-                         </p>
-                       )}
-                     </label>
-                   </div>
+                    <div className="mb-6">
+                      <input
+                        type="file"
+                        accept=".csv,.xlsx,.xls"
+                        onChange={handleCssFileChange}
+                        className="hidden"
+                        id="cssps-file-input"
+                      />
+                      <label
+                        htmlFor="cssps-file-input"
+                        className="border-4 border-dashed border-border rounded-[2.5rem] py-16 mb-6 hover:bg-muted cursor-pointer flex flex-col items-center justify-center"
+                      >
+                        <p className="text-[11px] font-black uppercase tracking-widest text-text-secondary mb-2">Drop CSSPS File Here</p>
+                        <p className="text-[10px] text-muted">CSV/Excel formats supported</p>
+                        {csspsFile && (
+                          <p className="mt-3 text-[12px] font-black text-brand-primary">
+                            {csspsFile.name}
+                          </p>
+                        )}
+                      </label>
+                      <button 
+                        onClick={() => {
+                          const headers = ['indexNumber','firstName','lastName','middleName','gender','dateOfBirth','residentialStatus','className','departmentName','currentClassId','departmentId','parentFirstName','parentLastName','parentPhone','parentEmail','parentRelationship'];
+                          const sample = ['MSHTS/2024/001','Kwame','Mensah','Kofi','MALE','2008-01-15','DAY','1A','Science','','','Ama','Owusu','+233244000001','ama.owusu@parent.com','Mother'];
+                          const csv = [headers.join(','), sample.join(',')].join('\n');
+                          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = 'student-import-template.csv';
+                          a.click();
+                          URL.revokeObjectURL(url);
+                        }}
+                        className="text-[10px] font-black uppercase tracking-widest text-brand-primary hover:underline"
+                      >
+                        Download Template CSV
+                      </button>
+                    </div>
 
                    {csspsPreview.length > 0 && (
                       <div className="mb-6 max-h-64 overflow-y-auto border border-border rounded-2xl p-4 scrollbar-hide">
@@ -1120,23 +1227,23 @@ export const StudentRegistry = () => {
                 </motion.div>
              </div>
            )}
-           {importResults && (
-             <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
-                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-lg bg-surface rounded-[2.5rem] shadow-2xl p-10 text-center">
-                   <div className="w-16 h-16 bg-brand-primary/10 text-brand-primary rounded-2xl flex items-center justify-center mx-auto mb-6"><CheckCircle size={32} /></div>
-                   <h3 className="text-2xl font-black italic font-display text-text-primary mb-2">Import Complete</h3>
-                   <p className="text-[14px] text-text-secondary mb-6">
-                     Successfully imported {importResults.success} students. {importResults.failed > 0 && `${importResults.failed} failed.`}
-                   </p>
-                   <button 
-                     onClick={() => setImportResults(null)}
-                     className="px-8 py-3 bg-brand-dark text-primary-foreground rounded-2xl text-[11px] font-black uppercase tracking-widest"
-                   >
-                     Done
-                   </button>
-                </motion.div>
-             </div>
-            )}
+            {importResults && (
+              <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+                 <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-lg bg-surface rounded-[2.5rem] shadow-2xl p-10 text-center">
+                    <div className="w-16 h-16 bg-brand-primary/10 text-brand-primary rounded-2xl flex items-center justify-center mx-auto mb-6"><CheckCircle size={32} /></div>
+                    <h3 className="text-2xl font-black italic font-display text-text-primary mb-2">Import Complete</h3>
+                    <p className="text-[14px] text-text-secondary mb-6">
+                      Successfully imported {importResults.success} students. {importResults.failed > 0 && `${importResults.failed} failed.`}
+                    </p>
+                    <button 
+                      onClick={() => setImportResults(null)}
+                      className="px-8 py-3 bg-brand-dark text-primary-foreground rounded-2xl text-[11px] font-black uppercase tracking-widest"
+                    >
+                      Done
+                    </button>
+                 </motion.div>
+              </div>
+             )}
             {showCreateForm && (
               <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
                 <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md" onClick={() => setShowCreateForm(false)} />
@@ -1172,8 +1279,11 @@ export const StudentRegistry = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Email</label>
-                        <input value={newStudent.email} onChange={(e) => setNewStudent({...newStudent, email: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold" placeholder="student@email.com" />
+                        <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Residential Status</label>
+                        <select value={newStudent.residentialStatus} onChange={(e) => setNewStudent({...newStudent, residentialStatus: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold">
+                          <option value="DAY">Day Student</option>
+                          <option value="BOARDING">Boarding Student</option>
+                        </select>
                       </div>
                       <div>
                         <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Class / Program</label>
@@ -1184,7 +1294,7 @@ export const StudentRegistry = () => {
                       </div>
                     </div>
                   </div>
-                  <p className="text-[10px] text-text-secondary mt-4 mb-4">Default password: Student@123!</p>
+                   <p className="text-[10px] text-text-secondary mt-4 mb-4">A temporary password will be generated and the student will be prompted to change it on first login.</p>
                   <div className="flex gap-4">
                     <button onClick={() => setShowCreateForm(false)} className="flex-1 py-4 bg-muted rounded-[2rem] text-[11px] font-black uppercase tracking-widest">Cancel</button>
                     <button onClick={handleCreateStudent} disabled={creatingStudent || !newStudent.firstName || !newStudent.indexNumber} className={cn("flex-1 py-4 rounded-[2rem] text-[11px] font-black uppercase tracking-widest", creatingStudent || !newStudent.firstName || !newStudent.indexNumber ? "bg-muted text-text-secondary cursor-not-allowed" : "bg-brand-primary text-primary-foreground")}>

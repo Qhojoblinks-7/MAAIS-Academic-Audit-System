@@ -96,6 +96,16 @@ export function HODSidebar() {
       id: 'hod-archive',
       path: '/archive'
     },
+    {
+      icon: Users,
+      label: 'Directory',
+      id: 'hod-directory',
+      subItems: [
+        { label: 'Faculty Directory', path: '/hod/teachers' },
+        { label: 'Student Registry', path: '/hod/students' },
+        { label: 'Guardian Network', path: '/hod/parents' }
+      ]
+    },
   ].filter(Boolean);
 
   const handleLogout = () => {
@@ -167,11 +177,10 @@ export function HODSidebar() {
                       animate={{ opacity: 1, x: 0, scale: 1 }}
                       exit={{ opacity: 0, x: -8, scale: 0.95 }}
                       transition={{ duration: 0.15, ease: "easeOut" }}
-                      className="absolute left-[calc(100%+14px)] top-0 w-48 bg-surface rounded-2xl shadow-xl border border-border py-3 px-2 z-[60] ring-1 ring-brand-dark/5"
+                      className="fixed left-24 w-48 bg-surface rounded-2xl shadow-xl border border-border py-3 px-2 z-[9999] ring-1 ring-brand-dark/5"
                     >
                       <div className="mb-2 px-2.5">
                         <p className="text-[9px] font-bold text-text-secondary uppercase tracking-widest">{item.label}</p>
-                        <h4 className="text-[13px] font-semibold text-text-primary tracking-tight">{item.subHeader || 'Options'}</h4>
                       </div>
                       <div className="space-y-0.5">
                         {item.subItems.map((sub, idx) => {
