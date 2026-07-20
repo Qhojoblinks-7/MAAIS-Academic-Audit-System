@@ -24,6 +24,8 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { toast, Toaster } from '../../components/ui/toast.tsx';
+import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 import {
   Table,
   TableHeader,
@@ -111,28 +113,24 @@ export function StaffRegistry() {
     (selectedStatus !== 'All' ? 1 : 0);
 
   const handleExportCSV = () => {
-    const headers = ['Name', 'Employee ID', 'Department', 'Role', 'Status', 'Email', 'Phone', 'Joined Date'];
-    const csvContent = [
-      headers.join(','),
-      ...staff.map(s => [
-        `"${(s.firstName || '') + ' ' + (s.lastName || '')}"`,
-        `"${s.staffId || s.employeeId || ''}"`,
-        `"${s.department?.name || s.department || ''}"`,
-        `"${s.role || ''}"`,
-        `"${s.status || 'ACTIVE'}"`,
-        `"${s.email || ''}"`,
-        `"${s.phone || ''}"`,
-        `"${s.hiredAt || 'Recent'}"`
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const csv = Papa.unparse(filteredStaff.map(s => ({
+      'Name': `${s.firstName || ''} ${s.lastName || ''}`.trim(),
+      'Employee ID': s.staffId || s.employeeId || '',
+      'Department': s.department?.name || s.department || '',
+      'Role': s.role || '',
+      'Status': s.status || 'ACTIVE',
+      'Email': s.email || '',
+      'Phone': s.phone || '',
+      'Joined Date': s.hiredAt || 'Recent',
+    })));
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = 'staff-registry.csv';
     a.click();
     URL.revokeObjectURL(url);
+    toast.success(`Exported ${filteredStaff.length} staff records`);
   };
 
   const handleOnboardSubmit = async () => {
@@ -292,19 +290,18 @@ export function StaffRegistry() {
   const handleBulkSubmit = async () => {
     let parsed;
     try {
-      // CSV-first: try CSV (handles paste and file contents). JSON is a fallback.
       parsed = parseCsvStaff(bulkText);
     } catch (e) {
       try {
         const json = JSON.parse(bulkText);
         parsed = Array.isArray(json) ? json : [json];
       } catch (e2) {
-        alert('Could not read the data. Upload a CSV with headers, or paste a JSON array.');
+        toast.error('Could not read the data. Upload a CSV with headers, or paste a JSON array.');
         return;
       }
     }
     if (!Array.isArray(parsed) || parsed.length === 0) {
-      alert('No staff records found. Check that your CSV has a header row and at least one row.');
+      toast.error('No staff records found. Check that your CSV has a header row and at least one row.');
       return;
     }
 
@@ -313,7 +310,7 @@ export function StaffRegistry() {
     const invalid = validation.filter(v => v.errors.length > 0);
     if (invalid.length > 0) {
       const preview = invalid.slice(0, 5).map(v => `Row ${v.idx}: ${v.errors.join(', ')}`).join('\n');
-      alert(`Please fix ${invalid.length} invalid row(s) before importing:\n\n${preview}`);
+      toast.error(`Please fix ${invalid.length} invalid row(s) before importing:\n\n${preview}`);
       return;
     }
 
@@ -325,7 +322,7 @@ export function StaffRegistry() {
         setBulkFileName('');
       }
     } catch (err) {
-      alert('Bulk import failed: ' + (err.message || err));
+      toast.error('Bulk import failed: ' + (err.message || err));
     }
   };
 
@@ -333,14 +330,32 @@ export function StaffRegistry() {
     if (!file) return;
     setBulkFileName(file.name);
     const reader = new FileReader();
-    reader.onload = (e) => setBulkText(e.target.result || '');
+    reader.onload = (e) => {
+      try {
+        const content = e.target.result;
+        let parsed;
+        if (file.name.match(/\.xlsx?$/i)) {
+          parsed = parseXlsxStaff(content);
+        } else {
+          parsed = parseCsvStaff(content);
+        }
+        const csvText = Papa.unparse(parsed);
+        setBulkText(csvText);
+      } catch (err) {
+        toast.error('Failed to parse file: ' + (err.message || 'Unknown error'));
+      }
+    };
     reader.readAsText(file);
   };
 
   const downloadSampleCsv = () => {
-    const header = 'firstName,lastName,middleName,email,phone,staffId,role,gender,departmentName';
-    const example = 'Ama,Owusu,Abena,ama.owusu@mandoshts.edu.gh,+233244000001,TCH-001,TEACHER,MALE,Science\nKofi,Mensah,,kofi.mensah@mandoshts.edu.gh,+233244000002,HOD-001,HOD,MALE,Mathematics';
-    const blob = new Blob([`${header}\n${example}`], { type: 'text/csv' });
+    const sampleDept = departments.length > 0 ? departments[0].name : 'Science';
+    const rows = [
+      { firstName: 'Ama', lastName: 'Owusu', middleName: 'Abena', email: 'ama.owusu@mandoshts.edu.gh', phone: '+233244000001', staffId: 'TCH-001', role: 'TEACHER', gender: 'MALE', departmentName: sampleDept },
+      { firstName: 'Kofi', lastName: 'Mensah', middleName: '', email: 'kofi.mensah@mandoshts.edu.gh', phone: '+233244000002', staffId: 'HOD-001', role: 'HOD', gender: 'MALE', departmentName: sampleDept },
+    ];
+    const csv = Papa.unparse(rows);
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -383,34 +398,37 @@ export function StaffRegistry() {
   const ROLE_VALUES = ['TEACHER', 'HOD', 'HEADMASTER', 'SUPER_ADMIN'];
   const GENDER_VALUES = ['MALE', 'FEMALE', 'OTHER'];
 
-  // Robust CSV parsing: handles quoted fields, escaped quotes ("") and CRLF.
+  // Robust CSV parsing via PapaParse; fallback to manual for inline text paste
   const parseCsvStaff = (raw) => {
-    const text = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    const rows = [];
-    let row = [];
-    let field = '';
-    let inQuotes = false;
-    for (let i = 0; i < text.length; i++) {
-      const c = text[i];
-      if (inQuotes) {
-        if (c === '"') {
-          if (text[i + 1] === '"') { field += '"'; i++; }
-          else inQuotes = false;
-        } else field += c;
-      } else {
-        if (c === '"') inQuotes = true;
-        else if (c === ',') { row.push(field); field = ''; }
-        else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
-        else field += c;
-      }
+    const results = Papa.parse(raw, {
+      header: true,
+      skipEmptyLines: true,
+      dynamicTyping: false,
+      transformHeader: (h) => (HEADER_ALIASES[h.trim().toLowerCase()] || h.trim()),
+    });
+    if (results.errors.length > 0 && results.data.length === 0) {
+      throw new Error(results.errors[0].message);
     }
-    if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row); }
-    const clean = rows.filter(r => r.some(c => c.trim() !== ''));
-    if (clean.length < 2) throw new Error('CSV needs a header row and at least one data row');
-    const headers = clean[0].map(h => (HEADER_ALIASES[h.trim().toLowerCase()] || h.trim()));
-    return clean.slice(1).map(r => {
+    return results.data.map(r => {
       const obj = {};
-      headers.forEach((h, i) => { obj[h] = (r[i] ?? '').trim(); });
+      Object.entries(r).forEach(([h, v]) => {
+        obj[h] = (v ?? '').toString().trim();
+      });
+      return obj;
+    });
+  };
+
+  const parseXlsxStaff = (content) => {
+    const workbook = XLSX.read(content, { type: 'binary' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+    return jsonData.map(row => {
+      const obj = {};
+      Object.entries(row).forEach(([key, value]) => {
+        const normalizedKey = HEADER_ALIASES[key.trim().toLowerCase()] || key.trim();
+        obj[normalizedKey] = value !== undefined && value !== null ? String(value).trim() : '';
+      });
       return obj;
     });
   };

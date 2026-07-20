@@ -1,5 +1,6 @@
 import { getAuthToken } from './auth';
 import { calcRoman } from '../constants/grading';
+import Papa from 'papaparse';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 const DEFAULT_TIMEOUT = 15000;
@@ -123,16 +124,17 @@ export function downloadResponse(res, filename) {
 
 export function generateWAECCSV(rows, subjectName = 'Subject', className = 'Class') {
   const headers = ['Index', 'Student Name', 'SBA', 'Exam', 'Final', 'Grade', 'Roman'];
-  const dataRows = (rows || []).map((s) => [
-    s.index ?? '',
-    `"${(s.name ?? '').replace(/"/g, '""')}"`,
-    s.sba ?? 0,
-    s.exam ?? 0,
-    s.final ?? 0,
-    s.grade ?? '',
-    calcRoman(s.grade),
-  ]);
-  return [headers, ...dataRows].map((r) => r.join(',')).join('\r\n');
+  const dataRows = (rows || []).map((s) => ({
+    'Index': s.index ?? '',
+    'Student Name': s.name ?? '',
+    'SBA': s.sba ?? 0,
+    'Exam': s.exam ?? 0,
+    'Final': s.final ?? 0,
+    'Grade': s.grade ?? '',
+    'Roman': calcRoman(s.grade),
+  }));
+  const csv = Papa.unparse(dataRows, { columns: headers });
+  return csv;
 }
 
 export async function exportWAECCSVDownload(termId, className, subjectName, rows) {

@@ -14,7 +14,6 @@ export function AcademicArchitect() {
   const [activeTab, setActiveTab] = useState('Blueprint');
   const [expandedYears, setExpandedYears] = useState([]);
   const [expandedPrograms, setExpandedPrograms] = useState([]);
-  const [selectedProgramForClassroom, setSelectedProgramForClassroom] = useState(null);
 
   const yearsQuery = useAdminAcademicYears();
   const departmentsQuery = useAllDepartments();
@@ -51,7 +50,7 @@ export function AcademicArchitect() {
     const yearClasses = classes.filter(c => c.level === (y.label || y.name));
     const programsMap = {};
     yearClasses.forEach(c => {
-      const progName = c.name?.split(' ').slice(1).join(' ') || c.name || 'General';
+      const progName = c.program || c.name?.split(' ').slice(1).join(' ') || 'General';
       if (!programsMap[progName]) programsMap[progName] = [];
       programsMap[progName].push(c);
     });
@@ -83,7 +82,7 @@ export function AcademicArchitect() {
     return Object.entries(grouped).map(([levelName, clsList], idx) => {
       const programsMap = {};
       clsList.forEach(c => {
-        const progName = c.name?.split(' ').slice(1).join(' ') || c.name || 'General';
+        const progName = c.program || c.name?.split(' ').slice(1).join(' ') || 'General';
         if (!programsMap[progName]) programsMap[progName] = [];
         programsMap[progName].push(c);
       });
@@ -220,10 +219,9 @@ export function AcademicArchitect() {
   };
 
   const createClassMutation = useCreateClass();
-  const PROGRAMS = ['Science', 'General Arts', 'Business', 'Home Economics', 'Technical'];
 
-  const handleCreateClassroom = useCallback(async ({ name, capacity, studentsCount, houseDistribution, programId, track }) => {
-    const program = selectedProgramForClassroom?.name || '';
+  const handleCreateClassroom = useCallback(async ({ name, capacity, studentsCount, houseDistribution, programId, programName, track }) => {
+    const program = programName || '';
     const yearGroup = effectiveDisplayYears.find(y => y.programs.some(p => p.id === programId))?.name || '';
     const levelMap = { 'Form 1': 'FORM_1', 'Form 2': 'FORM_2', 'Form 3': 'FORM_3', 'SHS 1': 'FORM_1', 'SHS 2': 'FORM_2', 'SHS 3': 'FORM_3' };
     const levelEnum = levelMap[yearGroup] || 'FORM_1';
@@ -234,7 +232,7 @@ export function AcademicArchitect() {
       program,
       track
     });
-  }, [createClassMutation, effectiveDisplayYears, selectedProgramForClassroom?.name]);
+  }, [createClassMutation, effectiveDisplayYears]);
 
   const handleStructuralExport = useCallback(() => {
     toast.info('Generating Structural Export...');

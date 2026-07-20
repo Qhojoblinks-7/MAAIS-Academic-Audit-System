@@ -1,18 +1,19 @@
 import { calcRoman } from '../constants/grading';
+import Papa from 'papaparse';
 
 class ReportEngine {
   generateWAECCSV(rows, subjectName = 'Subject', className = 'Class') {
     const headers = ['Index', 'Student Name', 'SBA', 'Exam', 'Final', 'Grade', 'Roman'];
-    const dataRows = (rows || []).map((s) => [
-      s.index ?? '',
-      `"${(s.name ?? '').replace(/"/g, '""')}"`,
-      s.sba ?? 0,
-      s.exam ?? 0,
-      s.final ?? 0,
-      s.grade ?? '',
-      calcRoman(s.grade),
-    ]);
-    return [headers, ...dataRows].map((r) => r.join(',')).join('\r\n');
+    const dataRows = (rows || []).map((s) => ({
+      'Index': s.index ?? '',
+      'Student Name': s.name ?? '',
+      'SBA': s.sba ?? 0,
+      'Exam': s.exam ?? 0,
+      'Final': s.final ?? 0,
+      'Grade': s.grade ?? '',
+      'Roman': calcRoman(s.grade),
+    }));
+    return Papa.unparse(dataRows, { columns: headers });
   }
 
   downloadCSV(csvContent, filename) {

@@ -4,10 +4,12 @@ import {
   Search, Download, ChevronRight, TrendingUp, Trash2, X, Lock,
   FileText, FileUp, MoreVertical, GraduationCap, HeartPulse,
   Phone, MessageSquare, Activity, BarChart3, AlertCircle, Users,
-  CheckCircle, Flag, Shield, ShieldCheck, AlertTriangle, UserPlus, FileUp
+  CheckCircle, Flag, Shield, ShieldCheck, AlertTriangle, UserPlus,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { useAllStudents, usePromoteStudent, useDeactivateUser, useUpdateStudentProfile, useCreateStudent, useBatchImportStudents } from '../../lib/hooks';
+import { useAllStudents, usePromoteStudent, useDeactivateUser, useUpdateStudentProfile, useCreateStudent, useBatchImportStudents, useAllClasses, useAllDepartments } from '../../lib/hooks';
+import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 import {
   ResponsiveContainer,
   XAxis, YAxis, Tooltip,
@@ -34,6 +36,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '../../components/molecules';
+import { toast, Toaster } from '../../components/ui/toast.tsx';
 
 const StudentDossier = ({ student, onClose, onGenerateReport, onBuildTranscript }) => {
   const [activeTab, setActiveTab] = useState('Academic');
@@ -187,11 +190,24 @@ const StudentDossier = ({ student, onClose, onGenerateReport, onBuildTranscript 
 
 export function HODStudentRegistry() {
   const studentsQuery = useAllStudents();
+  const classesQuery = useAllClasses();
+  const departmentsQuery = useAllDepartments();
   const promoteStudentMutation = usePromoteStudent();
   const deactivateUserMutation = useDeactivateUser();
   const updateStudentProfileMutation = useUpdateStudentProfile();
   const students = studentsQuery.data || [];
+  const classes = classesQuery.data || [];
+  const departments = departmentsQuery.data || [];
   const isLoading = studentsQuery.isLoading;
+
+  const programs = useMemo(() => {
+    const deptNames = (departments || []).map(d => d.name);
+    const classPrograms = (classes || [])
+      .map(c => c.program)
+      .filter(Boolean);
+    const unique = Array.from(new Set([...deptNames, ...classPrograms]));
+    return unique.sort();
+  }, [departments, classes]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProgram, setSelectedProgram] = useState('All');
@@ -216,28 +232,17 @@ export function HODStudentRegistry() {
     parentFirstName: '', parentLastName: '', parentPhone: '', parentEmail: '', parentRelationship: 'Guardian',
   });
 
-  const PROGRAMS = ['Science', 'General Arts', 'Business', 'Home Economics', 'Technical'];
-
   const displayStudents = useMemo(() => students.map((s) => {
     const parentLink = s.parentLinks?.[0];
     const grades = s.grades || [];
     const avgGrade = grades.length > 0 ? Math.round(grades.reduce((sum, g) => sum + (g.totalScore || g.score || 0), 0) / grades.length) : 0;
-    const rawClass = s.currentClass?.name || s.department?.name || '';
-    const classProgram = (() => {
-      const n = rawClass.toLowerCase();
-      if (n.includes('science')) return 'Science';
-      if (n.includes('arts') && !n.includes('visual')) return 'General Arts';
-      if (n.includes('bus')) return 'Business';
-      if (n.includes('home')) return 'Home Economics';
-      if (n.includes('technical')) return 'Technical';
-      return 'General';
-    })();
+    const program = s.department?.name || s.currentClass?.program || 'General';
     return {
       id: s.id || s.userId,
       name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.user?.email || 'Unknown',
       indexNumber: s.indexNumber,
-      currentClass: rawClass || 'Unassigned',
-      program: classProgram,
+      currentClass: s.currentClass?.name || 'Unassigned',
+      program,
       averageGrade: avgGrade,
       gender: s.gender === 'MALE' ? 'Male' : s.gender === 'FEMALE' ? 'Female' : 'N/A',
       subjects: grades,
@@ -324,79 +329,55 @@ export function HODStudentRegistry() {
   };
 
   const parseCsvContent = (content) => {
-    const rows = [];
-    let currentRow = [];
-    let currentField = '';
-    let inQuotes = false;
-
-    for (let i = 0; i < content.length; i++) {
-      const char = content[i];
-
-      if (inQuotes) {
-        if (char === '"') {
-          if (content[i + 1] === '"') {
-            currentField += '"';
-            i++;
-          } else {
-            inQuotes = false;
-          }
-        } else {
-          currentField += char;
-        }
-      } else {
-        if (char === '"') {
-          inQuotes = true;
-        } else if (char === ',') {
-          currentRow.push(currentField.trim());
-          currentField = '';
-        } else if (char === '\n' || char === '\r') {
-          currentRow.push(currentField.trim());
-          if (currentRow.some(f => f !== '')) {
-            rows.push(currentRow);
-          }
-          currentRow = [];
-          currentField = '';
-          if (char === '\r' && content[i + 1] === '\n') i++;
-        } else {
-          currentField += char;
-        }
-      }
+    const results = Papa.parse(content, {
+      header: true,
+      skipEmptyLines: true,
+      dynamicTyping: false,
+      transformHeader: (h) => h.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
+    });
+    if (results.errors.length > 0 && results.data.length === 0) {
+      throw new Error(results.errors[0].message);
     }
+    return results.data.filter(r => r.index_number || r.first_name || r.last_name || r.indexnumber || r.firstname || r.lastname);
+  };
 
-    currentRow.push(currentField.trim());
-    if (currentRow.some(f => f !== '')) {
-      rows.push(currentRow);
-    }
-
-    if (rows.length < 2) return [];
-
-    const headers = rows[0].map(h => h.toLowerCase().replace(/\s+/g, '_'));
-    return rows.slice(1).map(row => {
-      const record = {};
-      headers.forEach((h, i) => {
-        record[h] = row[i] || '';
+  const parseXlsxContent = (content) => {
+    const workbook = XLSX.read(content, { type: 'binary' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+    return jsonData.map(row => {
+      const normalized = {};
+      Object.entries(row).forEach(([key, value]) => {
+        const normalizedKey = key.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+        normalized[normalizedKey] = value !== undefined && value !== null ? String(value).trim() : '';
       });
-      return record;
-    }).filter(r => r.index_number || r.first_name || r.last_name);
+      return normalized;
+    }).filter(r => r.index_number || r.first_name || r.last_name || r.indexnumber || r.firstname || r.lastname);
   };
 
   const handleCssFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     if (!file.name.match(/\.(csv|xlsx|xls)$/i)) {
       setCsspsError('Only CSV/Excel files are supported');
       return;
     }
-    
+
     setCsspsFile(file);
     setCsspsError('');
-    
+
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
         const content = event.target.result;
-        const records = typeof content === 'string' ? parseCsvContent(content) : [];
+        let records;
+        if (file.name.match(/\.xlsx?$/i)) {
+          records = parseXlsxContent(content);
+        } else {
+          records = parseCsvContent(content);
+        }
         setCsspsPreview(records);
       } catch (err) {
         setCsspsError('Failed to parse file: ' + (err.message || 'Unknown error'));
@@ -416,44 +397,112 @@ export function HODStudentRegistry() {
 
   const handleProcessCsspsUpload = async () => {
     if (!csspsPreview.length) return;
-    
+
+    const validationErrors = [];
+    const seenIndexNumbers = new Set();
+    const validClassIds = new Set((classes || []).map(c => c.id));
+    const validClassNames = new Set((classes || []).map(c => c.name));
+    const validDeptIds = new Set((departments || []).map(d => d.id));
+    const validDeptNames = new Set((departments || []).map(d => d.name));
+
+    csspsPreview.forEach((record, idx) => {
+      const rowNum = idx + 2;
+      const indexNum = record.index_number || record.indexnumber || record.index || '';
+      if (!indexNum) {
+        validationErrors.push(`Row ${rowNum}: Missing index number`);
+      } else {
+        if (seenIndexNumbers.has(indexNum)) {
+          validationErrors.push(`Row ${rowNum}: Duplicate index number ${indexNum}`);
+        }
+        seenIndexNumbers.add(indexNum);
+      }
+
+      const firstName = record.first_name || record.firstname || record.firstName || '';
+      const lastName = record.last_name || record.lastname || record.lastName || '';
+      if (!firstName) validationErrors.push(`Row ${rowNum}: Missing first name`);
+      if (!lastName) validationErrors.push(`Row ${rowNum}: Missing last name`);
+
+      const classId = record.currentclassid || record.currentClassId || '';
+      const className = record.classname || record.className || record.class_name || '';
+      if (classId && !validClassIds.has(classId)) {
+        validationErrors.push(`Row ${rowNum}: Invalid class ID "${classId}"`);
+      }
+      if (className && !validClassNames.has(className)) {
+        validationErrors.push(`Row ${rowNum}: Unknown class name "${className}"`);
+      }
+
+      const deptId = record.departmentid || record.departmentId || '';
+      const deptName = record.departmentname || record.departmentName || record.department_name || '';
+      if (deptId && !validDeptIds.has(deptId)) {
+        validationErrors.push(`Row ${rowNum}: Invalid department ID "${deptId}"`);
+      }
+      if (deptName && !validDeptNames.has(deptName)) {
+        validationErrors.push(`Row ${rowNum}: Unknown department name "${deptName}"`);
+      }
+    });
+
+    if (validationErrors.length > 0) {
+      setCsspsError(`Validation failed (${validationErrors.length} issue(s)):\n${validationErrors.slice(0, 15).join('\n')}${validationErrors.length > 15 ? `\n...and ${validationErrors.length - 15} more` : ''}`);
+      return;
+    }
+
     setIsProcessingCssps(true);
-    
+
     const students = csspsPreview.map(record => ({
-      indexNumber: record.index_number || record.indexNumber || `MSHTS/2024/${String(Date.now()).slice(-6)}`,
-      firstName: record.first_name || record.firstName || '',
-      lastName: record.last_name || record.lastName || '',
-      middleName: record.middle_name || record.middleName || '',
+      indexNumber: record.index_number || record.indexnumber || record.index || `MSHTS/2024/${String(Date.now()).slice(-6)}`,
+      firstName: record.first_name || record.firstname || record.firstName || '',
+      lastName: record.last_name || record.lastname || record.lastName || '',
+      middleName: record.middle_name || record.middlename || record.middleName || '',
       gender: (record.gender || 'MALE').toUpperCase(),
-      dateOfBirth: record.date_of_birth || record.dob || record.dateOfBirth,
+      dateOfBirth: record.date_of_birth || record.dob || record.dateofbirth || record.dateOfBirth,
       currentClassId: record.currentclassid || record.currentClassId || '',
       departmentId: record.departmentid || record.departmentId || '',
-      className: record.classname || record.className || '',
-      departmentName: record.departmentname || record.departmentName || '',
-      parentFirstName: record.parentfirstname || record.parentFirstName || '',
-      parentLastName: record.parentlastname || record.parentLastName || '',
-      parentPhone: record.parentphone || record.parentPhone || '',
-      parentEmail: record.parentemail || record.parentEmail || '',
-      parentRelationship: record.parentrelationship || record.parentRelationship || 'Guardian',
+      className: record.classname || record.className || record.class_name || '',
+      departmentName: record.departmentname || record.departmentName || record.department_name || '',
+      parentFirstName: record.parentfirstname || record.parentFirstName || record.parent_first_name || '',
+      parentLastName: record.parentlastname || record.parentLastName || record.parent_last_name || '',
+      parentPhone: record.parentphone || record.parentPhone || record.parent_phone || '',
+      parentEmail: record.parentemail || record.parentEmail || record.parent_email || '',
+      parentRelationship: record.parentrelationship || record.parentRelationship || record.parent_relationship || 'Guardian',
       isBoarder: (record.residential_status || record.isBoarder || '').toUpperCase() === 'BOARDING',
     }));
-    
+
     try {
       const result = await batchImportMutation.mutateAsync(students);
       setImportResults(result);
       setCsspsPreview([]);
+      setCsspsFile(null);
     } catch (err) {
-      alert('Import failed: ' + (err.message || 'Unknown error'));
+      setCsspsError('Import failed: ' + (err.message || 'Unknown error'));
     } finally {
       setIsProcessingCssps(false);
     }
   };
 
   const downloadTemplateCsv = () => {
+    const sampleClass = classes.length > 0 ? classes[0] : null;
+    const sampleDept = departments.length > 0 ? departments[0] : null;
     const headers = ['indexNumber','firstName','lastName','middleName','gender','dateOfBirth','residentialStatus','className','departmentName','currentClassId','departmentId','parentFirstName','parentLastName','parentPhone','parentEmail','parentRelationship'];
-    const sample = ['MSHTS/2024/001','Kwame','Mensah','Kofi','MALE','2008-01-15','DAY','1A','Science','','','Ama','Owusu','+233244000001','ama.owusu@parent.com','Mother'];
-    const csv = [headers.join(','), sample.join(',')].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const sample = [
+      'MSHTS/2024/001',
+      'Kwame',
+      'Mensah',
+      'Kofi',
+      'MALE',
+      '2008-01-15',
+      'DAY',
+      sampleClass?.name || '1A',
+      sampleDept?.name || 'Science',
+      sampleClass?.id || '',
+      sampleDept?.id || '',
+      'Ama',
+      'Owusu',
+      '+233244000001',
+      'ama.owusu@parent.com',
+      'Mother'
+    ];
+    const csv = Papa.unparse([headers, sample]);
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -480,23 +529,20 @@ export function HODStudentRegistry() {
               <UserPlus size={14} /> Register Student
             </Button>
             <Button variant="outline" className="px-4 py-2 text-[10px] font-black uppercase tracking-widest" onClick={() => {
-              const headers = ['Index Number', 'Name', 'Email', 'Program'];
-              const csvContent = [
-                headers.join(','),
-                ...filteredStudents.map(s => [
-                  `"${s.indexNumber}"`,
-                  `"${s.name}"`,
-                  `"${s.email || ''}"`,
-                  `"${s.program}"`
-                ].join(','))
-              ].join('\n');
-              const blob = new Blob([csvContent], { type: 'text/csv' });
+              const csv = Papa.unparse(filteredStudents.map(s => ({
+                'Index Number': s.indexNumber,
+                'Name': s.name,
+                'Email': s.email || '',
+                'Program': s.program,
+              })));
+              const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
               const url = URL.createObjectURL(blob);
               const a = document.createElement('a');
               a.href = url;
               a.download = 'student-ledger.csv';
               a.click();
               URL.revokeObjectURL(url);
+              toast.success(`Exported ${filteredStudents.length} student records`);
             }}>
               <Download size={14} /> Export CSV
             </Button>
@@ -510,15 +556,15 @@ export function HODStudentRegistry() {
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
             <Input placeholder="Search students..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2.5" />
           </div>
-          <Select value={selectedProgram} onValueChange={(value) => setSelectedProgram(value)}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Programs" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="All">All Programs</SelectItem>
-              {PROGRAMS.map(p => (<SelectItem key={p} value={p}>{p}</SelectItem>))}
-            </SelectContent>
-          </Select>
+              <Select value={selectedProgram} onValueChange={(value) => setSelectedProgram(value)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All Programs" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Programs</SelectItem>
+                  {programs.map(p => (<SelectItem key={p} value={p}>{p}</SelectItem>))}
+                </SelectContent>
+              </Select>
         </div>
       </div>
 
@@ -773,6 +819,7 @@ export function HODStudentRegistry() {
           </motion.div>
         </div>
       )}
+      <Toaster />
     </div>
   );
 }

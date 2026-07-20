@@ -13,7 +13,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { toast, Toaster } from '../../components/ui/toast.tsx';
 import { EmptyState } from '../../components/molecules';
-import { useAllStudents, useCreateStudent, useBatchImportStudents, usePromoteStudent, useBuildTranscript, useGenerateReportCard, useDeactivateUser, useUpdateStudentProfile } from '../../lib/hooks';
+import { useAllStudents, useCreateStudent, useBatchImportStudents, usePromoteStudent, useBuildTranscript, useGenerateReportCard, useDeactivateUser, useUpdateStudentProfile, useAllClasses, useAllDepartments } from '../../lib/hooks';
+import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 import { 
   ResponsiveContainer,
   XAxis, YAxis, Tooltip, 
@@ -300,6 +302,8 @@ const StudentDossier = ({
 
 export const StudentRegistry = () => {
   const studentsQuery = useAllStudents();
+  const classesQuery = useAllClasses();
+  const departmentsQuery = useAllDepartments();
   const createStudentMutation = useCreateStudent();
   const batchImportMutation = useBatchImportStudents();
   const promoteStudentMutation = usePromoteStudent();
@@ -308,6 +312,8 @@ export const StudentRegistry = () => {
   const deactivateUserMutation = useDeactivateUser();
   const updateStudentProfileMutation = useUpdateStudentProfile();
   const students = studentsQuery.data || [];
+  const classes = classesQuery.data || [];
+  const departments = departmentsQuery.data || [];
   const isLoading = studentsQuery.isLoading;
 
   const handlePromote = async (classId) => {
@@ -320,32 +326,15 @@ export const StudentRegistry = () => {
   };
 
   const handleBatchPromotion = async () => {
-    if (!selectedSourceClass || !selectedDestClass) {
-      toast.error('Select both source and destination classes');
-      return;
-    }
-
-    const classToPromote = filteredStudents
-      .filter(s => s.program === selectedSourceClass)
-      .find(s => s.id);
-    
-    if (!classToPromote) {
-      toast.error('No students found in the selected source class');
-      return;
-    }
-
-    const classId = classToPromote.currentClassId || 
-                    filteredStudents.find(s => s.program === selectedSourceClass)?.currentClassId;
-
-    if (!classId) {
-      toast.error('Could not determine class ID for promotion');
+    if (!selectedSourceClass) {
+      toast.error('Select a source class');
       return;
     }
 
     try {
-      const result = await promoteStudentMutation.mutateAsync({ classId });
+      const result = await promoteStudentMutation.mutateAsync({ classId: selectedSourceClass });
       setPromotionStatus({ 
-        promoted: result.totalProcessed || filteredStudents.filter(s => s.program === selectedSourceClass).length, 
+        promoted: result.totalProcessed || 0, 
         failed: 0 
       });
       toast.success(`Promoted ${result.totalProcessed || 0} students`);
@@ -599,20 +588,27 @@ export const StudentRegistry = () => {
     }
   };
 
-  const PROGRAMS = ['Science', 'General Arts', 'Business', 'Home Economics', 'Technical'];
+  const programs = useMemo(() => {
+    const deptNames = (departments || []).map(d => d.name);
+    const classPrograms = (classes || [])
+      .map(c => c.program)
+      .filter(Boolean);
+    const unique = Array.from(new Set([...deptNames, ...classPrograms]));
+    return unique.sort();
+  }, [departments, classes]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProgram, setSelectedProgram] = useState('All');
   const [viewMode, setViewMode] = useState('Academic');
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [isPromoting, setIsPromoting] = useState(false);
   const [selectedSourceClass, setSelectedSourceClass] = useState('');
-  const [selectedDestClass, setSelectedDestClass] = useState('');
   const [promotionStatus, setPromotionStatus] = useState(null);
   const [isBatchUploading, setIsBatchUploading] = useState(false);
   const [showReverification, setShowReverification] = useState({ active: false, action: null });
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newStudent, setNewStudent] = useState({
-    firstName: '', lastName: '', indexNumber: '', gender: 'MALE', dateOfBirth: '', residentialStatus: 'DAY', classId: '',
+    firstName: '', lastName: '', indexNumber: '', gender: 'MALE', dateOfBirth: '', residentialStatus: 'DAY', currentClassId: '',
     parentFirstName: '', parentLastName: '', parentPhone: '', parentEmail: '', parentRelationship: 'Guardian',
   });
   const [creatingStudent, setCreatingStudent] = useState(false);
@@ -633,23 +629,14 @@ export const StudentRegistry = () => {
       ? Math.round(grades.reduce((sum, g) => sum + (g.totalScore || g.score || 0), 0) / grades.length) 
       : 0;
     const baseAtRisk = avgGrade < 50;
-    const rawClass = s.currentClass?.name || s.department?.name || '';
-    const classProgram = (() => {
-      const n = rawClass.toLowerCase();
-      if (n.includes('science')) return 'Science';
-      if (n.includes('arts') && !n.includes('visual')) return 'General Arts';
-      if (n.includes('bus')) return 'Business';
-      if (n.includes('home')) return 'Home Economics';
-      if (n.includes('technical')) return 'Technical';
-      return 'General';
-    })();
+    const program = s.department?.name || s.currentClass?.program || 'General';
     return {
       id: s.id || s.userId,
       name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.user?.email || 'Unknown',
       indexNumber: s.indexNumber,
       dob: s.dateOfBirth,
-      currentClass: rawClass || 'Unassigned',
-      program: classProgram,
+      currentClass: s.currentClass?.name || 'Unassigned',
+      program,
       averageGrade: avgGrade,
       atRisk: studentAtRisk[s.id] ?? baseAtRisk,
       fundingStatus: studentFunding[s.id] || s.feesStatus || 'Free SHS',
@@ -751,10 +738,17 @@ export const StudentRegistry = () => {
       return;
     }
 
+    const selectedClass = classes.find(c => c.id === newStudent.currentClassId);
+    const departmentId = selectedClass?.program 
+      ? departments.find(d => d.name === selectedClass.program)?.id 
+      : undefined;
+
     setCreatingStudent(true);
     try {
       await createStudentMutation.mutateAsync({
         ...newStudent,
+        currentClassId: newStudent.currentClassId,
+        departmentId,
         isBoarder: newStudent.residentialStatus === 'BOARDING',
         password: 'Student@123!',
         parentFirstName: newStudent.parentFirstName,
@@ -764,7 +758,7 @@ export const StudentRegistry = () => {
         parentRelationship: newStudent.parentRelationship,
       });
       setShowCreateForm(false);
-      setNewStudent({ firstName: '', lastName: '', indexNumber: '', gender: 'MALE', dateOfBirth: '', residentialStatus: 'DAY', classId: '', parentFirstName: '', parentLastName: '', parentPhone: '', parentEmail: '', parentRelationship: 'Guardian' });
+      setNewStudent({ firstName: '', lastName: '', indexNumber: '', gender: 'MALE', dateOfBirth: '', residentialStatus: 'DAY', currentClassId: '', parentFirstName: '', parentLastName: '', parentPhone: '', parentEmail: '', parentRelationship: 'Guardian' });
       toast.success('Student registered successfully');
     } catch (err) {
       toast.error(`Registration failed: ${err.message || 'Unknown error'}`);
@@ -774,64 +768,47 @@ export const StudentRegistry = () => {
   };
 
   // CSSPS Upload handlers
-  const parseCsvContent = (content) => {
-    const rows = [];
-    let currentRow = [];
-    let currentField = '';
-    let inQuotes = false;
-
-    for (let i = 0; i < content.length; i++) {
-      const char = content[i];
-
-      if (inQuotes) {
-        if (char === '"') {
-          if (content[i + 1] === '"') {
-            currentField += '"';
-            i++;
+  const parseFile = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const content = event.target.result;
+          if (file.name.match(/\.xlsx?$/i)) {
+            const workbook = XLSX.read(content, { type: 'binary' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+            resolve(jsonData);
           } else {
-            inQuotes = false;
+            Papa.parse(content, {
+              header: true,
+              skipEmptyLines: true,
+              dynamicTyping: false,
+              complete: (results) => resolve(results.data),
+              error: (err) => reject(err),
+            });
           }
-        } else {
-          currentField += char;
+        } catch (err) {
+          reject(err);
         }
-      } else {
-        if (char === '"') {
-          inQuotes = true;
-        } else if (char === ',') {
-          currentRow.push(currentField.trim());
-          currentField = '';
-        } else if (char === '\n' || char === '\r') {
-          currentRow.push(currentField.trim());
-          if (currentRow.some(f => f !== '')) {
-            rows.push(currentRow);
-          }
-          currentRow = [];
-          currentField = '';
-          if (char === '\r' && content[i + 1] === '\n') i++;
-        } else {
-          currentField += char;
-        }
-      }
-    }
-
-    currentRow.push(currentField.trim());
-    if (currentRow.some(f => f !== '')) {
-      rows.push(currentRow);
-    }
-
-    if (rows.length < 2) return [];
-
-    const headers = rows[0].map(h => h.toLowerCase().replace(/\s+/g, '_'));
-    return rows.slice(1).map(row => {
-      const record = {};
-      headers.forEach((h, i) => {
-        record[h] = row[i] || '';
-      });
-      return record;
-    }).filter(r => r.index_number || r.first_name || r.last_name);
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsText(file);
+    });
   };
 
-  const handleCssFileChange = (e) => {
+  const normalizeRecord = (record) => {
+    const keys = Object.keys(record);
+    const normalized = {};
+    keys.forEach(key => {
+      const normalizedKey = key.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+      normalized[normalizedKey] = record[key] !== undefined && record[key] !== null ? String(record[key]).trim() : '';
+    });
+    return normalized;
+  };
+
+  const handleCssFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
@@ -843,18 +820,14 @@ export const StudentRegistry = () => {
     setCsspsFile(file);
     setCsspsError('');
     
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const content = event.target.result;
-        const records = typeof content === 'string' ? parseCsvContent(content) : [];
-        setCsspsPreview(records);
-      } catch (err) {
-        setCsspsError('Failed to parse file: ' + (err.message || 'Unknown error'));
-        setCsspsPreview([]);
-      }
-    };
-    reader.readAsText(file);
+    try {
+      const rawRecords = await parseFile(file);
+      const normalizedRecords = rawRecords.map(normalizeRecord);
+      setCsspsPreview(normalizedRecords);
+    } catch (err) {
+      setCsspsError('Failed to parse file: ' + (err.message || 'Unknown error'));
+      setCsspsPreview([]);
+    }
   };
 
   const handleCancelCsspsUpload = () => {
@@ -869,42 +842,80 @@ export const StudentRegistry = () => {
   const handleProcessCsspsUpload = async () => {
     if (!csspsPreview.length) return;
     
+    const validationErrors = [];
+    const seenIndexNumbers = new Set();
+    
+    csspsPreview.forEach((record, idx) => {
+      if (!record.index_number && !record.indexnumber && !record.index) {
+        validationErrors.push(`Row ${idx + 2}: Missing index number`);
+      } else {
+        const indexNum = record.index_number || record.indexnumber || record.index;
+        if (seenIndexNumbers.has(indexNum)) {
+          validationErrors.push(`Row ${idx + 2}: Duplicate index number ${indexNum}`);
+        }
+        seenIndexNumbers.add(indexNum);
+      }
+      
+      if (!record.first_name && !record.firstname && !record.first_name) {
+        validationErrors.push(`Row ${idx + 2}: Missing first name`);
+      }
+      
+      if (!record.last_name && !record.lastname && !record.last_name) {
+        validationErrors.push(`Row ${idx + 2}: Missing last name`);
+      }
+    });
+    
+    if (validationErrors.length > 0) {
+      setCsspsError(`Validation failed:\n${validationErrors.slice(0, 10).join('\n')}${validationErrors.length > 10 ? `\n...and ${validationErrors.length - 10} more errors` : ''}`);
+      return;
+    }
+    
     setIsProcessingCssps(true);
     
     const students = csspsPreview.map(record => ({
-      indexNumber: record.index_number || record.indexNumber || `MSHTS/2024/${String(Date.now()).slice(-6)}`,
-      firstName: record.first_name || record.firstName || '',
-      lastName: record.last_name || record.lastName || '',
-      middleName: record.middle_name || record.middleName || '',
+      indexNumber: record.index_number || record.indexnumber || record.index || `MSHTS/2024/${String(Date.now()).slice(-6)}`,
+      firstName: record.first_name || record.firstname || record.first_name || '',
+      lastName: record.last_name || record.lastname || record.last_name || '',
+      middleName: record.middle_name || record.middlename || record.middleName || '',
       gender: (record.gender || 'MALE').toUpperCase(),
-      dateOfBirth: record.date_of_birth || record.dob || record.dateOfBirth,
-      currentClassId: record.currentclassid || record.currentClassId || '',
-      departmentId: record.departmentid || record.departmentId || '',
-      className: record.classname || record.className || '',
-      departmentName: record.departmentname || record.departmentName || '',
-      parentFirstName: record.parentfirstname || record.parentFirstName || '',
-      parentLastName: record.parentlastname || record.parentLastName || '',
-      parentPhone: record.parentphone || record.parentPhone || '',
-      parentEmail: record.parentemail || record.parentEmail || '',
-      parentRelationship: record.parentrelationship || record.parentRelationship || 'Guardian',
-      isBoarder: (record.residential_status || record.isBoarder || '').toUpperCase() === 'BOARDING',
+      dateOfBirth: record.date_of_birth || record.dob || record.dateofbirth || record.dateOfBirth,
+      currentClassId: record.currentclassid || record.currentclassid || record.currentclassid || '',
+      departmentId: record.departmentid || record.departmentid || record.departmentid || '',
+      className: record.classname || record.classname || record.class_name || '',
+      departmentName: record.departmentname || record.departmentname || record.department_name || '',
+      parentFirstName: record.parentfirstname || record.parentfirstname || record.parent_first_name || '',
+      parentLastName: record.parentlastname || record.parentlastname || record.parent_last_name || '',
+      parentPhone: record.parentphone || record.parentphone || record.parent_phone || '',
+      parentEmail: record.parentemail || record.parentemail || record.parent_email || '',
+      parentRelationship: record.parentrelationship || record.parentrelationship || record.parent_relationship || 'Guardian',
+      isBoarder: (record.residential_status || record.isboarder || record.isBoarder || '').toUpperCase() === 'BOARDING',
     }));
     
     try {
       const result = await batchImportMutation.mutateAsync(students);
       setImportResults(result);
       setCsspsPreview([]);
-      if (result.failed === 0) {
-        toast.success(`Imported ${result.success} students successfully`);
-      } else {
-        toast.warning(`Imported ${result.success} students, ${result.failed} failed`);
-      }
+      setCsspsFile(null);
     } catch (err) {
-      toast.error(`Import failed: ${err.message || 'Unknown error'}`);
+      setCsspsError('Import failed: ' + (err.message || 'Unknown error'));
     } finally {
       setIsProcessingCssps(false);
     }
   };
+
+  const predictNextClass = (sourceClassName) => {
+    if (!sourceClassName) return '';
+    const match = sourceClassName.match(/^([1-3])(.+)$/);
+    if (!match) return '';
+    const num = parseInt(match[1]);
+    const suffix = match[2];
+    const nextNum = num + 1;
+    if (nextNum > 3) return 'Graduation';
+    const nextClass = classes.find(c => c.name === `${nextNum}${suffix}`);
+    return nextClass ? nextClass.name : `${nextNum}${suffix}`;
+  };
+
+  const predictedDest = predictNextClass(selectedSourceClass);
 
   return (
     <div className="flex-1 flex flex-col bg-muted overflow-hidden relative">
@@ -925,17 +936,13 @@ export const StudentRegistry = () => {
               </button>
               <button 
                 onClick={() => {
-                  const csvHeaders = ['Index Number', 'Name', 'Email', 'Program'];
-                  const csvContent = [
-                    csvHeaders.join(','),
-                    ...filteredStudents.map(s => [
-                      `"${s.indexNumber}"`,
-                      `"${s.name}"`,
-                      `"${s.email || ''}"`,
-                      `"${s.program}"`
-                    ].join(','))
-                  ].join('\n');
-                  const blob = new Blob([csvContent], { type: 'text/csv' });
+                  const csv = Papa.unparse(filteredStudents.map(s => ({
+                    'Index Number': s.indexNumber,
+                    'Name': s.name,
+                    'Email': s.email || '',
+                    'Program': s.program,
+                  })));
+                  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement('a');
                   a.href = url;
@@ -965,17 +972,17 @@ export const StudentRegistry = () => {
               <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" />
               <Input placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-12 pr-6 py-3" />
             </div>
-            <Select value={selectedProgram} onValueChange={(value) => setSelectedProgram(value)}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="All Programs" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Programs</SelectItem>
-                {PROGRAMS.map(p => (
-                  <SelectItem key={p} value={p}>{p}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Select value={selectedProgram} onValueChange={(value) => setSelectedProgram(value)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All Programs" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Programs</SelectItem>
+                  {programs.map(p => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
          </div>
           <div className="flex items-center gap-3">
              <div className="flex bg-muted p-1 rounded-xl border border-border">
@@ -986,26 +993,22 @@ export const StudentRegistry = () => {
                   Biosocial
                 </Button>
              </div>
-<Button onClick={() => {
-                  const csvHeaders = ['Index', 'Name', 'Program', 'Average Grade'];
-                  const csvContent = [
-                    csvHeaders.join(','),
-                    ...filteredStudents.map(s => [
-                      `"${s.indexNumber}"`,
-                      `"${s.name}"`,
-                      `"${s.program}"`,
-                      `"${s.averageGrade}"`
-                    ].join(','))
-                  ].join('\n');
-                const blob = new Blob([csvContent], { type: 'text/csv' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'student-ledger.csv';
-                a.click();
-                URL.revokeObjectURL(url);
-                toast.success(`Exported ${filteredStudents.length} student records`);
-              }} className="p-3">
+              <Button onClick={() => {
+                  const csv = Papa.unparse(filteredStudents.map(s => ({
+                    'Index': s.indexNumber,
+                    'Name': s.name,
+                    'Program': s.program,
+                    'Average Grade': s.averageGrade,
+                  })));
+                  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'student-ledger.csv';
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  toast.success(`Exported ${filteredStudents.length} student records`);
+                }} className="p-3">
                 <Download size={20} />
               </Button>
               <Button 
@@ -1161,23 +1164,42 @@ export const StudentRegistry = () => {
                           </p>
                         )}
                       </label>
-                      <button 
-                        onClick={() => {
-                          const headers = ['indexNumber','firstName','lastName','middleName','gender','dateOfBirth','residentialStatus','className','departmentName','currentClassId','departmentId','parentFirstName','parentLastName','parentPhone','parentEmail','parentRelationship'];
-                          const sample = ['MSHTS/2024/001','Kwame','Mensah','Kofi','MALE','2008-01-15','DAY','1A','Science','','','Ama','Owusu','+233244000001','ama.owusu@parent.com','Mother'];
-                          const csv = [headers.join(','), sample.join(',')].join('\n');
-                          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-                          const url = URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = url;
-                          a.download = 'student-import-template.csv';
-                          a.click();
-                          URL.revokeObjectURL(url);
-                        }}
-                        className="text-[10px] font-black uppercase tracking-widest text-brand-primary hover:underline"
-                      >
-                        Download Template CSV
-                      </button>
+                       <button 
+                          onClick={() => {
+                            const headers = ['indexNumber','firstName','lastName','middleName','gender','dateOfBirth','residentialStatus','className','departmentName','currentClassId','departmentId','parentFirstName','parentLastName','parentPhone','parentEmail','parentRelationship'];
+                            const sampleClass = classes.length > 0 ? classes[0] : null;
+                            const sampleDept = departments.length > 0 ? departments[0] : null;
+                            const sample = [
+                              'MSHTS/2024/001',
+                              'Kwame',
+                              'Mensah',
+                              'Kofi',
+                              'MALE',
+                              '2008-01-15',
+                              'DAY',
+                              sampleClass?.name || '1A',
+                              sampleDept?.name || 'Science',
+                              sampleClass?.id || '',
+                              sampleDept?.id || '',
+                              'Ama',
+                              'Owusu',
+                              '+233244000001',
+                              'ama.owusu@parent.com',
+                              'Mother'
+                            ];
+                            const csv = Papa.unparse([headers, sample]);
+                            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'student-import-template.csv';
+                            a.click();
+                            URL.revokeObjectURL(url);
+                          }}
+                         className="text-[10px] font-black uppercase tracking-widest text-brand-primary hover:underline"
+                       >
+                         Download Template CSV
+                       </button>
                     </div>
 
                    {csspsPreview.length > 0 && (
@@ -1286,10 +1308,10 @@ export const StudentRegistry = () => {
                         </select>
                       </div>
                       <div>
-                        <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Class / Program</label>
-                        <select value={newStudent.classId} onChange={(e) => setNewStudent({...newStudent, classId: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold">
-                          <option value="">Select Program</option>
-                          {PROGRAMS.map(p => <option key={p} value={p}>{p}</option>)}
+                        <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Class</label>
+                        <select value={newStudent.currentClassId} onChange={(e) => setNewStudent({...newStudent, currentClassId: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold">
+                          <option value="">Select Class</option>
+                          {classes.map(c => <option key={c.id} value={c.id}>{c.name} ({c.level})</option>)}
                         </select>
                       </div>
                     </div>
@@ -1308,39 +1330,40 @@ export const StudentRegistry = () => {
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
              <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md" onClick={() => setIsPromoting(false)} />
              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-2xl bg-surface rounded-[3rem] shadow-2xl p-12">
-                  <h3 className="text-3xl font-black italic font-display text-text-primary mb-12">Promotion Engine</h3>
-                  <div className="grid grid-cols-2 gap-8 mb-12">
-                     <select 
-                       value={selectedSourceClass}
-                       onChange={(e) => setSelectedSourceClass(e.target.value)}
-                       className="px-6 py-4 bg-muted border border-border rounded-2xl outline-none"
-                     >
-                       <option value="">Source Cohort</option>
-                       {PROGRAMS.map(prog => <option key={prog} value={prog}>{prog}</option>)}
-                     </select>
-                     <select 
-                       value={selectedDestClass}
-                       onChange={(e) => setSelectedDestClass(e.target.value)}
-                       className="px-6 py-4 bg-muted border border-border rounded-2xl outline-none"
-                     >
-                       <option value="">Destination Pipeline</option>
-                       {PROGRAMS.map(prog => <option key={prog} value={prog}>{prog}</option>)}
-                     </select>
-                  </div>
-                  <div className="flex gap-4">
-                     <button onClick={() => setIsPromoting(false)} className="flex-1 py-5 bg-muted rounded-[2rem] text-[11px] font-black uppercase tracking-widest">Abort</button>
-                     <button 
-                       onClick={() => {
-                         setIsPromoting(false);
-                         handleBatchPromotion();
-                       }} 
-                       disabled={!selectedSourceClass || !selectedDestClass}
-                       className={cn(
-                         "flex-1 py-5 rounded-[2rem] text-[11px] font-black uppercase tracking-widest",
-                         selectedSourceClass && selectedDestClass ? "bg-brand-primary text-primary-foreground" : "bg-muted text-text-secondary cursor-not-allowed"
-                       )}
-                     >Execute</button>
-                  </div>
+                   <h3 className="text-3xl font-black italic font-display text-text-primary mb-12">Promotion Engine</h3>
+                    <div className="space-y-6 mb-12">
+                       <div>
+                         <label className="block text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2">Source Class</label>
+                         <select 
+                           value={selectedSourceClass}
+                           onChange={(e) => setSelectedSourceClass(e.target.value)}
+                           className="w-full px-6 py-4 bg-muted border border-border rounded-2xl outline-none"
+                         >
+                           <option value="">Select source class</option>
+                           {classes.map(c => <option key={c.id} value={c.id}>{c.name} ({c.level})</option>)}
+                         </select>
+                       </div>
+                       <div>
+                         <label className="block text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2">Predicted Destination</label>
+                         <div className="w-full px-6 py-4 bg-muted/50 border border-border rounded-2xl text-text-secondary text-sm">
+                           {predictedDest || 'Select a source class first'}
+                         </div>
+                       </div>
+                    </div>
+                   <div className="flex gap-4">
+                      <button onClick={() => setIsPromoting(false)} className="flex-1 py-5 bg-muted rounded-[2rem] text-[11px] font-black uppercase tracking-widest">Abort</button>
+                      <button 
+                        onClick={() => {
+                          setIsPromoting(false);
+                          handleBatchPromotion();
+                        }} 
+                        disabled={!selectedSourceClass}
+                        className={cn(
+                          "flex-1 py-5 rounded-[2rem] text-[11px] font-black uppercase tracking-widest",
+                          selectedSourceClass ? "bg-brand-primary text-primary-foreground" : "bg-muted text-text-secondary cursor-not-allowed"
+                        )}
+                      >Execute</button>
+                   </div>
                   {promotionStatus && (
                     <div className="mt-6 p-4 bg-brand-primary/10 text-brand-primary rounded-2xl text-[11px] font-black">
                       Promoted {promotionStatus.promoted} students successfully

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../../lib/utils';
 import { School, Layers, Users, AlertTriangle, ChevronRight, ChevronDown, MoreVertical, Plus, X, TrendingUp, Settings2, Archive, UserPlus, Ruler, Home, Trash2, Loader2, Check } from 'lucide-react';
 import { toast } from '../../../components/ui/toast.tsx';
-import { usePromoteLevel, useArchiveYear, useTransferStudents, useUpdateClassCapacity, useRebalanceHouses, useDissolveClass, useUpdateClass, useAllStudents, useCreateYear, useActivateYear, useGetAcademicYears, useCreateClass } from '../../../lib/hooks';
+import { usePromoteLevel, useArchiveYear, useTransferStudents, useUpdateClassCapacity, useRebalanceHouses, useDissolveClass, useUpdateClass, useAllStudents, useCreateYear, useActivateYear, useGetAcademicYears, useCreateClass, useAllDepartments } from '../../../lib/hooks';
 import { ConfirmationDialog } from '../../../components/molecules/ConfirmationDialog';
 
 const HOUSES = ['Guggisberg', 'Aggrey', 'Nkrumah'];
@@ -17,7 +17,7 @@ export function BlueprintTreeView({
   toggleProgram,
   onCreateClassroom,
   studentAvatarsByClass = {},
-  programs = ['Science', 'General Arts', 'Business', 'Home Economics', 'Technical'],
+  programs: programsProp,
   activeYear = null,
 }) {
   const [showYearModal, setShowYearModal] = useState(false);
@@ -28,7 +28,6 @@ export function BlueprintTreeView({
     endDate: '',
     termSystem: 'THREE_TERMS',
     levels: ['FORM_1', 'FORM_2', 'FORM_3'],
-    createTrackClasses: true,
   });
   const [classroomForm, setClassroomForm] = useState({ name: '', capacity: 45, initialStudents: 0, track: '' });
   const [selectedProgramForClassroom, setSelectedProgramForClassroom] = useState(null);
@@ -56,8 +55,12 @@ export function BlueprintTreeView({
   const dissolveClassMutation = useDissolveClass();
   const createYearMutation = useCreateYear();
   const activateYearMutation = useActivateYear();
+  const updateClassMutation = useUpdateClass();
   const yearsQuery = useGetAcademicYears();
   const createClassMutation = useCreateClass();
+  const departmentsQuery = useAllDepartments();
+  const departments = departmentsQuery.data || [];
+  const programs = programsProp && programsProp.length > 0 ? programsProp : departments.map(d => d.name);
 
   useEffect(() => {
     const closeMenus = () => {
@@ -410,38 +413,8 @@ export function BlueprintTreeView({
         qc.invalidateQueries({ queryKey: ['admin', 'academic', 'years'] });
       }
 
-      const levelLabels = { FORM_1: 'SHS 1', FORM_2: 'SHS 2', FORM_3: 'SHS 3' };
-      const selectedLevels = yearForm.levels.length
-        ? yearForm.levels
-        : ['FORM_1', 'FORM_2', 'FORM_3'];
-      let classCount = 0;
-      for (const level of selectedLevels) {
-        if (yearForm.createTrackClasses) {
-          for (const track of ['Gold', 'Green']) {
-            await createClassMutation.mutateAsync({
-              name: `${levelLabels[level].replace('SHS ', '')}${track === 'Gold' ? 'A' : 'B'}`,
-              level,
-              capacity: 45,
-              program: '',
-              track,
-            });
-            classCount += 1;
-          }
-        } else {
-          await createClassMutation.mutateAsync({
-            name: `${levelLabels[level].replace('SHS ', '')}`,
-            level,
-            capacity: 45,
-            program: '',
-          });
-          classCount += 1;
-        }
-      }
-
-      setYearForm({ label: '', startDate: '', endDate: '', termSystem: 'THREE_TERMS', levels: ['FORM_1', 'FORM_2', 'FORM_3'], createTrackClasses: true });
-      setShowYearModal(false);
       const systemLabel = yearForm.termSystem === 'TWO_SEMESTERS' ? '2 Semesters' : '3 Terms';
-      toast.success(`Academic year created with ${systemLabel} and ${classCount} class(es) and set active`);
+      toast.success(`Academic year created with ${systemLabel} and set active`);
     } catch (err) {
       toast.error(`Failed to create academic year: ${err?.message || 'Unknown error'}`);
     }
@@ -471,6 +444,7 @@ export function BlueprintTreeView({
         studentsCount: total,
         houseDistribution: houseDist,
         programId: selectedProgramForClassroom.id,
+        programName: selectedProgramForClassroom.name,
         track: classroomForm.track || undefined,
       });
       setClassroomForm({ name: '', capacity: 45, initialStudents: 0, track: '' });
@@ -483,12 +457,17 @@ export function BlueprintTreeView({
   };
 
   const openClassroomModal = (program) => {
-    setSelectedProgramForClassroom(program);
+    if (program) {
+      const matchedDept = departments.find(d => program.name.startsWith(d.name) || d.name.startsWith(program.name));
+      setSelectedProgramForClassroom(matchedDept || null);
+    } else {
+      setSelectedProgramForClassroom(null);
+    }
     setShowClassroomModal(true);
   };
 
-  const handleProgramSelect = (prog) => {
-    setSelectedProgramForClassroom(prev => ({ ...prev, name: prog }));
+  const handleDepartmentChange = (dept) => {
+    setSelectedProgramForClassroom(dept);
   };
 
   return (
@@ -837,25 +816,6 @@ export function BlueprintTreeView({
                         })}
                       </div>
                     </div>
-                    <div className="flex items-center justify-between bg-muted/30 rounded-xl px-4 py-3">
-                      <div>
-                        <p className="text-xs font-black uppercase tracking-widest text-foreground">Create Gold &amp; Green classes</p>
-                        <p className="text-[10px] text-muted-foreground mt-1">Each level gets a Gold class (A) and a Green class (B).</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setYearForm((prev) => ({ ...prev, createTrackClasses: !prev.createTrackClasses }))}
-                        className={cn(
-                          "w-14 h-8 rounded-full transition-all relative shrink-0",
-                          yearForm.createTrackClasses ? "bg-brand-primary" : "bg-muted"
-                        )}
-                      >
-                        <span className={cn(
-                          "absolute top-1 w-6 h-6 rounded-full bg-white transition-all",
-                          yearForm.createTrackClasses ? "left-7" : "left-1"
-                        )} />
-                      </button>
-                    </div>
                     <div className="flex gap-3">
                       <button
                         type="button"
@@ -903,17 +863,40 @@ export function BlueprintTreeView({
                   </button>
                 </div>
                 <form onSubmit={(e) => { e.preventDefault(); handleAddClassroom(); }} className="space-y-6">
-                  <div>
-                    <label className="block text-xs font-bold text-foreground/70 mb-2">Classroom Name</label>
-                    <input
-                      type="text"
-                      value={classroomForm.name}
-                      onChange={(e) => setClassroomForm({ ...classroomForm, name: e.target.value })}
-                      className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent text-foreground outline-none transition-all"
-                      placeholder="e.g., 1 Science 3"
-                      required
-                    />
-                  </div>
+                   <div>
+                     <label className="block text-xs font-bold text-foreground/70 mb-2">Classroom Name</label>
+                     <input
+                       type="text"
+                       value={classroomForm.name}
+                       onChange={(e) => setClassroomForm({ ...classroomForm, name: e.target.value })}
+                       className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent text-foreground outline-none transition-all"
+                       placeholder="e.g., 1 Business 1"
+                       required
+                     />
+                   </div>
+                   <div>
+                     <label className="block text-xs font-bold text-foreground/70 mb-2">Department / Program</label>
+                     {departmentsQuery.isLoading ? (
+                       <div className="w-full px-4 py-3 border border-border rounded-xl text-muted-foreground text-xs">Loading departments...</div>
+                     ) : departments.length === 0 ? (
+                       <div className="w-full px-4 py-3 border border-border rounded-xl text-muted-foreground text-xs">No departments found. Create departments in Staff Directory first.</div>
+                     ) : (
+                       <select
+                       value={selectedProgramForClassroom?.id || ''}
+                       onChange={(e) => {
+                         const dept = departments.find(d => d.id === e.target.value);
+                         handleDepartmentChange(dept);
+                       }}
+                       className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent text-foreground outline-none transition-all bg-surface"
+                       required
+                     >
+                       <option value="">Select a department</option>
+                       {departments.map(dept => (
+                         <option key={dept.id} value={dept.id}>{dept.name}</option>
+                       ))}
+                     </select>
+                     )}
+                   </div>
                   <div>
                     <label className="block text-xs font-bold text-foreground/70 mb-2">Capacity Load</label>
                     <input
