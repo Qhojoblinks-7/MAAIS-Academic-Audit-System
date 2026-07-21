@@ -2,14 +2,18 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { clearAuthToken, getAuthToken, setAuthToken } from '../services/auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
-
-const AUTH_TIMEOUT = 15000;
+const AUTH_TIMEOUT = 30000;
 
 async function fetchWithTimeout(url, init, timeoutMs = AUTH_TIMEOUT) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
     return await fetch(url, { ...init, signal: controller.signal });
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error(`Request timed out after ${timeoutMs}ms: ${url}`);
+    }
+    throw err;
   } finally {
     clearTimeout(timeoutId);
   }
@@ -70,6 +74,7 @@ export function RoleProvider({ children }) {
     const fetchMe = async () => {
       try {
         const token = getAuthToken();
+        console.log('[RoleContext] fetchMe start, token present:', !!token);
         if (!token) {
           if (!cancelled) {
             setUser(null);
@@ -88,6 +93,8 @@ export function RoleProvider({ children }) {
           credentials: 'include',
         });
 
+        console.log('[RoleContext] /auth/me status:', res.status, 'ok:', res.ok);
+
         if (!res.ok) {
           if (res.status === 401) {
             const refreshToken = localStorage.getItem('refreshToken') || sessionStorage.getItem('refreshToken');
@@ -102,8 +109,11 @@ export function RoleProvider({ children }) {
                   credentials: 'include',
                 });
 
+                console.log('[RoleContext] /auth/refresh status:', refreshRes.status, 'ok:', refreshRes.ok);
+
                 if (refreshRes.ok && !cancelled) {
                   const refreshData = await refreshRes.json();
+                  console.log('[RoleContext] refresh data keys:', Object.keys(refreshData));
                   if (refreshData.accessToken) {
                     setAuthToken(refreshData.accessToken);
                     
@@ -116,6 +126,8 @@ export function RoleProvider({ children }) {
                       credentials: 'include',
                     });
 
+                    console.log('[RoleContext] post-refresh /auth/me status:', newRes.status, 'ok:', newRes.ok);
+
                     if (newRes.ok && !cancelled) {
                       const data = await newRes.json();
                       const payload = (() => {
@@ -126,6 +138,7 @@ export function RoleProvider({ children }) {
                       setUser(parseUserProfile(data, payload));
                       setIsAuthenticated(true);
                       setLoading(false);
+                      console.log('[RoleContext] user restored after refresh:', data?.name, data?.role);
                       return;
                     }
                   }
@@ -146,6 +159,7 @@ export function RoleProvider({ children }) {
               setUser(null);
               setIsAuthenticated(false);
               setLoading(false);
+              console.warn('[RoleContext] cleared auth — 401 with no refresh');
             }
             return;
           }
@@ -161,15 +175,20 @@ export function RoleProvider({ children }) {
         if (!cancelled) {
           setUser(parseUserProfile(data, payload));
           setIsAuthenticated(true);
+          console.log('[RoleContext] /auth/me success:', data?.name, 'role:', data?.role);
         }
       } catch (e) {
-        console.error('Auth check failed:', e);
+        console.error('[RoleContext] fetchMe exception:', e);
+        if (e.message?.includes('timed out')) {
+          console.warn('[RoleContext] auth check timed out — backend may be cold-starting');
+        }
         if (!cancelled) {
           setUser(null);
           setIsAuthenticated(false);
         }
       } finally {
         if (!cancelled) setLoading(false);
+        console.log('[RoleContext] fetchMe finished, loading:', false);
       }
     };
 
@@ -218,6 +237,7 @@ export function RoleProvider({ children }) {
 
   const login = useCallback((credentials) => {
     if (!credentials?.token) {
+      console.warn('[RoleContext] login called without token');
       return false;
     }
     try {
@@ -225,10 +245,8 @@ export function RoleProvider({ children }) {
       const profile = parseUserProfile(credentials.user, payload);
       setUser(profile);
       setIsAuthenticated(true);
+      console.log('[RoleContext] login success:', profile.name, profile.role);
 
-      // The login response omits the profile name/photo (the access token only
-      // carries sub/email/role). Fetch the full /auth/me profile so the UI
-      // (e.g. the Topbar) shows the user's real name.
       fetchWithTimeout(`${API_BASE_URL}/auth/me`, {
         method: 'GET',
         headers: {

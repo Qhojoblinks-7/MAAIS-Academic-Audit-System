@@ -6,13 +6,18 @@ import { useUI } from '../../context/UIContext';
 import { setAuthToken } from '../../services/auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
-const LOGIN_TIMEOUT = 15000;
+const LOGIN_TIMEOUT = 30000;
 
 async function fetchWithTimeout(url, init, timeoutMs = LOGIN_TIMEOUT) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
     return await fetch(url, { ...init, signal: controller.signal });
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error(`Request timed out after ${timeoutMs}ms: ${url}`);
+    }
+    throw err;
   } finally {
     clearTimeout(timeoutId);
   }
