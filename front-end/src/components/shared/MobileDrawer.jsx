@@ -37,7 +37,7 @@ React.useEffect(() => {
     { icon: Users, label: 'Parent Records', id: 'parents', path: '/identity/parents', roles: ['ADMIN'] },
     { icon: Cpu, label: 'Academic Blueprint', id: 'architect', path: '/academic-architect', roles: ['ADMIN'] },
     { icon: GraduationCap, label: 'Grading Rules', id: 'grading-admin', path: '/grading', roles: ['ADMIN'] },
-    { icon: Calendar, label: 'Timetable', id: 'timetable', path: '/timetable', roles: ['TEACHER', 'STUDENT', 'ADMIN'] },
+    { icon: Calendar, label: 'Timetable', id: 'timetable', path: user?.role === 'TEACHER' ? '/teacher/timetable' : '/timetable', roles: ['TEACHER', 'STUDENT', 'ADMIN'] },
     { icon: Database, label: 'Finance & Assets', id: 'finance', path: '/finance', roles: ['ADMIN'] },
     { icon: MessageSquare, label: 'Notice Board', id: 'comms', path: '/comms', roles: ['ADMIN'] },
     { icon: ShieldCheck, label: 'User Roles', id: 'system', path: '/system', roles: ['ADMIN'] },

@@ -746,6 +746,14 @@ function AppContent() {
                 </RequireRole>
               }
             />
+            <Route
+              path="/teacher/timetable"
+              element={
+                <RequireRole allowedRoles={["TEACHER"]}>
+                  <MobileTimetableView />
+                </RequireRole>
+              }
+            />
 
             {/* HOD Console Routes */}
             <Route
