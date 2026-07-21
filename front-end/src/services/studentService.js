@@ -1,40 +1,23 @@
-import { getAuthToken } from './auth';
+import { api } from '../lib/api';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
-function getHeaders() {
-  const token = getAuthToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
-
 async function request(method, path, body) {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers: getHeaders(),
-    credentials: 'include',
-    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-  });
-
-  if (!res.ok) {
-    let errorBody;
-    try {
-      errorBody = await res.clone().json();
-    } catch {
-      errorBody = await res.text();
-    }
+  const endpoint = `${BASE_URL}${path}`;
+  const key = { GET: 'get', POST: 'post', PUT: 'put', PATCH: 'patch', DELETE: 'delete' }[method] || 'get';
+  try {
+    const opts = key === 'get' ? {} : { body: JSON.stringify(body) };
+    const res = await api[key](endpoint, opts);
+    return res;
+  } catch (err) {
+    const errorBody = err.response || {};
     const freezeReason = errorBody?.freezeReason;
-    const baseMessage = errorBody?.message || errorBody?.error || `Request failed: ${res.status} ${method} ${path}`;
-    const err = new Error(freezeReason ? `${baseMessage} — ${freezeReason}` : baseMessage);
-    err.status = res.status;
-    err.response = errorBody;
-    throw err;
+    const baseMessage = errorBody?.message || errorBody?.error || err.message || `Request failed: ${err.status || '?'} ${method} ${path}`;
+    const wrapped = new Error(freezeReason ? `${baseMessage} — ${freezeReason}` : baseMessage);
+    wrapped.status = err.status;
+    wrapped.response = errorBody;
+    throw wrapped;
   }
-
-  if (res.status === 204) return undefined;
-  return res.json();
 }
 
 function createRealService() {

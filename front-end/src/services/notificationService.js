@@ -1,44 +1,22 @@
-import { getAuthToken } from './auth';
+import { api } from '../lib/api';
 import { dataSync } from './dataSyncLayer';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
-const NOTIFICATION_SOUND_URL = '/sounds/notification.mp3';
-
-function getHeaders() {
-  const token = getAuthToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
 
 async function request(method, path, body) {
+  const endpoint = `${BASE_URL}${path}`;
+  const key = { GET: 'get', POST: 'post', PUT: 'put', PATCH: 'patch', DELETE: 'delete' }[method] || 'get';
   try {
-    const url = `${BASE_URL}${path}`;
-    const headers = getHeaders();
-    console.debug(`[NotificationService] ${method} ${url}`, { headers: { ...headers, Authorization: headers.Authorization ? 'Bearer ***' : undefined } });
-    const res = await fetch(url, {
-      method,
-      headers,
-      credentials: 'include',
-      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-    });
-
-    console.debug(`[NotificationService] ${method} ${url} -> ${res.status}`);
-
-    if (!res.ok) {
-      let errorText = '';
-      try { errorText = await res.text(); } catch {}
-      console.error(`[NotificationService] ${method} ${url} failed: ${res.status}`, errorText);
-      throw new Error(`Notification request failed: ${res.status}`);
-    }
-    return res.status === 204 ? undefined : res.json();
+    const opts = key === 'get' ? {} : { body: JSON.stringify(body) };
+    const res = await api[key](endpoint, opts);
+    return res;
   } catch (err) {
-    if (err instanceof TypeError && err.message === 'Failed to fetch') {
-      console.warn(`[NotificationService] Network error for ${method} ${path}: backend may be unreachable`);
-      return null;
-    }
-    throw err;
+    const errorBody = err.response || {};
+    const baseMessage = errorBody?.message || errorBody?.error || err.message || `Notification request failed: ${err.status || '?'}`;
+    const wrapped = new Error(baseMessage);
+    wrapped.status = err.status;
+    wrapped.response = errorBody;
+    throw wrapped;
   }
 }
 
