@@ -90,12 +90,12 @@ export function SplashScreen({ onComplete }) {
       <div className="hidden sm:block h-12" />
 
       {/* Hero Branding Section */}
-      <div className="flex flex-col items-center my-auto max-w-sm w-full text-center z-10">
+      <div className="flex flex-col items-center my-auto w-full px-4 sm:px-6 text-center z-10">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-          className="w-100 h-100 sm:w-64 sm:h-64 mb-6 flex items-center justify-center"
+          className="w-24 h-24 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 xl:w-64 xl:h-64 mb-4 sm:mb-6 flex items-center justify-center"
         >
           <img 
             src={LogoImage} 
@@ -109,7 +109,7 @@ export function SplashScreen({ onComplete }) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.8 }}
-          className="text-4xl sm:text-5xl font-black text-text-primary tracking-[0.2em] uppercase pl-[0.2em] mb-4"
+          className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl font-black text-text-primary tracking-[0.2em] uppercase pl-[0.2em] mb-3 sm:mb-4"
         >
           MAAIS
         </motion.h1>
@@ -118,7 +118,7 @@ export function SplashScreen({ onComplete }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.8 }}
-          className="space-y-2"
+          className="space-y-1 sm:space-y-2"
         >
           <p className="text-brand-primary font-bold tracking-[0.25em] text-xs uppercase">
             Academic Audit System

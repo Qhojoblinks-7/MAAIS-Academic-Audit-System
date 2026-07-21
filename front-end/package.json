@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "clean": "rmdir /s /q dist 2>nul || rm -rf dist",
     "lint": "tsc --noEmit",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "generate:icons": "node scripts/generate-icons.js",
+    "pwa:build": "npm run generate:icons && npm run build"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
@@ -52,10 +54,12 @@
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.21",
     "playwright": "^1.61.1",
+    "sharp": "^0.35.3",
     "tailwindcss": "^4.1.14",
     "terser": "^5.48.0",
     "tsx": "^4.21.0",
     "vite": "^6.2.0",
-    "vite-plugin-compression2": "^2.5.3"
+    "vite-plugin-compression2": "^2.5.3",
+    "vite-plugin-pwa": "^1.3.0"
   }
 }

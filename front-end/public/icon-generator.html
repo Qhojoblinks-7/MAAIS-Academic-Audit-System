@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MAAIS Icon Generator</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #fff;
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 2rem;
+    }
+    .subtitle {
+      text-align: center;
+      color: #94a3b8;
+      margin-bottom: 40px;
+    }
+    .icon-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+    .icon-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+    }
+    .icon-card h3 {
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      color: #cbd5e1;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    canvas {
+      border: 2px solid #334155;
+      border-radius: 12px;
+      display: block;
+      margin: 0 auto 16px;
+      image-rendering: pixelated;
+    }
+    .download-btn {
+      display: inline-block;
+      padding: 10px 24px;
+      background: #3b82f6;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: background 0.2s;
+      border: none;
+      cursor: pointer;
+    }
+    .download-btn:hover {
+      background: #2563eb;
+    }
+    .preview-section {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 32px;
+      margin-top: 40px;
+    }
+    .preview-section h2 {
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+    }
+    .preview-grid {
+      display: flex;
+      gap: 30px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .preview-item {
+      text-align: center;
+    }
+    .preview-item canvas {
+      border: 2px solid #475569;
+      border-radius: 16px;
+      margin-bottom: 8px;
+    }
+    .preview-item p {
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+    .instructions {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 24px;
+      margin-top: 40px;
+    }
+    .instructions h2 {
+      margin-bottom: 16px;
+      font-size: 1.3rem;
+    }
+    .instructions ol {
+      margin-left: 20px;
+      line-height: 1.8;
+      color: #cbd5e1;
+    }
+    .instructions code {
+      background: #0f172a;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>MAAIS Icon Generator</h1>
+    <p class="subtitle">Professional PWA icons for MAAIS Academic Audit System</p>
+
+    <div class="icon-grid" id="iconGrid"></div>
+
+    <div class="preview-section">
+      <h2>Live Preview</h2>
+      <div class="preview-grid" id="previewGrid"></div>
+    </div>
+
+    <div class="instructions">
+      <h2>How to Use</h2>
+      <ol>
+        <li>Click any download button to save the PNG icon</li>
+        <li>Rename the file to match the manifest entry (e.g., <code>pwa-192x192.png</code>)</li>
+        <li>Place icons in <code>front-end/public/</code></li>
+        <li>Update <code>vite.config.js</code> manifest paths if needed</li>
+        <li>Build and test: <code>npm run build && npm run preview</code></li>
+      </ol>
+    </div>
+  </div>
+
+  <script>
+    const sizes = [
+      { name: 'Favicon', size: 32 },
+      { name: 'PWA Small', size: 192 },
+      { name: 'PWA Large', size: 512 },
+    ];
+
+    const brandColor = '#0f172a';
+    const primaryColor = '#3b82f6';
+    const secondaryColor = '#10b981';
+    const accentColor = '#f59e0b';
+
+    function drawIcon(canvas, size) {
+      const ctx = canvas.getContext('2d');
+      canvas.width = size;
+      canvas.height = size;
+
+      const centerX = size / 2;
+      const centerY = size / 2;
+      const baseUnit = size / 100;
+
+      ctx.fillStyle = brandColor;
+      ctx.beginPath();
+      ctx.roundRect(0, 0, size, size, size * 0.15);
+      ctx.fill();
+
+      const shieldWidth = 60 * baseUnit;
+      const shieldHeight = 70 * baseUnit;
+      const shieldTop = centerY - shieldHeight / 2 + 5 * baseUnit;
+
+      ctx.fillStyle = primaryColor;
+      ctx.beginPath();
+      ctx.moveTo(centerX, shieldTop + shieldHeight);
+      ctx.lineTo(centerX - shieldWidth / 2, shieldTop);
+      ctx.lineTo(centerX + shieldWidth / 2, shieldTop);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      const innerShieldWidth = shieldWidth * 0.75;
+      const innerShieldHeight = shieldHeight * 0.75;
+      const innerShieldTop = shieldTop + (shieldHeight - innerShieldHeight) / 2;
+      ctx.moveTo(centerX, innerShieldTop + innerShieldHeight);
+      ctx.lineTo(centerX - innerShieldWidth / 2, innerShieldTop);
+      ctx.lineTo(centerX + innerShieldWidth / 2, innerShieldTop);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = primaryColor;
+      const bookWidth = 30 * baseUnit;
+      const bookHeight = 35 * baseUnit;
+      const bookTop = centerY - bookHeight / 2;
+      const bookLeft = centerX - bookWidth / 2;
+
+      ctx.beginPath();
+      ctx.roundRect(bookLeft, bookTop, bookWidth, bookHeight, 4 * baseUnit);
+      ctx.fill();
+
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2 * baseUnit;
+      ctx.beginPath();
+      ctx.moveTo(centerX, bookTop + 5 * baseUnit);
+      ctx.lineTo(centerX, bookTop + bookHeight - 5 * baseUnit);
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `bold ${size * 0.08}px Inter, -apple-system, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('MAAIS', centerX, centerY + shieldHeight / 2 + 15 * baseUnit);
+
+      ctx.fillStyle = accentColor;
+      ctx.beginPath();
+      ctx.arc(centerX - 25 * baseUnit, shieldTop + 12 * baseUnit, 4 * baseUnit, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = secondaryColor;
+      ctx.beginPath();
+      ctx.arc(centerX + 25 * baseUnit, shieldTop + 12 * baseUnit, 4 * baseUnit, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function downloadIcon(canvas, filename) {
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    function renderIcons() {
+      const iconGrid = document.getElementById('iconGrid');
+      const previewGrid = document.getElementById('previewGrid');
+      iconGrid.innerHTML = '';
+      previewGrid.innerHTML = '';
+
+      sizes.forEach(({ name, size }) => {
+        const card = document.createElement('div');
+        card.className = 'icon-card';
+
+        const canvas = document.createElement('canvas');
+        canvas.style.width = '128px';
+        canvas.style.height = '128px';
+        drawIcon(canvas, size);
+
+        const title = document.createElement('h3');
+        title.textContent = `${name} (${size}x${size})`;
+
+        const btn = document.createElement('button');
+        btn.className = 'download-btn';
+        btn.textContent = 'Download PNG';
+        btn.onclick = () => downloadIcon(canvas, `pwa-${size}x${size}.png`);
+
+        card.appendChild(canvas);
+        card.appendChild(title);
+        card.appendChild(btn);
+        iconGrid.appendChild(card);
+
+        const previewItem = document.createElement('div');
+        previewItem.className = 'preview-item';
+        const previewCanvas = document.createElement('canvas');
+        previewCanvas.width = size;
+        previewCanvas.height = size;
+        previewCanvas.style.width = `${Math.min(size, 150)}px`;
+        previewCanvas.style.height = `${Math.min(size, 150)}px`;
+        drawIcon(previewCanvas, size);
+
+        const label = document.createElement('p');
+        label.textContent = `${name} ${size}x${size}`;
+
+        previewItem.appendChild(previewCanvas);
+        previewItem.appendChild(label);
+        previewGrid.appendChild(previewItem);
+      });
+    }
+
+    renderIcons();
+  </script>
+</body>
+</html>

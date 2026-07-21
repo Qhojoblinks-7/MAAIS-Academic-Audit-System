@@ -47,7 +47,9 @@ import { LoginPage } from "./pages/auth/LoginPage";
 import { SUBJECT_CONFIG } from "./constants/subjectConfig";
 import { gradingService } from "./services/gradingService";
 import { teacherService } from "./services/teacherService";
-import { TooltipProvider } from "./components/ui/tooltip";
+import { TooltipProvider } from './components/ui/tooltip'
+import { PWAInstallPrompt } from './components/pwa/PWAInstallPrompt'
+import { OfflineBanner } from './components/pwa/OfflineStatus'
 import { UIProvider, useUI } from "./context/UIContext";
 import { useRole } from "./context/RoleContext";
 import { HODProvider } from "./context/HODContext";
@@ -1137,6 +1139,7 @@ export default function App() {
   return (
     <Router>
       <UIProvider>
+        <OfflineBanner />
         <TooltipProvider>
           <HODProvider>
             <BreadcrumbProvider>
@@ -1147,6 +1150,7 @@ export default function App() {
           </HODProvider>
         </TooltipProvider>
         <Toaster />
+        <PWAInstallPrompt />
       </UIProvider>
     </Router>
   );
