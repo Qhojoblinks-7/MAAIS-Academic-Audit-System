@@ -6,22 +6,6 @@ import { useUI } from '../../context/UIContext';
 import { setAuthToken } from '../../services/auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
-const LOGIN_TIMEOUT = 30000;
-
-async function fetchWithTimeout(url, init, timeoutMs = LOGIN_TIMEOUT) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...init, signal: controller.signal });
-  } catch (err) {
-    if (err.name === 'AbortError') {
-      throw new Error(`Request timed out after ${timeoutMs}ms: ${url}`);
-    }
-    throw err;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
 
 export function LoginPage() {
   const { login, setRole, isAuthenticated } = useRole();
@@ -36,7 +20,9 @@ export function LoginPage() {
 
   const from = location.state?.from?.pathname || '/';
 
-  console.log('[LoginPage] mounted, pathname:', location.pathname, 'isAuthenticated:', isAuthenticated);
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,77 +30,60 @@ export function LoginPage() {
     setLoading(true);
 
     try {
-      console.group('[LoginPage] handleSubmit');
-      console.log('[LoginPage] email:', email);
-      console.log('[LoginPage] target:', `${API_BASE_URL}/auth/login`);
-
-      const response = await fetchWithTimeout(`${API_BASE_URL}/auth/login`, {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
-      console.log('[LoginPage] response status:', response.status, 'ok:', response.ok);
-
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        console.warn('[LoginPage] login rejected:', data);
         setError(data?.message || 'Invalid credentials');
-        console.groupEnd();
         return;
       }
 
       const data = await response.json();
-      console.log('[LoginPage] response keys:', Object.keys(data));
-      console.log('[LoginPage] role:', data.user?.role);
 
       const accessToken = data.accessToken;
       const refreshToken = data.refreshToken;
       const userId = data.userId;
       if (!accessToken) {
-        console.error('[LoginPage] missing accessToken in response');
         setError('Authentication failed');
-        console.groupEnd();
         return;
       }
 
       setAuthToken(accessToken);
-      if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
-      if (userId) localStorage.setItem('userId', userId);
-      console.log('[LoginPage] tokens stored');
+      if (refreshToken) {
+        localStorage.setItem('refreshToken', refreshToken);
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('refreshToken', refreshToken);
+        }
+      }
+      if (userId) {
+        localStorage.setItem('userId', userId);
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('userId', userId);
+        }
+      }
 
-      console.log('[LoginPage] calling RoleContext.login()');
       const success = login({ token: accessToken, refreshToken, user: data.user });
-      console.log('[LoginPage] RoleContext.login() returned:', success);
 
       if (success) {
         if (data.user?.role === 'PARENT') {
           setError('Parent portal access is not available. Please contact the school administration.');
-          console.warn('[LoginPage] blocked PARENT role');
           return;
         }
-        console.log('[LoginPage] navigating to:', from);
         setMobileMenuOpen(false);
         navigate(from, { replace: true });
       } else {
-        console.error('[LoginPage] login() returned false');
         setError('Invalid role assignment');
       }
-      console.groupEnd();
     } catch (err) {
-      console.error('[LoginPage] exception:', err);
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
     }
   };
-
-  // If user is already authenticated, redirect to dashboard
-  console.log('[LoginPage] Auth check - isAuthenticated:', isAuthenticated, 'pathname:', location.pathname);
-  if (isAuthenticated) {
-    console.warn('[LoginPage] Redirecting to / because user is authenticated');
-    return <Navigate to="/" replace />;
-  }
 
   return (
     <div className="flex h-screen bg-background font-sans antialiased">
