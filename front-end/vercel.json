@@ -4,8 +4,8 @@
   "framework": "vite",
   "installCommand": "npm install --legacy-peer-deps",
   "env": {
-    "VITE_API_BASE_URL": "@maais-api-url",
-    "VITE_APP_URL": "@maais-app-url"
+    "VITE_API_BASE_URL": "/api/v1",
+    "VITE_APP_URL": "https://maais-academic-audit-system.vercel.app"
   },
   "headers": [
     {
