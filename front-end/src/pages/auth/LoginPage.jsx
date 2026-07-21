@@ -6,6 +6,17 @@ import { useUI } from '../../context/UIContext';
 import { setAuthToken } from '../../services/auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+const LOGIN_TIMEOUT = 15000;
+
+async function fetchWithTimeout(url, init, timeoutMs = LOGIN_TIMEOUT) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 export function LoginPage() {
   const { login, setRole } = useRole();
@@ -30,7 +41,7 @@ export function LoginPage() {
       console.log('[AdminLogin] email:', email);
       console.log('[AdminLogin] API URL:', `${API_BASE_URL}/auth/login`);
 
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

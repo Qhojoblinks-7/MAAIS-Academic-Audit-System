@@ -1,13 +1,10 @@
 import { api } from '../lib/api';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
-
 async function request(method, path, body) {
-  const endpoint = `${BASE_URL}${path}`;
   const key = { GET: 'get', POST: 'post', PUT: 'put', PATCH: 'patch', DELETE: 'delete' }[method] || 'get';
   try {
     const opts = key === 'get' ? {} : { body: JSON.stringify(body) };
-    const res = await api[key](endpoint, opts);
+    const res = await api[key](path, opts);
     return res;
   } catch (err) {
     const errorBody = err.response || {};

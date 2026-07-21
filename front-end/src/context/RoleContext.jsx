@@ -3,6 +3,18 @@ import { clearAuthToken, getAuthToken, setAuthToken } from '../services/auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
+const AUTH_TIMEOUT = 15000;
+
+async function fetchWithTimeout(url, init, timeoutMs = AUTH_TIMEOUT) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 const RoleContext = createContext(undefined);
 
 const BACKEND_TO_FRONTEND_ROLE = {
@@ -67,7 +79,7 @@ export function RoleProvider({ children }) {
           return;
         }
 
-        const res = await fetch(`${API_BASE_URL}/auth/me`, {
+        const res = await fetchWithTimeout(`${API_BASE_URL}/auth/me`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -83,7 +95,7 @@ export function RoleProvider({ children }) {
             
             if (refreshToken && userId) {
               try {
-                const refreshRes = await fetch(`${API_BASE_URL}/auth/refresh`, {
+                const refreshRes = await fetchWithTimeout(`${API_BASE_URL}/auth/refresh`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ userId, refreshToken }),
@@ -95,7 +107,7 @@ export function RoleProvider({ children }) {
                   if (refreshData.accessToken) {
                     setAuthToken(refreshData.accessToken);
                     
-                    const newRes = await fetch(`${API_BASE_URL}/auth/me`, {
+                    const newRes = await fetchWithTimeout(`${API_BASE_URL}/auth/me`, {
                       method: 'GET',
                       headers: {
                         'Content-Type': 'application/json',
@@ -171,7 +183,7 @@ export function RoleProvider({ children }) {
     try {
       const token = getAuthToken();
       if (!token) return;
-      const res = await fetch(`${API_BASE_URL}/auth/me`, {
+      const res = await fetchWithTimeout(`${API_BASE_URL}/auth/me`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -217,7 +229,7 @@ export function RoleProvider({ children }) {
       // The login response omits the profile name/photo (the access token only
       // carries sub/email/role). Fetch the full /auth/me profile so the UI
       // (e.g. the Topbar) shows the user's real name.
-      fetch(`${API_BASE_URL}/auth/me`, {
+      fetchWithTimeout(`${API_BASE_URL}/auth/me`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
