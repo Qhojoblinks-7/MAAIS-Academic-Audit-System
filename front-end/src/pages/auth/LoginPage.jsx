@@ -19,7 +19,7 @@ async function fetchWithTimeout(url, init, timeoutMs = LOGIN_TIMEOUT) {
 }
 
 export function LoginPage() {
-  const { login, setRole } = useRole();
+  const { login, setRole, isAuthenticated } = useRole();
   const location = useLocation();
   const navigate = useNavigate();
   const { setMobileMenuOpen } = useUI();
@@ -31,15 +31,17 @@ export function LoginPage() {
 
   const from = location.state?.from?.pathname || '/';
 
+  console.log('[LoginPage] mounted, pathname:', location.pathname, 'isAuthenticated:', isAuthenticated);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      console.group('[AdminLogin] LoginPage.handleSubmit');
-      console.log('[AdminLogin] email:', email);
-      console.log('[AdminLogin] API URL:', `${API_BASE_URL}/auth/login`);
+      console.group('[LoginPage] handleSubmit');
+      console.log('[LoginPage] email:', email);
+      console.log('[LoginPage] target:', `${API_BASE_URL}/auth/login`);
 
       const response = await fetchWithTimeout(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
@@ -47,65 +49,55 @@ export function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      console.log('[AdminLogin] Response status:', response.status);
+      console.log('[LoginPage] response status:', response.status, 'ok:', response.ok);
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        console.warn('[AdminLogin] Login failed:', data);
+        console.warn('[LoginPage] login rejected:', data);
         setError(data?.message || 'Invalid credentials');
         console.groupEnd();
         return;
       }
 
       const data = await response.json();
-      console.log('[AdminLogin] Response data (keys):', Object.keys(data));
-      console.log('[AdminLogin] user object:', data.user);
-      console.log('[AdminLogin] role:', data.user?.role);
+      console.log('[LoginPage] response keys:', Object.keys(data));
+      console.log('[LoginPage] role:', data.user?.role);
 
       const accessToken = data.accessToken;
       const refreshToken = data.refreshToken;
       const userId = data.userId;
       if (!accessToken) {
-        console.error('[AdminLogin] No accessToken in response');
+        console.error('[LoginPage] missing accessToken in response');
         setError('Authentication failed');
         console.groupEnd();
         return;
       }
 
       setAuthToken(accessToken);
-      if (refreshToken) {
-        localStorage.setItem('refreshToken', refreshToken);
-        if (typeof sessionStorage !== 'undefined') {
-          sessionStorage.setItem('refreshToken', refreshToken);
-        }
-      }
-      if (userId) {
-        localStorage.setItem('userId', userId);
-        if (typeof sessionStorage !== 'undefined') {
-          sessionStorage.setItem('userId', userId);
-        }
-      }
+      if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+      if (userId) localStorage.setItem('userId', userId);
+      console.log('[LoginPage] tokens stored');
 
-      console.log('[AdminLogin] Calling RoleContext.login() with:', { token: !!accessToken, refreshToken: !!refreshToken, user: data.user });
+      console.log('[LoginPage] calling RoleContext.login()');
       const success = login({ token: accessToken, refreshToken, user: data.user });
-      console.log('[AdminLogin] login() returned:', success);
+      console.log('[LoginPage] RoleContext.login() returned:', success);
 
       if (success) {
         if (data.user?.role === 'PARENT') {
           setError('Parent portal access is not available. Please contact the school administration.');
-          console.warn('[Login] Parent login attempt blocked - no portal access');
+          console.warn('[LoginPage] blocked PARENT role');
           return;
         }
-        console.log('[AdminLogin] Navigate to:', from);
+        console.log('[LoginPage] navigating to:', from);
         setMobileMenuOpen(false);
         navigate(from, { replace: true });
       } else {
-        console.error('[AdminLogin] login() returned false — role mismatch?');
+        console.error('[LoginPage] login() returned false');
         setError('Invalid role assignment');
       }
       console.groupEnd();
     } catch (err) {
-      console.error('[AdminLogin] Network/exception error:', err);
+      console.error('[LoginPage] exception:', err);
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
@@ -113,10 +105,9 @@ export function LoginPage() {
   };
 
   // If user is already authenticated, redirect to dashboard
-  const { isAuthenticated } = useRole();
-  console.log('[AdminLogin] Auth check - isAuthenticated:', isAuthenticated, 'pathname:', location.pathname);
+  console.log('[LoginPage] Auth check - isAuthenticated:', isAuthenticated, 'pathname:', location.pathname);
   if (isAuthenticated) {
-    console.warn('[AdminLogin] Redirecting to / because user is authenticated');
+    console.warn('[LoginPage] Redirecting to / because user is authenticated');
     return <Navigate to="/" replace />;
   }
 
