@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
       manifest: {
         name: 'MAAIS Academic Audit System',
         shortName: 'MAAIS',
-        description: 'Master Academic Audit & Information System',
+        description: 'MAAIS Academic Audit System - Mando Senior High Technical School',
         theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',

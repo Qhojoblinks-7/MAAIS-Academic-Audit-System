@@ -86,7 +86,7 @@
   "redirects": [
     {
       "source": "/api/v1/(.*)",
-      "destination": "https://your-backend-url.onrender.com/api/v1/$1",
+      "destination": "https://maais-backend-6xh0.onrender.com/api/v1/$1",
       "permanent": false
     }
   ]
