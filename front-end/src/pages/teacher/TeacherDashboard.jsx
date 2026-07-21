@@ -108,7 +108,12 @@ export function TeacherDashboard() {
 
   const handleEnterMarks = (cls) => {
     if (user?.role !== 'STUDENT') {
-      navigate(`/grading?subject=${encodeURIComponent(cls.subject)}&class=${encodeURIComponent(cls.className)}`); 
+      const isMobile = window.innerWidth < 1024;
+      if (isMobile) {
+        navigate(`/teacher/grading-mobile?subject=${encodeURIComponent(cls.subject)}&class=${encodeURIComponent(cls.className)}`);
+      } else {
+        navigate(`/grading?subject=${encodeURIComponent(cls.subject)}&class=${encodeURIComponent(cls.className)}`);
+      }
     }
   };
 

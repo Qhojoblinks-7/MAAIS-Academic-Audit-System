@@ -33,10 +33,10 @@ import {
   HODSettingsPage, HODSupportPage, HODTeachers, HODAnalytics, HODArchiveView,
   HODArchiveDetailView, HODMissingObservations, Unauthorized, BroadsheetGenerator,
   HODCertification, HODStudentRegistry, HODParentRegistry,
-   TeacherDashboard, TeacherTimetableView, TeacherSettings, TeacherSupport,
-   TeacherArchiveView, TeacherArchiveDetailView, TeacherGradingView,
-   TeacherAnalyticsView, TeacherMissingObservations, TeacherRevisionsFeed,
-   TeacherStudents, MobileTimetableView,
+    TeacherDashboard, TeacherTimetableView, TeacherSettings, TeacherSupport,
+    TeacherArchiveView, TeacherArchiveDetailView, TeacherGradingView,
+    TeacherAnalyticsView, TeacherMissingObservations, TeacherRevisionsFeed,
+    TeacherStudents, MobileTimetableView, MobileGradingView,
   StudentPortal, StudentSettings, StudentSupport, StudentTimetable, StudentProfile,
   GradingSheet, HOD_JourneyHistoryAudit, TeacherProfile, NotificationsPage,
 } from "./router/lazyPages";
@@ -711,6 +711,14 @@ function AppContent() {
               element={
                 <RequireRole allowedRoles={["TEACHER"]}>
                   <TeacherGradingView />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/teacher/grading-mobile"
+              element={
+                <RequireRole allowedRoles={["TEACHER"]}>
+                  <MobileGradingView />
                 </RequireRole>
               }
             />

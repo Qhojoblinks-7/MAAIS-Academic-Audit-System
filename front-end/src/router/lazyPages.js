@@ -70,6 +70,7 @@ export const TeacherMissingObservations = l(() => import('../pages/teacher/Teach
 export const TeacherRevisionsFeed = l(() => import('../pages/teacher/TeacherRevisionsFeed'), 'TeacherRevisionsFeed');
 export const TeacherStudents = l(() => import('../pages/teacher/TeacherStudents'), 'TeacherStudents');
 export const MobileTimetableView = l(() => import('../pages/teacher/MobileTimetableView'), 'MobileTimetableView');
+export const MobileGradingView = l(() => import('../pages/teacher/MobileGradingView'), 'MobileGradingView');
 
 // ── Student ──────────────────────────────────────────────────────────────────
 export const StudentPortal = l(() => import('../pages/student/StudentPortal'), 'StudentPortal');
