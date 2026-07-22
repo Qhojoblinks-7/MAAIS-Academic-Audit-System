@@ -3,7 +3,7 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Calendar, Users, BarChart3, MoreHorizontal,
-  AlertCircle, ClipboardCheck, Database, User, Settings, LifeBuoy
+  AlertCircle, ClipboardCheck, Database, User, Settings, LifeBuoy, LogOut
 } from 'lucide-react';
 import { useUI } from '../../context/UIContext';
 import { useRole } from '../../context/RoleContext';
@@ -28,6 +28,12 @@ export function TeacherMobileBottomNav() {
     if (item.id === 'more') return false;
     if (item.id === 'grades') return location.pathname === '/teacher/grading-mobile';
     return location.pathname === item.path;
+  };
+
+  const handleLogout = () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = '/login';
   };
 
   const handleMore = () => setMoreOpen((prev) => !prev);
@@ -147,6 +153,9 @@ export function TeacherMobileBottomNav() {
                 <MoreNavItem label="Profile" icon={User} onClick={() => { closeMore(); navigate('/teacher/profile'); }} />
                 <MoreNavItem label="Settings" icon={Settings} onClick={() => { closeMore(); setSettingsModalOpen(true); }} />
                 <MoreNavItem label="Support" icon={LifeBuoy} onClick={() => { closeMore(); setSupportModalOpen(true); }} />
+                <div className="mt-2 pt-2 border-t border-border">
+                  <MoreNavItem label="Logout" icon={LogOut} onClick={() => { closeMore(); handleLogout(); }} color="text-destructive" />
+                </div>
               </div>
             </motion.div>
           </>
@@ -161,9 +170,12 @@ function MoreNavItem({ label, icon: Icon, onClick, count, color }) {
     <button
       type="button"
       onClick={onClick}
-      className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-muted transition-all text-left"
+      className={cn(
+        'w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-muted transition-all text-left',
+        color === 'text-destructive' && 'text-destructive hover:bg-destructive/10'
+      )}
     >
-      <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-text-secondary shrink-0">
+      <div className={cn('w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0', color === 'text-destructive' && 'bg-destructive/10 text-destructive')}>
         <Icon size={18} />
       </div>
       <span className="flex-1 text-sm font-black tracking-tight">{label}</span>
