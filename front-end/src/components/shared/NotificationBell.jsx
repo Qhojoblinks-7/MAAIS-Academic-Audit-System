@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, ChevronDown, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { notification } from '../../services/notificationService';
 import { eventBus } from '../../services/eventBus';
 import { useRole } from '../../context/RoleContext';
 
-export function NotificationBell() {
+export function NotificationBell({ navigateTo }) {
+  const navigate = useNavigate();
   const { user } = useRole();
   const userId = user?.id || user?.staffId;
   const userProfileId = user?.profileId;
@@ -82,13 +84,18 @@ export function NotificationBell() {
     }
   };
 
-  const toggleDropdown = () => setIsOpen(!isOpen);
-  const closeDropdown = () => setIsOpen(false);
+  const handleClick = () => {
+    if (navigateTo) {
+      navigate(navigateTo);
+    } else {
+      setIsOpen(prev => !prev);
+    }
+  };
 
   return (
     <div className="relative">
       <button
-        onClick={toggleDropdown}
+        onClick={handleClick}
         className="flex items-center gap-2 text-[9px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-600"
         aria-label="Notifications"
       >

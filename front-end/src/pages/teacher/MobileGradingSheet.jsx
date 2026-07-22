@@ -150,66 +150,58 @@ export function MobileGradingSheet(props) {
     <div className="flex-1 flex flex-col bg-background min-h-screen">
       {/* Header */}
       <header className="bg-surface border-b border-border px-4 py-3 shrink-0 sticky top-0 z-20">
-        <div className="flex items-center gap-3 mb-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center shrink-0 active:scale-95 transition-transform"
-          >
-            <ChevronLeft size={20} className="text-primary" />
-          </button>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-black text-primary truncate leading-tight">
-              {DISPLAY_CLASS_INFO?.subject}
-            </h1>
-            <p className="text-xs font-bold text-success uppercase tracking-widest truncate">
-              {DISPLAY_CLASS_INFO?.className} • {DISPLAY_CLASS_INFO?.studentCount} Students
-            </p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <button
+              onClick={() => navigate(-1)}
+              className="w-9 h-9 bg-muted rounded-xl flex items-center justify-center shrink-0 active:scale-95 transition-transform"
+            >
+              <ChevronLeft size={18} className="text-primary" />
+            </button>
+            <div className="min-w-0">
+              <h1 className="text-base font-black text-primary truncate leading-tight">
+                {DISPLAY_CLASS_INFO?.subject}
+              </h1>
+              <p className="text-[9px] font-bold text-text-secondary uppercase tracking-widest truncate">
+                {DISPLAY_CLASS_INFO?.className} • {DISPLAY_CLASS_INFO?.studentCount} Students
+              </p>
+            </div>
           </div>
-          {isTermFinalized && (
-            <span className="px-2 py-1 bg-destructive/10 text-destructive text-[10px] font-black uppercase tracking-wider rounded-lg shrink-0">
-              Locked
-            </span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 flex-nowrap">
-          <button
-            onClick={handleSTPMobile}
-            disabled={stpValidating || isTermFinalized}
-            className={cn(
-              "px-3 py-2 rounded-xl text-[10px] font-bold flex items-center gap-1.5 shrink-0 transition-all",
-              stpValidating || isTermFinalized
-                ? "bg-muted text-muted-foreground cursor-not-allowed"
-                : "bg-brand-primary/10 text-brand-primary active:scale-95"
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={handleSTPMobile}
+              disabled={stpValidating || isTermFinalized}
+              className={cn(
+                "w-9 h-9 rounded-xl flex items-center justify-center transition-all",
+                stpValidating || isTermFinalized
+                  ? "bg-muted text-muted-foreground cursor-not-allowed"
+                  : "bg-brand-primary/10 text-brand-primary active:scale-95"
+              )}
+              aria-label="STP"
+            >
+              {stpValidating ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
+            </button>
+            <button
+              type="button"
+              onClick={handleExportMobile}
+              disabled={isSubmissionLocked}
+              className={cn(
+                "w-9 h-9 rounded-xl flex items-center justify-center transition-all",
+                isSubmissionLocked
+                  ? "bg-muted text-muted-foreground cursor-not-allowed"
+                  : "bg-success/10 text-success active:scale-95"
+              )}
+              aria-label="Export WAEC"
+            >
+              <Download size={16} />
+            </button>
+            {isTermFinalized && (
+              <span className="px-2 py-1 bg-destructive/10 text-destructive text-[10px] font-black uppercase tracking-wider rounded-lg shrink-0">
+                Locked
+              </span>
             )}
-          >
-            {stpValidating ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
-            {stpValidating ? 'Validating...' : 'STP'}
-          </button>
-
-          <button
-            onClick={handleExportMobile}
-            disabled={isSubmissionLocked}
-            className={cn(
-              "px-3 py-2 rounded-xl text-[10px] font-bold flex items-center gap-1.5 shrink-0 transition-all",
-              isSubmissionLocked
-                ? "bg-muted text-muted-foreground cursor-not-allowed"
-                : "bg-success/10 text-success active:scale-95"
-            )}
-          >
-            <Download size={12} /> WAEC
-          </button>
-
-          {isMissingObsMode && (
-            <span className="px-2 py-1 bg-warning/10 text-warning text-[10px] font-black uppercase tracking-wider rounded-lg shrink-0">
-              Compliance
-            </span>
-          )}
-          {isCorrectionMode && (
-            <span className="px-2 py-1 bg-destructive/10 text-destructive text-[10px] font-black uppercase tracking-wider rounded-lg shrink-0">
-              Correction
-            </span>
-          )}
+          </div>
         </div>
       </header>
 
@@ -423,15 +415,15 @@ export function MobileGradingSheet(props) {
                         ) : (
                           <><CheckCircle2 size={12} /> View Observation</>
                         )}
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                       </button>
+              </div>
+            </motion.div>
+          )}
+         </AnimatePresence>
             </motion.div>
           );
         })}
-      </div>
+       </div>
 
       {/* Bottom Action Bar */}
       {!isTermFinalized && (
@@ -495,31 +487,40 @@ export function MobileGradingSheet(props) {
       {/* Observation Bottom Sheet */}
       <AnimatePresence>
         {isObsOpen && selectedStudent && (
-          <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed inset-x-0 bottom-0 z-50 bg-surface rounded-t-[2rem] border-t border-border shadow-2xl max-h-[85vh] flex flex-col"
-          >
-            <div className="px-5 py-4 border-b border-border flex items-center justify-between shrink-0">
-              <div>
-                <h3 className="text-base font-black text-foreground">
-                  {isMissingObsMode ? 'Guided Observation' : isCorrectionMode ? 'Correction Bridge' : 'Behavioral Observation'}
-                </h3>
-                <p className="text-xs font-bold text-muted-foreground mt-0.5">
-                  {selectedStudent.name} • Index {selectedStudent.index}
-                </p>
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-40 bg-foreground/40 backdrop-blur-sm"
+              onClick={() => setIsObsOpen(false)}
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="fixed inset-x-0 bottom-0 z-50 bg-surface rounded-t-[2rem] border-t border-border shadow-2xl max-h-[85vh] flex flex-col"
+            >
+              <div className="px-5 py-4 border-b border-border flex items-center justify-between shrink-0">
+                <div>
+                  <h3 className="text-base font-black text-foreground">
+                    {isMissingObsMode ? 'Guided Observation' : isCorrectionMode ? 'Correction Bridge' : 'Behavioral Observation'}
+                  </h3>
+                  <p className="text-xs font-bold text-muted-foreground mt-0.5">
+                    {selectedStudent.name} • Index {selectedStudent.index}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsObsOpen(false)}
+                  className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center text-muted-foreground"
+                >
+                  <X size={18} />
+                </button>
               </div>
-              <button
-                onClick={() => setIsObsOpen(false)}
-                className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center text-muted-foreground"
-              >
-                <X size={18} />
-              </button>
-            </div>
 
-            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+              <div className="flex-1 overflow-y-auto p-5 space-y-5">
               {/* Student Avatar */}
               <div className="flex items-center gap-3">
                 <img
@@ -633,12 +634,13 @@ export function MobileGradingSheet(props) {
                 {sidebarSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                 {sidebarSaving ? 'Saving...' : 'Save Observation'}
               </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+             </div>
+           </motion.div>
+           </>
+         )}
+       </AnimatePresence>
 
-      {/* STP Error Overlay */}
+       {/* STP Error Overlay */}
       <AnimatePresence>
         {showSTPOverlay && stpErrors.length > 0 && (
           <motion.div

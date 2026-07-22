@@ -71,6 +71,9 @@ export const TeacherRevisionsFeed = l(() => import('../pages/teacher/TeacherRevi
 export const TeacherStudents = l(() => import('../pages/teacher/TeacherStudents'), 'TeacherStudents');
 export const MobileTimetableView = l(() => import('../pages/teacher/MobileTimetableView'), 'MobileTimetableView');
 export const MobileGradingView = l(() => import('../pages/teacher/MobileGradingView'), 'MobileGradingView');
+export const MobileTeacherProfile = l(() => import('../pages/teacher/MobileTeacherProfile'), 'MobileTeacherProfile');
+export const MobileSearchPage = l(() => import('../pages/shared/MobileSearchPage'), 'MobileSearchPage');
+export const MobileNotificationsPage = l(() => import('../pages/shared/MobileNotificationsPage'), 'MobileNotificationsPage');
 
 // ── Student ──────────────────────────────────────────────────────────────────
 export const StudentPortal = l(() => import('../pages/student/StudentPortal'), 'StudentPortal');

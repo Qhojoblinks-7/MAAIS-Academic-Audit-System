@@ -11,6 +11,7 @@ export function UIProvider({ children }) {
   const [revisionCount, setRevisionCount] = useState(0);
   const [missingObservationCount, setMissingObservationCount] = useState(0);
   const [rightPanelVisible, setRightPanelVisible] = useState(true);
+  const [isGradingSheetActive, setIsGradingSheetActive] = useState(false);
 
   const [isDraftMode, setIsDraftMode] = useState(() => {
     try {
@@ -119,6 +120,8 @@ export function UIProvider({ children }) {
     setMissingObservationCount,
     rightPanelVisible,
     setRightPanelVisible,
+    isGradingSheetActive,
+    setIsGradingSheetActive,
   }), [
     settingsModalOpen,
     supportModalOpen,
@@ -129,7 +132,8 @@ export function UIProvider({ children }) {
     deviceType,
     revisionCount,
     missingObservationCount,
-    rightPanelVisible
+    rightPanelVisible,
+    isGradingSheetActive,
   ]);
 
   return (

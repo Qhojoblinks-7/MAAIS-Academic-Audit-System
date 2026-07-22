@@ -46,7 +46,7 @@ React.useEffect(() => {
     { icon: AlertCircle, label: 'Revisions', id: 'revisions', path: '/revisions', roles: ['TEACHER'], badge: revisionCount || 0, badgeColor: 'bg-destructive' },
      { icon: ClipboardCheck, label: 'Missing Obs', id: 'missing-obs', path: '/missing-observations', roles: ['TEACHER'], badge: missingObservationCount || 0, badgeColor: 'bg-warning' },
      { icon: GraduationCap, label: 'Grading', id: 'grading', path: '/grading', roles: ['TEACHER'] },
-    { icon: GraduationCap, label: 'Teacher Hub', id: 'teacher-dashboard', path: '/teacher-dashboard', roles: ['TEACHER'] },
+     { icon: GraduationCap, label: 'Teacher Hub', id: 'teacher-dashboard', path: '/teacher/grading-mobile', roles: ['TEACHER'] },
     { icon: Database, label: 'Archive', id: 'archive', path: '/archive', roles: ['TEACHER', 'HOD'] },
     { icon: ShieldCheck, label: 'Certification', id: 'certification', path: '/certification', roles: ['HOD'] },
     { icon: Users, label: 'Student Records', id: 'students-mobile', path: '/identity/students', roles: ['HOD'] },

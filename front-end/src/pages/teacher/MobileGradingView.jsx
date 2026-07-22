@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, Filter, BookOpen, Percent, GraduationCap, ChevronRight, Star, PenLine, ClipboardCheck, X, ArrowLeft } from 'lucide-react';
+import { Search, Filter, BookOpen, Percent, GraduationCap, ChevronRight, Star, PenLine, ClipboardCheck, X, SlidersHorizontal } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { motion } from 'framer-motion';
 import { useRole } from '../../context/RoleContext';
+import { useUI } from '../../context/UIContext';
 import { MobileGradingSheet } from './MobileGradingSheet';
 import { teacherService } from '../../services';
 import { useActiveYear } from '../../lib/hooks';
@@ -15,6 +16,7 @@ export { SUBJECT_CONFIG };
 export function MobileGradingView() {
   const { user } = useRole();
   const navigate = useNavigate();
+  const { setIsGradingSheetActive } = useUI();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClassFilter, setSelectedClassFilter] = useState('');
@@ -23,6 +25,10 @@ export function MobileGradingView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedClass, setSelectedClass] = useState(null);
+
+  useEffect(() => {
+    setIsGradingSheetActive(!!selectedClass);
+  }, [selectedClass, setIsGradingSheetActive]);
   const [selectedSubject, setSelectedSubject] = useState('');
   const [gradingStudents, setGradingStudents] = useState([]);
   const [statusMeta, setStatusMeta] = useState({});
@@ -125,14 +131,24 @@ export function MobileGradingView() {
     return rest.length ? [selectedClass, ...rest] : gradingClasses;
   }, [gradingClasses, selectedClass]);
 
-  const filtered = gradingClasses.filter((c) => {
-    const matchesSearch =
-      c.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.className.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesClass = selectedClassFilter === '' || c.className === selectedClassFilter;
-    const matchesSubject = selectedSubjectFilter === '' || c.subject === selectedSubjectFilter;
-    return matchesSearch && matchesClass && matchesSubject;
-  });
+  const avgProgress = useMemo(() => {
+    const source = gradingClasses;
+    if (!source.length) return 0;
+    return Math.round(source.reduce((sum, c) => sum + (c.progress || 0), 0) / source.length);
+  }, [gradingClasses]);
+
+  const totalStudents = useMemo(() => {
+    return gradingClasses.reduce((sum, c) => sum + (c.studentCount || 0), 0);
+  }, [gradingClasses]);
+
+  const filtered = useMemo(() => {
+    if (!Array.isArray(gradingClasses)) return [];
+    const matchesClass = selectedClassFilter === '' || gradingClasses.some(c => c.className === selectedClassFilter);
+    const base = selectedClassFilter ? gradingClasses.filter(c => c.className === selectedClassFilter) : gradingClasses;
+    const matchesSubject = selectedSubjectFilter === '' || base.some(c => c.subject === selectedSubjectFilter);
+    if (!matchesClass || !matchesSubject) return [];
+    return selectedSubjectFilter ? base.filter(c => c.subject === selectedSubjectFilter) : base;
+  }, [gradingClasses, selectedClassFilter, selectedSubjectFilter]);
 
   const fetchGradingStudents = useCallback(async (subject, className) => {
     const students = await teacherService.getGradingStudents(subject || '', className || '');
@@ -217,65 +233,88 @@ export function MobileGradingView() {
   if (!selectedClass) {
     return (
       <div className="flex-1 flex flex-col bg-background">
-        <header className="bg-surface border-b border-border px-4 py-4">
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate(-1)} className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center">
-              <ArrowLeft size={20} className="text-primary" />
-            </button>
-            <div>
-              <h1 className="text-xl font-black text-primary">Grade Entry</h1>
-              <p className="text-xs font-bold text-success uppercase tracking-widest">Select a class</p>
+        <header className="px-4 pt-5 pb-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="text-lg font-black text-primary tracking-tight leading-none truncate">
+                Welcome back, <span className="text-success">{user?.name?.split(' ')[0] || 'Teacher'}</span>!
+              </h1>
+              <p className="text-[9px] font-bold text-primary/70 uppercase tracking-widest mt-1 truncate">Academic Workspace & Assessment Matrix</p>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => navigate('/mobile-search')}
+                className="w-9 h-9 bg-muted rounded-xl flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors"
+                aria-label="Search"
+              >
+                <Search size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => document.getElementById('filter-row')?.scrollIntoView({ behavior: 'smooth' })}
+                className="w-9 h-9 bg-muted rounded-xl flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors"
+                aria-label="Filters"
+              >
+                <SlidersHorizontal size={16} />
+              </button>
             </div>
           </div>
         </header>
 
-        <div className="flex-1 px-4 py-4 overflow-y-auto">
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <div className="bg-card rounded-2xl p-4 border border-border">
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Classes</p>
-              <p className="text-2xl font-black text-foreground">{filtered.length}</p>
-            </div>
-            <div className="bg-card rounded-2xl p-4 border border-border">
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Students</p>
-              <p className="text-2xl font-black text-foreground">{filtered.reduce((sum, c) => sum + (c.studentCount || 0), 0)}</p>
-            </div>
+        <div className="flex-1 px-4 py-4 overflow-y-auto pb-24">
+          {/* KPI Cards */}
+          <div className="flex gap-3 overflow-x-auto -mx-4 px-4 mb-6 scroll-smooth touch-pan-x">
+            {[
+              { label: 'Assigned Classes', value: gradingClasses.length, subtext: `${gradingClasses.length} active tracks`, icon: BookOpen, bg: 'bg-brand-primary/5', color: 'text-brand-primary' },
+              { label: 'Grading Operations', value: `${avgProgress}%`, subtext: 'Grading complete', icon: Percent, bg: 'bg-success/10', color: 'text-success' },
+              { label: 'Student Scope', value: totalStudents, subtext: `${totalStudents} total roster`, icon: GraduationCap, bg: 'bg-brand-primary/5', color: 'text-brand-primary' },
+            ].map((card, i) => {
+              const CardIcon = card.icon;
+              return (
+                <div key={i} className="shrink-0 w-44 bg-surface p-4 rounded-2xl border border-border/50 shadow-sm transition-all relative group">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[9px] font-bold text-text-secondary uppercase tracking-wider mb-0.5 whitespace-nowrap">{card.label}</p>
+                      <p className="text-[10px] font-medium text-text-secondary leading-tight whitespace-nowrap">{card.subtext}</p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      {String(card.value).endsWith('%') ? (
+                        <p className="text-2xl font-bold tracking-tighter leading-none whitespace-nowrap">
+                          {String(card.value).slice(0, -1)}<span className="text-sm font-bold align-baseline">{String(card.value).slice(-1)}</span>
+                        </p>
+                      ) : (
+                        <p className="text-2xl font-bold tracking-tighter leading-none whitespace-nowrap">{card.value}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
-          {/* Search & Filter */}
-          <div className="space-y-3 mb-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-              <input
-                type="text"
-                placeholder="Search classes..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-success/10"
-              />
-            </div>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              <select
-                value={selectedClassFilter}
-                onChange={(e) => setSelectedClassFilter(e.target.value)}
-                className="appearance-none pl-3 pr-8 py-2.5 bg-card border border-border rounded-xl text-[10px] font-black uppercase tracking-widest text-foreground focus:outline-none focus:ring-2 focus:ring-success/10"
-              >
-                <option value="">All Classes</option>
-                {uniqueClasses.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-              <select
-                value={selectedSubjectFilter}
-                onChange={(e) => setSelectedSubjectFilter(e.target.value)}
-                className="appearance-none pl-3 pr-8 py-2.5 bg-card border border-border rounded-xl text-[10px] font-black uppercase tracking-widest text-foreground focus:outline-none focus:ring-2 focus:ring-success/10"
-              >
-                <option value="">All Subjects</option>
-                {uniqueSubjects.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            </div>
+          {/* Filters */}
+          <div id="filter-row" className="flex gap-2 overflow-x-auto pb-1 mb-4">
+            <select
+              value={selectedClassFilter}
+              onChange={(e) => setSelectedClassFilter(e.target.value)}
+              className="appearance-none pl-3 pr-8 py-2.5 bg-card border border-border rounded-xl text-[10px] font-black uppercase tracking-widest text-foreground focus:outline-none focus:ring-2 focus:ring-success/10 shrink-0"
+            >
+              <option value="">All Classes</option>
+              {uniqueClasses.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+            <select
+              value={selectedSubjectFilter}
+              onChange={(e) => setSelectedSubjectFilter(e.target.value)}
+              className="appearance-none pl-3 pr-8 py-2.5 bg-card border border-border rounded-xl text-[10px] font-black uppercase tracking-widest text-foreground focus:outline-none focus:ring-2 focus:ring-success/10 shrink-0"
+            >
+              <option value="">All Subjects</option>
+              {uniqueSubjects.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
           </div>
 
           {/* Class List */}

@@ -1,9 +1,8 @@
 import React, { Suspense, lazy } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useRole } from '../../context/RoleContext';
+import { useUI } from '../../context/UIContext';
 
-// Role-specific dashboards are lazy-loaded so the landing "Dashboard" shell
-// stays tiny and each role's dashboard chunk downloads only when needed.
 const AdminHome = lazy(() =>
   import('../admin/AdminHome').then((m) => ({ default: m.AdminHome })),
 );
@@ -24,15 +23,17 @@ function DashboardFallback() {
 
 export function Dashboard() {
   const { user, isAuthenticated } = useRole();
+  const { isMobile } = useUI();
 
-  // Redirect to login if not authenticated
   if (!isAuthenticated || !user?.role) {
     return <Navigate to="/login" replace />;
   }
 
-  // Route to the appropriate institutional layout based on security profile roles
-  // NOTE: Backend may return SUPER_ADMIN / HEADMASTER; treat them as ADMIN.
   if (user?.role === 'STUDENT') return <Navigate to="/student/portal" replace />;
+
+  if (user?.role === 'TEACHER' && isMobile) {
+    return <Navigate to="/teacher/grading-mobile" replace />;
+  }
 
   return (
     <Suspense fallback={<DashboardFallback />}>

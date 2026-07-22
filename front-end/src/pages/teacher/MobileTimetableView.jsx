@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Clock, MapPin, BookOpen, FilePlus, ChevronLeft, Calendar as CalendarIcon } from 'lucide-react';
+import { Clock, MapPin, BookOpen, FilePlus, ChevronLeft, CalendarDays } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { useTeacherTimetable } from '../../hooks/useTeacherTimetable';
@@ -57,39 +57,50 @@ export function MobileTimetableView() {
   return (
     <div className="flex-1 flex flex-col bg-background">
       {/* Header */}
-      <header className="bg-surface border-b border-border px-4 py-4">
-        <div className="flex items-center gap-3 mb-4">
-          <button 
-            onClick={() => navigate(-1)}
-            className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center"
-          >
-            <ChevronLeft size={20} className="text-primary" />
-          </button>
-          <div>
-            <h1 className="text-xl font-black text-primary">My Timetable</h1>
-            <p className="text-xs font-bold text-success uppercase tracking-widest">Live Schedule</p>
+      <header className="bg-surface border-b border-border px-4 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <button 
+              onClick={() => navigate(-1)}
+              className="w-9 h-9 bg-muted rounded-xl flex items-center justify-center shrink-0 active:scale-95 transition-transform"
+            >
+              <ChevronLeft size={18} className="text-primary" />
+            </button>
+            <div className="min-w-0">
+              <h1 className="text-base font-black text-primary truncate leading-tight">My Timetable</h1>
+              <p className="text-[9px] font-bold text-text-secondary uppercase tracking-widest truncate">Live Schedule</p>
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={() => document.getElementById('day-selector')?.scrollIntoView({ behavior: 'smooth' })}
+            className="w-9 h-9 bg-muted rounded-xl flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors shrink-0"
+            aria-label="Jump to days"
+          >
+            <CalendarDays size={16} />
+          </button>
         </div>
+      </header>
 
-        {/* Day Selector */}
+      {/* Day Selector */}
+      <div id="day-selector" className="bg-surface border-b border-border px-4 py-3">
         <div className="flex gap-2 overflow-x-auto pb-1">
           {DAYS.map(day => (
             <button
               key={day}
               onClick={() => setSelectedDay(day)}
               className={cn(
-                "flex flex-col items-center justify-center w-14 h-16 rounded-xl text-xs font-black transition-all",
+                "px-4 py-2 rounded-xl text-[10px] font-black transition-all whitespace-nowrap",
                 selectedDay === day 
                   ? "bg-success text-white" 
                   : "bg-muted text-secondary hover:bg-border"
               )}
             >
-              <span className="text-xs leading-none">{getDayInitials(day)}</span>
-              <CalendarIcon size={14} className="mt-1" />
+              <span className="text-[10px] leading-none">{getDayInitials(day)}</span>
             </button>
           ))}
         </div>
-      </header>
+      </div>
 
       {/* Content */}
       <div className="flex-1 px-4 py-4 overflow-y-auto">
@@ -134,7 +145,7 @@ export function MobileTimetableView() {
 
                   <div className="flex gap-2">
                     <button
-                      onClick={() => navigate('/grading')}
+                       onClick={() => navigate(`/teacher/grading-mobile?subject=${encodeURIComponent(entry.subjectName)}&class=${encodeURIComponent(entry.className)}`)}
                       className="flex-1 py-2.5 bg-success/10 text-success rounded-xl text-xs font-black hover:bg-success/20 transition-all"
                     >
                       Grade Now

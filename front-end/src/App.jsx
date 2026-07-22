@@ -13,6 +13,7 @@ import {
   StudentSidebar,
   TeacherSidebar,
 } from "./components/layout";
+import { TeacherMobileBottomNav } from "./components/teacher/TeacherMobileBottomNav";
 import {
   Topbar,
   RightPanel,
@@ -36,7 +37,7 @@ import {
     TeacherDashboard, TeacherTimetableView, TeacherSettings, TeacherSupport,
     TeacherArchiveView, TeacherArchiveDetailView, TeacherGradingView,
     TeacherAnalyticsView, TeacherMissingObservations, TeacherRevisionsFeed,
-    TeacherStudents, MobileTimetableView, MobileGradingView,
+    TeacherStudents,     MobileTimetableView, MobileGradingView, MobileTeacherProfile, MobileSearchPage, MobileNotificationsPage,
   StudentPortal, StudentSettings, StudentSupport, StudentTimetable, StudentProfile,
   GradingSheet, HOD_JourneyHistoryAudit, TeacherProfile, NotificationsPage,
 } from "./router/lazyPages";
@@ -447,6 +448,8 @@ function AppContent() {
     supportModalOpen,
     setSupportModalOpen,
     rightPanelVisible,
+    isMobile,
+    isGradingSheetActive,
   } = useUI();
   const systemFreezeQuery = useSystemFreeze();
   const isSystemFrozen = systemFreezeQuery.data?.systemFrozen ?? false;
@@ -602,7 +605,7 @@ function AppContent() {
       <div className="flex-1 flex flex-col min-w-0">
         <ConnectivityBanner />
         {/* Topbar Context */}
-        <Topbar />
+        {location.pathname !== '/mobile-search' && !isGradingSheetActive && location.pathname !== '/teacher/timetable' && location.pathname !== '/mobile-notifications' && <Topbar />}
 
         <main className="flex-1 flex overflow-hidden relative">
           <Suspense fallback={<PageLoader />}>
@@ -702,7 +705,7 @@ function AppContent() {
               path="/teacher-dashboard"
               element={
                 <RequireRole allowedRoles={["TEACHER"]}>
-                  <TeacherDashboard />
+                  <DashboardRedirect />
                 </RequireRole>
               }
             />
@@ -747,6 +750,14 @@ function AppContent() {
               }
             />
             <Route
+              path="/teacher/profile"
+              element={
+                <RequireRole allowedRoles={["TEACHER"]}>
+                  <MobileTeacherProfile />
+                </RequireRole>
+              }
+            />
+            <Route
               path="/archive/teacher/:id"
               element={
                 <RequireRole allowedRoles={["TEACHER"]}>
@@ -759,6 +770,22 @@ function AppContent() {
               element={
                 <RequireRole allowedRoles={["TEACHER"]}>
                   <MobileTimetableView />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/mobile-search"
+              element={
+                <RequireRole allowedRoles={["TEACHER", "HOD", "ADMIN"]}>
+                  <MobileSearchPage />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/mobile-notifications"
+              element={
+                <RequireRole allowedRoles={["TEACHER", "HOD", "ADMIN", "STUDENT"]}>
+                  <MobileNotificationsPage />
                 </RequireRole>
               }
             />
@@ -1112,7 +1139,9 @@ function AppContent() {
       </div>
 
       {/* Drawers and Modals */}
-      {user?.role === "STUDENT" ? <StudentMobileDrawer /> : <MobileDrawer />}
+      {user?.role === "STUDENT" ? <StudentMobileDrawer /> : user?.role === "TEACHER" && isMobile ? null : <MobileDrawer />}
+
+      {user?.role === "TEACHER" && isMobile && !isGradingSheetActive && <TeacherMobileBottomNav />}
 
       <Suspense fallback={null}>
       <Modal
@@ -1150,6 +1179,21 @@ function AppContent() {
     </div>
   );
 }
+
+  const DashboardRedirect = () => {
+    const [isMobile, setIsMobile] = React.useState(() => window.innerWidth < 768);
+
+    React.useEffect(() => {
+      const handleResize = () => setIsMobile(window.innerWidth < 768);
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    if (isMobile) {
+      return <Navigate to="/teacher/grading-mobile" replace />;
+    }
+    return <TeacherDashboard />;
+  };
 
 export default function App() {
   return (

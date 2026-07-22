@@ -164,7 +164,7 @@ function BreadcrumbNav({ compact = false }) {
 export function Topbar() {
   const { user, setRole } = useRole();
   const { openChangePassword } = useChangePassword();
-  const { isDraftMode, setIsDraftMode, setMobileMenuOpen } = useUI();
+  const { isDraftMode, setIsDraftMode, setMobileMenuOpen, isMobile } = useUI();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -297,9 +297,11 @@ export function Topbar() {
           <BreadcrumbNav />
         </nav>
         <div className="flex items-center gap-2 lg:hidden">
-          <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)} className="w-9 h-9">
-            <Menu size={18} />
-          </Button>
+          {!(user?.role === 'TEACHER' && isMobile) && (
+            <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)} className="w-9 h-9">
+              <Menu size={18} />
+            </Button>
+          )}
           <div className="flex items-center gap-1.5">
             <div className="w-6 h-6 bg-brand-primary rounded-lg flex items-center justify-center text-surface font-black text-[11px] tracking-tighter">
               M
@@ -332,7 +334,7 @@ export function Topbar() {
         )}
 
         {!["STUDENT", "PARENT"].includes(user?.role) && (
-          <div ref={searchContainerRef} className="relative w-full max-w-[150px] xs:max-w-[180px] sm:max-w-[240px] lg:max-w-[260px]">
+          <div ref={searchContainerRef} className="hidden lg:block relative w-full max-w-[150px] xs:max-w-[180px] sm:max-w-[240px] lg:max-w-[260px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" size={13} />
             <Input
               placeholder="Search students..."
@@ -412,8 +414,14 @@ export function Topbar() {
           </div>
         )}
 
+        {!["STUDENT", "PARENT"].includes(user?.role) && (
+          <Button variant="ghost" size="icon" onClick={() => navigate('/mobile-search')} className="lg:hidden w-9 h-9">
+            <Search size={18} />
+          </Button>
+        )}
+
         <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-border shrink-0">
-          <NotificationBell />
+          <NotificationBell navigateTo={isMobile ? '/mobile-notifications' : undefined} />
 
           {user?.mustChangePassword && (
             <Button
@@ -433,12 +441,25 @@ export function Topbar() {
           </div>
 
           <div className="relative shrink-0">
-            <Avatar className="w-8 h-8 rounded-xl border border-border">
-              <AvatarImage src={avatarSrc} alt="User Profile" />
-              <AvatarFallback className="rounded-xl bg-brand-secondary/10 text-brand-secondary text-[11px] font-bold">
-                <UserIcon size={13} />
-              </AvatarFallback>
-            </Avatar>
+            <button
+              type="button"
+              onClick={() => {
+                if (user?.role === 'TEACHER' && isMobile) {
+                  navigate('/teacher/profile');
+                }
+              }}
+              className={cn(
+                'rounded-xl border border-border',
+                user?.role === 'TEACHER' && isMobile ? 'cursor-pointer hover:ring-2 hover:ring-brand-primary/30 transition-all' : 'pointer-events-none'
+              )}
+            >
+              <Avatar className="w-8 h-8">
+                <AvatarImage src={avatarSrc} alt="User Profile" />
+                <AvatarFallback className="rounded-xl bg-brand-secondary/10 text-brand-secondary text-[11px] font-bold">
+                  <UserIcon size={13} />
+                </AvatarFallback>
+              </Avatar>
+            </button>
           </div>
         </div>
       </div>
