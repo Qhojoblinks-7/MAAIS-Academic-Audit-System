@@ -19,7 +19,10 @@ export function GradingSheetHeader({
    availableClasses,
    uniqueSubjects,
    onSubjectChange,
-   onClassChange
+   onClassChange,
+   uniqueLevels,
+   selectedLevel,
+   onLevelChange
    }) {
    const handleExportWAEC = () => {
      if (missingCount > 0 || isTermFinalized) return;
@@ -56,6 +59,19 @@ export function GradingSheetHeader({
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto pb-1 flex-nowrap">
+        {uniqueLevels?.length > 0 && (
+          <select
+            value={selectedLevel || ''}
+            onChange={onLevelChange || (() => {})}
+            className="min-w-[80px] lg:min-w-[100px] px-2 lg:px-3 py-1.5 lg:py-2 bg-white border-2 border-border rounded-lg text-[10px] lg:text-xs font-bold text-text-primary uppercase tracking-wider shadow-sm"
+          >
+            <option value="">All Levels</option>
+            {uniqueLevels.map((l) => (
+              <option key={l} value={l}>{l}</option>
+            ))}
+          </select>
+        )}
+
         <select
           value={selectedSubject || ''}
           onChange={onSubjectChange || (() => {})}

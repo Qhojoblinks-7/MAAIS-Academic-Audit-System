@@ -76,7 +76,7 @@ function Tooltip({
 
   const contextValue = React.useMemo(() => ({
     open: actualOpen,
-    setOpen: setActualOpen,
+    setOpen: setActualOpen as React.Dispatch<React.SetStateAction<boolean>>,
     triggerRef,
     tooltipRef,
     side: 'top' as TooltipSide,
@@ -87,7 +87,7 @@ function Tooltip({
 
   return (
     <TooltipContext.Provider value={contextValue}>
-      {typeof children === 'function' ? children({ open: actualOpen }) : children}
+      {typeof children === 'function' ? (children as (props: { open: boolean }) => React.ReactNode)({ open: actualOpen }) : children}
     </TooltipContext.Provider>
   )
 }

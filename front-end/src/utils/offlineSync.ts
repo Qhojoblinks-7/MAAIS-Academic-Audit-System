@@ -1,4 +1,4 @@
-import { openDB, DBSchema, IDBKeyRange } from 'idb-keyval'
+import { openDB, DBSchema } from 'idb'
 
 interface OfflineAction {
   id?: string
@@ -31,10 +31,11 @@ class OfflineSyncQueue {
 
   private async getDB() {
     if (!this.db) {
+      const queueName = this.queueName
       this.db = await openDB('MAAIS-OfflineDB', 1, {
         upgrade(db) {
-          if (!db.objectStoreNames.contains(this.queueName)) {
-            db.createObjectStore(this.queueName, { keyPath: 'id', autoIncrement: true })
+          if (!db.objectStoreNames.contains(queueName)) {
+            db.createObjectStore(queueName, { keyPath: 'id', autoIncrement: true })
           }
         },
       })

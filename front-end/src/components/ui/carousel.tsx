@@ -100,7 +100,7 @@ const Carousel = React.forwardRef<
   }, [api, onSelect])
 
   const contextValue = React.useMemo(() => ({
-    carouselRef: mounted ? carouselRef : { current: null },
+    carouselRef: mounted ? carouselRef : (null as any),
     api: mounted ? api : undefined,
     opts,
     orientation,

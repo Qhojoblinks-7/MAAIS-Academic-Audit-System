@@ -48,6 +48,7 @@ import { LoginPage } from "./pages/auth/LoginPage";
 import { SUBJECT_CONFIG } from "./constants/subjectConfig";
 import { gradingService } from "./services/gradingService";
 import { teacherService } from "./services/teacherService";
+import { adminService } from "./services/adminService";
 import { TooltipProvider } from './components/ui/tooltip'
 import { PWAInstallPrompt } from './components/pwa/PWAInstallPrompt'
 import { OfflineBanner } from './components/pwa/OfflineStatus'
@@ -95,10 +96,14 @@ function GradingRouteLoader() {
   const [teacherClasses, setTeacherClasses] = React.useState([]);
   const [selectedSubject, setSelectedSubject] = React.useState(subjectParam || "");
   const [selectedClass, setSelectedClass] = React.useState(null);
+  const [selectedLevel, setSelectedLevel] = React.useState("");
+  const [classesLoaded, setClassesLoaded] = React.useState(false);
 
   const activeYearQuery = useActiveYear();
   const activeTerm = activeYearQuery.data?.terms?.find(t => t.isActive);
   const isTermFinalized = activeTerm?.isLocked ?? false;
+
+  const isAdmin = user?.role === "ADMIN";
 
   React.useEffect(() => {
     const interval = setInterval(() => {
@@ -110,8 +115,16 @@ function GradingRouteLoader() {
   React.useEffect(() => {
     let cancelled = false;
     const fetchGradingData = async () => {
-      if (!subjectParam || !classParam) {
+      if (!subjectParam && !classParam) {
         setLoading(false);
+        return;
+      }
+      if (!subjectParam || !classParam) {
+        if (isAdmin && subjectParam) {
+          setLoading(false);
+        } else {
+          setLoading(false);
+        }
         return;
       }
       try {
@@ -174,29 +187,52 @@ function GradingRouteLoader() {
 
   React.useEffect(() => {
     let cancelled = false;
-    const fetchTeacherClasses = async () => {
+    const fetchClasses = async () => {
       if (!user?.id) return;
       try {
-        const teacherId = user.profileId || user.id;
-        const classes = await teacherService.getClasses(teacherId);
+        let classes = [];
+        if (isAdmin) {
+          const allClasses = await adminService.getAllClasses();
+          const raw = allClasses || [];
+          classes = raw
+            .filter((c) => c.id && (c.name || c.className))
+            .map((c) => ({
+              id: c.id,
+              subject: c.subject?.name || c.subject || "",
+              className: c.name || c.className || "",
+              department: c.department?.name || c.department || "GENERAL",
+              level: c.level || c.form || "",
+              studentCount: c._count?.students || c.studentCount || 0,
+            }))
+            .sort((a, b) => a.className.localeCompare(b.className));
+        } else {
+          const teacherId = user.profileId || user.id;
+          classes = await teacherService.getClasses(teacherId);
+        }
         if (!cancelled) {
           setTeacherClasses(classes || []);
+          setClassesLoaded(true);
           if (!selectedClass && classes?.length > 0) {
             const match = classes.find(c => c.subject === subjectParam && c.className === classParam);
-            setSelectedClass(match || classes[0]);
+            if (!match && isAdmin && subjectParam) {
+              const subjectMatch = classes.find(c => c.subject === subjectParam);
+              setSelectedClass(subjectMatch || classes[0]);
+            } else {
+              setSelectedClass(match || classes[0]);
+            }
           }
         }
       } catch (err) {
         if (!cancelled) {
-          console.error("[GradingRouteLoader] failed to load teacher classes:", err);
+          console.error("[GradingRouteLoader] failed to load classes:", err);
         }
       }
     };
-    fetchTeacherClasses();
+    fetchClasses();
     return () => {
       cancelled = true;
     };
-  }, [user?.id, user?.profileId, subjectParam, classParam]);
+  }, [user?.id, user?.profileId, subjectParam, classParam, isAdmin]);
 
   React.useEffect(() => {
     setSelectedSubject(subjectParam || "");
@@ -214,8 +250,8 @@ function GradingRouteLoader() {
   }, [classParam, teacherClasses]);
 
   React.useEffect(() => {
-    if (!selectedClass || !gradingData) return;
-    if (selectedClass.id === gradingData.classId) return;
+    if (!selectedClass) return;
+    if (selectedClass.id === gradingData?.classId) return;
     
     let cancelled = false;
     const fetchStudentsForClass = async () => {
@@ -278,20 +314,45 @@ function GradingRouteLoader() {
     return subjects.sort();
   }, [teacherClasses]);
 
+  const uniqueLevels = React.useMemo(() => {
+    if (!Array.isArray(teacherClasses)) return [];
+    const levels = [...new Set(teacherClasses.map(c => c.level || c.form).filter(Boolean))];
+    return levels.sort();
+  }, [teacherClasses]);
+
   const availableClasses = React.useMemo(() => {
     if (!Array.isArray(teacherClasses)) return [];
-    if (!selectedSubject) return teacherClasses;
-    return teacherClasses.filter(c => c.subject === selectedSubject);
-  }, [teacherClasses, selectedSubject]);
+    let filtered = teacherClasses;
+    if (selectedSubject) {
+      filtered = filtered.filter(c => c.subject === selectedSubject);
+    }
+    if (isAdmin && selectedLevel) {
+      filtered = filtered.filter(c => (c.level || c.form) === selectedLevel);
+    }
+    return filtered;
+  }, [teacherClasses, selectedSubject, selectedLevel, isAdmin]);
 
   const handleSubjectChange = React.useCallback((e) => {
     const subject = e.target.value;
     setSelectedSubject(subject);
+    setSelectedLevel("");
     if (!subject) {
       setSelectedClass(null);
       return;
     }
     const firstMatch = teacherClasses.find(c => c.subject === subject);
+    if (firstMatch) {
+      setSelectedClass(firstMatch);
+    }
+  }, [teacherClasses]);
+
+  const handleLevelChange = React.useCallback((e) => {
+    const level = e.target.value;
+    setSelectedLevel(level);
+    if (!level) {
+      return;
+    }
+    const firstMatch = teacherClasses.find(c => (c.level || c.form) === level);
     if (firstMatch) {
       setSelectedClass(firstMatch);
     }
@@ -304,6 +365,15 @@ function GradingRouteLoader() {
       setSelectedClass(cls);
     }
   }, [teacherClasses]);
+
+  React.useEffect(() => {
+    if (!isAdmin) return;
+    if (!selectedClass) return;
+    const stillAvailable = availableClasses.some(c => c.id === selectedClass.id);
+    if (!stillAvailable && availableClasses.length > 0) {
+      setSelectedClass(availableClasses[0]);
+    }
+  }, [isAdmin, selectedClass, availableClasses]);
 
   if (loading) {
     return (
@@ -318,6 +388,54 @@ function GradingRouteLoader() {
   }
 
   if (error || !gradingData) {
+    if (isAdmin && !error && subjectParam) {
+      const emptyGradingData = { students: [], subjectConfig: {}, subjectId: null, classId: null, termId: null };
+      const { students, subjectConfig } = emptyGradingData;
+      const targetStudentId = getTargetStudentId || null;
+      const DEFAULT_CLASS_INFO = {
+        id: selectedClass ? selectedClass.id : subjectParam,
+        subject: selectedSubject || subjectParam,
+        className: selectedClass ? selectedClass.className : '',
+        programme: selectedClass ? (selectedClass.department || 'GENERAL') : 'GENERAL',
+        studentCount: 0,
+        form: selectedClass ? formatFormNumber(selectedClass.level) : '1',
+        academicYear: '2025/2026',
+      };
+      const STP_RULES = [
+        { check: (s) => s.final > 100, message: 'Final score exceeds 100%' },
+        { check: (s) => s.sba > 30, message: 'SBA exceeds 30% limit' },
+        { check: (s) => s.exam > 70, message: 'Exam exceeds 70% limit' },
+        { check: (s) => s.auditStatus === 'MISSING', message: 'Missing behavioral observations' },
+      ];
+      return (
+        <GradingSheet
+          classInfo={DEFAULT_CLASS_INFO}
+          teacherId={user?.id || user?.staffId}
+          students={students}
+          subjectConfig={subjectConfig}
+          stpRules={STP_RULES}
+          isTermFinalized={isTermFinalized}
+          missingObsId={getMissingObsId}
+          targetStudentId={targetStudentId}
+          targetStudentName={getTargetStudentName}
+          targetStudentIndex={getTargetStudentIndex}
+          noAssignmentWarning={false}
+          isAtRisk={isAtRisk}
+          selectedSubject={selectedSubject}
+          selectedClass={selectedClass}
+          availableClasses={availableClasses}
+          uniqueSubjects={uniqueSubjects}
+          onSubjectChange={handleSubjectChange}
+          onClassChange={(e) => {
+            const cls = availableClasses.find(c => c.id === e.target.value);
+            if (cls) setSelectedClass(cls);
+          }}
+          uniqueLevels={isAdmin ? uniqueLevels : []}
+          selectedLevel={isAdmin ? selectedLevel : undefined}
+          onLevelChange={isAdmin ? handleLevelChange : undefined}
+        />
+      );
+    }
     return (
       <div className="flex-1 overflow-y-auto bg-background p-6 md:p-8 lg:p-10">
         <div className="max-w-7xl mx-auto flex flex-col items-center justify-center py-24">
@@ -370,12 +488,15 @@ function GradingRouteLoader() {
        selectedClass={selectedClass}
        availableClasses={availableClasses}
        uniqueSubjects={uniqueSubjects}
-       onSubjectChange={handleSubjectChange}
-       onClassChange={(e) => {
-         const cls = availableClasses.find(c => c.id === e.target.value);
-         if (cls) setSelectedClass(cls);
-       }}
-     />
+        onSubjectChange={handleSubjectChange}
+        onClassChange={(e) => {
+          const cls = availableClasses.find(c => c.id === e.target.value);
+          if (cls) setSelectedClass(cls);
+        }}
+        uniqueLevels={isAdmin ? uniqueLevels : []}
+        selectedLevel={isAdmin ? selectedLevel : undefined}
+        onLevelChange={isAdmin ? handleLevelChange : undefined}
+      />
    );
 }
 
@@ -663,11 +784,7 @@ function AppContent() {
               path="/grading"
               element={
                 <RequireRole allowedRoles={["TEACHER", "ADMIN"]}>
-          {user?.role === "ADMIN" ? (
-                    <GradingRulesView />
-                  ) : (
-                    <StandaloneGradingWrapper />
-                  )}
+                  <StandaloneGradingWrapper />
                 </RequireRole>
               }
             />

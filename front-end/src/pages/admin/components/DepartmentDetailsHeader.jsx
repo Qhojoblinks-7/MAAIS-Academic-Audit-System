@@ -92,7 +92,7 @@ export function DepartmentDetailsHeader({ selectedDept, onBack, onExport, onFree
         <div className="flex items-center gap-2 flex-wrap">
           <button onClick={() => setActiveTab('staff')} className={cn("text-[9px] font-black uppercase tracking-widest transition-all px-3 py-1.5 rounded-lg cursor-pointer", activeTab === 'staff' ? "text-primary-foreground bg-primary-foreground/15" : "text-primary-foreground/60 hover:text-primary-foreground bg-primary-foreground/5 hover:bg-primary-foreground/10")}>Faculty</button>
           <button onClick={() => setActiveTab('grading')} className={cn("text-[9px] font-black uppercase tracking-widest transition-all px-3 py-1.5 rounded-lg cursor-pointer", activeTab === 'grading' ? "text-primary-foreground bg-primary-foreground/15" : "text-primary-foreground/60 hover:text-primary-foreground bg-primary-foreground/5 hover:bg-primary-foreground/10")}>Grading</button>
-          <button onClick={() => setActiveTab('vault')} className={cn("text-[9px] font-black uppercase tracking-widest transition-all px-3 py-1.5 rounded-lg cursor-pointer", activeTab === 'vault' ? "text-primary-foreground bg-primary-foreground/15" : "text-primary-foreground/60 hover:text-primary-foreground bg-primary-foreground/5 hover:bg-primary-foreground/10")}>Minutes</button>
+          <button onClick={() => setActiveTab('vault')} className={cn("text-[9px] font-black uppercase tracking-widest transition-all px-3 py-1.5 rounded-lg cursor-pointer", activeTab === 'vault' ? "text-primary-foreground bg-primary-foreground/15" : "text-primary-foreground/60 hover:text-primary-foreground bg-primary-foreground/5 hover:bg-primary-foreground/10")}>Grading Sheet</button>
         </div>
       </div>
     </div>

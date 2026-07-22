@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Folder, 
@@ -25,6 +25,8 @@ import { cn } from '../../../lib/utils';
 import { buildDistribution } from '../hooks/useDepartments';
 
 export function DepartmentGrid({ departments, viewType, setViewType, setSelectedDeptId, onSpawnClick }) {
+  const distributionData = useMemo(() => buildDistribution(departments), [departments]);
+
   return (
     <>
       {/* 1. Page Title */}
@@ -196,14 +198,14 @@ export function DepartmentGrid({ departments, viewType, setViewType, setSelected
               </h4>
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                  <BarChart data={buildDistribution(departments)} layout="vertical" margin={{ left: -20, right: 20 }}>
+                  <BarChart data={distributionData} layout="vertical" margin={{ left: 40, right: 20 }}>
                     <XAxis type="number" hide />
                     <YAxis 
                       dataKey="name" 
                       type="category" 
                       axisLine={false} 
                       tickLine={false} 
-                      tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 900 }}
+                      tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
                     />
                     <Tooltip 
                       content={({ active, payload }) => {
@@ -217,14 +219,14 @@ export function DepartmentGrid({ departments, viewType, setViewType, setSelected
                         return null;
                       }}
                     />
-                     <Bar dataKey="teachers" radius={[0, 4, 4, 0]} barSize={16}>
-                       {buildDistribution(departments).map((entry, index) => (
-                         <Cell key={`cell-${index}`} fill={entry.hex || (index % 2 === 0 ? '#1e293b' : '#334155')} />
-                       ))}
-                     </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+                      <Bar dataKey="teachers" radius={[0, 4, 4, 0]} barSize={16}>
+                        {distributionData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.hex || (index % 2 === 0 ? '#1e293b' : '#334155')} />
+                        ))}
+                       </Bar>
+                   </BarChart>
+                 </ResponsiveContainer>
+               </div>
             </section>
 
             <section>

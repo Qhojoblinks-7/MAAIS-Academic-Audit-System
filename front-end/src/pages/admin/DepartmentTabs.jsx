@@ -1,6 +1,6 @@
 import React from 'react';
 import { GradingTabContent } from './components/GradingTabContent';
-import { VaultTabContent } from './components/VaultTabContent';
+import { DepartmentGradingSheet } from './components/DepartmentGradingSheet';
 
 export function DepartmentTabs({ selectedDept, activeTab, setActiveTab, handleNodeOperation }) {
   return (
@@ -10,7 +10,7 @@ export function DepartmentTabs({ selectedDept, activeTab, setActiveTab, handleNo
         <GradingTabContent dept={selectedDept} handleNodeOperation={handleNodeOperation} />
       )}
       {activeTab === 'vault' && (
-        <VaultTabContent selectedDept={selectedDept} />
+        <DepartmentGradingSheet dept={selectedDept} />
       )}
     </div>
   );

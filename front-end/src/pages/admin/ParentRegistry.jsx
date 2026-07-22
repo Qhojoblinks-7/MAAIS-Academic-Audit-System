@@ -44,6 +44,12 @@ import { useAllParents, useCreateParent, useAllStudents } from '../../lib/hooks'
 
 const ParentProfile = ({ parent, onClose }) => {
   const [activeTab, setActiveTab] = useState('Overview');
+  const chartDataParent = React.useMemo(() => [
+    { day: 'Meeting 1', count: 45 },
+    { day: 'Meeting 2', count: 52 },
+    { day: 'Meeting 3', count: 38 },
+    { day: 'Meeting 4', count: 65 },
+  ], []);
 
   return (
       <div className="flex flex-col h-full bg-surface">
@@ -484,19 +490,14 @@ export const ParentRegistry = () => {
                     <div className="bg-muted p-8 rounded-[2.5rem] border border-border">
                       <h4 className="text-[11px] font-black text-text-secondary uppercase tracking-widest mb-6">Attendance Trends</h4>
                       <div className="h-48 w-full">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                          <AreaChart data={[
-                            { day: 'Meeting 1', count: 45 },
-                            { day: 'Meeting 2', count: 52 },
-                            { day: 'Meeting 3', count: 38 },
-                            { day: 'Meeting 4', count: 65 },
-                          ]}>
-                            <defs>
-                              <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                                <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                              </linearGradient>
-                            </defs>
+               <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                           <AreaChart data={chartDataParent}>
+                             <defs>
+                               <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                                 <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                                 <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                               </linearGradient>
+                             </defs>
                             <XAxis dataKey="day" hide />
                             <Tooltip />
                             <Area type="monotone" dataKey="count" stroke="#059669" fillOpacity={1} fill="url(#colorCount)" strokeWidth={3} />

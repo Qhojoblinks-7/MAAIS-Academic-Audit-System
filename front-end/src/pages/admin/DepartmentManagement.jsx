@@ -85,7 +85,7 @@ export function DepartmentManagement() {
 
   React.useEffect(() => {
     if (selectedDept) {
-      const tabLabel = activeTab === 'staff' ? selectedDept.name : activeTab === 'classes' ? 'Classes' : activeTab === 'academic' ? 'Academic Profile' : activeTab === 'grading' ? 'Grade Entry' : activeTab;
+      const tabLabel = activeTab === 'staff' ? selectedDept.name : activeTab === 'classes' ? 'Classes' : activeTab === 'academic' ? 'Academic Profile' : activeTab === 'grading' ? 'Grade Entry' : activeTab === 'vault' ? 'Grading Sheet' : activeTab;
       setBreadcrumb([
         { label: 'Departments', path: '/identity/departments' },
         { label: tabLabel, path: null },
