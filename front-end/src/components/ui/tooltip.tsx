@@ -12,6 +12,7 @@ interface TooltipContextValue {
   side: TooltipSide
   sideOffset: number
   align: TooltipAlign
+  delay: number
 }
 
 const TooltipContext = React.createContext<TooltipContextValue>({
@@ -22,10 +23,19 @@ const TooltipContext = React.createContext<TooltipContextValue>({
   side: 'top',
   sideOffset: 4,
   align: 'center',
+  delay: 300,
 })
 
 function TooltipProvider({ children, delay = 300 }: { children: React.ReactNode; delay?: number }) {
-  return <>{children}</>
+  const [open, setOpen] = React.useState(false)
+  const triggerRef = React.useRef<HTMLDivElement>(null)
+  const tooltipRef = React.useRef<HTMLDivElement>(null)
+
+  return (
+    <TooltipContext.Provider value={{ open, setOpen, triggerRef, tooltipRef, side: 'top', sideOffset: 4, align: 'center', delay }}>
+      {children}
+    </TooltipContext.Provider>
+  )
 }
 
 function Tooltip({ 
@@ -46,6 +56,7 @@ function Tooltip({
   const triggerRef = React.useRef<HTMLDivElement>(null)
   const tooltipRef = React.useRef<HTMLDivElement>(null)
   const timeoutRef = React.useRef<number | null>(null)
+  const { delay } = React.useContext(TooltipContext)
 
   const handleOpen = React.useCallback(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current)
@@ -71,7 +82,8 @@ function Tooltip({
     side: 'top' as TooltipSide,
     sideOffset: 4,
     align: 'center' as TooltipAlign,
-  }), [actualOpen, setActualOpen])
+    delay,
+  }), [actualOpen, setActualOpen, delay])
 
   return (
     <TooltipContext.Provider value={contextValue}>
