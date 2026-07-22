@@ -7,6 +7,9 @@
     "VITE_API_BASE_URL": "https://maais-backend-49i4.onrender.com/api/v1",
     "VITE_APP_URL": "https://maais-academic-audit-system.vercel.app"
   },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
