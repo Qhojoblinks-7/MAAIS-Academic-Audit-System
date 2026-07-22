@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useRole } from '../../context/RoleContext';
 import { useUI } from '../../context/UIContext';
@@ -24,6 +24,12 @@ function DashboardFallback() {
 export function Dashboard() {
   const { user, isAuthenticated } = useRole();
   const { isMobile } = useUI();
+
+  useEffect(() => {
+    if (user?.role === 'TEACHER' && isMobile) {
+      import('../teacher/MobileGradingView').catch(() => {});
+    }
+  }, [user?.role, isMobile]);
 
   if (!isAuthenticated || !user?.role) {
     return <Navigate to="/login" replace />;

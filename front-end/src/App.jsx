@@ -529,7 +529,7 @@ function AppContent() {
   }
 
   return (
-    <div className="flex h-screen bg-background font-sans selection:bg-success/20 selection:text-success">
+    <div className="flex h-screen bg-background font-sans selection:bg-success/20 selection:text-success overflow-x-hidden">
       {isSystemFrozen && user?.role !== "STUDENT" && (!freezeAck || isAckExpired) && (
         <>
           {user?.role === "ADMIN" ? (

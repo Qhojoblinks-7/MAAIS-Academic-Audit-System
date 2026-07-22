@@ -52,9 +52,11 @@ export function MobileGradingView() {
         return;
       }
       try {
-        const classes = await teacherService.getClasses(user.profileId || user.id);
-        const meta = await teacherService.getGradingStatusMeta();
-        const subjectConfig = await teacherService.getSubjectConfig().catch(() => []);
+        const [classes, meta, subjectConfig] = await Promise.all([
+          teacherService.getClasses(user.profileId || user.id),
+          teacherService.getGradingStatusMeta(),
+          teacherService.getSubjectConfig().catch(() => []),
+        ]);
 
         const configMap = {};
         if (Array.isArray(subjectConfig)) {
@@ -232,51 +234,31 @@ export function MobileGradingView() {
 
   if (!selectedClass) {
     return (
-      <div className="flex-1 flex flex-col bg-background">
+      <div className="flex-1 flex flex-col bg-background no-scrollbar min-w-0 overflow-x-hidden">
+        {/* Header */}
         <header className="px-4 pt-5 pb-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <h1 className="text-lg font-black text-primary tracking-tight leading-none truncate">
-                Welcome back, <span className="text-success">{user?.name?.split(' ')[0] || 'Teacher'}</span>!
-              </h1>
-              <p className="text-[9px] font-bold text-primary/70 uppercase tracking-widest mt-1 truncate">Academic Workspace & Assessment Matrix</p>
-            </div>
-            <div className="flex items-center gap-1 shrink-0">
-              <button
-                type="button"
-                onClick={() => navigate('/mobile-search')}
-                className="w-9 h-9 bg-muted rounded-xl flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors"
-                aria-label="Search"
-              >
-                <Search size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={() => document.getElementById('filter-row')?.scrollIntoView({ behavior: 'smooth' })}
-                className="w-9 h-9 bg-muted rounded-xl flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors"
-                aria-label="Filters"
-              >
-                <SlidersHorizontal size={16} />
-              </button>
-            </div>
+          <div className="min-w-0">
+            <h1 className="text-lg font-black text-primary tracking-tight leading-none truncate">
+              Welcome back, <span className="text-success">{user?.name?.split(' ')[0] || 'Teacher'}</span>!
+            </h1>
+            <p className="text-[9px] font-bold text-primary/70 uppercase tracking-widest mt-1 truncate">Academic Workspace & Assessment Matrix</p>
           </div>
         </header>
 
-        <div className="flex-1 px-4 py-4 overflow-y-auto pb-24">
+        <div className="flex-1 px-4 py-4 overflow-y-auto overflow-x-hidden pb-24 min-w-0">
           {/* KPI Cards */}
-          <div className="flex gap-3 overflow-x-auto -mx-4 px-4 mb-6 scroll-smooth touch-pan-x">
+          <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 mb-6 scrollbar-hide scroll-smooth" style={{ scrollPadding: '1rem', WebkitOverflowScrolling: 'touch' }}>
             {[
-              { label: 'Assigned Classes', value: gradingClasses.length, subtext: `${gradingClasses.length} active tracks`, icon: BookOpen, bg: 'bg-brand-primary/5', color: 'text-brand-primary' },
-              { label: 'Grading Operations', value: `${avgProgress}%`, subtext: 'Grading complete', icon: Percent, bg: 'bg-success/10', color: 'text-success' },
-              { label: 'Student Scope', value: totalStudents, subtext: `${totalStudents} total roster`, icon: GraduationCap, bg: 'bg-brand-primary/5', color: 'text-brand-primary' },
+              { label: 'Assigned Classes', value: gradingClasses.length, subtext: 'Active tracks' },
+              { label: 'Grading Operations', value: `${avgProgress}%`, subtext: 'Grading complete' },
+              { label: 'Student Scope', value: totalStudents, subtext: 'Total roster' },
             ].map((card, i) => {
-              const CardIcon = card.icon;
               return (
-                <div key={i} className="shrink-0 w-44 bg-surface p-4 rounded-2xl border border-border/50 shadow-sm transition-all relative group">
+                <div key={i} className="snap-start shrink-0 w-52 bg-surface p-4 rounded-2xl border border-border/50 shadow-sm transition-all relative group">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[9px] font-bold text-text-secondary uppercase tracking-wider mb-0.5 whitespace-nowrap">{card.label}</p>
-                      <p className="text-[10px] font-medium text-text-secondary leading-tight whitespace-nowrap">{card.subtext}</p>
+                      <p className="text-[9px] font-bold text-text-secondary uppercase tracking-wider mb-0.5">{card.label}</p>
+                      <p className="text-[10px] font-medium text-text-secondary leading-tight">{card.subtext}</p>
                     </div>
                     <div className="shrink-0 text-right">
                       {String(card.value).endsWith('%') ? (
@@ -294,7 +276,7 @@ export function MobileGradingView() {
           </div>
 
           {/* Filters */}
-          <div id="filter-row" className="flex gap-2 overflow-x-auto pb-1 mb-4">
+          <div id="filter-row" className="flex gap-2 mb-4">
             <select
               value={selectedClassFilter}
               onChange={(e) => setSelectedClassFilter(e.target.value)}
@@ -333,7 +315,7 @@ export function MobileGradingView() {
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-black text-foreground truncate">{cls.subject}</p>
-                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{cls.className}</p>
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest truncate">{cls.className}</p>
                     </div>
                     <span className={cn("text-[10px] font-black px-2 py-1 uppercase tracking-widest rounded-lg border shrink-0 ml-2", sm.badge)}>
                       <span className={cn("w-1.5 h-1.5 rounded-full inline-block mr-1", sm.dot)} />
