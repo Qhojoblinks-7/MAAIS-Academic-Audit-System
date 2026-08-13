@@ -57,7 +57,7 @@ const ParentProfile = ({ parent, onClose }) => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 bg-muted scrollbar-hide">
+       <div className="flex-1 overflow-y-auto py-6 px-8 bg-muted scrollbar-hide">
         {activeTab === 'Overview' && (
           <div className="space-y-4">
             <div className="flex justify-between items-center">

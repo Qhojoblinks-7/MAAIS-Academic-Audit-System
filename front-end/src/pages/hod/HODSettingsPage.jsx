@@ -228,7 +228,7 @@ export function HODSettingsPage() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-gray-50/30">
-      <div className="flex-1 overflow-auto p-6 lg:p-8">
+       <div className="flex-1 overflow-auto py-6 lg:py-8 px-8">
         <div className="max-w-4xl mx-auto space-y-5">
 
           {/* Header Dashboard Level Row */}

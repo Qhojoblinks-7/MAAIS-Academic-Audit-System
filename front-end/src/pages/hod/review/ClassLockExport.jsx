@@ -228,7 +228,7 @@ export function ClassLockExport({ pipeline, activeClassId, onSelect }) {
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                 <div className="flex-1 overflow-y-auto py-5 px-8 space-y-4">
                   <div className="bg-muted border border-border rounded-xl p-4 space-y-2.5">
                     <h4 className="text-[10px] font-bold uppercase tracking-wider text-text-secondary flex items-center gap-1.5">
                       <FileSpreadsheet size={12} className="text-text-secondary" />
@@ -303,7 +303,7 @@ export function ClassLockExport({ pipeline, activeClassId, onSelect }) {
                 <X size={16} />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+             <div className="flex-1 overflow-y-auto py-6 px-8 space-y-4">
               <p className="text-xs text-text-secondary font-medium">
                 Class: <span className="text-text-primary font-bold">{revisionModal.className}</span>
                 {revisionModal.subject && <span className="text-text-secondary ml-2">— {revisionModal.subject}</span>}

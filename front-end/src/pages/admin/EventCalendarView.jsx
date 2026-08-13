@@ -51,8 +51,8 @@ export function EventCalendarView() {
   const upcoming = EVENTS.slice(0, 4);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background p-8 lg:p-12 scrollbar-hide">
-      <div className="max-w-5xl mx-auto">
+    <div className="flex-1 overflow-y-auto bg-background py-6 lg:py-10 px-8 scrollbar-hide">
+       <div className="w-full">
         
         {/* Header */}
         <header className="mb-10">

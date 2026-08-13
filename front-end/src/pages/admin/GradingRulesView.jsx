@@ -213,7 +213,7 @@ const handleAuditTrailClick = () => {
     };
 
     return (
-    <div className="flex-1 p-8 bg-muted overflow-y-auto relative">
+    <div className="flex-1 py-6 px-8 bg-muted overflow-y-auto relative scrollbar-hide">
       {/* Final Seal Confirmation Modal */}
       <AnimatePresence>
         {showSealConfirm && (
@@ -301,7 +301,7 @@ const handleAuditTrailClick = () => {
         )}
       </AnimatePresence>
 
-      <div className="max-w-7xl mx-auto space-y-10 pb-20">
+      <div className="w-full space-y-10 pb-20">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h1 className="text-3xl font-black italic font-display text-text-primary tracking-tight leading-none">

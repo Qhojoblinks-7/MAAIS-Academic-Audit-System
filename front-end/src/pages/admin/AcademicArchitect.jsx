@@ -294,8 +294,8 @@ export function AcademicArchitect() {
       </header>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto p-8 relative scrollbar-hide">
-        <div className="max-w-7xl mx-auto space-y-8">
+      <div className="flex-1 overflow-y-auto py-6 lg:py-10 px-8 relative scrollbar-hide">
+        <div className="w-full space-y-8">
           {activeTab === 'Blueprint' ? (
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
                 <BlueprintTreeView 

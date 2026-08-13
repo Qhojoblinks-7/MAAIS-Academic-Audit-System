@@ -157,7 +157,7 @@ export function HODMissingObservations() {
       </section>
 
       {/* PRIMARY CENTRAL FEED LOG VIEWPORT */}
-      <main className="flex-1 overflow-y-auto p-6 lg:p-8 min-h-0 no-scrollbar">
+       <main className="flex-1 overflow-y-auto py-6 lg:py-8 px-8 min-h-0 no-scrollbar">
         <div className="max-w-6xl mx-auto">
           
           <Card className="rounded-2xl overflow-hidden flex flex-col">

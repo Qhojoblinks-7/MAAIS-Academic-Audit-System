@@ -138,7 +138,7 @@ export function HODAudit() {
    };
 
    return (
-      <div className="hod-audit-page">
+       <div className="hod-audit-page no-scrollbar" style={{ maxWidth: '95%', paddingLeft: '2rem', paddingRight: '2rem' }}>
          <main className="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 lg:p-8 flex gap-6 relative items-start">
             <div className="flex-1 space-y-6 min-w-0">
                <div className="hod-panel">

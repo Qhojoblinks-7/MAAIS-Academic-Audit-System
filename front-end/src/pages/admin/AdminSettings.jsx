@@ -61,8 +61,8 @@ export function AdminSettings() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background p-8 lg:p-12 pb-32 lg:pb-24 scrollbar-hide">
-      <div className="max-w-4xl mx-auto">
+    <div className="flex-1 overflow-y-auto bg-background py-6 lg:py-10 px-8 pb-32 lg:pb-24 scrollbar-hide">
+       <div className="w-full">
         <header className="mb-12 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-brand-dark rounded-2xl flex items-center justify-center text-primary-foreground shadow-xl shadow-brand-dark/10">

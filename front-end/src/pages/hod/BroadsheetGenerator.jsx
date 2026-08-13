@@ -349,7 +349,7 @@ export function BroadsheetGenerator() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 overflow-y-auto bg-background p-6 md:p-8 select-none scrollbar-hide no-scrollbar">
+       <div className="flex-1 overflow-y-auto bg-background py-6 md:py-8 px-8 select-none scrollbar-hide no-scrollbar">
         <div className="flex flex-col items-center justify-center py-32 space-y-4">
           <div className="relative flex items-center justify-center">
             <div className="w-12 h-12 rounded-full border-2 border-border border-t-brand-primary animate-spin" />
@@ -363,7 +363,7 @@ export function BroadsheetGenerator() {
 
   if (error) {
     return (
-      <div className="flex-1 overflow-y-auto bg-background p-6 md:p-8 select-none scrollbar-hide no-scrollbar">
+       <div className="flex-1 overflow-y-auto bg-background py-6 md:py-8 px-8 select-none scrollbar-hide no-scrollbar">
         <div className="bg-destructive/5 border border-destructive/20 p-6 rounded-2xl flex items-start gap-4 max-w-2xl mx-auto shadow-sm">
           <div className="p-3 bg-destructive text-primary-foreground rounded-xl shadow-inner shrink-0">{"\u26A0\uFE0F"}</div>
           <div>

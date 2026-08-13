@@ -15,8 +15,8 @@ export function DepartmentDetailsView({
   openTransferModal,
 }) {
   return (
-    <div className="flex-1 overflow-y-auto p-6 bg-muted/30 scrollbar-hide">
-      <div className="max-w-6xl mx-auto w-full">
+    <div className="flex-1 overflow-y-auto py-6 px-8 bg-muted/30 scrollbar-hide">
+      <div className="w-full">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}

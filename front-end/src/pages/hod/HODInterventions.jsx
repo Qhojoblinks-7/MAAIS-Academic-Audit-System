@@ -454,7 +454,7 @@ export function HODInterventions() {
                 </div>
 
                 {/* Primary Content Viewport */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                 <div className="flex-1 overflow-y-auto py-6 px-8 space-y-6">
                   {/* Diagnosis Presentation Card */}
                   <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
                     <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">

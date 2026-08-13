@@ -81,7 +81,7 @@ const StudentDossier = ({ student, onClose, onGenerateReport, onBuildTranscript 
           ))}
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-6 bg-muted scrollbar-hide">
+       <div className="flex-1 overflow-y-auto py-6 px-8 bg-muted scrollbar-hide">
         {activeTab === 'Academic' && (
           <div className="space-y-4">
             <div className="bg-surface p-5 rounded-3xl border border-border shadow-sm">

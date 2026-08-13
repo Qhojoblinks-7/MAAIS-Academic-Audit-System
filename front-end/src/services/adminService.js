@@ -1,9 +1,11 @@
 import { api } from '../lib/api';
 
-async function request(method, path, body) {
+async function request(method, path, body, params) {
   const key = { GET: 'get', POST: 'post', PUT: 'put', PATCH: 'patch', DELETE: 'delete' }[method] || 'get';
   try {
-    const opts = key === 'get' ? {} : { body: JSON.stringify(body) };
+    const opts = key === 'get'
+      ? (params ? { params } : {})
+      : { body: JSON.stringify(body) };
     const res = await api[key](path, opts);
     return res;
   } catch (err) {
@@ -175,7 +177,7 @@ function createRealService() {
 
     // ── Timetable ────────────────────────────────────────────────────────────
     createTimetableEntry: (body) => request('POST', '/timetable', body),
-    getTimetableEntries: (params = {}) => request('GET', '/timetable', params),
+    getTimetableEntries: (params = {}) => request('GET', '/timetable', undefined, params),
     getMySchedule: () => request('GET', '/timetable/my-schedule'),
     getTeacherTimetable: (teacherId) =>
       request('GET', `/timetable/teacher/${teacherId}`),
@@ -186,6 +188,11 @@ function createRealService() {
     getTimetableEntry: (id) => request('GET', `/timetable/${id}`),
     updateTimetableEntry: (id, body) => request('PUT', `/timetable/${id}`, body),
     deleteTimetableEntry: (id) => request('DELETE', `/timetable/${id}`),
+    getClassAssignments: (classId, track) => request('GET', `/academic/assignments/class/${classId}`, undefined, { track }),
+    getTimeSlots: () => request('GET', '/time-slots'),
+    createTimeSlot: (body) => request('POST', '/time-slots', body),
+    updateTimeSlot: (id, body) => request('PUT', `/time-slots/${id}`, body),
+    deleteTimeSlot: (id) => request('DELETE', `/time-slots/${id}`),
 
     // ── Students (Admin-accessible) ──────────────────────────────────────────
     getStudentBehavior: (studentId) =>

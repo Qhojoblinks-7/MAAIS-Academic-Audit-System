@@ -246,7 +246,7 @@ export function GradeApprovals({ pipeline }) {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-5 space-y-5">
+               <div className="flex-1 overflow-y-auto py-5 px-8 space-y-5">
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Course Matrices Override Channels</h4>
                   {Array.isArray(selectedStudent.subjects) && selectedStudent.subjects.map((s, i) => (

@@ -526,8 +526,8 @@ export function AdminHome() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background relative p-5 scrollbar-hide">
-      <div className="max-w-6xl mx-auto pb-12 space-y-5">
+    <div className="flex-1 overflow-y-auto bg-background relative py-5 px-8 scrollbar-hide">
+      <div className="w-full pb-12 space-y-5">
         
         {/* Header - Transparent Architecture */}
         <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-2 px-1 relative overflow-hidden group">

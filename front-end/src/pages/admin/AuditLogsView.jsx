@@ -84,11 +84,11 @@ export function AuditLogsView() {
   }, [auditLogsQuery.data]);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background p-6 lg:p-12 pb-32 lg:pb-24 scrollbar-hide">
+    <div className="flex-1 overflow-y-auto bg-background py-5 px-8 pb-32 lg:pb-24 scrollbar-hide">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-6xl mx-auto"
+         className="w-full"
       >
         {/* View Header */}
         <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">

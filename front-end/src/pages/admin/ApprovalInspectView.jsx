@@ -38,8 +38,8 @@ export function ApprovalInspectView() {
   };
   
   return (
-    <div className="flex-1 overflow-y-auto bg-background p-6 scrollbar-hide">
-      <div className="max-w-4xl mx-auto">
+    <div className="flex-1 overflow-y-auto bg-background py-5 px-8 scrollbar-hide">
+       <div className="w-full">
         {/* Header */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-text-primary">Approval Request Details</h1>

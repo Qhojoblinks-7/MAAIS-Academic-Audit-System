@@ -161,7 +161,7 @@ export function RevisionRequests({ pipeline }) {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 bg-muted/30 space-y-3 min-h-0 no-scrollbar">
+         <div className="flex-1 overflow-y-auto py-6 px-8 bg-muted/30 space-y-3 min-h-0 no-scrollbar">
           {filteredData.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 bg-card rounded-2xl border border-dashed border-border p-8 text-center">
               <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mb-3">
@@ -236,7 +236,7 @@ export function RevisionRequests({ pipeline }) {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 min-h-0 no-scrollbar space-y-4">
+             <div className="flex-1 overflow-y-auto py-6 px-8 min-h-0 no-scrollbar space-y-4">
               <button
                 onClick={() => setDiscussionOpen((o) => !o)}
                 className="w-full flex items-center justify-between group"

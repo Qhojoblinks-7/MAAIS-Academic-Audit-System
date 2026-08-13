@@ -263,7 +263,7 @@ export function HODTeachers() {
       </header>
 
       {/* Main Container Canvas Frame Layout */}
-      <main className="flex-1 p-6 max-w-7xl w-full mx-auto space-y-5">
+      <main className="flex-1 py-6 px-8 max-w-7xl w-full mx-auto space-y-5">
         
         {/* Dynamic Filter Context Shell Block */}
         <div className="bg-white rounded-xl p-3 flex items-center shadow-3xs border border-slate-200/80">

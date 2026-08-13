@@ -349,7 +349,7 @@ export function HODAnalytics() {
    }
 
   return (
-    <div className="hod-page">
+    <div className="hod-page no-scrollbar" style={{ maxWidth: '95%', paddingLeft: '2rem', paddingRight: '2rem' }}>
 
       {/* 1. Header & Controls Workspace Container */}
       <div className="hod-panel">

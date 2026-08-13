@@ -30,7 +30,7 @@ export function DepartmentGrid({ departments, viewType, setViewType, setSelected
   return (
     <>
       {/* 1. Page Title */}
-      <header className="px-4 sm:px-8 py-4 bg-surface border-b border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+      <header className="px-8 py-4 bg-surface border-b border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
         <div>
           <h1 className="text-xl font-black text-foreground italic font-display tracking-tight leading-none">
             The Digital Filing Cabinet
@@ -71,8 +71,8 @@ export function DepartmentGrid({ departments, viewType, setViewType, setSelected
       </header>
 
        <div className="flex-1 flex overflow-hidden">
-         <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-hide">
-           <div className="max-w-7xl mx-auto">
+          <div className="flex-1 overflow-y-auto py-4 sm:py-6 lg:py-8 px-8 scrollbar-hide">
+            <div className="w-full">
              <section>
                <div className={cn(
                  "grid gap-4 sm:gap-5",
