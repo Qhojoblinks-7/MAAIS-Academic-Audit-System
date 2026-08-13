@@ -505,17 +505,20 @@ function StandaloneGradingWrapper() {
 }
 
 // Global Modal Wrapper Component
-function Modal({ isOpen, onClose, title, children }) {
+function Modal({ isOpen, onClose, title, children, fullScreenOnMobile = false }) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-sm transition-opacity duration-200 opacity-100" />
+        <div className={cn("fixed inset-0 z-[100] flex items-center justify-center", fullScreenOnMobile ? "lg:p-0 p-0" : "p-4")}>
+          <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-sm transition-opacity duration-200 opacity-100" onClick={onClose} />
           <motion.div
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative w-full max-w-4xl bg-surface rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+            className={cn(
+              "relative w-full bg-surface shadow-2xl overflow-hidden flex flex-col",
+              fullScreenOnMobile ? "lg:max-w-4xl lg:max-h-[90vh] lg:rounded-3xl max-h-screen h-screen rounded-none" : "max-w-4xl max-h-[90vh] rounded-3xl"
+            )}
           >
             <div className="px-8 py-6 border-b border-border flex justify-between items-center bg-surface shrink-0">
               <h3 className="text-xl font-black text-text-primary">{title}</h3>
@@ -1265,6 +1268,7 @@ function AppContent() {
         isOpen={settingsModalOpen}
         onClose={() => setSettingsModalOpen(false)}
         title="Identity & Security Control"
+        fullScreenOnMobile
       >
         {user?.role === "STUDENT" ? (
           <StudentSettings />
@@ -1281,6 +1285,7 @@ function AppContent() {
         isOpen={supportModalOpen}
         onClose={() => setSupportModalOpen(false)}
         title="ICT Support Desk"
+        fullScreenOnMobile
       >
         {user?.role === "STUDENT" ? (
           <StudentSupport />
