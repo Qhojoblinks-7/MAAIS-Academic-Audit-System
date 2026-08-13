@@ -106,7 +106,6 @@ export function MobileTimetableView() {
       <div className="flex-1 px-4 py-4 overflow-y-auto">
         {dayClasses.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-20">
-            <CalendarIcon size={48} className="text-secondary mb-4" />
             <h3 className="text-lg font-black text-primary mb-2">No Classes</h3>
             <p className="text-sm font-bold text-secondary">Enjoy your free period!</p>
           </div>
@@ -118,24 +117,17 @@ export function MobileTimetableView() {
                   style={{ animationDelay: `${idx * 50}ms` }}
                   className="bg-card rounded-2xl p-4 border border-border animate-in fade-in slide-in-from-bottom-4"
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-16 text-center">
-                      <p className="text-base font-black text-primary">{entry.startTime}</p>
-                      <p className="text-xs font-bold text-secondary">{entry.endTime}</p>
+                  <div className="flex items-center mb-3">
+                    <div className="flex items-baseline gap-1">
+                      <p className="text-sm font-black text-primary">{entry.startTime}</p>
+                      <span className="text-text-secondary text-[10px]">-</span>
+                      <p className="text-sm font-black text-secondary">{entry.endTime}</p>
                     </div>
-                    <span className={cn(
-                      "px-2 py-0.5 rounded text-xs font-black uppercase",
-                      entry.type === 'LAB' ? "bg-success/10 text-success" :
-                      entry.type === 'SUBSTITUTION' ? "bg-brand-secondary/10 text-brand-secondary" :
-                      "bg-muted text-muted-foreground"
-                    )}>
-                      {entry.type}
-                    </span>
                   </div>
 
-                  <h4 className="text-base font-black text-primary mb-2">{entry.subjectName}</h4>
+                  <h4 className="text-lg font-black text-primary mb-2">{entry.subjectName}</h4>
                   
-                  <div className="flex items-center gap-3 text-xs font-bold text-secondary mb-3">
+                  <div className="flex items-center gap-3 text-[11px] font-bold text-secondary mb-3">
                     <span className="truncate">{entry.className}</span>
                     <span className="text-border">•</span>
                     <span className="flex items-center gap-1 truncate">
@@ -145,8 +137,8 @@ export function MobileTimetableView() {
 
                   <div className="flex gap-2">
                     <button
-                       onClick={() => navigate(`/teacher/grading-mobile?subject=${encodeURIComponent(entry.subjectName)}&class=${encodeURIComponent(entry.className)}`)}
-                      className="flex-1 py-2.5 bg-success/10 text-success rounded-xl text-xs font-black hover:bg-success/20 transition-all"
+                       onClick={() => navigate(`/teacher/grading-mobile?subject=${encodeURIComponent(entry.subject)}&class=${encodeURIComponent(entry.className)}`)}
+                      className="flex-1 py-2.5 bg-success/10 text-success rounded-xl text-[11px] font-black hover:bg-success/20 transition-all"
                     >
                       Grade Now
                     </button>

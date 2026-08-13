@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { EmptyState } from '../../components/molecules';
 import { 
   Database, 
@@ -225,7 +226,7 @@ export function TeacherArchiveView() {
       )}
       
       {/* Navbar Container */}
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 z-20 shrink-0">
+      <header className="bg-white border-b border-slate-200 px-[5%] py-4 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 z-20 shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-xs shrink-0">
             <Database size={18} />
@@ -275,37 +276,57 @@ export function TeacherArchiveView() {
               />
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
+            <div className="flex-1 overflow-y-auto py-4 sm:py-6 lg:py-8 px-[5%] space-y-6 w-full mx-auto">
               
               {activeSubTab === 'REGISTRY' && (
                  <div
                    className="space-y-6 animate-in fade-in"
                  >
-                  {/* Analytic Display Segment */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {[
-                      { title: 'Total Rostered Students', val: totalAlumni, note: 'Active & Graduated', icon: Users, color: "text-blue-600" },
-                      { title: 'Cumulative Avg Score', val: `${cumulativeAverage}%`, note: 'Historical aggregate', icon: TrendingUp, color: "text-indigo-600" },
-                      { title: 'Cryptographic Seals', val: sealedCount, note: 'Tamper-proof storage', icon: ShieldCheck, color: "text-emerald-600" },
-                      { title: 'Database Security', val: 'Active', note: 'Secure Level 4 Crypt', icon: Lock, color: "text-slate-600" }
-                    ].map((card, idx) => (
-                      <Card key={idx} className="p-4 rounded-xl border border-slate-200 shadow-xs flex items-center gap-4 bg-white">
-                        <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center border border-slate-100 shrink-0">
-                          <card.icon size={18} className={card.color} />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider leading-none">{card.title}</p>
-                          <div className="flex items-baseline gap-1.5 mt-1.5">
-                            <span className="text-xl font-black text-slate-900 tracking-tight">{card.val}</span>
-                            <span className="text-xs font-medium text-slate-400 truncate">{card.note}</span>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
+                   {/* Analytic Display Segment */}
+                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                     {[
+                       { label: 'Total Rostered Students', value: totalAlumni, subtext: 'Active & Graduated', icon: 'Users', bg: 'bg-blue-50', color: 'text-blue-600' },
+                       { label: 'Cumulative Avg Score', value: `${cumulativeAverage}%`, subtext: 'Historical aggregate', icon: 'TrendingUp', bg: 'bg-indigo-50', color: 'text-indigo-600' },
+                       { label: 'Cryptographic Seals', value: sealedCount, subtext: 'Tamper-proof storage', icon: 'ShieldCheck', bg: 'bg-emerald-50', color: 'text-emerald-600' },
+                       { label: 'Database Security', value: 'Active', subtext: 'Secure Level 4 Crypt', icon: 'Lock', bg: 'bg-slate-100', color: 'text-slate-600' }
+                     ].map((card, i) => {
+                       const iconMap = { Users, TrendingUp, ShieldCheck, Lock };
+                       const CardIcon = iconMap[card.icon] || Users;
+                       return (
+                         <motion.div
+                           key={i}
+                           initial={{ opacity: 0, y: 10 }}
+                           animate={{ opacity: 1, y: 0 }}
+                           transition={{ delay: i * 0.05 }}
+                           className="bg-surface p-4 rounded-2xl border border-border/50 shadow-sm hover:shadow-md transition-all relative group"
+                         >
+                           <div className="flex items-center justify-between h-full gap-4">
+                             <div className="flex items-center gap-3 flex-1 min-w-0">
+                               <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shrink-0", card.bg, card.color)}>
+                                 <CardIcon size={22} />
+                               </div>
+                               <div className="min-w-0">
+                                 <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1 whitespace-nowrap">{card.label}</p>
+                                 <p className="text-[11px] font-medium text-text-secondary leading-tight whitespace-nowrap">{card.subtext}</p>
+                               </div>
+                             </div>
+                             <div className="text-right pl-4 shrink-0">
+                               {String(card.value).endsWith('%') ? (
+                                 <p className="text-5xl font-bold tracking-tighter leading-none whitespace-nowrap">
+                                   {String(card.value).slice(0, -1)}<span className="text-2xl font-bold align-baseline">{String(card.value).slice(-1)}</span>
+                                 </p>
+                               ) : (
+                                 <p className="text-5xl font-bold tracking-tighter leading-none whitespace-nowrap">{card.value}</p>
+                               )}
+                             </div>
+                           </div>
+                         </motion.div>
+                       );
+                     })}
+                   </div>
 
                   {/* Operational Filtering Matrix Panel */}
-                  <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-4">
+                   <div className="bg-white border border-slate-200 rounded-2xl py-4 px-[5%] shadow-xs space-y-4">
                     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
                       <div className="flex items-center gap-2">
                         <Filter size={14} className="text-slate-400" />
@@ -361,7 +382,7 @@ export function TeacherArchiveView() {
 
                   {/* Core Table Spreadsheet Layout Container */}
                   <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
-                    <header className="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
+                     <header className="px-[5%] py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
                       <div>
                         <h4 className="text-xs font-black text-slate-900 uppercase tracking-wide">Cohort Records Archive</h4>
                         <p className="text-xs text-slate-400 font-medium mt-0.5">Read-Only qualitative diaries and finalized transcripts.</p>
@@ -375,7 +396,7 @@ export function TeacherArchiveView() {
                       <div className="min-w-[750px] divide-y divide-slate-100">
                         
                         {/* Table Structured Grid Column Headers */}
-                        <div className={cn("px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50/70 border-b border-slate-100", rowGridStructure)}>
+                         <div className={cn("px-[5%] py-3 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50/70 border-b border-slate-100", rowGridStructure)}>
                           <div>Student Profile</div>
                           <div>Stream Group</div>
                           <div>Cumulative Avg</div>
@@ -401,7 +422,7 @@ export function TeacherArchiveView() {
                                 <div 
                                   key={student.id}
                                   className={cn(
-                                    "px-6 py-3.5 hover:bg-slate-50/80 group transition-colors duration-150 items-center",
+                                     "px-[5%] py-3.5 hover:bg-slate-50/80 group transition-colors duration-150 items-center",
                                     rowGridStructure
                                   )}
                                 >
@@ -475,11 +496,11 @@ export function TeacherArchiveView() {
                 </div>
               )}
 
-              {/* Interventions Segment Log Section */}
-              {activeSubTab === 'INTERVENTIONS' && (
-                 <div
-                   className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-6 animate-in fade-in"
-                 >
+               {/* Interventions Segment Log Section */}
+               {activeSubTab === 'INTERVENTIONS' && (
+                  <div
+                    className="bg-white border border-slate-200 rounded-2xl py-6 px-[5%] shadow-xs space-y-6 animate-in fade-in"
+                  >
                   <div>
                     <h4 className="text-xs font-black text-slate-900 uppercase tracking-wide">Historical Remedial Actions</h4>
                     <p className="text-xs text-slate-400 font-medium mt-0.5">Audit trail of supportive localized tutoring interventions finalized in past terms.</p>
@@ -515,11 +536,11 @@ export function TeacherArchiveView() {
                 </div>
               )}
 
-              {/* Past Qualitative Observations Summary Frame Section */}
-              {activeSubTab === 'OBS_SUMMARY' && (
-                 <div
-                   className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-6 animate-in fade-in"
-                 >
+               {/* Past Qualitative Observations Summary Frame Section */}
+               {activeSubTab === 'OBS_SUMMARY' && (
+                  <div
+                    className="bg-white border border-slate-200 rounded-2xl py-6 px-[5%] shadow-xs space-y-6 animate-in fade-in"
+                  >
                   <div>
                     <h3 className="text-xs font-black text-slate-900 uppercase tracking-wide">Historical Qualitative Observations</h3>
                     <p className="text-xs text-slate-400 font-medium mt-0.5">Archive of developmental progress reports and performance logs from previous years.</p>

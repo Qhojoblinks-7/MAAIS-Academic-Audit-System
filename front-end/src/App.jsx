@@ -37,7 +37,7 @@ import {
     TeacherDashboard, TeacherTimetableView, TeacherSettings, TeacherSupport,
     TeacherArchiveView, TeacherArchiveDetailView, TeacherGradingView,
     TeacherAnalyticsView, TeacherMissingObservations, TeacherRevisionsFeed,
-    TeacherStudents,     MobileTimetableView, MobileGradingView, MobileTeacherProfile, MobileSearchPage, MobileNotificationsPage,
+    TeacherStudents,     MobileTimetableView, MobileGradingView, MobileTeacherProfile, MobileAnalyticsView, MobileArchiveView, MobileMissingObservations, MobileRevisionsFeed, MobileSearchPage, MobileNotificationsPage,
   StudentPortal, StudentSettings, StudentSupport, StudentTimetable, StudentProfile,
   GradingSheet, HOD_JourneyHistoryAudit, TeacherProfile, NotificationsPage,
 } from "./router/lazyPages";
@@ -70,8 +70,7 @@ import { formatFormNumber } from "./lib/types";
 function RoleBasedMissingObservations() {
   const { user } = useRole();
   return user?.role === "TEACHER" ? (
-
-    <TeacherMissingObservations />
+    <MissingObservationsRedirect />
   ) : (
     <HODMissingObservations />
   );
@@ -542,7 +541,7 @@ function Modal({ isOpen, onClose, title, children }) {
   const { user } = useRole();
   if (user?.role === "ADMIN") return <ArchiveView />;
   if (user?.role === "HOD") return <HODArchiveView />;
-  if (user?.role === "TEACHER") return <TeacherArchiveView />;
+  if (user?.role === "TEACHER") return <ArchiveViewRedirect />;
   return <ArchiveView />;
 };
 
@@ -571,6 +570,7 @@ function AppContent() {
     rightPanelVisible,
     isMobile,
     isGradingSheetActive,
+    isRevisionDetailOpen,
   } = useUI();
   const systemFreezeQuery = useSystemFreeze();
   const isSystemFrozen = systemFreezeQuery.data?.systemFrozen ?? false;
@@ -811,7 +811,7 @@ function AppContent() {
                   {user?.role === "HOD" ? (
                     <Navigate to="/hod/review?view=revisions" replace />
                   ) : (
-                    <TeacherRevisionsFeed />
+                    <RevisionsFeedRedirect />
                   )}
                 </RequireRole>
               }
@@ -846,7 +846,7 @@ function AppContent() {
               path="/teacher/analytics"
               element={
                 <RequireRole allowedRoles={["TEACHER"]}>
-                  <TeacherAnalyticsView />
+                  <AnalyticsViewRedirect />
                 </RequireRole>
               }
             />
@@ -854,7 +854,7 @@ function AppContent() {
               path="/teacher/archive"
               element={
                 <RequireRole allowedRoles={["TEACHER"]}>
-                  <TeacherArchiveView />
+                  <ArchiveViewRedirect />
                 </RequireRole>
               }
             />
@@ -1258,7 +1258,7 @@ function AppContent() {
       {/* Drawers and Modals */}
       {user?.role === "STUDENT" ? <StudentMobileDrawer /> : user?.role === "TEACHER" && isMobile ? null : <MobileDrawer />}
 
-      {user?.role === "TEACHER" && isMobile && !isGradingSheetActive && <TeacherMobileBottomNav />}
+      {user?.role === "TEACHER" && isMobile && !isGradingSheetActive && !isRevisionDetailOpen && <TeacherMobileBottomNav />}
 
       <Suspense fallback={null}>
       <Modal
@@ -1312,7 +1312,67 @@ function AppContent() {
     return <TeacherDashboard />;
   };
 
-export default function App() {
+  const AnalyticsViewRedirect = () => {
+    const [isMobile, setIsMobile] = React.useState(() => window.innerWidth < 768);
+
+    React.useEffect(() => {
+      const handleResize = () => setIsMobile(window.innerWidth < 768);
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    if (isMobile) {
+      return <MobileAnalyticsView />;
+    }
+    return <TeacherAnalyticsView />;
+  };
+
+  const ArchiveViewRedirect = () => {
+    const [isMobile, setIsMobile] = React.useState(() => window.innerWidth < 768);
+
+    React.useEffect(() => {
+      const handleResize = () => setIsMobile(window.innerWidth < 768);
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    if (isMobile) {
+      return <MobileArchiveView />;
+    }
+    return <TeacherArchiveView />;
+  };
+
+  const MissingObservationsRedirect = () => {
+    const [isMobile, setIsMobile] = React.useState(() => window.innerWidth < 768);
+
+    React.useEffect(() => {
+      const handleResize = () => setIsMobile(window.innerWidth < 768);
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    if (isMobile) {
+      return <MobileMissingObservations />;
+    }
+    return <TeacherMissingObservations />;
+  };
+
+  const RevisionsFeedRedirect = () => {
+    const [isMobile, setIsMobile] = React.useState(() => window.innerWidth < 768);
+
+    React.useEffect(() => {
+      const handleResize = () => setIsMobile(window.innerWidth < 768);
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    if (isMobile) {
+      return <MobileRevisionsFeed />;
+    }
+    return <TeacherRevisionsFeed />;
+  };
+
+  export default function App() {
   return (
     <Router>
       <UIProvider>

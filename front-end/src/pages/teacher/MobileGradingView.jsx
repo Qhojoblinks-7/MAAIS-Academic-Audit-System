@@ -9,7 +9,7 @@ import { teacherService } from '../../services';
 import { useActiveYear } from '../../lib/hooks';
 import { SUBJECT_CONFIG } from '../../constants/subjectConfig';
 import { formatFormNumber } from '../../lib/types';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 export { SUBJECT_CONFIG };
 
@@ -33,6 +33,8 @@ export function MobileGradingView() {
   const [gradingStudents, setGradingStudents] = useState([]);
   const [statusMeta, setStatusMeta] = useState({});
   const [dynamicSubjectConfig, setDynamicSubjectConfig] = useState({});
+  const [searchParams] = useSearchParams();
+  const [resolvingFromUrl, setResolvingFromUrl] = useState(() => !!searchParams.get('subject') && !!searchParams.get('class'));
 
   const activeYearQuery = useActiveYear();
   const activeTerm = activeYearQuery.data?.terms?.find(t => t.isActive);
@@ -168,6 +170,21 @@ export function MobileGradingView() {
     await fetchGradingStudents(cls.subject, cls.className);
   }, [fetchGradingStudents]);
 
+  useEffect(() => {
+    if (selectedClass || !gradingClasses.length) return;
+    const subject = searchParams.get('subject');
+    const className = searchParams.get('class');
+    if (!subject || !className) {
+      setResolvingFromUrl(false);
+      return;
+    }
+    const match = gradingClasses.find(c => c.subject === subject && c.className === className);
+    if (match) {
+      setResolvingFromUrl(true);
+      handleSelectClass(match);
+    }
+  }, [gradingClasses, selectedClass, searchParams, handleSelectClass]);
+
   const handleSubjectChange = useCallback(async (e) => {
     const subject = e.target.value;
     setSelectedSubject(subject);
@@ -228,6 +245,14 @@ export function MobileGradingView() {
             Go Back
           </button>
         </div>
+      </div>
+    );
+  }
+
+  if (resolvingFromUrl && !selectedClass) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-background">
+        <div className="h-8 w-8 rounded-full border-2 border-success/30 border-t-success animate-spin" />
       </div>
     );
   }

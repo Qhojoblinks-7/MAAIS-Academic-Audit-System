@@ -72,6 +72,10 @@ export const TeacherStudents = l(() => import('../pages/teacher/TeacherStudents'
 export const MobileTimetableView = l(() => import('../pages/teacher/MobileTimetableView'), 'MobileTimetableView');
 export const MobileGradingView = l(() => import('../pages/teacher/MobileGradingView'), 'MobileGradingView');
 export const MobileTeacherProfile = l(() => import('../pages/teacher/MobileTeacherProfile'), 'MobileTeacherProfile');
+export const MobileAnalyticsView = l(() => import('../pages/teacher/MobileAnalyticsView'), 'MobileAnalyticsView');
+export const MobileArchiveView = l(() => import('../pages/teacher/MobileArchiveView'), 'MobileArchiveView');
+export const MobileMissingObservations = l(() => import('../pages/teacher/MobileMissingObservations'), 'MobileMissingObservations');
+export const MobileRevisionsFeed = l(() => import('../pages/teacher/MobileRevisionsFeed'), 'MobileRevisionsFeed');
 export const MobileSearchPage = l(() => import('../pages/shared/MobileSearchPage'), 'MobileSearchPage');
 export const MobileNotificationsPage = l(() => import('../pages/shared/MobileNotificationsPage'), 'MobileNotificationsPage');
 

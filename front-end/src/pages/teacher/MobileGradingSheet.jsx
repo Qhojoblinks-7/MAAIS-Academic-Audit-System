@@ -255,7 +255,6 @@ export function MobileGradingSheet(props) {
               transition={{ delay: idx * 0.03 }}
               className={cn(
                 "bg-card rounded-2xl border border-border shadow-sm overflow-hidden transition-all",
-                isSelected && "ring-2 ring-success ring-offset-1",
                 student.auditStatus === 'MISSING' && "border-warning/30"
               )}
             >
@@ -264,23 +263,35 @@ export function MobileGradingSheet(props) {
                 onClick={() => handleStudentTap(student)}
                 className="p-4 flex items-center gap-3 active:bg-muted/50 transition-colors cursor-pointer"
               >
-                <div className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-xs font-black",
-                  isSelected ? "bg-success text-background" : "bg-muted text-primary"
-                )}>
-                  {student.index || idx + 1}
-                </div>
+                <img
+                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(student.name || 'default')}`}
+                  alt={student.name}
+                  className="w-10 h-10 rounded-xl shrink-0 bg-muted"
+                />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-black text-foreground truncate">{student.name}</p>
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest truncate">
-                    {remark}
+                    {student.index || idx + 1}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className={cn("text-lg font-black px-2.5 py-1 rounded-lg border", getGradeColor(grade))}>
                     {grade}
                   </span>
-                  {isObsOpen && isSelected ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isSelected) {
+                        setSelectedStudent(null);
+                      } else {
+                        setSelectedStudent(student);
+                      }
+                    }}
+                    className="p-1 -mr-1 text-muted-foreground active:text-foreground transition-colors"
+                    aria-label={isSelected ? 'Collapse' : 'Expand'}
+                  >
+                    {isSelected ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
                 </div>
               </div>
 
@@ -297,7 +308,7 @@ export function MobileGradingSheet(props) {
                     <div className="px-4 pb-4 pt-2 border-t border-border/50 space-y-3">
                       {/* SBA Input */}
                       <div className="flex items-center gap-3">
-                        <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest w-20 shrink-0">
+                        <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex-1">
                           {subjectConfig?.sbaLabel || 'SBA (30%)'}
                         </label>
                         <input
@@ -306,10 +317,10 @@ export function MobileGradingSheet(props) {
                           disabled={studentLocked}
                           onChange={(e) => updateMark(student.id, 'sba', e.target.value)}
                           className={cn(
-                            "flex-1 px-3 py-2.5 rounded-xl border text-sm font-bold text-center transition-all",
+                            "w-24 px-3 py-2 rounded-xl text-sm font-bold text-center transition-all",
                             studentLocked
-                              ? "bg-muted text-muted-foreground cursor-not-allowed border-border"
-                              : "bg-surface border-border focus:border-success focus:ring-2 focus:ring-success/20 text-foreground"
+                              ? "bg-muted text-muted-foreground cursor-not-allowed"
+                              : "bg-surface focus:outline-none focus:ring-1 focus:ring-border text-foreground"
                           )}
                           placeholder="0"
                           inputMode="numeric"
@@ -323,54 +334,54 @@ export function MobileGradingSheet(props) {
                           animate={{ opacity: 1, height: 'auto' }}
                           className="space-y-2"
                         >
-                          {sectionFieldNames.map((fieldName, idx) => (
-                            <div key={fieldName} className="flex items-center gap-3">
-                              <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest w-20 shrink-0">
-                                {activeSections[idx] || `Section ${idx + 1}`}
-                              </label>
-                              <input
-                                type="number"
-                                value={student[fieldName] ?? ''}
-                                disabled={studentLocked}
-                                onChange={(e) => updateMark(student.id, fieldName, e.target.value)}
-                                className={cn(
-                                  "flex-1 px-3 py-2.5 rounded-xl border text-sm font-bold text-center transition-all",
-                                  studentLocked
-                                    ? "bg-muted text-muted-foreground cursor-not-allowed border-border"
-                                    : "bg-surface border-border focus:border-success focus:ring-2 focus:ring-success/20 text-foreground"
-                                )}
-                                placeholder="0"
-                                inputMode="numeric"
-                              />
-                            </div>
-                          ))}
-                          <div className="flex items-center gap-3">
-                            <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest w-20 shrink-0">
-                              Total
-                            </label>
-                            <div className="flex-1 px-3 py-2.5 rounded-xl bg-muted text-sm font-black text-center text-muted-foreground">
-                              {sectionFieldNames.reduce((sum, key) => sum + (parseFloat(student[key]) || 0), 0)}
-                            </div>
-                          </div>
+                           {sectionFieldNames.map((fieldName, idx) => (
+                             <div key={fieldName} className="flex items-center gap-3">
+                               <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex-1">
+                                 {activeSections[idx] || `Section ${idx + 1}`}
+                               </label>
+                               <input
+                                 type="number"
+                                 value={student[fieldName] ?? ''}
+                                 disabled={studentLocked}
+                                 onChange={(e) => updateMark(student.id, fieldName, e.target.value)}
+                                 className={cn(
+                                   "w-24 px-3 py-2 rounded-xl text-sm font-bold text-center transition-all",
+                                   studentLocked
+                                     ? "bg-muted text-muted-foreground cursor-not-allowed"
+                                     : "bg-surface focus:outline-none focus:ring-1 focus:ring-border text-foreground"
+                                 )}
+                                 placeholder="0"
+                                 inputMode="numeric"
+                               />
+                             </div>
+                           ))}
+                           <div className="flex items-center gap-3">
+                             <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex-1">
+                               Total
+                             </label>
+                             <div className="w-24 px-3 py-2 rounded-xl bg-muted text-sm font-black text-center text-muted-foreground">
+                               {sectionFieldNames.reduce((sum, key) => sum + (parseFloat(student[key]) || 0), 0)}
+                             </div>
+                           </div>
                         </motion.div>
                       )}
 
                       {/* Exam Input */}
                       <div className="flex items-center gap-3">
-                        <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest w-20 shrink-0">
+                        <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex-1">
                           {subjectConfig?.examLabel || 'Exam (70%)'}
                         </label>
-                        <div className="flex-1 relative">
+                        <div className="relative">
                           <input
                             type="number"
                             value={student.exam ?? ''}
                             disabled={studentLocked}
                             onChange={(e) => updateMark(student.id, 'exam', e.target.value)}
                             className={cn(
-                              "w-full px-3 py-2.5 rounded-xl border text-sm font-bold text-center transition-all",
+                              "w-24 px-3 py-2 rounded-xl text-sm font-bold text-center transition-all",
                               studentLocked
-                                ? "bg-muted text-muted-foreground cursor-not-allowed border-border"
-                                : "bg-surface border-border focus:border-success focus:ring-2 focus:ring-success/20 text-foreground"
+                                ? "bg-muted text-muted-foreground cursor-not-allowed"
+                                : "bg-surface focus:outline-none focus:ring-1 focus:ring-border text-foreground"
                             )}
                             placeholder="0"
                             inputMode="numeric"
@@ -385,18 +396,13 @@ export function MobileGradingSheet(props) {
                         </div>
                       </div>
 
-                      {/* Final & Grade Display */}
+                      {/* Final Display */}
                       <div className="flex items-center gap-3">
-                        <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest w-20 shrink-0">
+                        <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex-1">
                           Final
                         </label>
-                        <div className="flex-1 flex items-center gap-2">
-                          <div className="flex-1 px-3 py-2.5 rounded-xl bg-muted/50 text-sm font-black text-center text-foreground">
-                            {final}
-                          </div>
-                          <div className={cn("px-3 py-2.5 rounded-xl border text-sm font-black", getGradeColor(grade))}>
-                            {grade}
-                          </div>
+                        <div className="w-24 px-3 py-2 rounded-xl bg-muted/50 text-sm font-black text-center text-foreground">
+                          {final}
                         </div>
                       </div>
 
@@ -614,7 +620,7 @@ export function MobileGradingSheet(props) {
                   value={behavioralComment[selectedStudent.id] || ''}
                   onChange={(e) => updateBehavioralComment(e.target.value)}
                   placeholder="Add observation notes..."
-                  className="w-full h-24 bg-muted border border-border rounded-xl p-3 text-xs font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-success/20 resize-none"
+                  className="w-full h-24 bg-muted border border-border rounded-xl p-3 text-xs font-medium text-foreground placeholder:text-muted-foreground focus:outline-none resize-none"
                 />
               </div>
             </div>
@@ -691,7 +697,7 @@ export function MobileGradingSheet(props) {
                 value={justification}
                 onChange={(e) => setJustification(e.target.value)}
                 placeholder="Enter justification..."
-                className="w-full h-24 bg-muted border border-border rounded-xl p-3 text-xs font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/20 resize-none mb-4"
+                className="w-full h-24 bg-muted border border-border rounded-xl p-3 text-xs font-medium text-foreground placeholder:text-muted-foreground focus:outline-none resize-none mb-4"
               />
               <div className="flex gap-2">
                 <button
@@ -736,7 +742,7 @@ export function MobileGradingSheet(props) {
                 value={revisionText}
                 onChange={(e) => setRevisionText(e.target.value)}
                 placeholder="Describe what needs to be revised..."
-                className="w-full h-32 bg-muted border border-border rounded-xl p-3 text-xs font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/20 resize-none mb-4"
+                className="w-full h-32 bg-muted border border-border rounded-xl p-3 text-xs font-medium text-foreground placeholder:text-muted-foreground focus:outline-none resize-none mb-4"
               />
               <div className="flex gap-2">
                 <button

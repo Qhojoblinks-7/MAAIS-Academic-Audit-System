@@ -290,6 +290,12 @@ function createRealService() {
         return Array.isArray(payload.data) ? payload : { data: [], total: 0, page, limit, pages: 0 };
       });
     },
+    getObservationTypes: () => {
+      return request('GET', '/teacher/observation-types').then(r => r?.data ?? r);
+    },
+    getObservationColors: () => {
+      return request('GET', '/teacher/observation-colors').then(r => r?.data ?? r);
+    },
     getSupportObservations: () => {
 
       return request('GET', '/teacher/support/observations').then(r => r?.data ?? r).catch(() => []);

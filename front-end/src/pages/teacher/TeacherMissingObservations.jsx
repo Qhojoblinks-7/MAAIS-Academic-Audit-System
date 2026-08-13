@@ -309,8 +309,8 @@ export function TeacherMissingObservations() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0 w-full h-full bg-background font-sans antialiased overflow-hidden">
-      <header className="p-6 lg:p-8 bg-surface border-b border-border shrink-0">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <header className="px-8 py-6 bg-surface border-b border-border shrink-0">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-11 h-11 bg-warning rounded-xl flex items-center justify-center shadow-md shadow-brand-dark/10 shrink-0">
               <AlertTriangle size={20} className="text-surface" />
@@ -336,8 +336,8 @@ export function TeacherMissingObservations() {
         </div>
       </header>
 
-      <section className="px-6 lg:px-8 py-4 bg-surface border-b border-border shrink-0">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      <section className="px-8 py-4 bg-surface border-b border-border shrink-0">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div className="flex p-0.5 bg-muted rounded-xl border border-border self-start">
               {[
@@ -386,7 +386,7 @@ export function TeacherMissingObservations() {
       </section>
 
       <main className="flex-1 overflow-y-auto min-h-0">
-        <div className="max-w-6xl mx-auto px-8 py-8">
+        <div className="px-8 py-8">
           {isLoading && (
              <div className="flex items-center justify-center py-16 px-4 text-center bg-surface rounded-2xl border border-border animate-in fade-in">
               <p className="text-xs font-medium text-secondary">Syncing observation records from MAAIS backend…</p>

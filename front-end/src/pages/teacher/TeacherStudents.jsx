@@ -215,26 +215,26 @@ export function TeacherStudents() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0 h-full overflow-y-auto scrollbar-hide bg-slate-50/40 font-sans antialiased pb-12">
-      <header className="bg-white border-b border-slate-200/80 px-6 py-4 sticky top-0 z-10 backdrop-blur-md bg-white/95 shrink-0">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-lg font-bold text-slate-900 tracking-tight">Student Directory</h1>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">Students enrolled in your assigned classes</p>
+      <header className="bg-white border-b border-slate-200/80 px-4 lg:px-[5%] py-4 sticky top-0 z-10 backdrop-blur-md bg-white/95 shrink-0">
+        <div className="flex flex-row items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-lg font-bold text-slate-900 tracking-tight truncate">Student Directory</h1>
+            <p className="text-xs text-slate-500 font-medium mt-0.5 truncate">Students enrolled in your assigned classes</p>
           </div>
           <Button
             onClick={handleRefresh}
             disabled={refreshing || isLoading}
             variant="outline"
-            size="sm"
-            className="h-8 text-xs font-semibold border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-3xs"
+            size="icon"
+            className="h-8 w-8 p-0 md:w-auto md:px-3 md:py-2 text-xs font-semibold border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-3xs"
           >
-            <RefreshCw size={12} className={cn("text-slate-400 mr-1.5", refreshing && 'animate-spin text-indigo-600')} />
-            Synchronize Directory
+            <RefreshCw size={12} className={cn("text-slate-400", refreshing && 'animate-spin text-indigo-600')} />
+            <span className="hidden md:inline">Synchronize Directory</span>
           </Button>
         </div>
       </header>
 
-      <main className="flex-1 p-6 max-w-7xl w-full mx-auto space-y-5">
+      <main className="flex-1 px-4 lg:px-[5%] py-4 md:py-6 space-y-5">
         <div className="bg-white rounded-xl p-3 flex items-center shadow-3xs border border-slate-200/80">
           <Search size={14} className="text-slate-400 ml-2 mr-3 shrink-0" />
           <input

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid,
-  LineChart, Line, PieChart, Pie, Cell,
+  LineChart, Line, Cell,
   Legend
 } from 'recharts';
 import {
@@ -52,6 +53,15 @@ const GRADE_BANDS = [
   { label: 'E8', min: 40, max: 44, fill: '#dc2626' },
   { label: 'F9', min: 0, max: 39, fill: '#991b1b' },
 ];
+
+function categorizeObservation(text) {
+  const t = (text || '').toLowerCase();
+  if (/\b(lab|safety|equipment|experiment|practical|chemical|hazard)\b/.test(t)) return 'Lab Safety';
+  if (/\b(group|team|collab|peer|partner|teamwork)\b/.test(t)) return 'Collaboration';
+  if (/\b(late|absent|attendance|punctual|present|tardy)\b/.test(t)) return 'Punctuality';
+  if (/\b(behavior|disruptive|participation|attitude|conduct|disciplinary|respect)\b/.test(t)) return 'Behavioral';
+  return 'Academic';
+}
 
 export function TeacherAnalyticsView() {
   const { user } = useRole();
@@ -113,13 +123,32 @@ export function TeacherAnalyticsView() {
     [studentScores, gradeConfig]
   );
 
-  const obsTypePieData = useMemo(() => {
-    return OBS_TYPES_MODULE.map((t, i) => ({
-      name: t,
-      value: observations.filter(o => o.type === t).length,
-      fill: OBS_COLORS_MODULE[i],
+  const scoreDistribution = useMemo(() => {
+    const ranges = [
+      { label: '0–20', min: 0, max: 20, color: '#ef4444' },
+      { label: '21–40', min: 21, max: 40, color: '#f97316' },
+      { label: '41–60', min: 41, max: 60, color: '#eab308' },
+      { label: '61–80', min: 61, max: 80, color: '#22c55e' },
+      { label: '81–100', min: 81, max: 100, color: '#16a34a' },
+    ];
+    return ranges.map(r => ({
+      name: r.label,
+      value: studentScores.filter(s => (s.score || 0) >= r.min && (s.score || 0) <= r.max).length,
+      fill: r.color,
     }));
-  }, [observations]);
+  }, [studentScores]);
+
+  const obsTypeColorMap = useMemo(() => {
+    const map = {};
+    OBS_TYPES_MODULE.forEach((t, i) => {
+      map[t] = OBS_COLORS_MODULE[i];
+    });
+    return map;
+  }, []);
+
+  const uniqueObsTypes = useMemo(() => {
+    return ['All', ...OBS_TYPES_MODULE];
+  }, []);
 
   const statCards = useMemo(() => {
     const safeScores = studentScores || [];
@@ -131,10 +160,10 @@ export function TeacherAnalyticsView() {
       : 0;
 
     return [
-      { label: 'Class Avg Score', value: `${meanScore}%`, icon: GraduationCap, color: 'bg-success/10 text-success border-success/20', delta: '+2% vs last term' },
-      { label: 'Submission Rate', value: `${classProgress.reduce((s, c) => s + (c.completions || 0), 0)}/${classProgress.reduce((s, c) => s + (c.students || 0), 0)}`, icon: FileText, color: 'bg-brand-secondary/10 text-brand-secondary border-brand-secondary/20', delta: `${submissionRate}% complete` },
-      { label: 'At-Risk Students', value: safeScores.filter(s => (s.score || 0) < 60).length, icon: AlertTriangle, color: 'bg-danger/10 text-danger border-danger/20', delta: 'Score below 60' },
-      { label: 'Total Observations', value: observations.length, icon: Activity, color: 'bg-warning/10 text-warning border-warning/20', delta: `${observations.filter(o => o.status === 'active').length} active` },
+      { label: 'Class Avg Score', value: `${meanScore}%`, icon: 'GraduationCap', bg: 'bg-success/10', color: 'text-success', subtext: 'Score performance' },
+      { label: 'Submission Rate', value: `${classProgress.reduce((s, c) => s + (c.completions || 0), 0)}/${classProgress.reduce((s, c) => s + (c.students || 0), 0)}`, icon: 'FileText', bg: 'bg-brand-secondary/10', color: 'text-brand-secondary', subtext: `${submissionRate}% complete` },
+      { label: 'At-Risk Students', value: safeScores.filter(s => (s.score || 0) < 60).length, icon: 'AlertTriangle', bg: 'bg-danger/10', color: 'text-danger', subtext: 'Score below 60' },
+      { label: 'Total Observations', value: observations.length, icon: 'Activity', bg: 'bg-warning/10', color: 'text-warning', subtext: `${observations.filter(o => o.status === 'active').length} active` },
     ];
   }, [studentScores, classProgress, observations]);
 
@@ -172,11 +201,12 @@ export function TeacherAnalyticsView() {
   ];
 
   const filteredObs = observations.filter(o => {
-    const matchesSearch = o.student.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          o.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          o.comment.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = obsFilter === 'All' || o.type === obsFilter;
-    return matchesSearch && matchesType;
+    const category = categorizeObservation(o.comment);
+    const matchesSearch = (o.student || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (o.type || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (o.comment || '').toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = obsFilter === 'All' || category === obsFilter;
+    return matchesSearch && matchesCategory;
   });
 
   const filteredStudents = studentScores
@@ -188,59 +218,80 @@ export function TeacherAnalyticsView() {
       <div className="flex-1 flex flex-col bg-muted overflow-hidden relative">
 
           <header className="px-8 py-6 bg-surface border-b border-border shrink-0">
-            <h1 className="text-2xl font-black text-text-primary italic font-display tracking-tight leading-none">
-              Performance Analytics
-            </h1>
-            <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] mt-2 flex items-center gap-1.5">
-              <Eye size={10} className="text-text-secondary" />
-              Grade Insights · Observation Trends · At-Risk Flags
-            </p>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-black text-text-primary italic font-display tracking-tight leading-none">
+                  Performance Analytics
+                </h1>
+                <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] mt-2 flex items-center gap-1.5">
+                  <Eye size={10} className="text-text-secondary" />
+                  Grade Insights · Observation Trends · At-Risk Flags
+                </p>
+              </div>
+              <div className="flex bg-surface rounded-2xl border border-border shadow-sm p-1">
+                {tabs.map((t) => (
+                  <Tooltip key={t.id}>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => {
+                          setActiveTab(t.id);
+                          setSearchQuery('');
+                          setObsFilter('All');
+                        }}
+                        className={cn(
+                          "flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+                          activeTab === t.id
+                            ? 'bg-brand-primary text-surface shadow-md shadow-brand-dark/10'
+                            : 'text-secondary hover:text-primary hover:bg-muted'
+                        )}
+                      >
+                        <t.icon size={13} />
+                        {t.label}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={8}>{t.label} analytics</TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+            </div>
           </header>
 
           <div className="flex-1 overflow-y-auto relative scrollbar-hide">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 px-8 pt-8">
-            {statCards.map((s, i) => (
-              <div
-                key={s.label}
-                style={{ animationDelay: `${i * 50}ms` }}
-                className="bg-surface p-5 rounded-2xl border border-border shadow-sm flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-200"
-              >
-                <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border", s.color)}>
-                  <s.icon size={20} />
-                </div>
-                <div>
-                  <p className="text-xs font-black text-secondary uppercase tracking-widest leading-none mb-1">{s.label}</p>
-                  <p className="text-2xl font-black text-primary leading-none">{s.value}</p>
-                  <p className="text-xs font-bold text-secondary mt-1">{s.delta}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex bg-surface rounded-2xl border border-border shadow-sm p-1 mb-6 w-fit mx-8">
-            {tabs.map((t) => (
-              <Tooltip key={t.id}>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => {
-                      setActiveTab(t.id);
-                      setSearchQuery('');
-                      setObsFilter('All');
-                    }}
-                    className={cn(
-                      "flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
-                      activeTab === t.id
-                        ? 'bg-brand-primary text-surface shadow-md shadow-brand-dark/10'
-                        : 'text-secondary hover:text-primary hover:bg-muted'
-                    )}
-                  >
-                    <t.icon size={13} />
-                    {t.label}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={8}>{t.label} analytics</TooltipContent>
-              </Tooltip>
-            ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 px-8 pt-6">
+            {statCards.map((s, i) => {
+              const iconMap = { GraduationCap, FileText, AlertTriangle, Activity };
+              const CardIcon = iconMap[s.icon] || GraduationCap;
+              return (
+                <motion.div
+                  key={s.label}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="bg-surface p-4 rounded-2xl border border-border/50 shadow-sm hover:shadow-md transition-all relative group"
+                >
+                  <div className="flex items-center justify-between h-full gap-4">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shrink-0", s.bg, s.color)}>
+                        <CardIcon size={22} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1 whitespace-nowrap">{s.label}</p>
+                        <p className="text-[11px] font-medium text-text-secondary leading-tight whitespace-nowrap">{s.subtext}</p>
+                      </div>
+                    </div>
+                    <div className="text-right pl-4 shrink-0">
+                      {String(s.value).endsWith('%') ? (
+                        <p className="text-5xl font-bold tracking-tighter leading-none whitespace-nowrap">
+                          {String(s.value).slice(0, -1)}<span className="text-2xl font-bold align-baseline">{String(s.value).slice(-1)}</span>
+                        </p>
+                      ) : (
+                        <p className="text-5xl font-bold tracking-tighter leading-none whitespace-nowrap">{s.value}</p>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
 
             {activeTab === 'overview' && (
@@ -293,37 +344,31 @@ export function TeacherAnalyticsView() {
                     </div>
                   </div>
 
-                  <div className="bg-surface rounded-[2rem] border border-border shadow-sm p-6 lg:p-8">
-                    <h3 className="text-xs font-black text-primary uppercase tracking-widest mb-4 flex items-center gap-2">
-                      <Star size={14} className="text-secondary" />
-                      Observation Breakdown
-                    </h3>
-                     <div className="h-64 w-full">
-                       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                         <PieChart>
-                          <Pie
-                            data={obsTypePieData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={46}
-                            outerRadius={80}
-                            paddingAngle={4}
-                            dataKey="value"
-                            stroke="none"
-                          >
-                            {obsTypePieData.map((d, i) => (
-                              <Cell key={d.name} fill={d.fill} />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            contentStyle={{ fontSize: 11, fontWeight: 700, borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}
-                            formatter={(val) => [val, 'Records']}
-                          />
-                          <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 10, fontWeight: 700 }} />
-                        </PieChart>
-                      </ResponsiveContainer>
+                   <div className="bg-surface rounded-[2rem] border border-border shadow-sm p-6 lg:p-8">
+                     <h3 className="text-xs font-black text-primary uppercase tracking-widest mb-4 flex items-center gap-2">
+                       <Star size={14} className="text-secondary" />
+                       Student Score Distribution
+                     </h3>
+                      <div className="h-64 w-full">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                          <BarChart data={scoreDistribution} margin={{ top: 10, right: 20, left: -10, bottom: 0 }} layout="vertical">
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+                            <XAxis type="number" tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 700 }} tickLine={false} axisLine={false} />
+                            <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#64748b', fontWeight: 700 }} tickLine={false} axisLine={false} width={100} />
+                            <Tooltip
+                              contentStyle={{ fontSize: 11, fontWeight: 700, borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}
+                              formatter={(val) => [val, 'Students']}
+                            />
+                            <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 10, fontWeight: 700 }} />
+                            <Bar dataKey="value" name="Students" radius={[0, 6, 6, 0]}>
+                              {scoreDistribution.map((d) => (
+                                <Cell key={d.name} fill={d.fill} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
                     </div>
-                  </div>
                 </div>
 
                 <div className="bg-surface rounded-[2rem] border border-border shadow-sm p-6 lg:p-8">
@@ -367,7 +412,7 @@ export function TeacherAnalyticsView() {
                     />
                   </div>
                   <div className="flex gap-1.5 flex-wrap">
-                    {['All', ...OBS_TYPES_MODULE].map((f) => (
+                    {uniqueObsTypes.map((f) => (
                       <button
                         key={f}
                         onClick={() => setObsFilter(f)}
@@ -397,8 +442,8 @@ export function TeacherAnalyticsView() {
                     </TableHeader>
                     <TableBody>
                       {filteredObs.map((o, i) => {
-                        const typeIdx = OBS_TYPES_MODULE.indexOf(o.type);
-                        const typeColor = OBS_COLORS_MODULE[typeIdx] || '#1D4D4F';
+                        const category = categorizeObservation(o.comment);
+                        const typeColor = obsTypeColorMap[category] || '#1D4D4F';
                         return (
                           <TableRow
                             key={o.id}
@@ -408,7 +453,7 @@ export function TeacherAnalyticsView() {
                             <TableCell className="px-8 py-5 font-black text-sm text-primary truncate">{o.student}</TableCell>
 
                             <TableCell className="px-8 py-5">
-                              <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-widest text-surface" style={{ backgroundColor: typeColor }}>{o.type}</span>
+                              <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-widest text-surface" style={{ backgroundColor: typeColor }}>{category}</span>
                             </TableCell>
 
                             <TableCell className="px-8 py-5">
