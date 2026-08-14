@@ -12,11 +12,11 @@ import {
 import { cn } from '../../lib/utils';
 
 const EVENTS = [
-  { id: '1', title: 'Term 2 Resumption', date: '2026-05-10', type: 'ACADEMIC', allDay: true },
-  { id: '2', title: 'Mid-Term Exams', date: '2026-06-15', type: 'EXAM', allDay: true, end: '2026-06-20' },
+  { id: '1', title: 'Semester 2 Resumption', date: '2026-05-10', type: 'ACADEMIC', allDay: true },
+  { id: '2', title: 'Mid-Semester Exams', date: '2026-06-15', type: 'EXAM', allDay: true, end: '2026-06-20' },
   { id: '3', title: 'Sports Gala', date: '2026-06-28', type: 'EVENT', startTime: '08:00', endTime: '16:00', venue: 'Sports Field' },
   { id: '4', title: 'Parent-Teacher Conference', date: '2026-07-03', type: 'MEETING', startTime: '09:00', endTime: '15:00', venue: 'Hall A' },
-  { id: '5', title: 'End of Term 2', date: '2026-07-24', type: 'ACADEMIC', allDay: true },
+  { id: '5', title: 'End of Semester 2', date: '2026-07-24', type: 'ACADEMIC', allDay: true },
   { id: '6', title: 'Industrial Attachment', date: '2026-08-10', type: 'CAREER', allDay: true, end: '2026-08-21' },
 ];
 

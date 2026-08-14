@@ -43,7 +43,7 @@ const DEFAULT_BOUNDARIES = [
 
 export const GradingRulesView = () => {
   const { isTermFinalized, setIsTermFinalized } = useUI();
-  const TERM_DISPLAY = { TERM_1: 'Term 1', TERM_2: 'Term 2', TERM_3: 'Term 3', SEMESTER_1: 'Semester 1', SEMESTER_2: 'Semester 2' };
+  const TERM_DISPLAY = { SEMESTER_1: 'Semester 1', SEMESTER_2: 'Semester 2' };
   const [caWeight, setCaWeight] = useState(30);
   const [examWeight, setExamWeight] = useState(70);
   const [boundaries, setBoundaries] = useState(DEFAULT_BOUNDARIES);

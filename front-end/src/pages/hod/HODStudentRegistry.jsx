@@ -384,7 +384,11 @@ export function HODStudentRegistry() {
         setCsspsPreview([]);
       }
     };
-    reader.readAsText(file);
+    if (file.name.match(/\.xlsx?$/i)) {
+      reader.readAsBinaryString(file);
+    } else {
+      reader.readAsText(file);
+    }
   };
 
   const handleCancelCsspsUpload = () => {
@@ -407,7 +411,7 @@ export function HODStudentRegistry() {
 
     csspsPreview.forEach((record, idx) => {
       const rowNum = idx + 2;
-      const indexNum = record.index_number || record.indexnumber || record.index || '';
+      const indexNum = record.index_number || record.indexnumber || record.index || record.cassrefid || '';
       if (!indexNum) {
         validationErrors.push(`Row ${rowNum}: Missing index number`);
       } else {
@@ -419,11 +423,18 @@ export function HODStudentRegistry() {
 
       const firstName = record.first_name || record.firstname || record.firstName || '';
       const lastName = record.last_name || record.lastname || record.lastName || '';
-      if (!firstName) validationErrors.push(`Row ${rowNum}: Missing first name`);
-      if (!lastName) validationErrors.push(`Row ${rowNum}: Missing last name`);
+      const hasName = firstName || lastName || record.name;
+      
+      if (!hasName) {
+        validationErrors.push(`Row ${rowNum}: Missing first name`);
+      }
+      if (!lastName && !record.name) {
+        validationErrors.push(`Row ${rowNum}: Missing last name`);
+      }
 
       const classId = record.currentclassid || record.currentClassId || '';
-      const className = record.classname || record.className || record.class_name || '';
+      let className = record.classname || record.className || record.class_name || record.cassyear || '';
+      className = className.replace(/^Year\s+/i, 'Form ');
       if (classId && !validClassIds.has(classId)) {
         validationErrors.push(`Row ${rowNum}: Invalid class ID "${classId}"`);
       }
@@ -432,7 +443,7 @@ export function HODStudentRegistry() {
       }
 
       const deptId = record.departmentid || record.departmentId || '';
-      const deptName = record.departmentname || record.departmentName || record.department_name || '';
+      const deptName = record.departmentname || record.departmentName || record.department_name || record.programname || '';
       if (deptId && !validDeptIds.has(deptId)) {
         validationErrors.push(`Row ${rowNum}: Invalid department ID "${deptId}"`);
       }
@@ -448,24 +459,47 @@ export function HODStudentRegistry() {
 
     setIsProcessingCssps(true);
 
-    const students = csspsPreview.map(record => ({
-      indexNumber: record.index_number || record.indexnumber || record.index || `MSHTS/2024/${String(Date.now()).slice(-6)}`,
-      firstName: record.first_name || record.firstname || record.firstName || '',
-      lastName: record.last_name || record.lastname || record.lastName || '',
-      middleName: record.middle_name || record.middlename || record.middleName || '',
-      gender: (record.gender || 'MALE').toUpperCase(),
-      dateOfBirth: record.date_of_birth || record.dob || record.dateofbirth || record.dateOfBirth,
-      currentClassId: record.currentclassid || record.currentClassId || '',
-      departmentId: record.departmentid || record.departmentId || '',
-      className: record.classname || record.className || record.class_name || '',
-      departmentName: record.departmentname || record.departmentName || record.department_name || '',
-      parentFirstName: record.parentfirstname || record.parentFirstName || record.parent_first_name || '',
-      parentLastName: record.parentlastname || record.parentLastName || record.parent_last_name || '',
-      parentPhone: record.parentphone || record.parentPhone || record.parent_phone || '',
-      parentEmail: record.parentemail || record.parentEmail || record.parent_email || '',
-      parentRelationship: record.parentrelationship || record.parentRelationship || record.parent_relationship || 'Guardian',
-      isBoarder: (record.residential_status || record.isBoarder || '').toUpperCase() === 'BOARDING',
-    }));
+    const students = csspsPreview.map(record => {
+      const firstName = record.first_name || record.firstname || record.firstName || '';
+      const lastName = record.last_name || record.lastname || record.lastName || '';
+      let middleName = record.middle_name || record.middlename || record.middleName || '';
+      
+      if (record.name && !firstName && !lastName) {
+        const nameParts = record.name.trim().split(/\s+/);
+        if (nameParts.length >= 2) {
+          lastName = nameParts[0];
+          firstName = nameParts[1];
+          if (nameParts.length > 2) {
+            middleName = nameParts.slice(2).join(' ');
+          }
+        } else if (nameParts.length === 1) {
+          firstName = nameParts[0];
+        }
+      }
+      
+      return {
+        indexNumber: record.index_number || record.indexnumber || record.index || record.cassrefid || `MSHTS/2024/${String(Date.now()).slice(-6)}`,
+        firstName,
+        lastName,
+        middleName,
+        gender: (record.gender || 'MALE').toUpperCase(),
+        dateOfBirth: record.date_of_birth || record.dob || record.dateofbirth || record.dateOfBirth || '',
+        nationalId: record.nationalid || record.natid || record.nat_id || '',
+        disability: record.disability || record.disability_type || '',
+        canReadBraille: record.canreadbraille === 'true' || record.can_read_braille === 'true' || false,
+        subjects: record.sub ? [record.sub].filter(Boolean) : [],
+        currentClassId: record.currentclassid || record.currentClassId || '',
+        departmentId: record.departmentid || record.departmentId || '',
+        className: (record.classname || record.className || record.class_name || (record.cassyear ? record.cassyear.replace(/^Year\s+/i, 'Form ') : '')) || '',
+        departmentName: record.departmentname || record.departmentName || record.department_name || record.programname || '',
+        parentFirstName: record.parentfirstname || record.parentFirstName || record.parent_first_name || '',
+        parentLastName: record.parentlastname || record.parentLastName || record.parent_last_name || '',
+        parentPhone: record.parentphone || record.parentPhone || record.parent_phone || '',
+        parentEmail: record.parentemail || record.parentEmail || record.parent_email || '',
+        parentRelationship: record.parentrelationship || record.parentRelationship || record.parent_relationship || 'Guardian',
+        isBoarder: (record.residential_status || record.isBoarder || '').toUpperCase() === 'BOARDING',
+      };
+    });
 
     try {
       const result = await batchImportMutation.mutateAsync(students);

@@ -52,7 +52,7 @@ graph TD
 2.  **Audit Phase**: The system scans for "Missing Observations" (e.g., student has score but no attendance).
 3.  **Compiling**: The Report & Transcript engines pull weighted averages from across the 3-year history.
 4.  **Verification**: Every printed/PDF document is assigned a unique system hash and QR code.
-5.  **Archival**: At the end of Term 3, the Promotion Logic moves records out of active tables into the high-performance Vault.
+5.  **Archival**: At the end of Semester 2, the Promotion Logic moves records out of active tables into the high-performance Vault.
 
 ---
 

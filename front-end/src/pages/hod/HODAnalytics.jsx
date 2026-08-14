@@ -183,7 +183,7 @@ export function HODAnalytics() {
   const [analyticsSemester, setAnalyticsSemester] = useState('');
 
   const yearLabel = analyticsAcademicYearId;
-  const termNumber = analyticsTermNumber === 'sem-1' ? 'TERM_1' : analyticsTermNumber === 'sem-2' ? 'TERM_2' : undefined;
+  const termNumber = analyticsTermNumber === 'sem-1' ? 'SEMESTER_1' : analyticsTermNumber === 'sem-2' ? 'SEMESTER_2' : undefined;
 
   const handleResetFilters = useCallback(() => {
     const freshDate = getLocalDateString();
@@ -199,7 +199,7 @@ export function HODAnalytics() {
   }, [refreshAcademicYears]);
 
   useEffect(() => {
-    const termNumber = analyticsTermNumber === 'sem-1' ? 'TERM_1' : analyticsTermNumber === 'sem-2' ? 'TERM_2' : undefined;
+    const termNumber = analyticsTermNumber === 'sem-1' ? 'SEMESTER_1' : analyticsTermNumber === 'sem-2' ? 'SEMESTER_2' : undefined;
     refreshDepartmentProgress(1, 50, analyticsAcademicYearId || undefined, termNumber);
     refreshTeacherSubmissions(analyticsAcademicYearId || undefined, termNumber);
     refreshInterventionAlerts({

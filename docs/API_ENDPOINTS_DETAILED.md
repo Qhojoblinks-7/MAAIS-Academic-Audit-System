@@ -133,7 +133,7 @@
 ```json
 {
   "academicYearId": "year_uuid",
-  "termNumber": "TERM_1",
+  "termNumber": "SEMESTER_1",
   "startDate": "2024-09-02",
   "endDate": "2024-12-20"
 }
@@ -271,8 +271,8 @@
 ```json
 {
   "studentIds": ["student_uuid1", "student_uuid2"],
-  "title": "Term 2 Results Ready",
-  "body": "Your Term 2 report cards are now available.",
+  "title": "Semester 2 Results Ready",
+  "body": "Your Semester 2 report cards are now available.",
   "channel": "SMS"
 }
 ```
@@ -395,7 +395,7 @@
   "approvalStatus": "APPROVED",
   "attendancePercentage": 95.5,
   "yearForm": "2024-2025",
-  "semester": "Term 2",
+  "semester": "Semester 2",
   "terminalResults": [
     {
       "subject": "Core Mathematics",
@@ -415,7 +415,7 @@
   "academicHistory": [
     {
       "year": "2024/2025",
-      "term": "Term 1",
+      "term": "Semester 1",
       "subjects": [
         { "name": "Core Mathematics", "score": 80, "grade": "A" }
       ]
@@ -759,7 +759,7 @@
     "grades": [
       {
         "subject": { "name": "Mathematics" },
-        "term": { "termNumber": "TERM_1", "academicYear": { "label": "2024/2025" } },
+        "term": { "termNumber": "SEMESTER_1", "academicYear": { "label": "2024/2025" } },
         "totalScore": 80,
         "grade": "A"
       }
@@ -852,7 +852,7 @@
   "valid": true,
   "documentType": "REPORT_CARD",
   "student": { "indexNumber": "MSHTS/2024/001" },
-  "term": { "termNumber": "TERM_1", "academicYear": { "label": "2024/2025" } }
+  "term": { "termNumber": "SEMESTER_1", "academicYear": { "label": "2024/2025" } }
 }
 ```
 
@@ -866,7 +866,7 @@
   "endDate": "2025-07-31T00:00:00Z",
   "isActive": true,
   "terms": [
-    { "id": "...", "termNumber": "TERM_1", "isActive": false }
+    { "id": "...", "termNumber": "SEMESTER_1", "isActive": false }
   ]
 }
 ```

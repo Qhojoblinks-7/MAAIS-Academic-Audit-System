@@ -26,7 +26,7 @@ export function BlueprintTreeView({
     label: '',
     startDate: '',
     endDate: '',
-    termSystem: 'THREE_TERMS',
+    termSystem: 'TWO_SEMESTERS',
     levels: ['FORM_1', 'FORM_2', 'FORM_3'],
   });
   const [classroomForm, setClassroomForm] = useState({ name: '', capacity: 45, initialStudents: 0, track: '' });
@@ -413,7 +413,7 @@ export function BlueprintTreeView({
         qc.invalidateQueries({ queryKey: ['admin', 'academic', 'years'] });
       }
 
-      const systemLabel = yearForm.termSystem === 'TWO_SEMESTERS' ? '2 Semesters' : '3 Terms';
+      const systemLabel = '2 Semesters';
       toast.success(`Academic year created with ${systemLabel} and set active`);
     } catch (err) {
       toast.error(`Failed to create academic year: ${err?.message || 'Unknown error'}`);
@@ -753,18 +753,6 @@ export function BlueprintTreeView({
                       <div className="grid grid-cols-2 gap-3">
                         <button
                           type="button"
-                          onClick={() => setYearForm({ ...yearForm, termSystem: 'THREE_TERMS' })}
-                          className={cn(
-                            "px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest border transition-all",
-                            yearForm.termSystem === 'THREE_TERMS'
-                              ? "bg-brand-primary text-primary-foreground border-brand-primary"
-                              : "bg-muted/30 text-foreground border-border hover:bg-muted/50"
-                          )}
-                        >
-                          3 Terms
-                        </button>
-                        <button
-                          type="button"
                           onClick={() => setYearForm({ ...yearForm, termSystem: 'TWO_SEMESTERS' })}
                           className={cn(
                             "px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest border transition-all",
@@ -777,9 +765,7 @@ export function BlueprintTreeView({
                         </button>
                       </div>
                       <p className="text-[10px] text-muted-foreground mt-2 italic">
-                        {yearForm.termSystem === 'TWO_SEMESTERS'
-                          ? 'The year will be divided into Semester 1 and Semester 2.'
-                          : 'The year will be divided into Term 1, Term 2 and Term 3.'}
+                        The year will be divided into Semester 1 and Semester 2.
                       </p>
                     </div>
                     <div>

@@ -770,11 +770,12 @@ export const StudentRegistry = () => {
   // CSSPS Upload handlers
   const parseFile = (file) => {
     return new Promise((resolve, reject) => {
+      const isExcel = file.name.match(/\.xlsx?$/i);
       const reader = new FileReader();
       reader.onload = (event) => {
         try {
           const content = event.target.result;
-          if (file.name.match(/\.xlsx?$/i)) {
+          if (isExcel) {
             const workbook = XLSX.read(content, { type: 'binary' });
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
@@ -794,7 +795,11 @@ export const StudentRegistry = () => {
         }
       };
       reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsText(file);
+      if (isExcel) {
+        reader.readAsBinaryString(file);
+      } else {
+        reader.readAsText(file);
+      }
     });
   };
 
@@ -846,21 +851,25 @@ export const StudentRegistry = () => {
     const seenIndexNumbers = new Set();
     
     csspsPreview.forEach((record, idx) => {
-      if (!record.index_number && !record.indexnumber && !record.index) {
+      const indexNum = record.index_number || record.indexnumber || record.index || record.cassrefid;
+      if (!indexNum) {
         validationErrors.push(`Row ${idx + 2}: Missing index number`);
       } else {
-        const indexNum = record.index_number || record.indexnumber || record.index;
         if (seenIndexNumbers.has(indexNum)) {
           validationErrors.push(`Row ${idx + 2}: Duplicate index number ${indexNum}`);
         }
         seenIndexNumbers.add(indexNum);
       }
       
-      if (!record.first_name && !record.firstname && !record.first_name) {
+      const firstName = record.first_name || record.firstname || record.first_name || '';
+      const lastName = record.last_name || record.lastname || record.last_name || '';
+      const hasName = firstName || lastName || record.name;
+      
+      if (!hasName) {
         validationErrors.push(`Row ${idx + 2}: Missing first name`);
       }
       
-      if (!record.last_name && !record.lastname && !record.last_name) {
+      if (!lastName && !record.name) {
         validationErrors.push(`Row ${idx + 2}: Missing last name`);
       }
     });
@@ -872,24 +881,47 @@ export const StudentRegistry = () => {
     
     setIsProcessingCssps(true);
     
-    const students = csspsPreview.map(record => ({
-      indexNumber: record.index_number || record.indexnumber || record.index || `MSHTS/2024/${String(Date.now()).slice(-6)}`,
-      firstName: record.first_name || record.firstname || record.first_name || '',
-      lastName: record.last_name || record.lastname || record.last_name || '',
-      middleName: record.middle_name || record.middlename || record.middleName || '',
-      gender: (record.gender || 'MALE').toUpperCase(),
-      dateOfBirth: record.date_of_birth || record.dob || record.dateofbirth || record.dateOfBirth,
-      currentClassId: record.currentclassid || record.currentclassid || record.currentclassid || '',
-      departmentId: record.departmentid || record.departmentid || record.departmentid || '',
-      className: record.classname || record.classname || record.class_name || '',
-      departmentName: record.departmentname || record.departmentname || record.department_name || '',
-      parentFirstName: record.parentfirstname || record.parentfirstname || record.parent_first_name || '',
-      parentLastName: record.parentlastname || record.parentlastname || record.parent_last_name || '',
-      parentPhone: record.parentphone || record.parentphone || record.parent_phone || '',
-      parentEmail: record.parentemail || record.parentemail || record.parent_email || '',
-      parentRelationship: record.parentrelationship || record.parentrelationship || record.parent_relationship || 'Guardian',
-      isBoarder: (record.residential_status || record.isboarder || record.isBoarder || '').toUpperCase() === 'BOARDING',
-    }));
+    const students = csspsPreview.map(record => {
+      const firstName = record.first_name || record.firstname || record.first_name || '';
+      const lastName = record.last_name || record.lastname || record.last_name || '';
+      let middleName = record.middle_name || record.middlename || record.middleName || '';
+      
+      if (record.name && !firstName && !lastName) {
+        const nameParts = record.name.trim().split(/\s+/);
+        if (nameParts.length >= 2) {
+          lastName = nameParts[0];
+          firstName = nameParts[1];
+          if (nameParts.length > 2) {
+            middleName = nameParts.slice(2).join(' ');
+          }
+        } else if (nameParts.length === 1) {
+          firstName = nameParts[0];
+        }
+      }
+      
+      return {
+        indexNumber: record.index_number || record.indexnumber || record.index || record.cassrefid || `MSHTS/2024/${String(Date.now()).slice(-6)}`,
+        firstName,
+        lastName,
+        middleName,
+        gender: (record.gender || 'MALE').toUpperCase(),
+        dateOfBirth: record.date_of_birth || record.dob || record.dateofbirth || record.dateOfBirth || '',
+        nationalId: record.nationalid || record.natid || record.nat_id || '',
+        disability: record.disability || record.disability_type || '',
+        canReadBraille: record.canreadbraille === 'true' || record.can_read_braille === 'true' || false,
+        subjects: record.sub ? [record.sub].filter(Boolean) : [],
+        currentClassId: record.currentclassid || record.currentclassid || record.currentclassid || '',
+        departmentId: record.departmentid || record.departmentid || record.departmentid || '',
+        className: (record.classname || record.class_name || (record.cassyear ? record.cassyear.replace(/^Year\s+/i, 'Form ') : '')) || '',
+        departmentName: record.departmentname || record.department_name || record.programname || '',
+        parentFirstName: record.parentfirstname || record.parentfirstname || record.parent_first_name || '',
+        parentLastName: record.parentlastname || record.parentlastname || record.parent_last_name || '',
+        parentPhone: record.parentphone || record.parentphone || record.parent_phone || '',
+        parentEmail: record.parentemail || record.parentemail || record.parent_email || '',
+        parentRelationship: record.parentrelationship || record.parentrelationship || record.parent_relationship || 'Guardian',
+        isBoarder: (record.residential_status || record.isboarder || record.isBoarder || '').toUpperCase() === 'BOARDING',
+      };
+    });
     
     try {
       const result = await batchImportMutation.mutateAsync(students);

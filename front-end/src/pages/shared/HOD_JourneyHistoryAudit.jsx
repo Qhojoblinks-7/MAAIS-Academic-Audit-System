@@ -13,21 +13,19 @@ import {
 } from '../../components/ui/table';
 
 const historyData = [
-  { id: 's1', name: 'Angela Owusu', index: '10001', year: '2025/2026', term: 'Term 2', final: 78.5, status: 'IN PROGRESS' },
-  { id: 's2', name: 'Kwame Mensah', index: '10002', year: '2025/2026', term: 'Term 2', final: 72.3, status: 'IN PROGRESS' },
-  { id: 's3', name: 'Yaw Boateng', index: '10003', year: '2024/2025', term: 'Term 3', final: 84.1, status: 'GRADUATED' },
-  { id: 's4', name: 'Ama Darko', index: '10004', year: '2024/2025', term: 'Term 3', final: 69.7, status: 'GRADUATED' },
-  { id: 's5', name: 'Abena Serwaa', index: '10007', year: '2023/2024', term: 'Term 3', final: 91.2, status: 'GRADUATED' },
+  { id: 's1', name: 'Angela Owusu', index: '10001', year: '2025/2026', term: 'Semester 2', final: 78.5, status: 'IN PROGRESS' },
+  { id: 's2', name: 'Kwame Mensah', index: '10002', year: '2025/2026', term: 'Semester 2', final: 72.3, status: 'IN PROGRESS' },
+  { id: 's3', name: 'Yaw Boateng', index: '10003', year: '2024/2025', term: 'Semester 2', final: 84.1, status: 'GRADUATED' },
+  { id: 's4', name: 'Ama Darko', index: '10004', year: '2024/2025', term: 'Semester 2', final: 69.7, status: 'GRADUATED' },
+  { id: 's5', name: 'Abena Serwaa', index: '10007', year: '2023/2024', term: 'Semester 2', final: 91.2, status: 'GRADUATED' },
 ];
 
-const terms = ['SHS 1 Term 1', 'SHS 1 Term 2', 'SHS 1 Term 3', 'SHS 2 Term 1', 'SHS 2 Term 2', 'SHS 2 Term 3'];
+const terms = ['SHS 1 Semester 1', 'SHS 1 Semester 2', 'SHS 2 Semester 1', 'SHS 2 Semester 2'];
 const journeyData = [
-  { term: 'SHS1 T1', score: 68, classAvg: 62 },
-  { term: 'SHS1 T2', score: 72, classAvg: 65 },
-  { term: 'SHS1 T3', score: 70, classAvg: 68 },
-  { term: 'SHS2 T1', score: 78, classAvg: 67 },
-  { term: 'SHS2 T2', score: 75, classAvg: 70 },
-  { term: 'SHS2 T3', score: 82.4, classAvg: 72 },
+  { term: 'SHS1 S1', score: 68, classAvg: 62 },
+  { term: 'SHS1 S2', score: 72, classAvg: 65 },
+  { term: 'SHS2 S1', score: 78, classAvg: 67 },
+  { term: 'SHS2 S2', score: 82.4, classAvg: 72 },
 ];
 
 export function HOD_JourneyHistoryAudit() {

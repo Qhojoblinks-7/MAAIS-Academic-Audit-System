@@ -345,7 +345,11 @@ export function StaffRegistry() {
         toast.error('Failed to parse file: ' + (err.message || 'Unknown error'));
       }
     };
-    reader.readAsText(file);
+    if (file.name.match(/\.xlsx?$/i)) {
+      reader.readAsBinaryString(file);
+    } else {
+      reader.readAsText(file);
+    }
   };
 
   const downloadSampleCsv = () => {
@@ -395,7 +399,7 @@ export function StaffRegistry() {
     'department name': 'departmentName',
   };
 
-  const ROLE_VALUES = ['TEACHER', 'HOD', 'HEADMASTER', 'SUPER_ADMIN'];
+  const ROLE_VALUES = ['TEACHER', 'HOD', 'HEADMASTER', 'ASSISTANT_HEAD_ADMINISTRATION', 'ASSISTANT_HEAD_DOMESTIC', 'SUPER_ADMIN'];
   const GENDER_VALUES = ['MALE', 'FEMALE', 'OTHER'];
 
   // Robust CSV parsing via PapaParse; fallback to manual for inline text paste
@@ -434,7 +438,6 @@ export function StaffRegistry() {
   };
 
   const normalizeStaffRecord = (rec) => {
-    const role = (rec.role || 'TEACHER').toString().toUpperCase();
     const gender = (rec.gender || 'MALE').toString().toUpperCase();
     return {
       firstName: rec.firstName || '',
@@ -444,7 +447,7 @@ export function StaffRegistry() {
       staffId: rec.staffId || '',
       departmentId: rec.departmentId || '',
       departmentName: rec.departmentName || '',
-      role: ROLE_VALUES.includes(role) ? role : 'TEACHER',
+      role: 'TEACHER',
       gender: GENDER_VALUES.includes(gender) ? gender : 'MALE',
     };
   };

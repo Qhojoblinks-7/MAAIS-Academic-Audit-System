@@ -3,7 +3,7 @@
  * @typedef { 'MALE' | 'FEMALE' } Gender
  * @typedef { 'CORE' | 'ELECTIVE' } SubjectType
  * @typedef { 'EXCELLENT' | 'VERY_GOOD' | 'GOOD' | 'CREDIT' | 'PASS' | 'WEAK_PASS' | 'FAILURE' } GradeRemark
- * @typedef { 'TERM_1' | 'TERM_2' | 'TERM_3' | 'SEMESTER_1' | 'SEMESTER_2' } TermNumber
+ * @typedef { 'SEMESTER_1' | 'SEMESTER_2' } TermNumber
  * @typedef { 'FORM_1' | 'FORM_2' | 'FORM_3' } ClassLevel
  * @typedef { 'PROMOTED' | 'REPEATED' | 'GRADUATED' | 'WITHDRAWN' } PromotionStatus
  * @typedef { 'REPORT_CARD' | 'TRANSCRIPT' } DocumentType
@@ -293,9 +293,6 @@ const formatTermNumber = (termNumber) => {
   if (upperValue.startsWith('SEMESTER_')) {
     return numericMatch ? `${getOrdinal(Number(numericMatch[1]))} Semester` : '—';
   }
-  if (upperValue.startsWith('TERM_')) {
-    return numericMatch ? `${getOrdinal(Number(numericMatch[1]))} Term` : '—';
-  }
   return termNumber;
 };
 
@@ -324,14 +321,10 @@ export const GRADE_REMARKS = {
   FAILURE: 'FAILURE',
 };
 export const TERM_NUMBERS = { 
-  TERM_1: 'TERM_1', 
-  TERM_2: 'TERM_2', 
-  TERM_3: 'TERM_3',
   SEMESTER_1: 'SEMESTER_1',
   SEMESTER_2: 'SEMESTER_2',
 };
 export const TERM_SYSTEMS = {
-  THREE_TERMS: 'THREE_TERMS',
   TWO_SEMESTERS: 'TWO_SEMESTERS',
 };
 export const CLASS_LEVELS = { FORM_1: 'Form 1', FORM_2: 'Form 2', FORM_3: 'Form 3' };

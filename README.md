@@ -391,7 +391,7 @@ Visit `http://localhost:5173` and log in with the seeded admin account.
 | Model | Purpose |
 |-------|---------|
 | `User` | Polymorphic auth account (staff / student / parent) |
-| `AcademicYear` | School year with `termSystem` (`THREE_TERMS` or `TWO_SEMESTERS`) |
+| `AcademicYear` | School year with `termSystem` (`TWO_SEMESTERS`) |
 | `Term` | Individual term/semester with start/end dates, `isActive`, `isLocked` |
 | `ClassSection` | Classroom with `level` (FORM_1/2/3), `program`, `track` (Gold/Green) |
 | `TeachingAssignment` | Teacher → subject → class mapping |

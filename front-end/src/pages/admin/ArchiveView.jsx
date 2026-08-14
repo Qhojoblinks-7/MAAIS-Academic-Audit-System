@@ -255,11 +255,11 @@ const academicYears = yearsList;
   const terms = React.useMemo(() => {
     if (activeYearData?.terms && activeYearData.terms.length > 0) {
       return activeYearData.terms.map(t => {
-        const label = t.termNumber.replace('TERM_', 'Term ').replace('SEMESTER_', 'Semester ');
+        const label = t.termNumber.replace('SEMESTER_', 'Semester ');
         return `${activeYearData.label || ''} ${label}`.trim();
       });
     }
-    return ['Term 1', 'Term 2', 'Term 3'];
+    return ['Semester 1', 'Semester 2'];
   }, [activeYearData]);
 
   const displaySubjects = ['Core Mathematics', 'English Language', 'Integrated Science', 'Social Studies'];

@@ -45,8 +45,8 @@ function GradeRow({ student, currentGrade, previousGrade }) {
 
 function SubjectComparisonCard({ subject, onFetchComparison, loading }) {
   const [comparisonData, setComparisonData] = useState([]);
-  const [termA, setTermA] = useState('Term 1');
-  const [termB, setTermB] = useState('Term 2');
+  const [termA, setTermA] = useState('Semester 1');
+  const [termB, setTermB] = useState('Semester 2');
 
   const handleFetch = async () => {
     const data = await onFetchComparison?.(subject.id, termA, termB);
@@ -110,9 +110,8 @@ function SubjectComparisonCard({ subject, onFetchComparison, loading }) {
               onChange={(e) => setTermA(e.target.value)}
               className="text-[10px] border border-gray-200 rounded-lg px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
             >
-              <option value="Term 1">Term 1</option>
-              <option value="Term 2">Term 2</option>
-              <option value="Term 3">Term 3</option>
+              <option value="Semester 1">Semester 1</option>
+              <option value="Semester 2">Semester 2</option>
             </select>
           </div>
           <ArrowLeftRight size={10} className="text-gray-400" />
@@ -123,9 +122,8 @@ function SubjectComparisonCard({ subject, onFetchComparison, loading }) {
               onChange={(e) => setTermB(e.target.value)}
               className="text-[10px] border border-gray-200 rounded-lg px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
             >
-              <option value="Term 1">Term 1</option>
-              <option value="Term 2">Term 2</option>
-              <option value="Term 3">Term 3</option>
+              <option value="Semester 1">Semester 1</option>
+              <option value="Semester 2">Semester 2</option>
             </select>
           </div>
         </div>
