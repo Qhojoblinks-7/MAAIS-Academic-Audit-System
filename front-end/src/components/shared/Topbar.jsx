@@ -162,7 +162,7 @@ function BreadcrumbNav({ compact = false }) {
 }
 
 export function Topbar() {
-  const { user, setRole } = useRole();
+  const { user, setRole, activeMode, setActiveMode, userContext } = useRole();
   const { openChangePassword } = useChangePassword();
   const { isDraftMode, setIsDraftMode, setMobileMenuOpen, isMobile } = useUI();
   const location = useLocation();
@@ -423,6 +423,33 @@ export function Topbar() {
         <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-border shrink-0">
           <NotificationBell navigateTo={isMobile ? '/mobile-notifications' : undefined} />
 
+          {userContext?.canTeach && userContext?.canOversight && (
+            <div className="hidden sm:flex items-center gap-1 bg-muted/50 rounded-lg p-1">
+              <button
+                onClick={() => setActiveMode('teaching')}
+                className={cn(
+                  "px-2 py-1 text-[10px] font-bold rounded transition-all",
+                  activeMode === 'teaching' 
+                    ? "bg-white shadow text-text-primary" 
+                    : "text-text-secondary hover:text-text-primary"
+                )}
+              >
+                Teaching
+              </button>
+              <button
+                onClick={() => setActiveMode('oversight')}
+                className={cn(
+                  "px-2 py-1 text-[10px] font-bold rounded transition-all",
+                  activeMode === 'oversight' 
+                    ? "bg-white shadow text-text-primary" 
+                    : "text-text-secondary hover:text-text-primary"
+                )}
+              >
+                Oversight
+              </button>
+            </div>
+          )}
+
           {user?.mustChangePassword && (
             <Button
               size="sm"
@@ -437,7 +464,9 @@ export function Topbar() {
 
           <div className="hidden sm:flex flex-col text-right min-w-0 max-w-[100px]">
             <p className="text-xs font-bold text-text-primary truncate">{user?.name}</p>
-            <p className="text-[9px] font-bold text-brand-secondary/80 uppercase truncate">{user?.role}</p>
+            <p className="text-[9px] font-bold text-brand-secondary/80 uppercase truncate">
+              {user?.role} {activeMode === 'oversight' && userContext?.canTeach ? '· Oversight' : ''}
+            </p>
           </div>
 
           <div className="relative shrink-0">

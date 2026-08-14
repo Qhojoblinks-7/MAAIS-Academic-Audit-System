@@ -10,8 +10,9 @@ import { useHODActions } from './HODActions';
 const HODContext = createContext(undefined);
 
 export function HODProvider({ children }) {
-  const { user } = useRole();
+  const { user, activeMode } = useRole();
   const isHod = user?.role === 'HOD' || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' || user?.role === 'HEADMASTER';
+  const viewMode = activeMode === 'oversight' ? 'oversight' : 'teaching';
   const { isOnline, setIsOnline, isDraftMode, setIsDraftMode } = useUI();
 
   const state = useHODState();
@@ -164,7 +165,9 @@ export function HODProvider({ children }) {
     isTicketSLABreach,
     baselineDeltas,
     resetBaseline: () => saveBaseline({}),
-  }), [state, offline, filters, dataRefresh, actions, unresolvedAlerts, baselineDeltas]);
+    viewMode,
+    isHod,
+  }), [state, offline, filters, dataRefresh, actions, unresolvedAlerts, baselineDeltas, viewMode, isHod]);
 
   return <HODContext.Provider value={value}>{children}</HODContext.Provider>;
 }

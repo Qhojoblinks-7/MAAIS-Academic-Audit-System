@@ -51,6 +51,8 @@ export function RoleProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [activeMode, setActiveMode] = useState('teaching');
+  const [userContext, setUserContext] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -167,6 +169,36 @@ export function RoleProvider({ children }) {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    const fetchContext = async () => {
+      if (!user || !['TEACHER', 'HOD', 'ADMIN'].includes(user.role)) {
+        setUserContext(null);
+        return;
+      }
+      try {
+        const token = getAuthToken();
+        if (!token) return;
+        const res = await fetch(`${API_BASE_URL}/users/me/context`, {
+          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) {
+          setUserContext(data);
+          if (data?.activeMode && ['teaching', 'oversight', 'dual'].includes(data.activeMode)) {
+            setActiveMode(data.activeMode);
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to fetch user context:', e);
+      }
+    };
+    fetchContext();
+    return () => { cancelled = true; };
+  }, [user?.id, user?.role]);
+
   const refreshUser = useCallback(async () => {
     try {
       const token = getAuthToken();
@@ -244,8 +276,11 @@ export function RoleProvider({ children }) {
     logout,
     login,
     refreshUser,
-    isAuthenticated
-  }), [user, logout, login, refreshUser, isAuthenticated]);
+    isAuthenticated,
+    activeMode,
+    setActiveMode,
+    userContext,
+  }), [user, logout, login, refreshUser, isAuthenticated, activeMode, setActiveMode, userContext]);
 
   if (loading) {
     return null;
