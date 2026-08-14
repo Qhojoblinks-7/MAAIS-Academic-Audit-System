@@ -520,7 +520,79 @@ export const useStudentRegistry = () => {
       const normalizedKey = key.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
       normalized[normalizedKey] = record[key] !== undefined && record[key] !== null ? String(record[key]).trim() : '';
     });
-    return normalized;
+    return normalizeCsspsRecord(normalized);
+  };
+
+  const CSSPS_COLUMN_ALIASES = {
+    index_no: 'index_number',
+    indexnumber: 'index_number',
+    index: 'index_number',
+    cassrefid: 'index_number',
+    candidate_name: 'name',
+    full_name: 'name',
+    students_name: 'name',
+    name: 'name',
+    programme: 'department_name',
+    course: 'department_name',
+    department: 'department_name',
+    day_boarding: 'residential_status',
+    residential_status: 'residential_status',
+    residential: 'residential_status',
+    boarding_status: 'residential_status',
+    class_name: 'class_name',
+    className: 'class_name',
+    class: 'class_name',
+    year: 'class_name',
+    form: 'class_name',
+    parents_name: 'parent_name',
+    parent_name: 'parent_name',
+    parents_tel: 'parent_phone',
+    parent_phone: 'parent_phone',
+    parents_email: 'parent_email',
+    parent_email: 'parent_email',
+    relationship: 'parent_relationship',
+  };
+
+  const normalizeCsspsRecord = (record) => {
+    const mapped = { ...record };
+    Object.entries(CSSPS_COLUMN_ALIASES).forEach(([alias, target]) => {
+      if (record[alias] && !mapped[target]) {
+        mapped[target] = record[alias];
+      }
+    });
+
+    if (mapped.name && !mapped.first_name && !mapped.last_name) {
+      const nameParts = mapped.name.trim().split(/\s+/);
+      if (nameParts.length >= 2) {
+        mapped.last_name = nameParts[0];
+        mapped.first_name = nameParts[1];
+        if (nameParts.length > 2) {
+          mapped.middle_name = nameParts.slice(2).join(' ');
+        }
+      } else if (nameParts.length === 1) {
+        mapped.first_name = nameParts[0];
+      }
+    }
+
+    if (mapped.parent_name && !mapped.parent_first_name && !mapped.parent_last_name) {
+      const nameParts = mapped.parent_name.trim().split(/\s+/);
+      if (nameParts.length >= 2) {
+        mapped.parent_last_name = nameParts[0];
+        mapped.parent_first_name = nameParts[1];
+      } else if (nameParts.length === 1) {
+        mapped.parent_first_name = nameParts[0];
+      }
+    }
+
+    if (mapped.residential_status) {
+      mapped.isBoarder = mapped.residential_status.toUpperCase().includes('BOARD') || mapped.residential_status.toUpperCase() === 'BOARDING';
+    }
+
+    if (mapped.class_name) {
+      mapped.className = mapped.class_name.replace(/^Year\s+/i, 'Form ');
+    }
+
+    return mapped;
   };
 
   const handleCssFileChange = async (e) => {

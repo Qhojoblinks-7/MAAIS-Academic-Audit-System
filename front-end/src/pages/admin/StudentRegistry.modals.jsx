@@ -156,13 +156,13 @@ const StudentRegistryModals = ({ registry }) => {
                      <div className="mb-6 max-h-64 overflow-y-auto border border-border rounded-2xl p-4 scrollbar-hide">
                       <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-3">Preview ({csspsPreview.length} records)</p>
                       <div className="space-y-1">
-                        {csspsPreview.slice(0, 5).map((record, i) => (
-                          <div key={i} className="flex justify-between text-[11px] py-1 border-b border-border">
-                            <span className="font-bold text-text-primary">{record.indexNumber}</span>
-                            <span className="text-text-secondary">{record.firstName} {record.lastName}</span>
-                            <span className="text-text-secondary">{record.placementAggregate || 'N/A'}</span>
-                          </div>
-                        ))}
+                         {csspsPreview.slice(0, 5).map((record, i) => (
+                           <div key={i} className="flex justify-between text-[11px] py-1 border-b border-border">
+                             <span className="font-bold text-text-primary">{record.index_number || record.indexnumber || record.index || record.cassrefid || '—'}</span>
+                             <span className="text-text-secondary">{record.first_name || record.firstname || record.firstName || '—'} {(record.last_name || record.lastname || record.lastName || '')}</span>
+                             <span className="text-text-secondary">{record.placementAggregate || 'N/A'}</span>
+                           </div>
+                         ))}
                         {csspsPreview.length > 5 && (
                           <p className="text-[10px] text-text-secondary italic">...and {csspsPreview.length - 5} more</p>
                         )}
@@ -204,15 +204,28 @@ const StudentRegistryModals = ({ registry }) => {
                 <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-lg bg-surface rounded-[2.5rem] shadow-2xl p-10 text-center">
                    <div className="w-16 h-16 bg-brand-primary/10 text-brand-primary rounded-2xl flex items-center justify-center mx-auto mb-6"><CheckCircle size={32} /></div>
                    <h3 className="text-2xl font-black italic font-display text-text-primary mb-2">Import Complete</h3>
-                   <p className="text-[14px] text-text-secondary mb-6">
-                     Successfully imported {importResults.success} students. {importResults.failed > 0 && `${importResults.failed} failed.`}
-                   </p>
-                   <button
-                     onClick={() => setImportResults(null)}
-                     className="px-8 py-3 bg-brand-dark text-primary-foreground rounded-2xl text-[11px] font-black uppercase tracking-widest"
-                   >
-                     Done
-                   </button>
+                    <p className="text-[14px] text-text-secondary mb-4">
+                      Successfully imported {importResults.success} students. {importResults.failed > 0 && `${importResults.failed} failed.`}
+                    </p>
+                    {importResults.failed > 0 && importResults.errors && (
+                      <div className="mb-6 max-h-48 overflow-y-auto border border-border rounded-xl p-3 scrollbar-hide">
+                        <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 text-left">Errors</p>
+                        {importResults.errors.slice(0, 20).map((err, i) => (
+                          <div key={i} className="text-[11px] text-destructive text-left py-1 border-b border-border/50 last:border-0">
+                            <span className="font-bold">{err.indexNumber || 'Unknown'}:</span> {err.error}
+                          </div>
+                        ))}
+                        {importResults.errors.length > 20 && (
+                          <p className="text-[10px] text-text-secondary italic mt-2">...and {importResults.errors.length - 20} more errors</p>
+                        )}
+                      </div>
+                    )}
+                    <button
+                      onClick={() => setImportResults(null)}
+                      className="px-8 py-3 bg-brand-dark text-primary-foreground rounded-2xl text-[11px] font-black uppercase tracking-widest"
+                    >
+                      Done
+                    </button>
                 </motion.div>
              </div>
             )}

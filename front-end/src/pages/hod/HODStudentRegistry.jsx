@@ -338,7 +338,7 @@ export function HODStudentRegistry() {
     if (results.errors.length > 0 && results.data.length === 0) {
       throw new Error(results.errors[0].message);
     }
-    return results.data.filter(r => r.index_number || r.first_name || r.last_name || r.indexnumber || r.firstname || r.lastname);
+    return results.data.map(normalizeCsspsRecord).filter(r => r.index_number || r.first_name || r.last_name || r.indexnumber || r.firstname || r.lastname);
   };
 
   const parseXlsxContent = (content) => {
@@ -352,8 +352,80 @@ export function HODStudentRegistry() {
         const normalizedKey = key.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
         normalized[normalizedKey] = value !== undefined && value !== null ? String(value).trim() : '';
       });
-      return normalized;
+      return normalizeCsspsRecord(normalized);
     }).filter(r => r.index_number || r.first_name || r.last_name || r.indexnumber || r.firstname || r.lastname);
+  };
+
+  const CSSPS_COLUMN_ALIASES = {
+    index_no: 'index_number',
+    indexnumber: 'index_number',
+    index: 'index_number',
+    cassrefid: 'index_number',
+    candidate_name: 'name',
+    full_name: 'name',
+    students_name: 'name',
+    name: 'name',
+    programme: 'department_name',
+    course: 'department_name',
+    department: 'department_name',
+    day_boarding: 'residential_status',
+    residential_status: 'residential_status',
+    residential: 'residential_status',
+    boarding_status: 'residential_status',
+    class_name: 'class_name',
+    className: 'class_name',
+    class: 'class_name',
+    year: 'class_name',
+    form: 'class_name',
+    parents_name: 'parent_name',
+    parent_name: 'parent_name',
+    parents_tel: 'parent_phone',
+    parent_phone: 'parent_phone',
+    parents_email: 'parent_email',
+    parent_email: 'parent_email',
+    relationship: 'parent_relationship',
+  };
+
+  const normalizeCsspsRecord = (record) => {
+    const mapped = { ...record };
+    Object.entries(CSSPS_COLUMN_ALIASES).forEach(([alias, target]) => {
+      if (record[alias] && !mapped[target]) {
+        mapped[target] = record[alias];
+      }
+    });
+
+    if (mapped.name && !mapped.first_name && !mapped.last_name) {
+      const nameParts = mapped.name.trim().split(/\s+/);
+      if (nameParts.length >= 2) {
+        mapped.last_name = nameParts[0];
+        mapped.first_name = nameParts[1];
+        if (nameParts.length > 2) {
+          mapped.middle_name = nameParts.slice(2).join(' ');
+        }
+      } else if (nameParts.length === 1) {
+        mapped.first_name = nameParts[0];
+      }
+    }
+
+    if (mapped.parent_name && !mapped.parent_first_name && !mapped.parent_last_name) {
+      const nameParts = mapped.parent_name.trim().split(/\s+/);
+      if (nameParts.length >= 2) {
+        mapped.parent_last_name = nameParts[0];
+        mapped.parent_first_name = nameParts[1];
+      } else if (nameParts.length === 1) {
+        mapped.parent_first_name = nameParts[0];
+      }
+    }
+
+    if (mapped.residential_status) {
+      mapped.isBoarder = mapped.residential_status.toUpperCase().includes('BOARD') || mapped.residential_status.toUpperCase() === 'BOARDING';
+    }
+
+    if (mapped.class_name) {
+      mapped.className = mapped.class_name.replace(/^Year\s+/i, 'Form ');
+    }
+
+    return mapped;
   };
 
   const handleCssFileChange = (e) => {
@@ -811,12 +883,12 @@ export function HODStudentRegistry() {
                <div className="mb-6 max-h-64 overflow-y-auto border border-border rounded-2xl p-4 scrollbar-hide">
                 <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-3">Preview ({csspsPreview.length} records)</p>
                 <div className="space-y-1">
-                  {csspsPreview.slice(0, 5).map((record, i) => (
-                    <div key={i} className="flex justify-between text-[11px] py-1 border-b border-border">
-                      <span className="font-bold text-text-primary">{record.indexNumber}</span>
-                      <span className="text-text-secondary">{record.firstName} {record.lastName}</span>
-                    </div>
-                  ))}
+                   {csspsPreview.slice(0, 5).map((record, i) => (
+                     <div key={i} className="flex justify-between text-[11px] py-1 border-b border-border">
+                       <span className="font-bold text-text-primary">{record.index_number || record.indexnumber || record.index || record.cassrefid || '—'}</span>
+                       <span className="text-text-secondary">{record.first_name || record.firstname || record.firstName || '—'} {(record.last_name || record.lastname || record.lastName || '')}</span>
+                     </div>
+                   ))}
                   {csspsPreview.length > 5 && (
                     <p className="text-[10px] text-text-secondary italic">...and {csspsPreview.length - 5} more</p>
                   )}
@@ -850,6 +922,36 @@ export function HODStudentRegistry() {
                  {isProcessingCssps ? 'Processing...' : 'Verify & Import'}
                </button>
             </div>
+          </motion.div>
+        </div>
+      )}
+      {importResults && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-lg bg-surface rounded-[2.5rem] shadow-2xl p-10 text-center">
+            <div className="w-16 h-16 bg-brand-primary/10 text-brand-primary rounded-2xl flex items-center justify-center mx-auto mb-6"><CheckCircle size={32} /></div>
+            <h3 className="text-2xl font-black italic font-display text-text-primary mb-2">Import Complete</h3>
+            <p className="text-[14px] text-text-secondary mb-4">
+              Successfully imported {importResults.success} students. {importResults.failed > 0 && `${importResults.failed} failed.`}
+            </p>
+            {importResults.failed > 0 && importResults.errors && (
+              <div className="mb-6 max-h-48 overflow-y-auto border border-border rounded-xl p-3 scrollbar-hide">
+                <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 text-left">Errors</p>
+                {importResults.errors.slice(0, 20).map((err, i) => (
+                  <div key={i} className="text-[11px] text-destructive text-left py-1 border-b border-border/50 last:border-0">
+                    <span className="font-bold">{err.indexNumber || 'Unknown'}:</span> {err.error}
+                  </div>
+                ))}
+                {importResults.errors.length > 20 && (
+                  <p className="text-[10px] text-text-secondary italic mt-2">...and {importResults.errors.length - 20} more errors</p>
+                )}
+              </div>
+            )}
+            <button
+              onClick={() => setImportResults(null)}
+              className="px-8 py-3 bg-brand-dark text-primary-foreground rounded-2xl text-[11px] font-black uppercase tracking-widest"
+            >
+              Done
+            </button>
           </motion.div>
         </div>
       )}
