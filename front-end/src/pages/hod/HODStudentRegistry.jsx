@@ -42,10 +42,10 @@ const StudentDossier = ({ student, onClose, onGenerateReport, onBuildTranscript 
   const [activeTab, setActiveTab] = useState('Academic');
 
   const performanceData = [
-    { term: 'SHS1 T1', grade: Math.round(student.averageGrade - 7) },
-    { term: 'SHS1 T2', grade: Math.round(student.averageGrade - 4) },
-    { term: 'SHS1 T3', grade: Math.round(student.averageGrade - 2) },
-    { term: 'SHS2 T1', grade: student.averageGrade },
+    { term: 'SHS1 Semester 1', grade: Math.round(student.averageGrade - 7) },
+    { term: 'SHS1 Semester 2', grade: Math.round(student.averageGrade - 4) },
+    { term: 'SHS2 Semester 1', grade: Math.round(student.averageGrade - 2) },
+    { term: 'SHS2 Semester 2', grade: student.averageGrade },
   ];
 
   return (

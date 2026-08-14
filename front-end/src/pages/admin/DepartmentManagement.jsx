@@ -23,7 +23,7 @@ import {
 export function DepartmentManagement() {
   const { id: routeDeptId } = useParams();
   const departmentsQuery = useAllDepartments();
-  const apiDepartments = departmentsQuery.data || [];
+  const apiDepartments = React.useMemo(() => departmentsQuery.data || [], [departmentsQuery.data]);
 
   const [selectedDeptId, setSelectedDeptId] = React.useState(null);
   const [selectedDeptName, setSelectedDeptName] = React.useState(null);

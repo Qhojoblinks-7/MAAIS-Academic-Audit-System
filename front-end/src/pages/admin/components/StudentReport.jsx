@@ -96,7 +96,7 @@ export function StudentReport({ selectedStudent, reportConfig, setReportConfig }
           </header>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {['SHS 1-T1', 'SHS 1-T2', 'SHS 1-T3', 'SHS 2-T1', 'SHS 2-T2', 'SHS 2-T3'].map((term, tIdx) => (
+            {['SHS 1 Semester 1', 'SHS 1 Semester 2', 'SHS 2 Semester 1', 'SHS 2 Semester 2'].map((term, tIdx) => (
               <div key={term} className="bg-surface rounded-xl border border-border shadow-xs overflow-hidden flex flex-col">
                 {/* Minimal Row Group Header */}
                 <div className="bg-muted/30 px-3 py-2 border-b border-border flex items-center justify-between gap-2">

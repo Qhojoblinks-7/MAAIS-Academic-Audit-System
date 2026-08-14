@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Folder, 
@@ -18,7 +18,6 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  ResponsiveContainer,
   Cell
 } from 'recharts';
 import { cn } from '../../../lib/utils';
@@ -26,6 +25,29 @@ import { buildDistribution } from '../hooks/useDepartments';
 
 export function DepartmentGrid({ departments, viewType, setViewType, setSelectedDeptId, onSpawnClick }) {
   const distributionData = useMemo(() => buildDistribution(departments), [departments]);
+  const containerRef = useRef(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const computeWidth = () => {
+      const rect = el.getBoundingClientRect();
+      setContainerWidth(Math.max(rect.width, 0));
+    };
+
+    computeWidth();
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(computeWidth);
+      observer.observe(el);
+      return () => observer.disconnect();
+    }
+
+    window.addEventListener('resize', computeWidth);
+    return () => window.removeEventListener('resize', computeWidth);
+  }, []);
 
   return (
     <>
@@ -192,41 +214,41 @@ export function DepartmentGrid({ departments, viewType, setViewType, setSelected
 
           <div className="flex-1 overflow-y-auto p-6 space-y-10 scrollbar-hide">
             <section>
-              <h4 className="text-xs font-black text-foreground uppercase tracking-[0.25em] mb-6 flex items-center gap-3">
-                <div className="w-6 h-[1.5px] bg-border" />
-                The Balance Meter
-              </h4>
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                  <BarChart data={distributionData} layout="vertical" margin={{ left: 40, right: 20 }}>
-                    <XAxis type="number" hide />
-                    <YAxis 
-                      dataKey="name" 
-                      type="category" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
-                    />
-                    <Tooltip 
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          return (
-                            <div className="bg-brand-primary text-primary-foreground px-3 py-2 rounded-lg text-xs font-black uppercase tracking-widest shadow-2xl ring-1 ring-surface/10">
-                               {payload[0].value} Staff
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                      <Bar dataKey="teachers" radius={[0, 4, 4, 0]} barSize={16}>
-                        {distributionData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.hex || (index % 2 === 0 ? '#1e293b' : '#334155')} />
-                        ))}
-                       </Bar>
-                   </BarChart>
-                 </ResponsiveContainer>
-               </div>
+               <h4 className="text-xs font-black text-foreground uppercase tracking-[0.25em] mb-6 flex items-center gap-3">
+                 <div className="w-6 h-[1.5px] bg-border" />
+                 The Balance Meter
+               </h4>
+                <div className="h-64 w-full" ref={containerRef}>
+                  {containerWidth > 0 && (
+                    <BarChart width={containerWidth} height={256} data={distributionData} layout="vertical" margin={{ left: 40, right: 20 }}>
+                      <XAxis type="number" hide />
+                      <YAxis 
+                        dataKey="name" 
+                        type="category" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
+                      />
+                      <Tooltip 
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="bg-brand-primary text-primary-foreground px-3 py-2 rounded-lg text-xs font-black uppercase tracking-widest shadow-2xl ring-1 ring-surface/10">
+                                 {payload[0].value} Staff
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                        <Bar dataKey="teachers" radius={[0, 4, 4, 0]} barSize={16}>
+                          {distributionData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.hex || (index % 2 === 0 ? '#1e293b' : '#334155')} />
+                          ))}
+                         </Bar>
+                     </BarChart>
+                  )}
+                </div>
             </section>
 
             <section>

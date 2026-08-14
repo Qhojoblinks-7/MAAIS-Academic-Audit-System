@@ -143,8 +143,7 @@ export function AdminHome() {
 
   const selectedTermId = React.useMemo(() => {
     if (!configForm.term || !selectedYear?.terms?.length) return activeTerm?.id || null;
-    const formatted = configForm.term.replace('T', 'TERM_');
-    const match = selectedYear.terms.find(t => `T${t.termNumber.replace('TERM_', '')}` === configForm.term);
+    const match = selectedYear.terms.find(t => formatTermLabel(t.termNumber) === configForm.term);
     return match?.id || activeTerm?.id || null;
   }, [configForm.term, selectedYear, activeTerm]);
 
@@ -174,7 +173,7 @@ export function AdminHome() {
 
   const formatTermLabel = (termNumber) => {
     if (!termNumber) return '';
-    return termNumber.replace('TERM_', 'T');
+    return termNumber.replace('TERM_', 'Term ').replace('SEMESTER_', 'Semester ');
   };
 
   const activeYearLabel = formatYearLabel(resolvedYear?.label);
@@ -566,7 +565,7 @@ export function AdminHome() {
               className="px-3 py-1.5 bg-brand-dark text-primary-foreground rounded-xl flex items-center gap-2 shadow-md hover:bg-brand-dark/90 transition-all cursor-pointer"
             >
               <Calendar size={12} className="text-text-secondary" />
-              <span className="text-[9px] font-black tracking-wider uppercase">{displayYearLabel || 'No Year'} Academic • {displayTermLabel || '—'}</span>
+              <span className="text-[9px] font-black tracking-wider uppercase">{displayYearLabel || 'No Year'} Academic Year • {displayTermLabel || '—'}</span>
               <div className="px-1.5 py-0.5 bg-brand-dark rounded text-[8px] font-black tracking-normal">{configForm.level}</div>
               <Settings2 size={10} className="text-text-secondary ml-1" />
             </button>
@@ -1161,7 +1160,7 @@ export function AdminHome() {
               <div className="flex items-center justify-between mb-5">
                 <div>
                  <h3 className="text-lg font-black italic font-display text-text-primary">Configure Academic Period</h3>
-                   <p className="text-[8px] font-black uppercase text-text-secondary tracking-wider mt-0.5">Year, Term &amp; Level Filters</p>
+                   <p className="text-[8px] font-black uppercase text-text-secondary tracking-wider mt-0.5">Year, Semester &amp; Level Filters</p>
                 </div>
                 <button onClick={() => setShowConfigModal(false)} className="p-1.5 text-text-secondary hover:text-text-primary transition-colors">
                   <X size={16} />
@@ -1205,24 +1204,23 @@ export function AdminHome() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1.5">Academic Term</label>
+                     <label className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1.5">Semester</label>
                     <select
                       value={configForm.term}
                       onChange={(e) => setConfigForm({ ...configForm, term: e.target.value })}
                       className="w-full px-3 py-2.5 bg-surface border border-border rounded-xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-brand-primary/10"
                     >
-                       {(selectedYear?.terms && selectedYear.terms.length > 0)
-                        ? activeYear.terms.map(t => (
-                            <option key={t.id} value={formatTermLabel(t.termNumber)}>{formatTermLabel(t.termNumber)}</option>
-                          ))
-                        : (
-                          <>
-                            <option value="T1">T1</option>
-                            <option value="T2">T2</option>
-                            <option value="T3">T3</option>
-                          </>
-                        )
-                      }
+                        {(selectedYear?.terms && selectedYear.terms.length > 0)
+                         ? selectedYear.terms.map(t => (
+                             <option key={t.id} value={formatTermLabel(t.termNumber)}>{formatTermLabel(t.termNumber)}</option>
+                           ))
+                         : (
+                           <>
+                             <option value="Semester 1">Semester 1</option>
+                             <option value="Semester 2">Semester 2</option>
+                           </>
+                         )
+                       }
                     </select>
                   </div>
 

@@ -34,7 +34,8 @@ const StudentRegistryTable = ({
   setNewStudent,
 }) => {
   return (
-    <div className="flex-1 overflow-y-auto relative scrollbar-hide">
+    <>
+      <div className="flex-1 overflow-y-auto relative scrollbar-hide">
         <Table>
           <TableHeader>
               <TableRow className="bg-muted/80 border-b border-border">
@@ -104,7 +105,6 @@ const StudentRegistryTable = ({
           </TableBody>
          </Table>
       </div>
-
       <AnimatePresence>
         {selectedStudent && (
           <div className="fixed inset-0 z-[150] flex justify-end">
@@ -123,6 +123,7 @@ const StudentRegistryTable = ({
           </div>
         )}
       </AnimatePresence>
+    </>
   );
 };
 

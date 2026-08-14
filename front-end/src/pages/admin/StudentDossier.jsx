@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
    BarChart3, FileText, Activity, Phone,
    HeartPulse, AlertCircle, Users, MessageSquare,
@@ -25,12 +25,12 @@ const StudentDossier = ({
  }) => {
    const [activeTab, setActiveTab] = useState('Academic');
 
-   const performanceData = [
-     { term: 'SHS1 T1', grade: Math.round(student.averageGrade - 7) },
-     { term: 'SHS1 T2', grade: Math.round(student.averageGrade - 4) },
-     { term: 'SHS1 T3', grade: Math.round(student.averageGrade - 2) },
-     { term: 'SHS2 T1', grade: student.averageGrade },
-   ];
+   const performanceData = useMemo(() => [
+      { term: 'SHS1 Semester 1', grade: Math.round(student.averageGrade - 7) },
+      { term: 'SHS1 Semester 2', grade: Math.round(student.averageGrade - 4) },
+      { term: 'SHS2 Semester 1', grade: Math.round(student.averageGrade - 2) },
+      { term: 'SHS2 Semester 2', grade: student.averageGrade },
+   ], [student.averageGrade]);
 
    return (
        <div className="flex flex-col h-full bg-surface">
