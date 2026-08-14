@@ -55,6 +55,10 @@ export function StaffRegistry() {
     departmentId: '',
     role: 'TEACHER',
     isActive: true,
+    isHod: false,
+    hodDepartmentId: '',
+    canTeach: true,
+    canOversight: false,
   });
   const [isResettingPassword, setIsResettingPassword] = React.useState(false);
   const [resetResult, setResetResult] = React.useState(null);
@@ -206,6 +210,10 @@ export function StaffRegistry() {
       departmentId: staff.departmentId || '',
       role: staff.role,
       isActive: staff.isActive,
+      isHod: staff.isHod || false,
+      hodDepartmentId: staff.hodDepartmentId || '',
+      canTeach: staff.canTeach ?? true,
+      canOversight: staff.canOversight || false,
     });
     setSelectedEditStaff(staff);
   };
@@ -227,6 +235,10 @@ export function StaffRegistry() {
           departmentId: editForm.departmentId || undefined,
           role: editForm.role,
           isActive: editForm.isActive,
+          isHod: editForm.isHod,
+          hodDepartmentId: editForm.hodDepartmentId || undefined,
+          canTeach: editForm.canTeach,
+          canOversight: editForm.canOversight,
         },
       });
       setSelectedEditStaff(null);
@@ -1187,18 +1199,18 @@ export function StaffRegistry() {
                          className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[13px] font-bold text-text-primary focus:outline-none focus:ring-4 focus:ring-border"
                        />
                      </div>
-                     <div>
-                       <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mb-2">Job Role</p>
-                       <select
-                         value={editForm.role}
-                         onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
-                         className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[13px] font-bold text-text-primary focus:outline-none focus:ring-4 focus:ring-border"
-                       >
-                         {['TEACHER', 'HOD', 'HEADMASTER', 'SUPER_ADMIN'].map(role => (
-                           <option key={role} value={role}>{role}</option>
-                         ))}
-                       </select>
-                     </div>
+                      <div>
+                        <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mb-2">Job Role</p>
+                        <select
+                          value={editForm.role}
+                          onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                          className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[13px] font-bold text-text-primary focus:outline-none focus:ring-4 focus:ring-border"
+                        >
+                          {['TEACHER', 'HOD', 'HEADMASTER', 'ASSISTANT_HEAD_ADMINISTRATION', 'ASSISTANT_HEAD_DOMESTIC', 'SUPER_ADMIN'].map(role => (
+                            <option key={role} value={role}>{role}</option>
+                          ))}
+                        </select>
+                      </div>
                    </div>
 
                    <div className="grid grid-cols-2 gap-4">
@@ -1226,9 +1238,60 @@ export function StaffRegistry() {
                          <option value="Inactive">Inactive</option>
                        </select>
                      </div>
-                   </div>
+                    </div>
 
-                   <div className="flex gap-3 pt-4">
+                    <div className="space-y-3">
+                      <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mb-2">Dual-Role Flags</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="isHod"
+                            checked={editForm.isHod}
+                            onChange={(e) => setEditForm({ ...editForm, isHod: e.target.checked })}
+                            className="w-4 h-4 rounded border-border"
+                          />
+                          <label htmlFor="isHod" className="text-[11px] font-bold text-text-primary">Is HOD</label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="canTeach"
+                            checked={editForm.canTeach}
+                            onChange={(e) => setEditForm({ ...editForm, canTeach: e.target.checked })}
+                            className="w-4 h-4 rounded border-border"
+                          />
+                          <label htmlFor="canTeach" className="text-[11px] font-bold text-text-primary">Can Teach</label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="canOversight"
+                            checked={editForm.canOversight}
+                            onChange={(e) => setEditForm({ ...editForm, canOversight: e.target.checked })}
+                            className="w-4 h-4 rounded border-border"
+                          />
+                          <label htmlFor="canOversight" className="text-[11px] font-bold text-text-primary">Can Oversight</label>
+                        </div>
+                      </div>
+                      {editForm.isHod && (
+                        <div>
+                          <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mb-2">HOD Department</p>
+                          <select
+                            value={editForm.hodDepartmentId}
+                            onChange={(e) => setEditForm({ ...editForm, hodDepartmentId: e.target.value })}
+                            className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[13px] font-bold text-text-primary focus:outline-none focus:ring-4 focus:ring-border"
+                          >
+                            <option value="">Select department...</option>
+                            {departments.map(dept => (
+                              <option key={dept.id || dept.name} value={dept.id || dept.name}>{dept.name || dept.id}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-3 pt-4">
                      <button 
                        onClick={() => setSelectedEditStaff(null)}
                        className="flex-1 py-4 bg-muted text-text-primary font-black rounded-2xl text-[11px] uppercase tracking-widest border border-border hover:bg-muted transition-all"
