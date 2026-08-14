@@ -460,8 +460,8 @@ export function HODStudentRegistry() {
     setIsProcessingCssps(true);
 
     const students = csspsPreview.map(record => {
-      const firstName = record.first_name || record.firstname || record.firstName || '';
-      const lastName = record.last_name || record.lastname || record.lastName || '';
+      let firstName = record.first_name || record.firstname || record.firstName || '';
+      let lastName = record.last_name || record.lastname || record.lastName || '';
       let middleName = record.middle_name || record.middlename || record.middleName || '';
       
       if (record.name && !firstName && !lastName) {
