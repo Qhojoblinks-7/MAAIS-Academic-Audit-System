@@ -43,7 +43,7 @@ export function VaultTab({
 
   const kpiCards = [
     { title: 'Total Rostered Students', val: stats.totalAlumniCount, note: 'Current & Graduated profiles', icon: Users },
-    { title: 'Historic WASSCE Mean', val: stats.departmentAverage, note: 'Department-wide GPA', icon: TrendingUp },
+    { title: 'Historic WASSCE Mean', val: stats.departmentAverage, note: 'Department-wide Aggregate', icon: TrendingUp },
     { title: 'HOD Verified Seals', val: stats.verifiedSealsCount, note: 'Permanently validated', icon: ShieldCheck },
     { title: 'Retention & Pass Key', val: '100.0%', note: 'Zero compliance leakage', icon: Award }
   ];

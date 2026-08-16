@@ -136,9 +136,9 @@ export const TranscriptPrintTemplate = React.forwardRef(function TranscriptPrint
             </span>
           </div>
           <div className="flex items-center justify-between border-b border-slate-200/80 pb-1">
-            <span className="text-[9px] font-bold uppercase text-slate-400 tracking-wider">Cumulative GPA</span>
+            <span className="text-[9px] font-bold uppercase text-slate-400 tracking-wider">WASSCE Aggregate</span>
             <span className="text-xs font-black text-slate-950 font-mono">
-              {student.cgpa ? Number(student.cgpa).toFixed(2) : "0.00"}
+              {student.wassceAggregate ? Number(student.wassceAggregate) : "0"}
             </span>
           </div>
           <div className="flex items-center justify-between border-b border-slate-200/80 pb-1">

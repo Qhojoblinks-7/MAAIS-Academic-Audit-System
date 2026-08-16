@@ -73,7 +73,7 @@ export function VaultHeader({ activeSubTab, selectedStudent, searchTerm, setSear
               onChange={(e) => setSelectedSubject(e.target.value)}
               className="bg-transparent text-xs sm:text-sm font-black text-foreground focus:outline-none cursor-pointer pr-2 w-full truncate"
             >
-              <option>Integrated Science</option>
+              <option>General Science</option>
               <option>Elective Physics</option>
               <option>Elective Chemistry</option>
               <option>Elective Biology</option>

@@ -9,12 +9,12 @@ export function StudentSidebar({ portalData, backendStudent, isArchived, charact
   const formatDate = (dateStr) => { if (!dateStr) return '—'; try { return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); } catch { return '—'; } };
   const fullName = `${backendStudent?.firstName || ''} ${backendStudent?.middleName || ''} ${backendStudent?.lastName || ''}`.replace(/\s+/g, ' ').trim() || 'Unknown Student';
 
-  const latestGPA = portalData?.academicHistory?.length > 0
-    ? Number(portalData.academicHistory[portalData.academicHistory.length - 1]?.gpa || 0)
-    : Number(portalData?.cgpa || 0);
+  const latestAggregate = portalData?.academicHistory?.length > 0
+    ? Number(portalData.academicHistory[portalData.academicHistory.length - 1]?.wassceAggregate || 0)
+    : Number(portalData?.wassceAggregate || 0);
 
   const overviewStats = [
-    { label: 'CGPA', value: latestGPA.toFixed(2), icon: Award, color: 'bg-amber-50 text-amber-700 border-amber-200' },
+    { label: 'Aggregate', value: latestAggregate.toString(), icon: Award, color: 'bg-amber-50 text-amber-700 border-amber-200' },
     { label: 'Attendance', value: `${portalData?.attendancePercentage ?? 0}%`, icon: CheckCircle, color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
     { label: 'SBA Avg', value: `${portalData?.sbaScore ?? 0}%`, icon: BarChart3, color: 'bg-blue-50 text-blue-700 border-blue-200' },
     { label: 'Exam Avg', value: `${portalData?.waecExamScore ?? 0}%`, icon: GraduationCap, color: 'bg-purple-50 text-purple-700 border-purple-200' },

@@ -41,7 +41,7 @@ export function ArchiveView() {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [searchTrigger, setSearchTrigger] = React.useState(null);
   const [selectedYear, setSelectedYear] = React.useState('2024/2025');
-  const [selectedSubject, setSelectedSubject] = React.useState('Integrated Science');
+  const [selectedSubject, setSelectedSubject] = React.useState('General Science');
   const [showCoreComparison, setShowCoreComparison] = React.useState(false);
   const [selectedStudent, setSelectedStudent] = React.useState(null);
   const [reportConfig, setReportConfig] = React.useState({
@@ -262,7 +262,7 @@ const academicYears = yearsList;
     return ['Semester 1', 'Semester 2'];
   }, [activeYearData]);
 
-  const displaySubjects = ['Core Mathematics', 'English Language', 'Integrated Science', 'Social Studies'];
+  const displaySubjects = ['Core Mathematics', 'English Language', 'General Science', 'Social Studies'];
 
    const historyForChart = React.useMemo(() => {
      return terms.map((term, idx) => ({
@@ -425,7 +425,7 @@ onClick={() => {
                     onChange={(e) => setSelectedSubject(e.target.value)}
                     className="bg-transparent text-sm font-black text-text-primary focus:outline-none cursor-pointer pr-4"
                   >
-                    <option>Integrated Science</option>
+                    <option>General Science</option>
                     <option>Elective Physics</option>
                     <option>Elective Chemistry</option>
                     <option>Elective Biology</option>
@@ -710,7 +710,7 @@ onClick={() => {
                              </TableRow>
                            </TableHeader>
                            <TableBody>
-                             {['Core Mathematics', 'English Language', 'Integrated Science', 'Social Studies', 'Elective Subject 1', 'Elective Subject 2'].map((subj, sIdx) => {
+                             {['Core Mathematics', 'English Language', 'General Science', 'Social Studies', 'Elective Subject 1', 'Elective Subject 2'].map((subj, sIdx) => {
                                 const baseGrade = enrichedSelectedStudent.history[tIdx]?.finalGrade || 70;
                                const classScore = Math.round((baseGrade * 0.3) + (sIdx % 2 === 0 ? 2 : -2));
                                const examScore = Math.round((baseGrade * 0.7) + (sIdx % 3 === 0 ? -3 : 4));
@@ -759,10 +759,10 @@ onClick={() => {
                 {/* Summary Widgets */}
                 <div className="grid grid-cols-4 gap-6 mt-16">
                    <div className="bg-brand-primary/5 p-8 rounded-3xl border border-brand-primary/10">
-                      <p className="text-[9px] font-black text-brand-primary uppercase tracking-widest mb-1">Cumulative GPA</p>
-<p className="text-3xl font-black text-brand-primary italic tracking-tighter">
-                           {(enrichedSelectedStudent.history.reduce((acc, h) => acc + (h?.finalGrade ?? 0), 0) / Math.max(1, enrichedSelectedStudent.history.length)).toFixed(1)}%
-                       </p>
+                       <p className="text-[9px] font-black text-brand-primary uppercase tracking-widest mb-1">WASSCE Aggregate</p>
+                       <p className="text-3xl font-black text-brand-primary italic tracking-tighter">
+                            {enrichedSelectedStudent.history.reduce((acc, h) => acc + (h?.finalGrade ?? 0), 0) / Math.max(1, enrichedSelectedStudent.history.length)}
+                        </p>
                    </div>
                    <div className="bg-brand-primary/5 p-8 rounded-3xl border border-brand-primary/10">
                       <p className="text-[9px] font-black text-brand-primary uppercase tracking-widest mb-1">Consistency Score</p>

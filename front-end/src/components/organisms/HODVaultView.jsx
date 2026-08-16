@@ -74,7 +74,7 @@ export function HODVaultView({
         <HODArchiveKPICard 
           title="Historic WASSCE Mean" 
           val={`${departmentAverage}%`} 
-          note="Department-wide GPA" 
+           note="Department-wide Aggregate" 
           icon={TrendingUp} 
           color="emerald"
         />

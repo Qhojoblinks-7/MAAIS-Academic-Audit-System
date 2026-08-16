@@ -24,7 +24,7 @@ import {
   TableRow,
   TableCell,
 } from '@/components/ui/table';
-import { calculateGPA, calculateCGPA, calculateClassRanking, gpaToLetterGrade } from '@/lib/gpaUtils';
+import { calculateWASSCEAggregate, calculateTermAggregate, aggregateToLetter, getAggregateRemark } from '@/lib/aggregateUtils';
 import { Button } from '@/components/ui/button';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -58,9 +58,8 @@ export function BroadsheetGenerator() {
 
   const isAtRiskStudent = useCallback((student) => {
     if (!student) return false;
-    const gpa = student.gpa;
-    const letterGrade = student.letterGrade;
-    return (typeof gpa === 'number' && gpa < 2.0) || ['D7', 'E8', 'F9'].includes(letterGrade);
+    const aggregate = student.wassceAggregate;
+    return typeof aggregate === 'number' && aggregate > 24;
   }, []);
 
   const generateBroadSheet = useCallback(async () => {
@@ -71,34 +70,24 @@ export function BroadsheetGenerator() {
       const raw = fresh?.data || archivedStudents || [];
       const classes = groupStudentsByClass(raw);
       const processed = classes.map((classItem) => {
-        const studentsWithGPAs = classItem.students.map((student) => {
+        const studentsWithAggregates = classItem.students.map((student) => {
           const subjects = student.subjects || [];
-          const subjectGrades = subjects.map((subj) => ({
-            grade: subj.grade || '',
-            credits: subj.credits || 1,
-          }));
-          const gpa = calculateGPA(subjectGrades);
-          const termHistory = (student.termHistory || []).map((th) => ({
-            termGPA: th.termGPA || 0,
-            termCredits: th.termCredits || 1,
-          }));
-          const cgpa = calculateCGPA(termHistory);
+          const wassceAggregate = calculateWASSCEAggregate(subjects);
+          const termAggregate = calculateTermAggregate(subjects);
           const mainGrade = subjects[0]?.grade || '';
           return {
             ...student,
             index: student.indexNumber || student.index || '',
             grade: mainGrade,
-            gpa,
-            cgpa,
-            letterGrade: gpaToLetterGrade(gpa),
-            cgpaLetterGrade: gpaToLetterGrade(cgpa),
+            wassceAggregate,
+            termAggregate,
+            letterGrade: aggregateToLetter(wassceAggregate),
             subjects,
-            termHistory,
           };
         });
-        const rankingInfo = calculateClassRanking(studentsWithGPAs) || [];
+        const rankingInfo = calculateClassRanking(studentsWithAggregates) || [];
         const rankingMap = new Map(rankingInfo.map((item) => [item.index || item.id, item]));
-        const studentsWithRankings = studentsWithGPAs.map((student) => {
+        const studentsWithRankings = studentsWithAggregates.map((student) => {
           const matched = rankingMap.get(student.index || student.id);
           return {
             ...student,
@@ -106,17 +95,14 @@ export function BroadsheetGenerator() {
             percentile: matched?.percentile || 0,
           };
         });
-        const sumGpa = studentsWithRankings.reduce((acc, s) => acc + s.gpa, 0);
-        const sumCgpa = studentsWithRankings.reduce((acc, s) => acc + s.cgpa, 0);
+        const sumAggregate = studentsWithRankings.reduce((acc, s) => acc + s.wassceAggregate, 0);
         const count = studentsWithRankings.length || 1;
-        const classAverageGPA = parseFloat((sumGpa / count).toFixed(2));
-        const classAverageCGPA = parseFloat((sumCgpa / count).toFixed(2));
+        const classAverageAggregate = parseFloat((sumAggregate / count).toFixed(2));
         return {
           ...classItem,
           students: studentsWithRankings,
-          classAverageGPA,
-          classAverageCGPA,
-          classLetterGrade: gpaToLetterGrade(classAverageGPA),
+          classAverageAggregate,
+          classLetterGrade: aggregateToLetter(classAverageAggregate),
         };
       });
       setBroadsheetData(processed);
@@ -178,7 +164,7 @@ export function BroadsheetGenerator() {
     if (!broadsheetData || broadsheetData.length === 0) return null;
     const headers = [
       'Class Name', 'Subject', 'Academic Year', 'Term',
-      'Student Index', 'Student Name', 'Grade', 'GPA', 'Letter Grade', 'CGPA', 'Rank',
+      'Student Index', 'Student Name', 'Grade', 'Aggregate', 'Letter Grade', 'Best 6', 'Rank',
     ];
     const rows = broadsheetData.flatMap((classItem) =>
       (classItem.students || []).map((student) => [
@@ -189,9 +175,9 @@ export function BroadsheetGenerator() {
         student.index || 'N/A',
         student.name || 'N/A',
         student.grade || 'N/A',
-        student.gpa?.toFixed(2) || '0.00',
+        student.wassceAggregate || 0,
         student.letterGrade || 'F9',
-        student.cgpa?.toFixed(2) || '0.00',
+        student.termAggregate || 0,
         student.rank || 'N/A',
       ]),
     );
@@ -268,8 +254,8 @@ export function BroadsheetGenerator() {
                   <td class="num">${s.index || 'N/A'}</td>
                   <td>${String(s.name || 'Anonymous').replace(/</g, '&lt;')}</td>
                   <td class="grade">${s.grade || 'N/A'}</td>
-                  <td class="num">${s.gpa != null ? s.gpa.toFixed(2) : '0.00'} (${s.letterGrade || 'F9'})</td>
-                  <td class="num">${s.cgpa != null ? s.cgpa.toFixed(2) : '0.00'}</td>
+                  <td class="num">${s.wassceAggregate != null ? s.wassceAggregate : 'N/A'} (${s.letterGrade || 'F9'})</td>
+                  <td class="num">${s.termAggregate != null ? s.termAggregate : 'N/A'}</td>
                   <td class="num">${s.percentile != null ? s.percentile.toFixed(0) : '0'}%</td>
                 </tr>`,
                 )
@@ -277,7 +263,7 @@ export function BroadsheetGenerator() {
               return `
             <div class="class-block">
               <h2 class="class-title">${String(c.className || 'Unassigned Cohort').replace(/</g, '&lt;')}</h2>
-              <p class="summary">${(c.subject || 'General Discipline').toUpperCase()} &bull; Cycle: ${c.academicYear || 'N/A'} &bull; Term: ${c.term || 'N/A'} &bull; Class GPA: ${c.classAverageGPA?.toFixed(2)} (${c.classLetterGrade}) &bull; Class CGPA: ${c.classAverageCGPA?.toFixed(2)}</p>
+              <p class="summary">${(c.subject || 'General Discipline').toUpperCase()} &bull; Cycle: ${c.academicYear || 'N/A'} &bull; Term: ${c.term || 'N/A'} &bull; Class Aggregate: ${c.classAverageAggregate?.toFixed(1)} (${c.classLetterGrade})</p>
               <table>
                 <thead>
                   <tr>
@@ -285,8 +271,8 @@ export function BroadsheetGenerator() {
                     <th class="num">Index</th>
                     <th>Full Name</th>
                     <th class="num">Grade</th>
-                    <th class="num">Term GPA (Grade)</th>
-                    <th class="num">Cum. CGPA</th>
+                    <th class="num">WASSCE Aggregate</th>
+                    <th class="num">Best 6</th>
                     <th class="num">Percentile</th>
                   </tr>
                 </thead>
@@ -449,8 +435,8 @@ export function BroadsheetGenerator() {
               style: 'bg-brand-primary/10 text-brand-primary border-brand-primary/20',
             },
             {
-              label: 'Global Average GPA',
-              value: `${systemMetrics.globalAvgGpa} / 4.0`,
+              label: 'Global Avg Aggregate',
+              value: `${systemMetrics.globalAvgAggregate} / 48`,
               icon: BarChart3,
               style: 'bg-success/10 text-success border-success/20',
             },
@@ -557,17 +543,13 @@ export function BroadsheetGenerator() {
                     </div>
                     <div className="flex items-center gap-2 bg-background p-1.5 rounded-xl border border-border/60 shadow-xs self-start md:self-auto divide-x divide-border/80">
                       <div className="px-4 py-2 text-center">
-                        <p className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] leading-none">Class GPA</p>
+                        <p className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] leading-none">Class Aggregate</p>
                         <p className="text-sm font-black text-text-primary mt-1 flex items-center gap-1.5 justify-center">
-                          {classItem.classAverageGPA.toFixed(2)}
+                          {classItem.classAverageAggregate.toFixed(1)}
                           <span className="text-[8px] font-black text-brand-primary bg-brand-primary/10 border border-brand-primary/20 px-1.5 py-0.5 rounded-sm uppercase tracking-wider">
                             {classItem.classLetterGrade}
                           </span>
                         </p>
-                      </div>
-                      <div className="px-4 py-2 text-center">
-                        <p className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] leading-none">Class CGPA</p>
-                        <p className="text-sm font-black text-text-primary mt-1">{classItem.classAverageCGPA.toFixed(2)}</p>
                       </div>
                       <div className="px-4 py-2 text-center">
                         <p className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] leading-none">Count</p>
@@ -604,21 +586,21 @@ export function BroadsheetGenerator() {
 
                         <div className="grid grid-cols-3 gap-2">
                           <div className="bg-background/60 rounded-xl p-2.5 border border-border/50">
-                            <span className="block text-[8px] font-black text-muted-foreground uppercase tracking-[0.15em] mb-1">GPA</span>
+                            <span className="block text-[8px] font-black text-muted-foreground uppercase tracking-[0.15em] mb-1">Aggregate</span>
                             <span className="text-sm font-black text-text-primary tracking-tight">
-                              {student.gpa?.toFixed(2)}
+                              {student.wassceAggregate}
                             </span>
                             <span className={cn('ml-1 text-[8px] font-black border px-1 rounded-sm', getGradePillStyles(student.letterGrade))}>
                               {student.letterGrade}
                             </span>
                           </div>
                           <div className="bg-background/60 rounded-xl p-2.5 border border-border/50">
-                            <span className="block text-[8px] font-black text-muted-foreground uppercase tracking-[0.15em] mb-1">CGPA</span>
+                            <span className="block text-[8px] font-black text-muted-foreground uppercase tracking-[0.15em] mb-1">Best 6</span>
                             <span className="text-sm font-black text-brand-primary tracking-tight">
-                              {student.cgpa?.toFixed(2)}
+                              {student.termAggregate}
                             </span>
-                            <span className={cn('ml-1 text-[8px] font-black border px-1 rounded-sm', getGradePillStyles(student.cgpaLetterGrade))}>
-                              {student.cgpaLetterGrade}
+                            <span className={cn('ml-1 text-[8px] font-black border px-1 rounded-sm', getGradePillStyles(student.letterGrade))}>
+                              {student.letterGrade}
                             </span>
                           </div>
                           <div className="bg-background/60 rounded-xl p-2.5 border border-border/50">

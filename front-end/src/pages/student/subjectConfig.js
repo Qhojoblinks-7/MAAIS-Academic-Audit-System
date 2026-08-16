@@ -24,7 +24,7 @@ export const SUBJECT_CONFIG = {
     maxRaw: 80, sectionCount: 3, hasPractical: true, practicalMarks: 80,
     sbaLabel: 'SBA (30%)', examLabel: 'Exam (70%)',
   },
-  'Technical Drawing': {
+  'Design and Communication Technology': {
     sections: ['Geometric Construction (50)', 'Projection (50)'],
     maxRaw: 100, sectionCount: 2, hasPractical: true, practicalMarks: 100,
     sbaLabel: 'SBA (30%)', examLabel: 'Exam (70%)',

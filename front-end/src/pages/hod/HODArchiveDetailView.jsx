@@ -216,7 +216,7 @@ export function HODArchiveDetailView({ student, onBack }) {
                     <tbody>
                       <tr><td class="subject">Core Mathematics</td><td class="score">${term.finalGrade}%</td><td class="grade">${getWAECGrade(term.finalGrade).grade}</td></tr>
                       <tr><td class="subject">English Language</td><td class="score">${Math.min(100, term.finalGrade + 2)}%</td><td class="grade">${getWAECGrade(Math.min(100, term.finalGrade + 2)).grade}</td></tr>
-                      <tr><td class="subject">Integrated Science</td><td class="score">${term.finalGrade}%</td><td class="grade">${getWAECGrade(term.finalGrade).grade}</td></tr>
+                      <tr><td class="subject">General Science</td><td class="score">${term.finalGrade}%</td><td class="grade">${getWAECGrade(term.finalGrade).grade}</td></tr>
                       <tr><td class="subject">Social Studies</td><td class="score">${Math.max(30, term.finalGrade - 5)}%</td><td class="grade">${getWAECGrade(Math.max(30, term.finalGrade - 5)).grade}</td></tr>
                       <tr><td class="subject">Elective Subject 1</td><td class="score">${Math.min(100, term.finalGrade + 3)}%</td><td class="grade">${getWAECGrade(Math.min(100, term.finalGrade + 3)).grade}</td></tr>
                       <tr><td class="subject">Elective Subject 2</td><td class="score">${Math.max(30, term.finalGrade - 2)}%</td><td class="grade">${getWAECGrade(Math.max(30, term.finalGrade - 2)).grade}</td></tr>
@@ -348,7 +348,7 @@ export function HODArchiveDetailView({ student, onBack }) {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full md:w-auto self-stretch md:self-center relative">
             {[
-              { label: 'Longitudinal GPA', val: `${averageGpa}%`, note: 'Overall 3-year cumulative' },
+              { label: 'WASSCE Aggregate', val: student.wassceAggregate, note: 'Best 6 subjects (lower is better)' },
               { label: 'Peak Cycle Grade', val: `${highestTerminal}%`, note: 'WAEC Division Peak' },
               { label: 'WASSCE Output', val: student.finalWassce, note: 'National exam certification' },
               { label: 'Audit Status', val: 'VERIFIED & REGISTERED', note: 'HOD Clearance Sealed', accent: true },

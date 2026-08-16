@@ -17,7 +17,7 @@ export const SUBJECT_CONFIG = {
     maxRaw: 100, sectionCount: 3, hasPractical: false, practicalMarks: 0,
     sbaLabel: 'SBA (30%)', examLabel: 'Exam (70%)',
   },
-  'Integrated Science': {
+  'General Science': {
     sections: ['Sec A (40)', 'Sec B (60)'],
     maxRaw: 100, sectionCount: 2, hasPractical: false, practicalMarks: 0,
     sbaLabel: 'SBA (30%)', examLabel: 'Exam (70%)',
@@ -42,7 +42,7 @@ export const SUBJECT_CONFIG = {
     maxRaw: 80, sectionCount: 3, hasPractical: true, practicalMarks: 80,
     sbaLabel: 'SBA (30%)', examLabel: 'Exam (70%)',
   },
-  'Technical Drawing': {
+  'Design and Communication Technology': {
     sections: ['Geometric Construction (50)', 'Projection (50)'],
     maxRaw: 100, sectionCount: 2, hasPractical: true, practicalMarks: 100,
     sbaLabel: 'SBA (30%)', examLabel: 'Exam (70%)',

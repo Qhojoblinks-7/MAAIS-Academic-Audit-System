@@ -527,7 +527,6 @@ export const useStudentRegistry = () => {
     index_no: 'index_number',
     indexnumber: 'index_number',
     index: 'index_number',
-    cassrefid: 'index_number',
     candidate_name: 'name',
     full_name: 'name',
     students_name: 'name',
@@ -633,16 +632,13 @@ export const useStudentRegistry = () => {
     const seenIndexNumbers = new Set();
 
     csspsPreview.forEach((record, idx) => {
-      const indexNum = record.index_number || record.indexnumber || record.index || record.cassrefid;
-      if (!indexNum) {
-        validationErrors.push(`Row ${idx + 2}: Missing index number`);
-      } else {
+      const indexNum = record.index_number || record.indexnumber || record.index || '';
+      if (indexNum) {
         if (seenIndexNumbers.has(indexNum)) {
-          validationErrors.push(`Row ${idx + 2}: Duplicate index number ${indexNum}`);
+          validationErrors.push(Row : Duplicate index number );
         }
         seenIndexNumbers.add(indexNum);
       }
-
       const firstName = record.first_name || record.firstname || record.first_name || '';
       const lastName = record.last_name || record.lastname || record.last_name || '';
       const hasName = firstName || lastName || record.name;
@@ -682,7 +678,6 @@ export const useStudentRegistry = () => {
       }
 
       return {
-        indexNumber: record.index_number || record.indexnumber || record.index || record.cassrefid || `MSHTS/2024/${String(Date.now()).slice(-6)}`,
         firstName,
         lastName,
         middleName,
@@ -691,7 +686,12 @@ export const useStudentRegistry = () => {
         nationalId: record.nationalid || record.natid || record.nat_id || '',
         disability: record.disability || record.disability_type || '',
         canReadBraille: record.canreadbraille === 'true' || record.can_read_braille === 'true' || false,
-        subjects: record.sub ? [record.sub].filter(Boolean) : [],
+        indexNumber: record.index_number || record.indexnumber || record.index || '',
+        subjects: [
+          record.Sub1, record.Sub2, record.Sub3, record.Sub4, record.Sub5,
+          record.Sub6, record.Sub7, record.Sub8, record.Sub9, record.Sub10,
+          record.Sub11
+        ].filter(Boolean),
         currentClassId: record.currentclassid || record.currentclassid || record.currentclassid || '',
         departmentId: record.departmentid || record.departmentid || record.departmentid || '',
         className: (record.classname || record.class_name || (record.cassyear ? record.cassyear.replace(/^Year\s+/i, 'Form ') : '')) || '',

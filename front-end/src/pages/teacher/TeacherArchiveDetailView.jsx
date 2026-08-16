@@ -509,7 +509,7 @@ const handleExportTranscript = async () => {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full md:w-auto self-stretch md:self-center relative">
             {[
-              { label: 'Longitudinal GPA', val: `${averageGpa}%`, note: 'Overall 3-year mean' },
+              { label: 'WASSCE Aggregate', val: student.wassceAggregate ?? 'N/A', note: 'Best 6 subjects (lower is better)' },
               { label: 'Highest Cycle Grade', val: `${highestTerminal}%`, note: 'Peak score achievement' },
               { label: 'WASSCE Certificate', val: student.finalWassce, note: 'National exam output' },
               { label: 'Vault Security', val: 'SEALED & LOCKED', note: 'Tamper-proof status', accent: true }

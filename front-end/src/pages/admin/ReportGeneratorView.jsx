@@ -298,7 +298,7 @@ export const ReportGeneratorView = () => {
                    </div>
                    <div className="p-4 bg-surface rounded-2xl border border-warning">
                       <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-1">HOD Sign-off</p>
-                      <p className="text-[12px] font-black italic font-display text-text-primary">Technical Drawing Desk</p>
+                       <p className="text-[12px] font-black italic font-display text-text-primary">Design and Communication Technology Desk</p>
                       <p className="text-[9px] font-bold text-destructive mt-2 uppercase flex items-center gap-1">
                         <Clock size={10} /> Pending HOD Digital Key
                       </p>

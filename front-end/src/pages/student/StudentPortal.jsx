@@ -246,8 +246,7 @@ export function StudentPortal() {
       waecExamScore: transformedStudentData?.waecExamScore || 0,
       finalScore: transformedStudentData?.finalScore || 0,
       grade: transformedStudentData?.grade || '—',
-      gpaPerTerm: transformedStudentData?.gpaPerTerm || 0,
-      cgpa: transformedStudentData?.cgpa || 0,
+      wassceAggregate: transformedStudentData?.wassceAggregate || 0,
       approvalStatus: historyItem?.approvalStatus || transformedStudentData?.approvalStatus || '—',
       qualitativeAssessment: {
         characterQualities: transformedStudentData?.characterTraits?.characterQualities ?? 0,
@@ -320,8 +319,7 @@ export function StudentPortal() {
     waecExamScore: transformedStudentData.waecExamScore || 0,
     finalScore: transformedStudentData.finalScore || 0,
     grade: transformedStudentData.grade || '—',
-    gpaPerTerm: transformedStudentData.gpaPerTerm || 0,
-    cgpa: transformedStudentData.cgpa || 0,
+    wassceAggregate: transformedStudentData.wassceAggregate || 0,
     approvalStatus: transformedStudentData.approvalStatus || '—',
     qualitativeAssessment: {
       characterQualities: transformedStudentData.characterTraits?.characterQualities ?? 0,
@@ -373,10 +371,10 @@ export function StudentPortal() {
               studentData={transformedStudentData}
               approvalStatus={transformedStudentData.approvalStatus}
               coreResults={transformedStudentData.coreResults || (transformedStudentData.terminalResults || []).filter(r =>
-                ['Core Mathematics', 'English Language', 'Integrated Science', 'Social Studies'].includes(r.subject)
+                ['Core Mathematics', 'English Language', 'General Science', 'Social Studies'].includes(r.subject)
               )}
               technicalResults={transformedStudentData.technicalResults || (transformedStudentData.terminalResults || []).filter(r =>
-                !['Core Mathematics', 'English Language', 'Integrated Science', 'Social Studies'].includes(r.subject)
+                 !['Core Mathematics', 'English Language', 'General Science', 'Social Studies'].includes(r.subject)
               )}
               behaviorRating={transformedStudentData.behaviorRating ?? ((transformedStudentData.behavioralLogs?.reduce((avg, l) => avg + l.rating, 0) / (transformedStudentData.behavioralLogs?.length || 1)) || 0)}
               behaviorRemark={transformedStudentData.behaviorComments}

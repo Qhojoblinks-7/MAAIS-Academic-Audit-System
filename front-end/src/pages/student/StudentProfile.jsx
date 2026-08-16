@@ -70,7 +70,7 @@ export function StudentProfile() {
   const wassceResults = portalData?.wassceResults || [];
   const behavioralLogs = portalData?.behavioralLogs || [];
   const characterTraits = portalData?.characterTraits || null;
-  const latestGPA = academicHistory.length > 0 ? Number(academicHistory[academicHistory.length - 1]?.gpa || 0) : Number(portalData?.cgpa || 0);
+  const latestAggregate = academicHistory.length > 0 ? Number(academicHistory[academicHistory.length - 1]?.wassceAggregate || 0) : Number(portalData?.wassceAggregate || 0);
 
   const fetchStudentFullProfile = React.useCallback(async (studentId) => {
     if (!studentId) return;
@@ -103,7 +103,7 @@ export function StudentProfile() {
       if (foundFromHOD) {
         setPortalData({
           student: { id: foundFromHOD.id, firstName: foundFromHOD.name, lastName: '', indexNumber: foundFromHOD.index, currentClass: { name: foundFromHOD.classForm } },
-          academicHistory: [], terminalResults: [], coreResults: [], technicalResults: [], recentResults: [], notifications: [], activeInterventions: [], wassceResults: [], behavioralLogs: [], characterTraits: null, cgpa: 0,
+           academicHistory: [], terminalResults: [], coreResults: [], technicalResults: [], recentResults: [], notifications: [], activeInterventions: [], wassceResults: [], behavioralLogs: [], characterTraits: null, wassceAggregate: 0,
         });
         setIsArchived(foundFromHOD.archived || false);
       }

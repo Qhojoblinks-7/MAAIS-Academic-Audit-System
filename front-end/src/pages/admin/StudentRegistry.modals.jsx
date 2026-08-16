@@ -247,7 +247,7 @@ const StudentRegistryModals = ({ registry }) => {
                    </div>
                    <div>
                      <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Index Number *</label>
-                     <input value={newStudent.indexNumber} onChange={(e) => setNewStudent({...newStudent, indexNumber: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold" placeholder="e.g. MSHTS/2024/001" />
+                      <input value={newStudent.indexNumber} onChange={(e) => setNewStudent({...newStudent, indexNumber: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold" placeholder={newStudent.indexNumber ? "e.g. MSHTS/2024/001" : "Auto-generated if left blank"} />
                    </div>
                    <div className="grid grid-cols-2 gap-4">
                      <div>
@@ -282,7 +282,7 @@ const StudentRegistryModals = ({ registry }) => {
                   <p className="text-[10px] text-text-secondary mt-4 mb-4">A temporary password will be generated and the student will be prompted to change it on first login.</p>
                  <div className="flex gap-4">
                    <button onClick={() => setShowCreateForm(false)} className="flex-1 py-4 bg-muted rounded-[2rem] text-[11px] font-black uppercase tracking-widest">Cancel</button>
-                   <button onClick={handleCreateStudent} disabled={creatingStudent || !newStudent.firstName || !newStudent.indexNumber} className={cn("flex-1 py-4 rounded-[2rem] text-[11px] font-black uppercase tracking-widest", creatingStudent || !newStudent.firstName || !newStudent.indexNumber ? "bg-muted text-text-secondary cursor-not-allowed" : "bg-brand-primary text-primary-foreground")}>
+                    <button onClick={handleCreateStudent} disabled={creatingStudent || !newStudent.firstName} className={cn("flex-1 py-4 rounded-[2rem] text-[11px] font-black uppercase tracking-widest", creatingStudent || !newStudent.firstName ? "bg-muted text-text-secondary cursor-not-allowed" : "bg-brand-primary text-primary-foreground")}>
                      {creatingStudent ? 'Registering...' : 'Register Student'}
                    </button>
                  </div>

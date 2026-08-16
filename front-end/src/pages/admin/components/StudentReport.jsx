@@ -111,7 +111,7 @@ export function StudentReport({ selectedStudent, reportConfig, setReportConfig }
                 
                 {/* High-Density Row Grid (Replaces Table) */}
                 <div className="divide-y divide-border">
-                  {['Core Mathematics', 'English Language', 'Integrated Science', 'Social Studies', 'Elective Subject 1', 'Elective Subject 2'].map((subj, sIdx) => {
+                  {['Core Mathematics', 'English Language', 'General Science', 'Social Studies', 'Elective Subject 1', 'Elective Subject 2'].map((subj, sIdx) => {
                     const baseGrade = selectedStudent.history[tIdx]?.finalGrade || 70;
                     const classScore = Math.round((baseGrade * 0.3) + (sIdx % 2 === 0 ? 2 : -2));
                     const examScore = Math.round((baseGrade * 0.7) + (sIdx % 3 === 0 ? -3 : 4));
@@ -153,9 +153,9 @@ export function StudentReport({ selectedStudent, reportConfig, setReportConfig }
           {/* High-Density Summary Widgets */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-3">
             <div className="bg-success/10 p-2.5 rounded-xl border border-success/20 flex items-center justify-between">
-              <span className="text-[8px] font-bold text-success uppercase tracking-wider font-mono">Cumulative GPA</span>
+              <span className="text-[8px] font-bold text-success uppercase tracking-wider font-mono">WASSCE Aggregate</span>
               <p className="text-sm font-black text-success font-mono">
-                {(selectedStudent.history.reduce((acc, h) => acc + h.finalGrade, 0) / selectedStudent.history.length).toFixed(1)}%
+                {(selectedStudent.history.reduce((acc, h) => acc + h.finalGrade, 0) / selectedStudent.history.length)}
               </p>
             </div>
             <div className="bg-success/10 p-2.5 rounded-xl border border-success/20 flex items-center justify-between">

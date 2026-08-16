@@ -27,7 +27,7 @@ export function StudentSettings() {
   }, [portalData]);
    
   const studentStats = portalData ? {
-    cgpa: portalData.cgpa || 0,
+    wassceAggregate: portalData.wassceAggregate || 0,
     attendance: portalData.attendancePercentage || 0,
     classRank: portalData.classRank || 0,
   } : null;
@@ -73,10 +73,10 @@ export function StudentSettings() {
             <>
               <div className="bg-surface p-4 sm:p-5 rounded-2xl border border-border shadow-sm text-center flex flex-col justify-center min-w-0">
                 <span className="text-xl sm:text-2xl font-black tracking-tight block truncate text-success">
-                  {studentStats.cgpa.toFixed(2)}
+                  {studentStats.wassceAggregate}
                 </span>
                 <span className="text-[9px] font-black text-text-secondary uppercase tracking-wider mt-1 block truncate">
-                  Current CGPA
+                  WASSCE Aggregate
                 </span>
               </div>
               

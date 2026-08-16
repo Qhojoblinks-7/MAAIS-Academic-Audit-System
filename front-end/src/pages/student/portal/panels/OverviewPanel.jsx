@@ -92,10 +92,10 @@ export function OverviewPanel({
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <div className="bg-background rounded-xl p-3 sm:p-4 transition-colors hover:bg-surface">
             <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mb-1">
-              Current CGPA
+              WASSCE Aggregate
             </p>
             <p className="text-xl sm:text-2xl font-black text-text-primary">
-              {Number(studentData.cgpa || 0).toFixed(2)}
+              {Number(studentData.wassceAggregate || 0)}
             </p>
           </div>
           
