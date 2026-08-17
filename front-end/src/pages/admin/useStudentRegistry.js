@@ -635,7 +635,7 @@ export const useStudentRegistry = () => {
       const indexNum = record.index_number || record.indexnumber || record.index || '';
       if (indexNum) {
         if (seenIndexNumbers.has(indexNum)) {
-          validationErrors.push(Row : Duplicate index number );
+          validationErrors.push(`Row ${idx + 2}: Duplicate index number`);
         }
         seenIndexNumbers.add(indexNum);
       }
