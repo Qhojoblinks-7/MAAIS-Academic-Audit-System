@@ -88,32 +88,32 @@ const StudentRegistryModals = ({ registry }) => {
            </div>
          )}
   {isBatchUploading && (
-         <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
-            <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md" onClick={() => setIsBatchUploading(false)} />
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-2xl bg-surface rounded-[3rem] shadow-2xl p-12">
-                  <div className="w-24 h-24 bg-brand-primary/10 text-brand-primary rounded-[2.5rem] flex items-center justify-center mx-auto mb-10"><FileUp size={48} /></div>
-                  <h3 className="text-3xl font-black italic font-display text-text-primary mb-4">CSSPS Batch Intake</h3>
+         <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-6">
+             <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md" onClick={() => setIsBatchUploading(false)} />
+             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-lg sm:max-w-2xl bg-surface rounded-[1.5rem] sm:rounded-[3rem] shadow-2xl p-6 sm:p-12">
+                   <div className="w-20 h-20 sm:w-24 sm:h-24 bg-brand-primary/10 text-brand-primary rounded-[2rem] sm:rounded-[2.5rem] flex items-center justify-center mx-auto mb-6 sm:mb-10"><FileUp size={40} /></div>
+                   <h3 className="text-2xl sm:text-3xl font-black italic font-display text-text-primary mb-3 sm:mb-4">CSSPS Batch Intake</h3>
 
-                   <div className="mb-6">
-                     <input
-                       type="file"
-                       accept=".csv,.xlsx,.xls"
-                       onChange={handleCssFileChange}
-                       className="hidden"
-                       id="cssps-file-input"
-                     />
-                     <label
-                       htmlFor="cssps-file-input"
-                       className="border-4 border-dashed border-border rounded-[2.5rem] py-16 mb-6 hover:bg-muted cursor-pointer flex flex-col items-center justify-center"
-                     >
-                       <p className="text-[11px] font-black uppercase tracking-widest text-text-secondary mb-2">Drop CSSPS File Here</p>
-                       <p className="text-[10px] text-muted">CSV/Excel formats supported</p>
-                       {csspsFile && (
-                         <p className="mt-3 text-[12px] font-black text-brand-primary">
-                           {csspsFile.name}
-                         </p>
-                       )}
-                     </label>
+                    <div className="mb-5 sm:mb-6">
+                      <input
+                        type="file"
+                        accept=".csv,.xlsx,.xls"
+                        onChange={handleCssFileChange}
+                        className="hidden"
+                        id="cssps-file-input"
+                      />
+                      <label
+                        htmlFor="cssps-file-input"
+                        className="border-4 border-dashed border-border rounded-[1.5rem] sm:rounded-[2.5rem] py-8 sm:py-16 mb-5 sm:mb-6 hover:bg-muted cursor-pointer flex flex-col items-center justify-center"
+                      >
+                        <p className="text-[9px] sm:text-[11px] font-black uppercase tracking-widest text-text-secondary mb-2">Drop CSSPS File Here</p>
+                        <p className="text-[8px] sm:text-[10px] text-muted">CSV/Excel formats supported</p>
+                        {csspsFile && (
+                          <p className="mt-3 text-[11px] font-black text-brand-primary break-all px-4">
+                            {csspsFile.name}
+                          </p>
+                        )}
+                      </label>
                       <button
                          onClick={() => {
                            const headers = ['indexNumber','firstName','lastName','middleName','gender','dateOfBirth','residentialStatus','className','departmentName','currentClassId','departmentId','parentFirstName','parentLastName','parentPhone','parentEmail','parentRelationship'];
@@ -146,25 +146,25 @@ const StudentRegistryModals = ({ registry }) => {
                            a.click();
                            URL.revokeObjectURL(url);
                          }}
-                        className="text-[10px] font-black uppercase tracking-widest text-brand-primary hover:underline"
-                      >
-                        Download Template CSV
-                      </button>
-                   </div>
+                         className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-brand-primary hover:underline"
+                       >
+                         Download Template CSV
+                       </button>
+                    </div>
 
-                  {csspsPreview.length > 0 && (
-                     <div className="mb-6 max-h-64 overflow-y-auto border border-border rounded-2xl p-4 scrollbar-hide">
-                      <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-3">Preview ({csspsPreview.length} records)</p>
-                      <div className="space-y-1">
-                         {csspsPreview.slice(0, 5).map((record, i) => (
-                           <div key={i} className="flex justify-between text-[11px] py-1 border-b border-border">
-                             <span className="font-bold text-text-primary">{record.index_number || record.indexnumber || record.index || record.cassrefid || '—'}</span>
-                             <span className="text-text-secondary">{record.first_name || record.firstname || record.firstName || '—'} {(record.last_name || record.lastname || record.lastName || '')}</span>
-                             <span className="text-text-secondary">{record.placementAggregate || 'N/A'}</span>
-                           </div>
-                         ))}
+                   {csspsPreview.length > 0 && (
+                      <div className="mb-5 sm:mb-6 max-h-52 sm:max-h-64 overflow-y-auto border border-border rounded-xl sm:rounded-2xl p-3 sm:p-4 scrollbar-hide">
+                       <p className="text-[8px] sm:text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 sm:mb-3">Preview ({csspsPreview.length} records)</p>
+                       <div className="space-y-1">
+                          {csspsPreview.slice(0, 5).map((record, i) => (
+                            <div key={i} className="flex justify-between text-[10px] sm:text-[11px] py-1 border-b border-border">
+                              <span className="font-bold text-text-primary">{record.index_number || record.indexnumber || record.index || record.cassrefid || '—'}</span>
+                              <span className="text-text-secondary truncate max-w-[40%]">{record.last_name || record.lastname || record.lastName || ''} {record.first_name || record.firstname || record.firstName || '—'} {record.middle_name || record.middlename || record.middleName || ''}</span>
+                              <span className="text-text-secondary">{record.placementAggregate || 'N/A'}</span>
+                            </div>
+                          ))}
                         {csspsPreview.length > 5 && (
-                          <p className="text-[10px] text-text-secondary italic">...and {csspsPreview.length - 5} more</p>
+                           <p className="text-[8px] sm:text-[10px] text-text-secondary italic">...and {csspsPreview.length - 5} more</p>
                         )}
                       </div>
                     </div>
@@ -207,19 +207,32 @@ const StudentRegistryModals = ({ registry }) => {
                     <p className="text-[14px] text-text-secondary mb-4">
                       Successfully imported {importResults.success} students. {importResults.failed > 0 && `${importResults.failed} failed.`}
                     </p>
-                    {importResults.failed > 0 && importResults.errors && (
-                      <div className="mb-6 max-h-48 overflow-y-auto border border-border rounded-xl p-3 scrollbar-hide">
-                        <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 text-left">Errors</p>
-                        {importResults.errors.slice(0, 20).map((err, i) => (
-                          <div key={i} className="text-[11px] text-destructive text-left py-1 border-b border-border/50 last:border-0">
-                            <span className="font-bold">{err.indexNumber || 'Unknown'}:</span> {err.error}
-                          </div>
-                        ))}
-                        {importResults.errors.length > 20 && (
-                          <p className="text-[10px] text-text-secondary italic mt-2">...and {importResults.errors.length - 20} more errors</p>
-                        )}
-                      </div>
-                    )}
+                     {importResults.failed > 0 && importResults.errors && (
+                       <div className="mb-6 max-h-48 overflow-y-auto border border-border rounded-xl p-3 scrollbar-hide">
+                         <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 text-left">Errors</p>
+                         {importResults.errors.slice(0, 20).map((err, i) => (
+                           <div key={i} className="text-[11px] text-destructive text-left py-1 border-b border-border/50 last:border-0">
+                             <span className="font-bold">{err.indexNumber || 'Unknown'}:</span> {err.error}
+                           </div>
+                         ))}
+                         {importResults.errors.length > 20 && (
+                           <p className="text-[10px] text-text-secondary italic mt-2">...and {importResults.errors.length - 20} more errors</p>
+                         )}
+                       </div>
+                     )}
+                     {importResults.warnings && importResults.warnings.length > 0 && (
+                       <div className="mb-6 max-h-48 overflow-y-auto border border-warning/30 rounded-xl p-3 scrollbar-hide">
+                         <p className="text-[10px] font-black text-warning uppercase tracking-widest mb-2 text-left">Warnings</p>
+                         {importResults.warnings.slice(0, 20).map((w, i) => (
+                           <div key={i} className="text-[11px] text-warning text-left py-1 border-b border-warning/20 last:border-0">
+                             <span className="font-bold">{w.indexNumber || 'Unknown'}:</span> {w.message}
+                           </div>
+                         ))}
+                         {importResults.warnings.length > 20 && (
+                           <p className="text-[10px] text-text-secondary italic mt-2">...and {importResults.warnings.length - 20} more warnings</p>
+                         )}
+                       </div>
+                     )}
                     <button
                       onClick={() => setImportResults(null)}
                       className="px-8 py-3 bg-brand-dark text-primary-foreground rounded-2xl text-[11px] font-black uppercase tracking-widest"

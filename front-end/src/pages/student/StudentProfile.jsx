@@ -58,7 +58,7 @@ export function StudentProfile() {
   }, [archivedClasses]);
 
   const backendStudent = portalData?.student;
-  const studentName = portalData ? `${backendStudent?.firstName || ''} ${backendStudent?.lastName || ''}`.trim() || 'Unknown Student' : null;
+  const studentName = portalData ? `${backendStudent?.lastName || ''} ${backendStudent?.firstName || ''} ${backendStudent?.middleName || ''}`.replace(/\s+/g, ' ').trim() || 'Unknown Student' : null;
   const studentIndex = backendStudent?.indexNumber || '—';
   const classForm = backendStudent?.currentClass?.name || '—';
   const department = backendStudent?.department?.name || '—';

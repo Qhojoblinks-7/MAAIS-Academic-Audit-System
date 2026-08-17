@@ -243,7 +243,7 @@ export function AdminHome() {
     const base = import.meta.env.VITE_API_BASE_URL || '/api/v1';
     const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
     let cancelled = false;
-    (async () => {
+    const fetchKpis = async () => {
       try {
         const [studentsRes, staffRes, boardersRes] = await Promise.all([
           fetch(`${base}/users/students/count`, { headers }),
@@ -264,12 +264,23 @@ export function AdminHome() {
             const parsed = parseInt(staffText, 10);
             if (!isNaN(parsed)) setLiveStaffCount(parsed);
           }
+          if (boardersRes.ok) {
+            try {
+              const stats = JSON.parse(boardersText);
+              qc.setQueryData(['admin', 'students', 'boarder-stats'], stats);
+            } catch {
+              // ignore parse errors
+            }
+          }
         }
       } catch (e) {
         console.error('[AdminHome KPI fetch error]', e);
       }
-    })();
-    return () => { cancelled = true; };
+    };
+
+    fetchKpis();
+    const interval = setInterval(fetchKpis, 30000);
+    return () => { cancelled = true; clearInterval(interval); };
   }, [selectedAcademicYearId, selectedTermId, selectedLevel]);
 
   React.useEffect(() => {
@@ -1303,7 +1314,7 @@ export function AdminHome() {
       <AnimatePresence>
         {selectedTicket && (() => {
           const creator = selectedTicket.createdBy;
-          const nameFromProfile = (p) => (p ? `${p.firstName || ''} ${p.lastName || ''}`.trim() : '');
+          const nameFromProfile = (p) => (p ? `${p.lastName || ''} ${p.firstName || ''} ${p.middleName || ''}`.replace(/\s+/g, ' ').trim() : '');
           const reporter =
             nameFromProfile(selectedTicket.student) ||
             nameFromProfile(creator?.staffProfile || creator?.studentProfile) ||

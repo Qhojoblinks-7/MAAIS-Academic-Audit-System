@@ -13,7 +13,7 @@ export function StudentSettings() {
    const { data: portalData, loading } = useStudentPortalData(user?.profileId || user?.id || null);
    
   const [name, setName] = React.useState(() => {
-    const n = portalData ? `${portalData.student?.firstName || ''} ${portalData.student?.lastName || ''}`.trim() : '';
+    const n = portalData ? `${portalData.student?.lastName || ''} ${portalData.student?.firstName || ''} ${portalData.student?.middleName || ''}`.replace(/\s+/g, ' ').trim() : '';
     return n || 'Student';
   });
   const [bio, setBio] = React.useState(() => portalData?.student?.bio || '');

@@ -7,7 +7,11 @@ export function useAllStudents() {
   return useQuery({
     queryKey: ['admin', 'students'],
     queryFn: adminApi.getAllStudents,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000,
+    refetchIntervalInBackground: false,
   });
 }
 
@@ -16,6 +20,8 @@ export function useStudentCount() {
     queryKey: ['admin', 'students', 'count'],
     queryFn: adminApi.getStudentCount,
     staleTime: 1000 * 60 * 5,
+    refetchInterval: 30000,
+    refetchIntervalInBackground: false,
   });
 }
 
@@ -23,7 +29,11 @@ export function useStudentBoarderStats() {
   return useQuery({
     queryKey: ['admin', 'students', 'boarder-stats'],
     queryFn: adminApi.getStudentBoarderStats,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000,
+    refetchIntervalInBackground: false,
   });
 }
 
@@ -80,7 +90,10 @@ export function useCreateStudent() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (dto) => adminApi.createStudent(dto),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'students'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'students'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'students', 'boarder-stats'] });
+    },
   });
 }
 
@@ -88,7 +101,10 @@ export function useBatchImportStudents() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (students) => adminApi.batchImportStudents(students),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'students'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'students'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'students', 'boarder-stats'] });
+    },
   });
 }
 

@@ -71,7 +71,7 @@ export const useStudentRegistry = () => {
     const program = s.department?.name || s.currentClass?.program || 'General';
     return {
       id: s.id || s.userId,
-      name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.user?.email || 'Unknown',
+      name: `${s.lastName || ''} ${s.firstName || ''} ${s.middleName || ''}`.replace(/\s+/g, ' ').trim() || s.user?.email || 'Unknown',
       indexNumber: s.indexNumber,
       dob: s.dateOfBirth,
       currentClass: s.currentClass?.name || 'Unassigned',
@@ -85,7 +85,7 @@ export const useStudentRegistry = () => {
       phone: s.user?.phone || s.phone,
       role: s.user?.role || s.role,
       emergencyContact: parentLink ? {
-        name: `${parentLink.parent?.firstName || ''} ${parentLink.parent?.lastName || ''}`.trim() || 'Unknown',
+        name: `${parentLink.parent?.lastName || ''} ${parentLink.parent?.firstName || ''} ${parentLink.parent?.middleName || ''}`.replace(/\s+/g, ' ').trim() || 'Unknown',
         relation: parentLink.relationship || 'Guardian',
       } : null,
       healthNotes: s.bio || '',
@@ -561,7 +561,7 @@ export const useStudentRegistry = () => {
     });
 
     if (mapped.name && !mapped.first_name && !mapped.last_name) {
-      const nameParts = mapped.name.trim().split(/\s+/);
+      const nameParts = mapped.name.trim().split(/[\s]+/).filter(Boolean);
       if (nameParts.length >= 2) {
         mapped.last_name = nameParts[0];
         mapped.first_name = nameParts[1];
@@ -574,10 +574,13 @@ export const useStudentRegistry = () => {
     }
 
     if (mapped.parent_name && !mapped.parent_first_name && !mapped.parent_last_name) {
-      const nameParts = mapped.parent_name.trim().split(/\s+/);
+      const nameParts = mapped.parent_name.trim().split(/[\s]+/).filter(Boolean);
       if (nameParts.length >= 2) {
         mapped.parent_last_name = nameParts[0];
         mapped.parent_first_name = nameParts[1];
+        if (nameParts.length > 2) {
+          mapped.parent_middle_name = nameParts.slice(2).join(' ');
+        }
       } else if (nameParts.length === 1) {
         mapped.parent_first_name = nameParts[0];
       }
@@ -660,12 +663,12 @@ export const useStudentRegistry = () => {
     setIsProcessingCssps(true);
 
     const students = csspsPreview.map(record => {
-      let firstName = record.first_name || record.firstname || record.first_name || '';
-      let lastName = record.last_name || record.lastname || record.last_name || '';
+      let firstName = record.first_name || record.firstname || record.firstName || '';
+      let lastName = record.last_name || record.lastname || record.lastName || '';
       let middleName = record.middle_name || record.middlename || record.middleName || '';
 
       if (record.name && !firstName && !lastName) {
-        const nameParts = record.name.trim().split(/\s+/);
+        const nameParts = record.name.trim().split(/[\s]+/).filter(Boolean);
         if (nameParts.length >= 2) {
           lastName = nameParts[0];
           firstName = nameParts[1];
@@ -688,7 +691,7 @@ export const useStudentRegistry = () => {
         canReadBraille: record.canreadbraille === 'true' || record.can_read_braille === 'true' || false,
         indexNumber: record.index_number || record.indexnumber || record.index || '',
         subjects: [
-          record.Sub1, record.Sub2, record.Sub3, record.Sub4, record.Sub5,
+          record.Sub, record.Sub1, record.Sub2, record.Sub3, record.Sub4, record.Sub5,
           record.Sub6, record.Sub7, record.Sub8, record.Sub9, record.Sub10,
           record.Sub11
         ].filter(Boolean),
@@ -697,6 +700,7 @@ export const useStudentRegistry = () => {
         className: (record.classname || record.class_name || (record.cassyear ? record.cassyear.replace(/^Year\s+/i, 'Form ') : '')) || '',
         departmentName: record.departmentname || record.department_name || record.programname || '',
         parentFirstName: record.parentfirstname || record.parentfirstname || record.parent_first_name || '',
+        parentMiddleName: record.parentmiddlename || record.parentmiddle_name || '',
         parentLastName: record.parentlastname || record.parentlastname || record.parent_last_name || '',
         parentPhone: record.parentphone || record.parentphone || record.parent_phone || '',
         parentEmail: record.parentemail || record.parentemail || record.parent_email || '',

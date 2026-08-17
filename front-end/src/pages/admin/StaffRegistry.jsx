@@ -151,7 +151,7 @@ export function StaffRegistry() {
         lastName: onboardForm.lastName,
         email: onboardForm.email,
         phone: onboardForm.phone,
-        staffId: onboardForm.staffId || `STF-${String(staff.length + 1).padStart(3, '0')}`,
+        staffId: onboardForm.staffId || undefined,
         department: onboardForm.department,
         role: onboardForm.role,
       });
@@ -400,8 +400,8 @@ export function StaffRegistry() {
   const downloadSampleCsv = () => {
     const sampleDept = departments.length > 0 ? departments[0].name : 'Science';
     const rows = [
-      { firstName: 'Ama', lastName: 'Owusu', middleName: 'Abena', email: 'ama.owusu@mandoshts.edu.gh', phone: '+233244000001', staffId: 'TCH-001', role: 'TEACHER', gender: 'MALE', departmentName: sampleDept },
-      { firstName: 'Kofi', lastName: 'Mensah', middleName: '', email: 'kofi.mensah@mandoshts.edu.gh', phone: '+233244000002', staffId: 'HOD-001', role: 'HOD', gender: 'MALE', departmentName: sampleDept },
+      { firstName: 'Ama', lastName: 'Owusu', middleName: 'Abena', email: 'ama.owusu@mandoshts.edu.gh', phone: '+233244000001', staffId: 'TCH25SC001', role: 'TEACHER', gender: 'MALE', departmentName: sampleDept },
+      { firstName: 'Kofi', lastName: 'Mensah', middleName: '', email: 'kofi.mensah@mandoshts.edu.gh', phone: '+233244000002', staffId: 'HOD25SC001', role: 'HOD', gender: 'MALE', departmentName: sampleDept },
     ];
     const csv = Papa.unparse(rows);
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -1518,7 +1518,7 @@ export function StaffRegistry() {
                 <Textarea
                   value={bulkText}
                   onChange={(e) => { setBulkText(e.target.value); setBulkFileName(''); setBulkPreview(null); setBulkValidation([]); }}
-                  placeholder={'firstName,lastName,email,phone,staffId,role,gender,departmentName\nAma,Owusu,ama.owusu@mandoshts.edu.gh,+233244000001,TCH-001,TEACHER,MALE,Science\nKofi,Mensah,kofi.mensah@mandoshts.edu.gh,+233244000002,HOD-001,HOD,MALE,Mathematics'}
+                  placeholder={'firstName,lastName,email,phone,staffId,role,gender,departmentName\nAma,Owusu,ama.owusu@mandoshts.edu.gh,+233244000001,TCH25SC001,TEACHER,MALE,Science\nKofi,Mensah,kofi.mensah@mandoshts.edu.gh,+233244000002,HOD25SC001,HOD,MALE,Mathematics'}
                   className="w-full h-40 px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-mono text-text-primary focus:outline-none focus:ring-4 focus:ring-border resize-none"
                 />
 

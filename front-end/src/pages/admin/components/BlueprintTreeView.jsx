@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../../lib/utils';
-import { School, Layers, Users, AlertTriangle, ChevronRight, ChevronDown, MoreVertical, Plus, X, TrendingUp, Settings2, Archive, UserPlus, Ruler, Home, Trash2, Loader2, Check } from 'lucide-react';
+import { School, Layers, Users, AlertTriangle, ChevronRight, ChevronDown, MoreVertical, Plus, X, TrendingUp, Settings2, Archive, UserPlus, Ruler, Home, Trash2, Loader2, Check, Pencil } from 'lucide-react';
 import { toast } from '../../../components/ui/toast.tsx';
 import { usePromoteLevel, useArchiveYear, useTransferStudents, useUpdateClassCapacity, useRebalanceHouses, useDissolveClass, useUpdateClass, useAllStudents, useCreateYear, useActivateYear, useGetAcademicYears, useCreateClass, useAllDepartments } from '../../../lib/hooks';
 import { ConfirmationDialog } from '../../../components/molecules/ConfirmationDialog';
@@ -43,6 +43,9 @@ export function BlueprintTreeView({
 
   const [capacityClassroom, setCapacityClassroom] = useState(null);
   const [capacityValue, setCapacityValue] = useState('');
+
+  const [renameClassroom, setRenameClassroom] = useState(null);
+  const [renameValue, setRenameValue] = useState('');
 
   const [confirmDialog, setConfirmDialog] = useState({ open: false, title: '', message: '', action: null, variant: 'danger' });
 
@@ -221,6 +224,36 @@ export function BlueprintTreeView({
     }
   };
 
+  const openRenameModal = (classroom) => {
+    setRenameClassroom(classroom);
+    setRenameValue(classroom.name);
+  };
+
+  const closeRenameModal = () => {
+    setRenameClassroom(null);
+    setRenameValue('');
+  };
+
+  const handleApplyRename = async () => {
+    if (!renameClassroom) return;
+    const trimmed = renameValue.trim();
+    if (!trimmed) {
+      toast.error('Class name cannot be empty');
+      return;
+    }
+    try {
+      await updateClassMutation.mutateAsync({
+        id: renameClassroom.id,
+        dto: { name: trimmed },
+      });
+      qc.invalidateQueries({ queryKey: ['admin', 'academic'] });
+      toast.success(`Renamed to "${trimmed}"`);
+      closeRenameModal();
+    } catch (err) {
+      toast.error(`Rename failed: ${err.message || 'Unknown error'}`);
+    }
+  };
+
   const toggleTransferStudent = (id) => {
     setSelectedStudentIds((prev) => {
       const next = new Set(prev);
@@ -345,6 +378,10 @@ export function BlueprintTreeView({
     switch (action) {
       case 'transfers': {
         openTransferModal(classroom);
+        break;
+      }
+      case 'rename': {
+        openRenameModal(classroom);
         break;
       }
       case 'capacity': {
@@ -660,6 +697,7 @@ export function BlueprintTreeView({
                                       </button>
                                       {openKebabClassroomId === classroom.id && (
                                         <div className="absolute right-0 top-12 w-56 bg-surface border border-border rounded-xl shadow-xl z-50 py-1">
+                                          <button onClick={() => handleClassroomKebabAction(classroom.id, 'rename', classroom)} className="w-full text-left px-3 py-2.5 text-xs font-bold text-foreground/80 hover:bg-muted/50 flex items-center gap-2"><Pencil size={12} className="text-brand-primary" /> Rename Class</button>
                                           <button onClick={() => handleClassroomKebabAction(classroom.id, 'transfers', classroom)} className="w-full text-left px-3 py-2.5 text-xs font-bold text-foreground/80 hover:bg-muted/50 flex items-center gap-2"><UserPlus size={12} className="text-brand-primary" /> Student Transfers</button>
                                           <button onClick={() => handleClassroomKebabAction(classroom.id, 'capacity', classroom)} className="w-full text-left px-3 py-2.5 text-xs font-bold text-foreground/80 hover:bg-muted/50 flex items-center gap-2"><Ruler size={12} className="text-brand-primary" /> Capacity Overrides</button>
                                           <button onClick={() => handleClassroomKebabAction(classroom.id, 'rebalance', classroom)} className="w-full text-left px-3 py-2.5 text-xs font-bold text-foreground/80 hover:bg-muted/50 flex items-center gap-2"><Home size={12} className="text-success" /> House Rebalancing</button>
@@ -1227,6 +1265,68 @@ export function BlueprintTreeView({
                       <><Loader2 size={14} className="animate-spin" /> Updating...</>
                     ) : (
                       'Apply Override'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {renameClassroom && (
+          <div className="fixed inset-0 z-[600] flex items-center justify-center p-6">
+            <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md transition-opacity duration-200 opacity-100" />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="relative w-full max-w-md bg-surface rounded-[2.5rem] shadow-2xl overflow-hidden"
+            >
+              <div className="p-8">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-brand-primary/10 text-brand-primary rounded-xl flex items-center justify-center">
+                      <Pencil size={20} />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black italic font-display text-foreground">Rename Class</h3>
+                      <p className="text-[9px] font-black uppercase text-muted-foreground tracking-wider">Update the classroom unit name</p>
+                    </div>
+                  </div>
+                  <button onClick={closeRenameModal} className="p-2 text-muted-foreground hover:text-foreground transition-all">
+                    <X size={24} />
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-foreground/70 uppercase tracking-wider">Class Name</label>
+                  <input
+                    type="text"
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    autoFocus
+                    className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent text-foreground outline-none transition-all"
+                  />
+                </div>
+                <div className="flex gap-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={closeRenameModal}
+                    className="flex-1 px-5 py-3 bg-muted/30 text-foreground font-black rounded-xl border border-border hover:bg-muted/50 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleApplyRename}
+                    disabled={updateClassMutation.isPending}
+                    className="flex-1 px-5 py-3 bg-brand-primary text-primary-foreground font-black rounded-xl hover:bg-brand-primary/90 transition-all shadow-lg shadow-brand-primary/20 disabled:opacity-60 flex items-center justify-center gap-2"
+                  >
+                    {updateClassMutation.isPending ? (
+                      <><Loader2 size={14} className="animate-spin" /> Renaming...</>
+                    ) : (
+                      'Apply Rename'
                     )}
                   </button>
                 </div>

@@ -187,7 +187,7 @@ export function StudentPortal() {
       yearForm: normalizedYearForm,
       semester: normalizedSemester,
       academicHistory,
-      studentName: `${student.firstName || ''} ${student.lastName || ''}`.trim() || 'Student',
+      studentName: `${student.lastName || ''} ${student.firstName || ''} ${student.middleName || ''}`.replace(/\s+/g, ' ').trim() || 'Student',
       indexNumber: student.indexNumber || '—',
       program,
       programName: program,

@@ -200,7 +200,7 @@ export function DepartmentManagement() {
           createStaffMutation.mutateAsync({
             firstName,
             lastName,
-            staffId: `HOD-${Date.now()}`,
+            staffId: undefined,
             email: `${firstName.toLowerCase()}.${lastName.toLowerCase().replace(/\s+/g, '.')}@maais.edu`,
             role: 'HOD',
             departmentId: deptId,
@@ -208,7 +208,7 @@ export function DepartmentManagement() {
           createStaffMutation.mutateAsync({
             firstName: 'Auto',
             lastName: 'Teacher 1',
-            staffId: `TCH-${Date.now()}-1`,
+            staffId: undefined,
             email: `auto.teacher1@maais.edu`,
             role: 'TEACHER',
             departmentId: deptId,
@@ -216,7 +216,7 @@ export function DepartmentManagement() {
           createStaffMutation.mutateAsync({
             firstName: 'Auto',
             lastName: 'Teacher 2',
-            staffId: `TCH-${Date.now()}-2`,
+            staffId: undefined,
             email: `auto.teacher2@maais.edu`,
             role: 'TEACHER',
             departmentId: deptId,

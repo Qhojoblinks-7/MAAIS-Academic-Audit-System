@@ -228,7 +228,7 @@ export function HODStudentRegistry() {
   const batchImportMutation = useBatchImportStudents();
 
   const [newStudent, setNewStudent] = useState({
-    firstName: '', lastName: '', indexNumber: '', gender: 'MALE', dateOfBirth: '', residentialStatus: 'DAY', classId: '',
+    firstName: '', lastName: '', indexNumber: '', gender: 'MALE', dateOfBirth: '', residentialStatus: 'DAY', currentClassId: '',
     parentFirstName: '', parentLastName: '', parentPhone: '', parentEmail: '', parentRelationship: 'Guardian',
   });
 
@@ -313,6 +313,7 @@ export function HODStudentRegistry() {
     try {
       await createStudentMutation.mutateAsync({
         ...newStudent,
+        currentClassId: newStudent.currentClassId,
         isBoarder: newStudent.residentialStatus === 'BOARDING',
         password: 'Student@123!',
         parentFirstName: newStudent.parentFirstName,
@@ -322,7 +323,7 @@ export function HODStudentRegistry() {
         parentRelationship: newStudent.parentRelationship,
       });
       setShowCreateForm(false);
-      setNewStudent({ firstName: '', lastName: '', indexNumber: '', gender: 'MALE', dateOfBirth: '', residentialStatus: 'DAY', classId: '', parentFirstName: '', parentLastName: '', parentPhone: '', parentEmail: '', parentRelationship: 'Guardian' });
+      setNewStudent({ firstName: '', lastName: '', indexNumber: '', gender: 'MALE', dateOfBirth: '', residentialStatus: 'DAY', currentClassId: '', parentFirstName: '', parentLastName: '', parentPhone: '', parentEmail: '', parentRelationship: 'Guardian' });
     } catch (err) {
       alert('Failed to create student: ' + (err.message || err));
     }
@@ -395,7 +396,7 @@ export function HODStudentRegistry() {
     });
 
     if (mapped.name && !mapped.first_name && !mapped.last_name) {
-      const nameParts = mapped.name.trim().split(/\s+/);
+      const nameParts = mapped.name.trim().split(/[\s]+/).filter(Boolean);
       if (nameParts.length >= 2) {
         mapped.last_name = nameParts[0];
         mapped.first_name = nameParts[1];
@@ -408,10 +409,13 @@ export function HODStudentRegistry() {
     }
 
     if (mapped.parent_name && !mapped.parent_first_name && !mapped.parent_last_name) {
-      const nameParts = mapped.parent_name.trim().split(/\s+/);
+      const nameParts = mapped.parent_name.trim().split(/[\s]+/).filter(Boolean);
       if (nameParts.length >= 2) {
         mapped.parent_last_name = nameParts[0];
         mapped.parent_first_name = nameParts[1];
+        if (nameParts.length > 2) {
+          mapped.parent_middle_name = nameParts.slice(2).join(' ');
+        }
       } else if (nameParts.length === 1) {
         mapped.parent_first_name = nameParts[0];
       }
@@ -537,7 +541,7 @@ export function HODStudentRegistry() {
       let middleName = record.middle_name || record.middlename || record.middleName || '';
       
       if (record.name && !firstName && !lastName) {
-        const nameParts = record.name.trim().split(/\s+/);
+        const nameParts = record.name.trim().split(/[\s]+/).filter(Boolean);
         if (nameParts.length >= 2) {
           lastName = nameParts[0];
           firstName = nameParts[1];
@@ -559,12 +563,17 @@ export function HODStudentRegistry() {
         nationalId: record.nationalid || record.natid || record.nat_id || '',
         disability: record.disability || record.disability_type || '',
         canReadBraille: record.canreadbraille === 'true' || record.can_read_braille === 'true' || false,
-        subjects: record.sub ? [record.sub].filter(Boolean) : [],
+        subjects: [
+          record.Sub, record.Sub1, record.Sub2, record.Sub3, record.Sub4,
+          record.Sub5, record.Sub6, record.Sub7, record.Sub8, record.Sub9,
+          record.Sub10, record.Sub11
+        ].filter(Boolean),
         currentClassId: record.currentclassid || record.currentClassId || '',
         departmentId: record.departmentid || record.departmentId || '',
         className: (record.classname || record.className || record.class_name || (record.cassyear ? record.cassyear.replace(/^Year\s+/i, 'Form ') : '')) || '',
         departmentName: record.departmentname || record.departmentName || record.department_name || record.programname || '',
         parentFirstName: record.parentfirstname || record.parentFirstName || record.parent_first_name || '',
+        parentMiddleName: record.parentmiddlename || record.parentmiddle_name || '',
         parentLastName: record.parentlastname || record.parentLastName || record.parent_last_name || '',
         parentPhone: record.parentphone || record.parentPhone || record.parent_phone || '',
         parentEmail: record.parentemail || record.parentEmail || record.parent_email || '',
@@ -802,10 +811,19 @@ export function HODStudentRegistry() {
                    <option value="DAY">Day Student</option>
                    <option value="BOARDING">Boarding Student</option>
                  </select>
-               </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Class</label>
+                  <select value={newStudent.currentClassId} onChange={(e) => setNewStudent({...newStudent, currentClassId: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold">
+                    <option value="">Select Class</option>
+                    {classes.map(c => (
+                      <option key={c.id} value={c.id}>{c.name} {c.program ? `(${c.program})` : ''}</option>
+                    ))}
+                  </select>
+                </div>
 
-              <div className="border-t border-border pt-4 mt-2">
-                <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-3">Parent / Guardian (optional)</p>
+               <div className="border-t border-border pt-4 mt-2">
+                 <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-3">Parent / Guardian (optional)</p>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Parent First Name</label>
@@ -835,7 +853,7 @@ export function HODStudentRegistry() {
               <p className="text-[10px] text-text-secondary mt-4">Default password: Student@123! Student will be prompted to change it on first login.</p>
               <div className="flex gap-4">
                 <button onClick={() => setShowCreateForm(false)} className="flex-1 py-4 bg-muted rounded-[2rem] text-[11px] font-black uppercase tracking-widest">Cancel</button>
-                <button onClick={handleCreateStudent} disabled={creatingStudent || !newStudent.firstName || !newStudent.indexNumber} className={cn("flex-1 py-4 rounded-[2rem] text-[11px] font-black uppercase tracking-widest", creatingStudent || !newStudent.firstName || !newStudent.indexNumber ? "bg-muted text-text-secondary cursor-not-allowed" : "bg-brand-primary text-primary-foreground")}>
+                <button onClick={handleCreateStudent} disabled={creatingStudent || !newStudent.firstName || !newStudent.indexNumber || !newStudent.currentClassId} className={cn("flex-1 py-4 rounded-[2rem] text-[11px] font-black uppercase tracking-widest", creatingStudent || !newStudent.firstName || !newStudent.indexNumber || !newStudent.currentClassId ? "bg-muted text-text-secondary cursor-not-allowed" : "bg-brand-primary text-primary-foreground")}>
                   {creatingStudent ? 'Registering...' : 'Register Student'}
                 </button>
               </div>
@@ -845,56 +863,54 @@ export function HODStudentRegistry() {
       )}
 
       {isBatchUploading && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-6">
           <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md" onClick={() => setIsBatchUploading(false)} />
-          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-2xl bg-surface rounded-[3rem] shadow-2xl p-12">
-            <div className="w-24 h-24 bg-brand-primary/10 text-brand-primary rounded-[2.5rem] flex items-center justify-center mx-auto mb-10"><FileUp size={48} /></div>
-            <h3 className="text-3xl font-black italic font-display text-text-primary mb-4">CSSPS Batch Intake</h3>
+          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-lg sm:max-w-2xl bg-surface rounded-[1.5rem] sm:rounded-[3rem] shadow-2xl p-6 sm:p-12">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-brand-primary/10 text-brand-primary rounded-[2rem] sm:rounded-[2.5rem] flex items-center justify-center mx-auto mb-6 sm:mb-10"><FileUp size={40} /></div>
+            <h3 className="text-2xl sm:text-3xl font-black italic font-display text-text-primary mb-3 sm:mb-4">CSSPS Batch Intake</h3>
             
-            <div className="mb-6">
-              <input
-                type="file"
-                accept=".csv,.xlsx,.xls"
-                onChange={handleCssFileChange}
-                className="hidden"
-                id="hod-cssps-file-input"
-              />
-              <label
-                htmlFor="hod-cssps-file-input"
-                className="border-4 border-dashed border-border rounded-[2.5rem] py-16 mb-6 hover:bg-muted cursor-pointer flex flex-col items-center justify-center"
-              >
-                <p className="text-[11px] font-black uppercase tracking-widest text-text-secondary mb-2">Drop CSSPS File Here</p>
-                <p className="text-[10px] text-muted">CSV/Excel formats supported</p>
-                {csspsFile && (
-                  <p className="mt-3 text-[12px] font-black text-brand-primary">
-                    {csspsFile.name}
-                  </p>
-                )}
-              </label>
-              <button 
-                onClick={downloadTemplateCsv}
-                className="text-[10px] font-black uppercase tracking-widest text-brand-primary hover:underline"
-              >
-                Download Template CSV
-              </button>
-            </div>
+             <div className="mb-5 sm:mb-6">
+               <input
+                 type="file"
+                 accept=".csv,.xlsx,.xls"
+                 onChange={handleCssFileChange}
+                 className="hidden"
+                 id="hod-cssps-file-input"
+               />
+               <label
+                 htmlFor="hod-cssps-file-input"
+                 className="border-4 border-dashed border-border rounded-[1.5rem] sm:rounded-[2.5rem] py-8 sm:py-16 mb-5 sm:mb-6 hover:bg-muted cursor-pointer flex flex-col items-center justify-center"
+               >
+                 <p className="text-[9px] sm:text-[11px] font-black uppercase tracking-widest text-text-secondary mb-2">Drop CSSPS File Here</p>
+                 <p className="text-[8px] sm:text-[10px] text-muted">CSV/Excel formats supported</p>
+                 {csspsFile && (
+                   <p className="mt-3 text-[11px] font-black text-brand-primary break-all px-4">
+                     {csspsFile.name}
+                   </p>
+                 )}
+               </label>
+               <button 
+                 onClick={downloadTemplateCsv}
+                 className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-brand-primary hover:underline"
+               >
+                 Download Template CSV
+               </button>
+             </div>
 
-            {csspsPreview.length > 0 && (
-               <div className="mb-6 max-h-64 overflow-y-auto border border-border rounded-2xl p-4 scrollbar-hide">
-                <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-3">Preview ({csspsPreview.length} records)</p>
-                <div className="space-y-1">
-                   {csspsPreview.slice(0, 5).map((record, i) => (
-                     <div key={i} className="flex justify-between text-[11px] py-1 border-b border-border">
-                       <span className="font-bold text-text-primary">{record.index_number || record.indexnumber || record.index || record.cassrefid || '—'}</span>
-                       <span className="text-text-secondary">{record.first_name || record.firstname || record.firstName || '—'} {(record.last_name || record.lastname || record.lastName || '')}</span>
-                     </div>
-                   ))}
-                  {csspsPreview.length > 5 && (
-                    <p className="text-[10px] text-text-secondary italic">...and {csspsPreview.length - 5} more</p>
-                  )}
+                <div className="mb-5 sm:mb-6 max-h-52 sm:max-h-64 overflow-y-auto border border-border rounded-xl sm:rounded-2xl p-3 sm:p-4 scrollbar-hide">
+                  <p className="text-[8px] sm:text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 sm:mb-3">Preview ({csspsPreview.length} records)</p>
+                  <div className="space-y-1">
+                     {csspsPreview.slice(0, 5).map((record, i) => (
+                       <div key={i} className="flex justify-between text-[10px] sm:text-[11px] py-1 border-b border-border">
+                         <span className="font-bold text-text-primary">{record.index_number || record.indexnumber || record.index || record.cassrefid || '—'}</span>
+                          <span className="text-text-secondary truncate max-w-[40%]">{record.last_name || record.lastname || record.lastName || ''} {record.first_name || record.firstname || record.firstName || '—'} {record.middle_name || record.middlename || record.middleName || ''}</span>
+                       </div>
+                     ))}
+                    {csspsPreview.length > 5 && (
+                      <p className="text-[8px] sm:text-[10px] text-text-secondary italic">...and {csspsPreview.length - 5} more</p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
 
             {csspsError && (
               <div className="mb-4 p-3 bg-destructive/10 text-destructive rounded-xl text-[11px] font-black">
