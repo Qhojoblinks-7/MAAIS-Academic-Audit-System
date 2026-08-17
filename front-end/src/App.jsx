@@ -45,6 +45,8 @@ import { Error401View } from "./pages/errors/Error401View";
 import { Error403View } from "./pages/errors/Error403View";
 import { Error500View } from "./pages/errors/Error500View";
 import { LoginPage } from "./pages/auth/LoginPage";
+import { ForgotPasswordPage } from "./pages/auth/ForgotPasswordPage";
+import { ResetPasswordPage } from "./pages/auth/ResetPasswordPage";
 import { SUBJECT_CONFIG } from "./constants/subjectConfig";
 import { gradingService } from "./services/gradingService";
 import { teacherService } from "./services/teacherService";
@@ -564,7 +566,7 @@ function AppContent() {
   const location = useLocation();
   const { user } = useRole();
   const isDashboard = location.pathname === "/";
-  const isLoginPage = location.pathname === "/login";
+  const isLoginPage = location.pathname === "/login" || location.pathname === "/forgot-password" || location.pathname === "/reset-password";
   const {
     settingsModalOpen,
     setSettingsModalOpen,
@@ -631,6 +633,8 @@ function AppContent() {
         <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
         </Suspense>

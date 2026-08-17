@@ -264,7 +264,7 @@ export function MobileGradingView() {
         <header className="px-4 pt-5 pb-3">
           <div className="min-w-0">
             <h1 className="text-lg font-black text-primary tracking-tight leading-none truncate">
-              Welcome back, <span className="text-success">{user?.name?.split(' ')[0] || 'Teacher'}</span>!
+               Welcome back, <span className="text-success">{user?.name || 'Teacher'}</span>!
             </h1>
             <p className="text-[9px] font-bold text-primary/70 uppercase tracking-widest mt-1 truncate">Academic Workspace & Assessment Matrix</p>
           </div>

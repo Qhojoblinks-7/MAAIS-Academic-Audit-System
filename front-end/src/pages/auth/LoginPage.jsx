@@ -234,9 +234,22 @@ export function LoginPage() {
                 </button>
               </form>
 
-              <div className="mt-6 pt-6 border-t border-border">
-                <p className="text-xs text-text-secondary text-center">
-                  Contact your administrator for access credentials
+              <div className="mt-6 pt-6 border-t border-border space-y-3">
+                <p className="text-[11px] text-text-secondary text-center">
+                  Need an account? Contact your administrator
+                </p>
+                <p className="text-[11px] text-text-secondary text-center">
+                  Forgot password?{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate('/forgot-password');
+                    }}
+                    className="text-brand-primary font-black hover:underline"
+                  >
+                    Click here to reset it
+                  </button>
                 </p>
               </div>
             </div>

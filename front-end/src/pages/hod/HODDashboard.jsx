@@ -75,6 +75,11 @@ export function HODDashboard() {
     ? Math.round(teacherSubmissions.reduce((sum, s) => sum + (s.progress || 0), 0) / teacherSubmissions.length)
     : 0;
 
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const displayName = user?.name || 'HOD';
+
   return (
     <div className="hod-page no-scrollbar">
       <motion.div
@@ -85,7 +90,7 @@ export function HODDashboard() {
         <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/60 pb-6">
           <div>
             <h1 className="text-2xl font-black text-foreground tracking-tight leading-none">
-              Welcome back, <span className="text-brand-primary">{user?.name?.split(' ')[0] || 'HOD'}</span>!
+              {greeting}, <span className="text-brand-primary">{user?.name || 'HOD'}</span>!
             </h1>
             <p className="text-xs font-black text-muted-foreground uppercase tracking-widest mt-2 flex items-center gap-1.5">
               <ShieldCheck size={10} className="text-muted-foreground" />

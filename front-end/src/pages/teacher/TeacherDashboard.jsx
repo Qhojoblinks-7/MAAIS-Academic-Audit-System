@@ -161,7 +161,7 @@ export function TeacherDashboard() {
         <header className="mb-8 border-b border-border pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-black text-primary tracking-tight leading-none">
-              Welcome back, <span className="text-success">{user?.name?.split(' ')[0] || 'Teacher'}</span>!
+              Welcome back, <span className="text-success">{user?.name || 'Teacher'}</span>!
             </h1>
             <p className="text-xs font-black text-primary/70 uppercase tracking-widest mt-2 flex items-center gap-1.5">
               <Layers size={10} className="text-primary/70" />

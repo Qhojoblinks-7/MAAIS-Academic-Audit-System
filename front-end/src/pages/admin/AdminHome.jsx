@@ -535,6 +535,11 @@ export function AdminHome() {
     setShowConfigModal(false);
   };
 
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const displayName = user?.name || 'Admin';
+
   return (
     <div className="flex-1 overflow-y-auto bg-background relative py-5 px-8 scrollbar-hide">
       <div className="w-full pb-12 space-y-5">
@@ -547,7 +552,7 @@ export function AdminHome() {
           
             <div className="relative">
               <h1 className="text-xl font-black text-text-primary tracking-tight italic font-display">
-                Good morning, {user?.name || 'Admin'}
+                 {greeting}, {displayName}
               </h1>
             <div className="flex items-center gap-2 mt-1">
               <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">{formatDate(currentTime)}</p>

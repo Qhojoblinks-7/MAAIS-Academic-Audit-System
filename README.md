@@ -414,7 +414,7 @@ npm run prisma:seed
 ```
 
 Creates:
-- Admin account: `admin@mandoshts.edu.gh` / `Admin@2024!`
+- Admin account: configured via `.env` (`ADMIN_EMAIL` / `ADMIN_PASSWORD`)
 - HOD, teacher, student, and parent demo accounts
 - Departments, subjects, classes (Gold/Green tracks)
 - 2024/2025 academic year with 3 terms

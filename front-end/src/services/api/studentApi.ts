@@ -96,7 +96,7 @@ async function request(method: string, path: string, body?: unknown) {
 
 export const studentApi = {
   getPortalData: (studentId: string) =>
-    request('GET', `/portal/students/${studentId}/portal-data`),
+    request('GET', `/portal/students/${studentId}/portal-data`).then(r => r?.data ?? r),
 
   getStudentGrades: (studentId: string, termId: string) =>
     request('GET', `/grading/students/${studentId}/terms/${termId}`),
