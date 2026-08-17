@@ -68,6 +68,9 @@ export function StaffRegistry() {
   const [showBulkModal, setShowBulkModal] = React.useState(false);
   const [bulkText, setBulkText] = React.useState('');
   const [bulkFileName, setBulkFileName] = React.useState('');
+  const [bulkPreview, setBulkPreview] = React.useState(null);
+  const [bulkValidation, setBulkValidation] = React.useState([]);
+  const [bulkDetectedHeaders, setBulkDetectedHeaders] = React.useState([]);
   const [bulkResult, setBulkResult] = React.useState(null);
   const [transferStaffId, setTransferStaffId] = React.useState(null);
   const [selectedDepartment, setSelectedDepartment] = React.useState('All');
@@ -300,24 +303,29 @@ export function StaffRegistry() {
   });
 
   const handleBulkSubmit = async () => {
-    let parsed;
-    try {
-      parsed = parseCsvStaff(bulkText);
-    } catch (e) {
+    let normalized;
+    if (bulkPreview && bulkPreview.length > 0) {
+      normalized = bulkPreview;
+    } else {
+      let parsed;
       try {
-        const json = JSON.parse(bulkText);
-        parsed = Array.isArray(json) ? json : [json];
-      } catch (e2) {
-        toast.error('Could not read the data. Upload a CSV with headers, or paste a JSON array.');
+        parsed = parseCsvStaff(bulkText);
+      } catch (e) {
+        try {
+          const json = JSON.parse(bulkText);
+          parsed = Array.isArray(json) ? json : [json];
+        } catch (e2) {
+          toast.error('Could not read the data. Upload a CSV with headers, or paste a JSON array.');
+          return;
+        }
+      }
+      if (!Array.isArray(parsed) || parsed.length === 0) {
+        toast.error('No staff records found. Check that your CSV has a header row and at least one row.');
         return;
       }
-    }
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-      toast.error('No staff records found. Check that your CSV has a header row and at least one row.');
-      return;
+      normalized = parsed.map(normalizeStaffRecord);
     }
 
-    const normalized = parsed.map(normalizeStaffRecord);
     const validation = normalized.map(validateStaffRecord);
     const invalid = validation.filter(v => v.errors.length > 0);
     if (invalid.length > 0) {
@@ -332,6 +340,8 @@ export function StaffRegistry() {
       if (res.failed === 0) {
         setBulkText('');
         setBulkFileName('');
+        setBulkPreview(null);
+        setBulkValidation([]);
       }
     } catch (err) {
       toast.error('Bulk import failed: ' + (err.message || err));
@@ -341,18 +351,41 @@ export function StaffRegistry() {
   const handleBulkFile = (file) => {
     if (!file) return;
     setBulkFileName(file.name);
+    setBulkPreview(null);
+    setBulkValidation([]);
+    setBulkDetectedHeaders([]);
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const content = e.target.result;
         let parsed;
+        let detectedHeaders = [];
         if (file.name.match(/\.xlsx?$/i)) {
-          parsed = parseXlsxStaff(content);
+          const result = parseXlsxStaff(content);
+          parsed = result.data;
+          detectedHeaders = result.detectedHeaders;
         } else {
-          parsed = parseCsvStaff(content);
+          const result = parseCsvStaff(content);
+          parsed = result.data;
+          detectedHeaders = result.detectedHeaders;
         }
-        const csvText = Papa.unparse(parsed);
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+          toast.error('No data rows found in file.');
+          return;
+        }
+        const normalized = parsed.map(normalizeStaffRecord);
+        const validation = normalized.map(validateStaffRecord);
+        const csvText = Papa.unparse(normalized);
         setBulkText(csvText);
+        setBulkPreview(normalized);
+        setBulkValidation(validation);
+        setBulkDetectedHeaders(detectedHeaders);
+        const invalidCount = validation.filter(v => v.errors.length > 0).length;
+        if (invalidCount > 0) {
+          toast.warning(`Parsed ${normalized.length} rows with ${invalidCount} validation issue(s). Review before importing.`);
+        } else {
+          toast.success(`Parsed ${normalized.length} valid staff records. Review and import.`);
+        }
       } catch (err) {
         toast.error('Failed to parse file: ' + (err.message || 'Unknown error'));
       }
@@ -384,31 +417,44 @@ export function StaffRegistry() {
     firstname: 'firstName',
     'first name': 'firstName',
     'given name': 'firstName',
+    givenname: 'firstName',
+    othernames: 'firstName',
+    'other names': 'firstName',
     lastname: 'lastName',
     'last name': 'lastName',
     'family name': 'lastName',
+    familyname: 'lastName',
     surname: 'lastName',
+    name: 'lastName',
+    fullname: '_fullName',
+    'full name': '_fullName',
     middlename: 'middleName',
     'middle name': 'middleName',
     email: 'email',
     'e-mail': 'email',
+    'email address': 'email',
     phone: 'phone',
     'phone number': 'phone',
-    'mobile': 'phone',
-    'telephone': 'phone',
+    mobile: 'phone',
+    telephone: 'phone',
+    'contact number': 'phone',
     role: 'role',
+    'job role': 'role',
+    'staff role': 'role',
     gender: 'gender',
+    'sex': 'gender',
     staffid: 'staffId',
     'staff id': 'staffId',
     'employee id': 'staffId',
     'emp id': 'staffId',
-    'employeeid': 'staffId',
+    employeeid: 'staffId',
     department: 'departmentId',
     'department id': 'departmentId',
-    'dept': 'departmentId',
+    dept: 'departmentId',
     'dept id': 'departmentId',
     departmentname: 'departmentName',
     'department name': 'departmentName',
+    'dept name': 'departmentName',
   };
 
   const ROLE_VALUES = ['TEACHER', 'HOD', 'HEADMASTER', 'ASSISTANT_HEAD_ADMINISTRATION', 'ASSISTANT_HEAD_DOMESTIC', 'SUPER_ADMIN'];
@@ -425,13 +471,15 @@ export function StaffRegistry() {
     if (results.errors.length > 0 && results.data.length === 0) {
       throw new Error(results.errors[0].message);
     }
-    return results.data.map(r => {
+    const detectedHeaders = results.meta.fields || [];
+    const data = results.data.map(r => {
       const obj = {};
       Object.entries(r).forEach(([h, v]) => {
         obj[h] = (v ?? '').toString().trim();
       });
       return obj;
     });
+    return { data, detectedHeaders };
   };
 
   const parseXlsxStaff = (content) => {
@@ -439,7 +487,8 @@ export function StaffRegistry() {
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
-    return jsonData.map(row => {
+    const detectedHeaders = jsonData.length > 0 ? Object.keys(jsonData[0]) : [];
+    const data = jsonData.map(row => {
       const obj = {};
       Object.entries(row).forEach(([key, value]) => {
         const normalizedKey = HEADER_ALIASES[key.trim().toLowerCase()] || key.trim();
@@ -447,21 +496,45 @@ export function StaffRegistry() {
       });
       return obj;
     });
+    return { data, detectedHeaders };
   };
 
   const normalizeStaffRecord = (rec) => {
+    let firstName = rec.firstName || '';
+    let lastName = rec.lastName || '';
+    if ((!firstName || !lastName) && rec._fullName) {
+      const parts = rec._fullName.trim().split(/\s+/);
+      if (parts.length > 0 && !firstName) firstName = parts[0];
+      if (parts.length > 1 && !lastName) lastName = parts.slice(1).join(' ');
+    }
     const gender = (rec.gender || 'MALE').toString().toUpperCase();
+    const rawRole = (rec.role || 'TEACHER').toString().trim();
+    const role = normalizeRole(rawRole);
     return {
-      firstName: rec.firstName || '',
-      lastName: rec.lastName || '',
+      firstName,
+      lastName,
       email: rec.email || '',
       phone: rec.phone || '',
       staffId: rec.staffId || '',
       departmentId: rec.departmentId || '',
       departmentName: rec.departmentName || '',
-      role: 'TEACHER',
+      role,
       gender: GENDER_VALUES.includes(gender) ? gender : 'MALE',
     };
+  };
+
+  const normalizeRole = (raw) => {
+    const upper = raw.toUpperCase();
+    if (upper.includes('ASSISTANT HEAD') || upper.includes('ASSISTANT_HEAD')) {
+      if (upper.includes('DOMESTIC')) return 'ASSISTANT_HEAD_DOMESTIC';
+      return 'ASSISTANT_HEAD_ADMINISTRATION';
+    }
+    if (upper === 'HEADMASTER') return 'HEADMASTER';
+    if (upper === 'HOD' || upper === 'HEAD OF DEPARTMENT') return 'HOD';
+    if (upper === 'TEACHER') return 'TEACHER';
+    if (upper === 'SUPER ADMIN' || upper === 'SUPER_ADMIN') return 'SUPER_ADMIN';
+    if (ROLE_VALUES.includes(upper)) return upper;
+    return 'TEACHER';
   };
 
   const validateStaffRecord = (rec, idx) => {
@@ -470,7 +543,8 @@ export function StaffRegistry() {
     if (!rec.lastName) errors.push('missing last name');
     if (!rec.email) errors.push('missing email');
     else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(rec.email)) errors.push('invalid email');
-    return { idx: idx + 1, errors };
+    if (!ROLE_VALUES.includes(rec.role)) errors.push(`invalid role "${rec.role}"`);
+    return { idx: idx + 1, errors, record: rec };
   };
 
   const handleOnboardStaff = () => setShowOnboardModal(true);
@@ -1365,19 +1439,85 @@ export function StaffRegistry() {
                 >
                   <Upload size={22} className="text-text-secondary" />
                   <span className="text-[11px] font-bold text-text-primary text-center">
-                    {bulkFileName ? bulkFileName : 'Drop a .csv file here or click to browse'}
+                    {bulkFileName ? bulkFileName : 'Drop a .csv, .xlsx, or .xls file here or click to browse'}
                   </span>
                   <input
                     type="file"
-                    accept=".csv,text/csv"
+                    accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
                     className="hidden"
                     onChange={(e) => handleBulkFile(e.target.files?.[0])}
                   />
                 </label>
 
+                {bulkPreview && bulkPreview.length > 0 && (
+                  <div className="mb-4 border border-border rounded-xl overflow-hidden">
+                    <div className="px-4 py-2 bg-muted border-b border-border flex items-center justify-between">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-text-secondary">
+                        Preview ({bulkPreview.length} rows)
+                      </p>
+                      <p className="text-[10px] font-bold text-text-secondary">
+                        {bulkValidation.filter(v => v.errors.length > 0).length} invalid
+                      </p>
+                    </div>
+                    <div className="overflow-x-auto max-h-64 scrollbar-hide">
+                      <table className="w-full text-[11px]">
+                        <thead>
+                          <tr className="bg-surface border-b border-border">
+                            <th className="px-3 py-2 text-left text-[9px] font-black uppercase tracking-widest text-text-secondary w-8">#</th>
+                            <th className="px-3 py-2 text-left text-[9px] font-black uppercase tracking-widest text-text-secondary">First Name</th>
+                            <th className="px-3 py-2 text-left text-[9px] font-black uppercase tracking-widest text-text-secondary">Last Name</th>
+                            <th className="px-3 py-2 text-left text-[9px] font-black uppercase tracking-widest text-text-secondary">Email</th>
+                            <th className="px-3 py-2 text-left text-[9px] font-black uppercase tracking-widest text-text-secondary">Staff ID</th>
+                            <th className="px-3 py-2 text-left text-[9px] font-black uppercase tracking-widest text-text-secondary">Role</th>
+                            <th className="px-3 py-2 text-left text-[9px] font-black uppercase tracking-widest text-text-secondary">Gender</th>
+                            <th className="px-3 py-2 text-left text-[9px] font-black uppercase tracking-widest text-text-secondary">Department</th>
+                            <th className="px-3 py-2 text-left text-[9px] font-black uppercase tracking-widest text-text-secondary w-24">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {bulkPreview.slice(0, 50).map((row, idx) => {
+                            const v = bulkValidation[idx];
+                            const hasErrors = v && v.errors.length > 0;
+                            return (
+                              <tr key={idx} className={cn('border-b border-border', hasErrors ? 'bg-destructive/5' : 'bg-muted/50')}>
+                                <td className="px-3 py-2 font-mono text-text-secondary">{idx + 1}</td>
+                                <td className="px-3 py-2 font-bold text-text-primary">{row.firstName || '—'}</td>
+                                <td className="px-3 py-2 font-bold text-text-primary">{row.lastName || '—'}</td>
+                                <td className="px-3 py-2 text-text-secondary">{row.email || '—'}</td>
+                                <td className="px-3 py-2 font-mono text-text-secondary">{row.staffId || '—'}</td>
+                                <td className="px-3 py-2">
+                                  <span className={cn('px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border', ROLE_CHIP_STYLES[row.role] || 'bg-muted border-border text-text-secondary')}>
+                                    {row.role}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2 text-text-secondary">{row.gender}</td>
+                                <td className="px-3 py-2 text-text-secondary">{row.departmentName || '—'}</td>
+                                <td className="px-3 py-2">
+                                  {hasErrors ? (
+                                    <span className="text-destructive font-black" title={v.errors.join(', ')}>
+                                      {v.errors.length} issue{v.errors.length > 1 ? 's' : ''}
+                                    </span>
+                                  ) : (
+                                    <span className="text-brand-primary font-black">OK</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    {bulkPreview.length > 50 && (
+                      <div className="px-4 py-2 bg-muted border-t border-border text-[10px] font-bold text-text-secondary text-center">
+                        Showing first 50 of {bulkPreview.length} rows
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <Textarea
                   value={bulkText}
-                  onChange={(e) => { setBulkText(e.target.value); setBulkFileName(''); }}
+                  onChange={(e) => { setBulkText(e.target.value); setBulkFileName(''); setBulkPreview(null); setBulkValidation([]); }}
                   placeholder={'firstName,lastName,email,phone,staffId,role,gender,departmentName\nAma,Owusu,ama.owusu@mandoshts.edu.gh,+233244000001,TCH-001,TEACHER,MALE,Science\nKofi,Mensah,kofi.mensah@mandoshts.edu.gh,+233244000002,HOD-001,HOD,MALE,Mathematics'}
                   className="w-full h-40 px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-mono text-text-primary focus:outline-none focus:ring-4 focus:ring-border resize-none"
                 />
@@ -1398,21 +1538,21 @@ export function StaffRegistry() {
                    </div>
                  )}
 
-                 <div className="flex gap-3 pt-6">
-                   <button
-                     onClick={() => { setShowBulkModal(false); setBulkResult(null); setBulkText(''); }}
-                     className="flex-1 py-4 bg-muted text-text-primary font-black rounded-2xl text-[11px] uppercase tracking-widest border border-border hover:bg-muted transition-all"
-                   >
-                     Cancel
-                   </button>
-                   <button
-                     onClick={handleBulkSubmit}
-                     disabled={bulkImportMutation.isPending || !bulkText.trim()}
-                     className="flex-1 py-4 bg-brand-dark text-primary-foreground font-black rounded-2xl text-[11px] uppercase tracking-widest hover:bg-brand-dark transition-all shadow-lg shadow-brand-dark/10 disabled:opacity-50"
-                   >
-                     {bulkImportMutation.isPending ? 'Importing…' : 'Import Staff'}
-                   </button>
-                 </div>
+                  <div className="flex gap-3 pt-6">
+                    <button
+                      onClick={() => { setShowBulkModal(false); setBulkResult(null); setBulkText(''); setBulkFileName(''); setBulkPreview(null); setBulkValidation([]); }}
+                      className="flex-1 py-4 bg-muted text-text-primary font-black rounded-2xl text-[11px] uppercase tracking-widest border border-border hover:bg-muted transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleBulkSubmit}
+                      disabled={bulkImportMutation.isPending || (!bulkPreview && !bulkText.trim())}
+                      className="flex-1 py-4 bg-brand-dark text-primary-foreground font-black rounded-2xl text-[11px] uppercase tracking-widest hover:bg-brand-dark transition-all shadow-lg shadow-brand-dark/10 disabled:opacity-50"
+                    >
+                      {bulkImportMutation.isPending ? `Importing ${bulkPreview?.length || ''} records…` : 'Import Staff'}
+                    </button>
+                  </div>
                </div>
              </motion.div>
            </div>
