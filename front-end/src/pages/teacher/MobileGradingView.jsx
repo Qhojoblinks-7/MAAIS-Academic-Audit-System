@@ -241,7 +241,7 @@ export function MobileGradingView() {
       <div className="flex-1 flex items-center justify-center bg-background p-6">
         <div className="text-center">
           <p className="text-sm font-bold text-primary">{error}</p>
-          <button onClick={() => navigate(-1)} className="mt-4 px-4 py-2 bg-success text-white rounded-xl text-xs font-bold">
+          <button onClick={() => navigate('/teacher/dashboard')} className="mt-4 px-4 py-2 bg-success text-white rounded-xl text-xs font-bold">
             Go Back
           </button>
         </div>
@@ -391,6 +391,7 @@ export function MobileGradingView() {
 
   return (
     <MobileGradingSheet
+      onBack={() => navigate('/teacher/dashboard')}
       classInfo={DEFAULT_CLASS_INFO}
       teacherId={user?.id || user?.staffId}
       students={gradingStudents}

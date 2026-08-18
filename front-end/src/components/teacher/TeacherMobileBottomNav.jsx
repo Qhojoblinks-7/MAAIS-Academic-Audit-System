@@ -20,7 +20,7 @@ const ITEMS = [
 export function TeacherMobileBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useRole();
+  const { user, logout } = useRole();
   const [moreOpen, setMoreOpen] = React.useState(false);
   const { revisionCount, missingObservationCount, setSettingsModalOpen, setSupportModalOpen } = useUI();
 
@@ -31,9 +31,7 @@ export function TeacherMobileBottomNav() {
   };
 
   const handleLogout = () => {
-    localStorage.clear();
-    sessionStorage.clear();
-    window.location.href = '/login';
+    logout();
   };
 
   const handleMore = () => setMoreOpen((prev) => !prev);

@@ -5,7 +5,7 @@ import { useGradingSheetLogic } from '../shared/useGradingSheetLogic';
 import { teacherService } from '../../services';
 import { toast } from '../../components/ui/toast';
 import { GRADE_SCALE } from '../../constants/grading';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const GRADES = ['A1', 'B2', 'B3', 'C4', 'C5', 'C6', 'D7', 'E8', 'F9'];
@@ -22,8 +22,9 @@ function getGradeLabel(grade) {
   return GRADE_SCALE[grade]?.label || '';
 }
 
-export function MobileGradingSheet(props) {
+export function MobileGradingSheet({ onBack, ...props }) {
   const navigate = useNavigate();
+  const handleBack = () => onBack ? onBack() : navigate('/teacher/dashboard');
   const [isObsOpen, setIsObsOpen] = useState(false);
   const [selectedStudentForObs, setSelectedStudentForObs] = useState(null);
   const [sidebarSaving, setSidebarSaving] = useState(false);
@@ -153,7 +154,7 @@ export function MobileGradingSheet(props) {
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <button
-              onClick={() => navigate(-1)}
+              onClick={handleBack}
               className="w-9 h-9 bg-muted rounded-xl flex items-center justify-center shrink-0 active:scale-95 transition-transform"
             >
               <ChevronLeft size={18} className="text-primary" />
@@ -481,7 +482,7 @@ export function MobileGradingSheet(props) {
               Database records are locked. Grade entry is no longer available for this term.
             </p>
             <button
-              onClick={() => navigate(-1)}
+              onClick={handleBack}
               className="w-full py-3 bg-muted border border-border rounded-xl text-xs font-black uppercase tracking-widest text-foreground"
             >
               Go Back

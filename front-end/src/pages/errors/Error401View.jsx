@@ -35,9 +35,11 @@ export function Error401View() {
   };
 
   const handleSignOut = () => {
-    localStorage.clear();
-    sessionStorage.clear();
-    window.location.href = '/';
+    if (window.confirm('Clear cache and return to login?')) {
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = '/login';
+    }
   };
 
   return (

@@ -107,6 +107,15 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
   });
 }
 
+// Force a hard reload when the page is restored from the Back/Forward Cache (bfcache).
+// This prevents stale authenticated state from persisting across sessions when a user
+// logs out and then navigates back via the browser back button.
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    window.location.reload();
+  }
+});
+
 createRoot(document.getElementById('root')).render(
   <ErrorBoundary>
     <Root />
