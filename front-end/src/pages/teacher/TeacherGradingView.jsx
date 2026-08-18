@@ -35,7 +35,7 @@ export function TeacherGradingView() {
   useEffect(() => {
     const interval = setInterval(() => {
       activeYearQuery.refetch();
-    }, 30000);
+    }, 180000);
     return () => clearInterval(interval);
   }, [activeYearQuery]);
 
@@ -198,7 +198,7 @@ export function TeacherGradingView() {
     const interval = setInterval(async () => {
       const students = await teacherService.getGradingStudents(selectedClass.subject, selectedClass.className);
       setGradingStudents(students || []);
-    }, 30000);
+    }, 120000);
     return () => clearInterval(interval);
   }, [selectedClass]);
 

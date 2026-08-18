@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+﻿import React, { useEffect, useRef, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -40,9 +40,9 @@ export function TeacherSidebar() {
       const pendingRevisions = Array.isArray(revisions)
         ? revisions.filter(r => r.status === 'AWAITING_APPROVAL' || r.status === 'PENDING').length
         : 0;
-      const missingCount = Array.isArray(missingObs)
-        ? missingObs.filter(o => o.status === 'Missing').length
-        : 0;
+      const missingObsData = Array.isArray(missingObs) ? { data: missingObs } : missingObs;
+      const missingCount = (missingObsData?.data || []).filter(o => o.status === 'Missing').length;
+
 
       setUnsavedMarks(pendingRevisions + missingCount);
       setMissingObservationCount(missingCount);
@@ -333,3 +333,4 @@ export function TeacherSidebar() {
 }
 
 export default TeacherSidebar;
+

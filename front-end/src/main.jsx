@@ -42,7 +42,7 @@ class ErrorBoundary extends Component {
   }
 }
 
-const queryClient = new QueryClient({
+ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 3,
@@ -50,7 +50,7 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       refetchOnMount: false,
       staleTime: 1000 * 60 * 5, // 5 minutes before revalidation
-      gcTime: 1000 * 60 * 60 * 24, // 24 hours cache retention
+      gcTime: 1000 * 60 * 10, // 10 minutes cache retention (prevents stale session data)
       networkMode: 'offlineFirst', // Serve cache immediately; sync in background
     },
     mutations: {

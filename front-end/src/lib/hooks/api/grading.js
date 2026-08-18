@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { gradingApi } from '../../../lib/api';
 
-// ── Queries ──────────────────────────────────────────────────────────────────
+// ── Queries ───────────────────────────────────────────────────────────────────
 export function useStudentTermGrades(studentId, termId) {
   return useQuery({
     queryKey: ['grading', 'students', studentId, 'terms', termId, 'grades'],
@@ -38,7 +38,7 @@ export function useClassPerformance(classId, termId) {
   });
 }
 
-// ── Mutations ────────────────────────────────────────────────────────────────
+// ── Mutations ─────────────────────────────────────────────────────────────────
 export function useUpsertGrade() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -55,8 +55,9 @@ export function useBulkUpsertGrades() {
   return useMutation({
     mutationFn: (entries) => gradingApi.bulkUpsertGrades(entries),
     onSuccess: () => {
-      // Bulk modifications update everything under the grading tree
-      queryClient.invalidateQueries({ queryKey: ['grading'] });
+      queryClient.invalidateQueries({ queryKey: ['grading', 'entries'] });
+      queryClient.invalidateQueries({ queryKey: ['grading', 'classes'] });
+      queryClient.invalidateQueries({ queryKey: ['grading', 'students'] });
     },
   });
 }
@@ -77,7 +78,6 @@ export function useLockGrade() {
   return useMutation({
     mutationFn: (gradeEntryId) => gradingApi.lockGrade(gradeEntryId),
     onSuccess: () => {
-      // Locking grade state blocks editing; components tracking eligibility must update
       queryClient.invalidateQueries({ queryKey: ['grading', 'entries'] });
       queryClient.invalidateQueries({ queryKey: ['grading', 'missing-observations'] });
     },
@@ -100,7 +100,6 @@ export function useApproveGrade() {
   return useMutation({
     mutationFn: (gradeEntryId) => gradingApi.approveGrade(gradeEntryId),
     onSuccess: () => {
-      // FIX: Invalidate entries, student summaries, and performance trends globally since status shifted to locked/finalized
       queryClient.invalidateQueries({ queryKey: ['grading', 'entries'] });
       queryClient.invalidateQueries({ queryKey: ['grading', 'classes'] });
       queryClient.invalidateQueries({ queryKey: ['grading', 'students'] });
@@ -113,7 +112,9 @@ export function useBulkApproveGrades() {
   return useMutation({
     mutationFn: (ids) => gradingApi.bulkApproveGrades(ids),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['grading'] });
+      queryClient.invalidateQueries({ queryKey: ['grading', 'entries'] });
+      queryClient.invalidateQueries({ queryKey: ['grading', 'classes'] });
+      queryClient.invalidateQueries({ queryKey: ['grading', 'students'] });
     },
   });
 }

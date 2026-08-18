@@ -1,16 +1,16 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi, api } from '../../../lib/api';
 import { getAuthToken } from '../../../services/auth';
 
-// ── Users / Staff ────────────────────────────────────────────────────────────
+// â”€â”€ Users / Staff â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function useAllStudents() {
   return useQuery({
     queryKey: ['admin', 'students'],
     queryFn: adminApi.getAllStudents,
-    staleTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    refetchInterval: 30000,
+    staleTime: 1000 * 60 * 2,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: false,
+    refetchInterval: 120000,
     refetchIntervalInBackground: false,
   });
 }
@@ -29,10 +29,10 @@ export function useStudentBoarderStats() {
   return useQuery({
     queryKey: ['admin', 'students', 'boarder-stats'],
     queryFn: adminApi.getStudentBoarderStats,
-    staleTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    refetchInterval: 30000,
+    staleTime: 1000 * 60 * 2,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: false,
+    refetchInterval: 120000,
     refetchIntervalInBackground: false,
   });
 }
@@ -154,7 +154,7 @@ export function useResetStaffCredentials() {
   });
 }
 
-// ── Academic Structure ───────────────────────────────────────────────────────
+// â”€â”€ Academic Structure â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function useActiveYear(options = {}) {
   return useQuery({
     queryKey: ['admin', 'academic', 'activeYear'],
@@ -381,7 +381,7 @@ export function useClassAssignments(classId, track) {
    });
 }
 
-// ── Reports ──────────────────────────────────────────────────────────────────
+// â”€â”€ Reports â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function useGenerateReportCard() {
   const qc = useQueryClient();
   return useMutation({
@@ -414,7 +414,7 @@ export function useVerifyDocument() {
   });
 }
 
-// ── Archive / Vault ──────────────────────────────────────────────────────────
+// â”€â”€ Archive / Vault â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function useArchiveStats() {
   return useQuery({
     queryKey: ['admin', 'archive', 'stats'],
@@ -442,7 +442,7 @@ export function useDatabaseHealth() {
   });
 }
 
-// ── Communications ───────────────────────────────────────────────────────────
+// â”€â”€ Communications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function useUnreadNotifications() {
   return useQuery({
     queryKey: ['admin', 'comms', 'unread'],
@@ -483,12 +483,17 @@ export function useCreateTicket() {
   });
 }
 
-// ── Grading (Admin / HOD) ────────────────────────────────────────────────────
+// â”€â”€ Grading (Admin / HOD) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function useUpsertGrade() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (dto) => adminApi.upsertGrade(dto),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['grading'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['grading', 'entries'] });
+      qc.invalidateQueries({ queryKey: ['grading', 'missing-observations'] });
+      qc.invalidateQueries({ queryKey: ['grading', 'classes'] });
+      qc.invalidateQueries({ queryKey: ['grading', 'students'] });
+    },
   });
 }
 
@@ -496,7 +501,12 @@ export function useBulkUpsertGrades() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (entries) => adminApi.bulkUpsertGrades(entries),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['grading'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['grading', 'entries'] });
+      qc.invalidateQueries({ queryKey: ['grading', 'missing-observations'] });
+      qc.invalidateQueries({ queryKey: ['grading', 'classes'] });
+      qc.invalidateQueries({ queryKey: ['grading', 'students'] });
+    },
   });
 }
 
@@ -504,7 +514,12 @@ export function useLockGrade() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (gradeEntryId) => adminApi.lockGrade(gradeEntryId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['grading'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['grading', 'entries'] });
+      qc.invalidateQueries({ queryKey: ['grading', 'missing-observations'] });
+      qc.invalidateQueries({ queryKey: ['grading', 'classes'] });
+      qc.invalidateQueries({ queryKey: ['grading', 'students'] });
+    },
   });
 }
 
@@ -512,7 +527,12 @@ export function useUnlockGrade() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (gradeEntryId) => adminApi.unlockGrade(gradeEntryId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['grading'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['grading', 'entries'] });
+      qc.invalidateQueries({ queryKey: ['grading', 'missing-observations'] });
+      qc.invalidateQueries({ queryKey: ['grading', 'classes'] });
+      qc.invalidateQueries({ queryKey: ['grading', 'students'] });
+    },
   });
 }
 
@@ -520,7 +540,12 @@ export function useApproveGrade() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (gradeEntryId) => adminApi.approveGrade(gradeEntryId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['grading'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['grading', 'entries'] });
+      qc.invalidateQueries({ queryKey: ['grading', 'missing-observations'] });
+      qc.invalidateQueries({ queryKey: ['grading', 'classes'] });
+      qc.invalidateQueries({ queryKey: ['grading', 'students'] });
+    },
   });
 }
 
@@ -528,7 +553,12 @@ export function useBulkApproveGrades() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (ids) => adminApi.bulkApproveGrades(ids),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['grading'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['grading', 'entries'] });
+      qc.invalidateQueries({ queryKey: ['grading', 'missing-observations'] });
+      qc.invalidateQueries({ queryKey: ['grading', 'classes'] });
+      qc.invalidateQueries({ queryKey: ['grading', 'students'] });
+    },
   });
 }
 
@@ -536,7 +566,12 @@ export function useCorrectGrade() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (dto) => adminApi.correctGrade(dto),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['grading'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['grading', 'entries'] });
+      qc.invalidateQueries({ queryKey: ['grading', 'missing-observations'] });
+      qc.invalidateQueries({ queryKey: ['grading', 'classes'] });
+      qc.invalidateQueries({ queryKey: ['grading', 'students'] });
+    },
   });
 }
 
@@ -584,7 +619,7 @@ export function useAdminProfile() {
   });
 }
 
-// ── Timetable ────────────────────────────────────────────────────────────────
+// â”€â”€ Timetable â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function useTimetableEntries(params = {}) {
   return useQuery({
     queryKey: ['admin', 'timetable', params],
@@ -650,7 +685,7 @@ export function useFinalizeTimetable() {
   });
 }
 
-// ── Time Slots ──────────────────────────────────────────────────────────────
+// â”€â”€ Time Slots â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function useTimeSlots() {
   return useQuery({
     queryKey: ['admin', 'time-slots'],
@@ -691,7 +726,7 @@ export function useReorderTimeSlots() {
   });
 }
 
-// ── Interventions & Behavior ─────────────────────────────────────────────────
+// â”€â”€ Interventions & Behavior â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function useStudentInterventions(studentId) {
   return useQuery({
     queryKey: ['admin', 'interventions', studentId],
@@ -718,7 +753,7 @@ export function useCreateBehavior() {
   });
 }
 
-// ── Approvals ─────────────────────────────────────────────────────────────────
+// â”€â”€ Approvals â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function useApprovals(query = {}) {
   return useQuery({
     queryKey: ['admin', 'approvals', query],
@@ -760,7 +795,7 @@ export function useDeleteApproval() {
   });
 }
 
-// ── Grading Rules ─────────────────────────────────────────────────────────────
+// â”€â”€ Grading Rules â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function useGradingRules(termId) {
   return useQuery({
     queryKey: ['admin', 'grading', 'rules', termId],
@@ -794,7 +829,7 @@ export function useTermSummary(termId) {
   });
 }
 
-// ── Report Generation (Admin) ─────────────────────────────────────────────────
+// â”€â”€ Report Generation (Admin) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function useStudentsForReportGeneration(query) {
   return useQuery({
     queryKey: ['admin', 'reports', 'generation', 'students', query],
@@ -828,7 +863,7 @@ export function useSendReportNudge() {
   });
 }
 
-// ── Admin Settings ────────────────────────────────────────────────────────────
+// â”€â”€ Admin Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function useAdminSettings() {
   return useQuery({
     queryKey: ['admin', 'settings'],
@@ -895,7 +930,7 @@ export function useUnlockTerm() {
   });
 }
 
-// ── Year Group Actions ───────────────────────────────────────────────────────
+// â”€â”€ Year Group Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function usePromoteLevel() {
   const qc = useQueryClient();
   return useMutation({
@@ -919,7 +954,7 @@ export function useArchiveYear() {
   });
 }
 
-// ── Classroom Actions ───────────────────────────────────────────────────────
+// â”€â”€ Classroom Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function useTransferStudents() {
   const qc = useQueryClient();
   return useMutation({
@@ -962,7 +997,7 @@ export function useDissolveClass() {
   });
 }
 
-// ── Curriculum Mapping ───────────────────────────────────────────────────────────
+// â”€â”€ Curriculum Mapping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function useDeployCurriculumMapping() {
   const qc = useQueryClient();
   return useMutation({

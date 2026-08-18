@@ -277,8 +277,10 @@ function createRealService() {
       params.set('page', String(page));
       params.set('limit', String(limit));
       return request('GET', `/teacher/missing-observations?${params.toString()}`).then((r) => {
-        const payload = r?.data ?? r ?? {};
-        return Array.isArray(payload.data) ? payload : { data: [], total: 0, page, limit, pages: 0 };
+        const result = r?.data ?? r ?? {};
+        return (result && typeof result === 'object' && !Array.isArray(result) && Array.isArray(result.data))
+          ? result
+          : { data: [], total: 0, page, limit, pages: 0 };
       });
     },
     getObservationLogs: (page = 1, limit = 50) => {
@@ -286,8 +288,10 @@ function createRealService() {
       params.set('page', String(page));
       params.set('limit', String(limit));
       return request('GET', `/teacher/observations?${params.toString()}`).then((r) => {
-        const payload = r?.data ?? r ?? {};
-        return Array.isArray(payload.data) ? payload : { data: [], total: 0, page, limit, pages: 0 };
+        const result = r?.data ?? r ?? {};
+        return (result && typeof result === 'object' && !Array.isArray(result) && Array.isArray(result.data))
+          ? result
+          : { data: [], total: 0, page, limit, pages: 0 };
       });
     },
     getObservationTypes: () => {

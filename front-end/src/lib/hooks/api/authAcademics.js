@@ -78,10 +78,10 @@ export function useAllStudents() {
   return useQuery({
     queryKey: ['users', 'students'],
     queryFn: usersApi.getAllStudents,
-    staleTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    refetchInterval: 30000,
+    staleTime: 1000 * 60 * 2,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: false,
+    refetchInterval: 120000,
     refetchIntervalInBackground: false,
   });
 }
