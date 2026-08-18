@@ -1,6 +1,16 @@
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { Legend } from 'recharts';
 import '@/index.css';
+
+const SUBJECT_PALETTE = [
+  'var(--chart-1)',
+  'var(--chart-2)',
+  'var(--chart-3)',
+  'var(--chart-4)',
+  'var(--chart-5)',
+];
 
 export function AcademicPanel({ studentData }) {
   const historyData = React.useMemo(() => {
@@ -38,7 +48,17 @@ export function AcademicPanel({ studentData }) {
     }));
   }, [historyData]);
 
-  // Extract baseline raw display names for the vertical subject progress grid elements
+  const chartConfig = React.useMemo(() => {
+    const config = {};
+    uniqueSubjectKeys.forEach((subject, index) => {
+      config[subject] = {
+        label: subject.toUpperCase(),
+        color: SUBJECT_PALETTE[index % SUBJECT_PALETTE.length],
+      };
+    });
+    return config;
+  }, [uniqueSubjectKeys]);
+
   const uniqueDisplaySubjects = React.useMemo(() => {
     return Array.from(
       new Set(
@@ -71,37 +91,34 @@ export function AcademicPanel({ studentData }) {
             {/* Responsive chart container wrapper */}
             <div className="w-full overflow-x-auto overflow-y-hidden -mx-4 px-4 sm:mx-0 sm:px-0">
               <div className="h-64 sm:h-80 md:h-96 min-w-[320px] w-full pr-2">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                <ChartContainer config={chartConfig} className="h-full w-full">
                   <LineChart
+                    accessibilityLayer
                     data={processedChartData}
-                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                    margin={{ top: 10, right: 30, left: -10, bottom: 0 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                    <XAxis 
-                      dataKey="term" 
+                    <CartesianGrid vertical={false} stroke="var(--border)" />
+                    <XAxis
+                      dataKey="term"
                       tick={{ fontSize: 10, fontWeight: 600, fill: 'var(--text-secondary)' }}
                       axisLine={false}
                       tickLine={false}
-                      dy={10}
+                      tickMargin={8}
+                      tickFormatter={(value) =>
+                        value ? value.toString().split(' ').slice(-2).join(' ') : value
+                      }
                     />
-                    <YAxis 
-                      domain={[0, 100]} 
+                    <YAxis
+                      domain={[0, 100]}
                       tick={{ fontSize: 10, fontWeight: 600, fill: 'var(--text-secondary)' }}
                       axisLine={false}
                       tickLine={false}
                     />
-                    <Tooltip 
-                      contentStyle={{ 
-                        borderRadius: '12px', 
-                        borderColor: 'var(--border)',
-                        backgroundColor: 'var(--surface)',
-                        fontSize: '12px',
-                        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)'
-                      }} 
-                      itemStyle={{ color: 'var(--text-primary)', fontWeight: 600 }}
-                      labelStyle={{ color: 'var(--text-secondary)', fontWeight: 700, marginBottom: '4px' }}
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent />}
                     />
-                    <Legend 
+                    <Legend
                       wrapperStyle={{ fontSize: '11px', fontWeight: 700, paddingTop: '15px', color: 'var(--text-primary)' }}
                       iconType="circle"
                     />
@@ -110,20 +127,14 @@ export function AcademicPanel({ studentData }) {
                         key={subject}
                         type="monotone"
                         dataKey={subject}
-stroke={[
-                           'var(--brand-primary)', 
-                           'var(--success)', 
-                           'var(--warning)', 
-                           'var(--danger)', 
-                           'var(--brand-secondary)'
-                         ][index % 5]}
+                        stroke={SUBJECT_PALETTE[index % SUBJECT_PALETTE.length]}
                         strokeWidth={2.5}
                         dot={{ r: 3, strokeWidth: 2, stroke: 'var(--surface)' }}
                         activeDot={{ r: 5, strokeWidth: 0 }}
                       />
                     ))}
                   </LineChart>
-                </ResponsiveContainer>
+                </ChartContainer>
               </div>
             </div>
           </div>

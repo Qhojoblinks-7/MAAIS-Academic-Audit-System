@@ -99,28 +99,28 @@ export const studentApi = {
     request('GET', `/portal/students/${studentId}/portal-data`).then(r => r?.data ?? r),
 
   getStudentGrades: (studentId: string, termId: string) =>
-    request('GET', `/grading/students/${studentId}/terms/${termId}`),
+    request('GET', `/grading/students/${studentId}/terms/${termId}`).then(r => r?.data ?? r),
 
   createTicket: (data: unknown) =>
-    request('POST', `/comms/tickets`, data),
+    request('POST', `/comms/tickets`, data).then(r => r?.data ?? r),
 
   getMyTickets: () =>
-    request('GET', `/comms/tickets/my`),
+    request('GET', `/comms/tickets/my`).then(r => r?.data ?? r),
 
   getNotifications: (studentId: string) =>
-    request('GET', `/comms/notifications/${studentId}`),
+    request('GET', `/comms/notifications/${studentId}`).then(r => r?.data ?? r),
 
   markNotificationRead: (notificationId: string) =>
-    request('PATCH', `/comms/notifications/${notificationId}/read`),
+    request('PATCH', `/comms/notifications/${notificationId}/read`, null).then(r => r?.data ?? r),
 
   getBehavior: (studentId: string) =>
-    request('GET', `/students/${studentId}/behavior`),
+    request('GET', `/students/${studentId}/behavior`).then(r => r?.data ?? r),
 
   getInterventions: (studentId: string) =>
-    request('GET', `/students/${studentId}/interventions`),
+    request('GET', `/students/${studentId}/interventions`).then(r => r?.data ?? r),
 
   getClassTimetable: (classId: string) =>
-    request('GET', `/timetable/class/${classId}`),
+    request('GET', `/timetable/class/${classId}`).then(r => r?.data ?? r),
 };
 
 export default studentApi;
