@@ -254,6 +254,22 @@ export function useActivateTerm() {
   });
 }
 
+export function useUpdateYear() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, dto }) => adminApi.updateYear(id, dto),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'academic'] }),
+  });
+}
+
+export function useUpdateTerm() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, dto }) => adminApi.updateTerm(id, dto),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'academic'] }),
+  });
+}
+
 export function useDeactivateTerm() {
   const qc = useQueryClient();
   return useMutation({

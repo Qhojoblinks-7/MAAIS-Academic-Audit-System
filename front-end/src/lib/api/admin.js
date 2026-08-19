@@ -20,9 +20,11 @@ export const adminApi = {
 
   // ── Academic Structure ─────────────────────────────────────────────────────
   createYear: (dto) => api.post('/academic/years', dto),
+  updateYear: (id, dto) => api.patch(`/academic/years/${id}`, dto),
   activateYear: (id) => api.patch(`/academic/years/${id}/activate`),
   getActiveYear: () => api.get('/academic/years/active'),
   createTerm: (dto) => api.post('/academic/terms', dto),
+  updateTerm: (id, dto) => api.patch(`/academic/terms/${id}`, dto),
   activateTerm: (id) => api.patch(`/academic/terms/${id}/activate`),
   deactivateTerm: (id) => api.patch(`/academic/terms/${id}/deactivate`),
   createDepartment: (dto) => api.post('/academic/departments', dto),

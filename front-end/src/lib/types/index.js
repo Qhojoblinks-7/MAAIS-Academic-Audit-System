@@ -107,10 +107,9 @@
  * @property {string} label
  * @property {string} startDate
  * @property {string} endDate
- * @property {boolean} isActive
- * @property {string} [termSystem]
- * @property {string} createdAt
- * @property {Term[]} [terms]
+  * @property {boolean} isActive
+  * @property {string} createdAt
+  * @property {Term[]} [terms]
  *
  * @typedef {Object} Term
  * @property {string} id

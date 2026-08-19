@@ -319,7 +319,14 @@ export function HODTeachers() {
                   <div className="w-14 h-14 rounded-full bg-slate-50 border border-slate-200 text-slate-600 font-bold flex items-center justify-center text-base shadow-3xs group-hover:scale-105 transition-transform duration-200">
                     {(teacher.name || '?').charAt(0).toUpperCase()}
                   </div>
-                  <h4 className="text-sm font-bold text-slate-900 mt-3.5 tracking-tight group-hover:text-indigo-600 transition-colors">{teacher.name || 'Faculty Member'}</h4>
+                   <h4 className="text-sm font-bold text-slate-900 mt-3.5 tracking-tight group-hover:text-indigo-600 transition-colors flex items-center gap-2">
+                    {teacher.name || 'Faculty Member'}
+                    {teacher.isVisiting && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 rounded uppercase tracking-wider">
+                        Visiting
+                      </span>
+                    )}
+                  </h4>
                   <p className="text-[10px] text-slate-400 font-mono mt-0.5">ID: {teacher.id || 'No ID mapped'}</p>
                   
                   <span className="mt-3.5 inline-block px-2.5 py-1 bg-slate-50 border border-slate-100 text-slate-600 font-semibold uppercase tracking-wider text-[9px] rounded-md">

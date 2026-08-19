@@ -358,10 +358,10 @@ export function HODStudentRegistry() {
   };
 
   const CSSPS_COLUMN_ALIASES = {
+    cassrefid: 'cassRefId',
     index_no: 'index_number',
     indexnumber: 'index_number',
     index: 'index_number',
-    cassrefid: 'index_number',
     candidate_name: 'name',
     full_name: 'name',
     students_name: 'name',
@@ -554,6 +554,7 @@ export function HODStudentRegistry() {
       }
       
       return {
+        cassRefId: record.cassrefid || '',
         indexNumber: record.index_number || record.indexnumber || record.index || record.cassrefid || `MSHTS/2024/${String(Date.now()).slice(-6)}`,
         firstName,
         lastName,
@@ -564,9 +565,9 @@ export function HODStudentRegistry() {
         disability: record.disability || record.disability_type || '',
         canReadBraille: record.canreadbraille === 'true' || record.can_read_braille === 'true' || false,
         subjects: [
-          record.Sub, record.Sub1, record.Sub2, record.Sub3, record.Sub4,
-          record.Sub5, record.Sub6, record.Sub7, record.Sub8, record.Sub9,
-          record.Sub10, record.Sub11
+          record.sub, record.sub1, record.sub2, record.sub3, record.sub4,
+          record.sub5, record.sub6, record.sub7, record.sub8, record.sub9,
+          record.sub10, record.sub11
         ].filter(Boolean),
         currentClassId: record.currentclassid || record.currentClassId || '',
         departmentId: record.departmentid || record.departmentId || '',
