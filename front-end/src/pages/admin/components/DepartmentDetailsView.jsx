@@ -25,25 +25,25 @@ export function DepartmentDetailsView({
             exit={{ opacity: 0, y: -30 }}
             transition={{ duration: 0.3, ease: "circOut" }}
           >
-            {activeTab === "staff" && (
-              <StaffTab
-                selectedDept={selectedDept}
-                departments={departments}
-                openKebabId={openKebabId}
-                toggleKebab={toggleKebab}
-                handleAssignHOD={handleAssignHOD}
-                handleNodeOperation={handleNodeOperation}
-                onTransferTeacher={openTransferModal}
-              />
-            )}
-{(activeTab === "grading" || activeTab === "vault") && (
-               <DepartmentTabs
+             {activeTab === "staff" && (
+               <StaffTab
                  selectedDept={selectedDept}
-                 activeTab={activeTab}
-                 setActiveTab={setActiveTab}
+                 departments={departments}
+                 openKebabId={openKebabId}
+                 toggleKebab={toggleKebab}
+                 handleAssignHOD={handleAssignHOD}
                  handleNodeOperation={handleNodeOperation}
+                 onTransferTeacher={openTransferModal}
                />
              )}
+             {(activeTab === "assignments" || activeTab === "subjects" || activeTab === "grading" || activeTab === "vault") && (
+                <DepartmentTabs
+                  selectedDept={selectedDept}
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  handleNodeOperation={handleNodeOperation}
+                />
+              )}
           </motion.div>
         </AnimatePresence>
       </div>

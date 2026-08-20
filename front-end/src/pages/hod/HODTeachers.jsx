@@ -3,15 +3,25 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, Search, RefreshCw, Eye, Key, AlertTriangle, 
   X, BookOpen, Mail, Phone, Shield, ClipboardCheck, Check,
-  SlidersHorizontal, ArrowLeft, ClipboardList, ChevronDown, UserCheck
+  SlidersHorizontal, ArrowLeft, ClipboardList, ChevronDown, UserCheck,
+  Plus
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useHOD } from '../../context/HODContext';
 import { LoadingSpinner } from '../../components/molecules';
 import { auditTrail } from '../../services/auditTrailService';
+import { toast } from '../../components/ui/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue
+} from '../../components/ui/select';
+import { useAssignTeacher, useAllSubjects, useAllClasses, useAcademicYears } from '../../lib/hooks';
 
 // ==========================================
 // COMPONENT: SLIDE-OVER DETAIL PROFILE PANEL
@@ -143,6 +153,14 @@ export function HODTeachers() {
   const [impersonatingTeacher, setImpersonatingTeacher] = useState(null);
   const [impersonateReason, setImpersonateReason] = useState('');
   const [copied, setCopied] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [assigningTeacher, setAssigningTeacher] = useState(null);
+  const [assignForm, setAssignForm] = useState({ subjectId: '', classSectionId: '', academicYearId: '' });
+
+  const assignTeacherMutation = useAssignTeacher();
+  const { data: subjects = [] } = useAllSubjects();
+  const { data: classes = [] } = useAllClasses();
+  const { data: academicYears = [] } = useAcademicYears();
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -219,6 +237,30 @@ export function HODTeachers() {
       }
     } catch (error) {
       console.error("Context assignment interop violation:", error);
+    }
+  };
+
+  const openAssignModal = (teacher) => {
+    setAssigningTeacher(teacher);
+    setAssignForm({ subjectId: '', classSectionId: '', academicYearId: academicYears[0]?.id || '' });
+    setShowAssignModal(true);
+  };
+
+  const handleAssignTeacher = async () => {
+    if (!assigningTeacher?.id || !assignForm.subjectId || !assignForm.classSectionId || !assignForm.academicYearId) return;
+    try {
+      await assignTeacherMutation.mutateAsync({
+        teacherId: assigningTeacher.id,
+        subjectId: assignForm.subjectId,
+        classSectionId: assignForm.classSectionId,
+        academicYearId: assignForm.academicYearId,
+      });
+      toast.success('Teacher assigned successfully');
+      setShowAssignModal(false);
+      setAssigningTeacher(null);
+      setAssignForm({ subjectId: '', classSectionId: '', academicYearId: '' });
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Failed to assign teacher');
     }
   };
 
@@ -334,24 +376,33 @@ export function HODTeachers() {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-3 mt-1">
+                <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-3 mt-1">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleImpersonateInitiate(teacher);
                     }}
-                    className="py-1.5 px-2 bg-slate-50 hover:bg-indigo-50 border border-slate-200/60 text-[10px] font-bold text-slate-600 hover:text-indigo-700 rounded-lg flex items-center justify-center gap-1.5 transition-all"
+                    className="py-1.5 px-1 bg-slate-50 hover:bg-indigo-50 border border-slate-200/60 text-[9px] font-bold text-slate-600 hover:text-indigo-700 rounded-lg flex items-center justify-center gap-1 transition-all"
                   >
-                    <Eye size={11} /> Session
+                    <Eye size={10} /> Session
                   </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handlePasswordReset(teacher);
                     }}
-                    className="py-1.5 px-2 bg-slate-50 hover:bg-amber-50 border border-slate-200/60 text-[10px] font-bold text-slate-600 hover:text-amber-700 rounded-lg flex items-center justify-center gap-1.5 transition-all"
+                    className="py-1.5 px-1 bg-slate-50 hover:bg-amber-50 border border-slate-200/60 text-[9px] font-bold text-slate-600 hover:text-amber-700 rounded-lg flex items-center justify-center gap-1 transition-all"
                   >
-                    <Key size={11} /> Access
+                    <Key size={10} /> Access
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openAssignModal(teacher);
+                    }}
+                    className="py-1.5 px-1 bg-slate-50 hover:bg-success/10 border border-slate-200/60 text-[9px] font-bold text-slate-600 hover:text-success rounded-lg flex items-center justify-center gap-1 transition-all"
+                  >
+                    <Plus size={10} /> Assign
                   </button>
                 </div>
               </Card>
@@ -519,6 +570,111 @@ export function HODTeachers() {
                   className="px-4 py-2 border-slate-200 text-slate-600 font-semibold text-xs rounded-xl"
                 >
                   Dismiss
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Assign Teacher Modal */}
+      <AnimatePresence>
+        {showAssignModal && assigningTeacher && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowAssignModal(false)}
+              className="absolute inset-0 bg-slate-950/30 backdrop-blur-xs"
+            />
+            <motion.div
+              initial={{ scale: 0.98, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.98, opacity: 0 }}
+              className="relative w-full max-w-md bg-white rounded-xl shadow-2xl border border-slate-200 p-6 z-10 space-y-5"
+            >
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 tracking-tight">Assign Teacher to Class</h3>
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                    {assigningTeacher.name || 'Faculty Member'}
+                  </p>
+                </div>
+                <Button
+                  onClick={() => setShowAssignModal(false)}
+                  variant="ghost"
+                  size="icon"
+                  className="w-6 h-6 rounded-full text-slate-400 hover:text-slate-700"
+                >
+                  <X size={12} />
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Subject</label>
+                  <Select value={assignForm.subjectId} onValueChange={(value) => setAssignForm({ ...assignForm, subjectId: value })}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjects.map((subject) => (
+                        <SelectItem key={subject.id} value={subject.id}>
+                          {subject.name} ({subject.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Class</label>
+                  <Select value={assignForm.classSectionId} onValueChange={(value) => setAssignForm({ ...assignForm, classSectionId: value })}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Class" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {classes.map((cls) => (
+                        <SelectItem key={cls.id} value={cls.id}>
+                          {cls.name} — {cls.level}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Academic Year</label>
+                  <Select value={assignForm.academicYearId} onValueChange={(value) => setAssignForm({ ...assignForm, academicYearId: value })}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {academicYears.map((year) => (
+                        <SelectItem key={year.id} value={year.id}>
+                          {year.label || year.id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  onClick={handleAssignTeacher}
+                  disabled={assignTeacherMutation.isPending || !assignForm.subjectId || !assignForm.classSectionId || !assignForm.academicYearId}
+                  className="flex-1 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs disabled:opacity-50"
+                >
+                  {assignTeacherMutation.isPending ? 'Assigning…' : 'Assign'}
+                </Button>
+                <Button
+                  onClick={() => setShowAssignModal(false)}
+                  variant="outline"
+                  className="px-4 py-2 border-slate-200 text-slate-600 font-semibold text-xs rounded-xl"
+                >
+                  Cancel
                 </Button>
               </div>
             </motion.div>

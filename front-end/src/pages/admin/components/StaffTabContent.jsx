@@ -9,9 +9,12 @@ import {
   ShieldCheck, 
   Trash2, 
   Plus,
-  FileText 
+  FileText,
+  BookOpen
 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
+import { useAssignTeacher, useAllSubjects, useAllClasses, useAcademicYears } from '../../../lib/hooks';
+import { toast } from '../../../components/ui/toast';
 
 export function StaffTabContent({
   dept,
@@ -23,7 +26,35 @@ export function StaffTabContent({
   onAddTeacher
 }) {
   const [dropdownCoords, setDropdownCoords] = useState({ top: 0, right: 0, positionBelow: true });
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [assigningStaff, setAssigningStaff] = useState(null);
+  const [assignForm, setAssignForm] = useState({ staffId: '', subjectId: '', classSectionId: '', academicYearId: '' });
   const rowRefs = useRef({});
+
+  const assignTeacher = useAssignTeacher();
+  const { data: subjects = [] } = useAllSubjects();
+  const { data: classes = [] } = useAllClasses();
+  const { data: academicYears = [] } = useAcademicYears();
+
+  const openAssignModal = (member) => {
+    setAssigningStaff(member);
+    setAssignForm({ staffId: member.id, subjectId: '', classSectionId: '', academicYearId: academicYears[0]?.id || '' });
+    setShowAssignModal(true);
+  };
+
+  const handleAssignTeacher = async (e) => {
+    e.preventDefault();
+    if (!assignForm.staffId || !assignForm.subjectId || !assignForm.classSectionId || !assignForm.academicYearId) return;
+    try {
+      await assignTeacher.mutateAsync(assignForm);
+      toast.success('Teacher assigned to class');
+      setShowAssignModal(false);
+      setAssigningStaff(null);
+      setAssignForm({ staffId: '', subjectId: '', classSectionId: '', academicYearId: '' });
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to assign teacher');
+    }
+  };
 
   // Recalculate dropdown positioning window clearance dynamically on invocation
   useEffect(() => {
@@ -156,6 +187,7 @@ export function StaffTabContent({
 {[
                             { label: 'Transfer', icon: ArrowRight, color: 'hover:text-brand-primary hover:bg-brand-primary/10', isDeptLevel: false },
                             { label: 'Credential Reset', icon: RotateCcw, color: 'hover:text-warning hover:bg-warning/10', isDeptLevel: false },
+                            { label: 'Assign to Class', icon: BookOpen, color: 'hover:text-success hover:bg-success/10', isDeptLevel: false, action: 'assign' },
                             { label: 'Audit Trail View', icon: Search, color: 'hover:text-brand-primary hover:bg-brand-primary/10', isDeptLevel: true },
                             { label: 'Revoke Authority', icon: ShieldCheck, color: 'hover:text-destructive hover:bg-destructive/5', isDeptLevel: false },
                             { label: 'Authorize Template Update', icon: FileText, color: 'hover:text-brand-primary hover:bg-brand-primary/10', isDeptLevel: true },
@@ -164,10 +196,14 @@ export function StaffTabContent({
                               key={item.label}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                // For department-level operations, pass dept info; for staff-level, pass member info
-                                const targetId = item.isDeptLevel ? dept.id : member.id;
-                                const targetName = item.isDeptLevel ? dept.name : member.name;
-                                handleNodeOperation(item.label, targetId, targetName, dept.id);
+                                if (item.action === 'assign') {
+                                  openAssignModal(member);
+                                } else {
+                                  // For department-level operations, pass dept info; for staff-level, pass member info
+                                  const targetId = item.isDeptLevel ? dept.id : member.id;
+                                  const targetName = item.isDeptLevel ? dept.name : member.name;
+                                  handleNodeOperation(item.label, targetId, targetName, dept.id);
+                                }
                               }}
                               className={cn(
                                 "w-full flex items-center gap-2 px-2 py-1.5 text-[10px] font-bold text-foreground/60 rounded-lg transition-all text-left cursor-pointer",
@@ -178,7 +214,7 @@ export function StaffTabContent({
                               <span className="truncate">{item.label}</span>
                             </button>
                           ))}
-                      </div>
+                        </div>
                       <div className="p-1 bg-muted/20 border-t border-border">
 <button 
                            onClick={(e) => {
@@ -206,7 +242,56 @@ export function StaffTabContent({
            <Plus size={11} className="shrink-0 transition-transform group-hover:rotate-90" />
             <span className="truncate">Transfer Teacher to Department</span>
          </button>
-       )}
+        )}
+
+      {/* Assign Teacher Modal */}
+      <AnimatePresence>
+        {showAssignModal && assigningStaff && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAssignModal(false)} className="absolute inset-0 bg-brand-dark/40 backdrop-blur-sm" />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-md bg-surface rounded-2xl shadow-2xl p-6 z-10 space-y-5">
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <div>
+                  <h3 className="text-sm font-black text-foreground tracking-tight">Assign Teacher to Class</h3>
+                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">{assigningStaff.name}</p>
+                </div>
+                <button onClick={() => setShowAssignModal(false)} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"><Trash2 size={14} /></button>
+              </div>
+              <form onSubmit={handleAssignTeacher} className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black text-foreground/60 mb-1.5">Subject</label>
+                  <select value={assignForm.subjectId} onChange={(e) => setAssignForm({ ...assignForm, subjectId: e.target.value })} className="w-full px-3 py-2.5 border border-border rounded-xl text-xs font-bold focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none bg-surface" required>
+                    <option value="">Select Subject</option>
+                    {subjects.filter((s) => s.departmentId === dept?.id).map((s) => (<option key={s.id} value={s.id}>{s.name} ({s.code})</option>))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-foreground/60 mb-1.5">Class</label>
+                  <select value={assignForm.classSectionId} onChange={(e) => setAssignForm({ ...assignForm, classSectionId: e.target.value })} className="w-full px-3 py-2.5 border border-border rounded-xl text-xs font-bold focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none bg-surface" required>
+                    <option value="">Select Class</option>
+                    {classes.filter((c) => c.program === dept?.name || c.departmentId === dept?.id).map((c) => (<option key={c.id} value={c.id}>{c.name} — {c.level}</option>))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-foreground/60 mb-1.5">Academic Year</label>
+                  <select value={assignForm.academicYearId} onChange={(e) => setAssignForm({ ...assignForm, academicYearId: e.target.value })} className="w-full px-3 py-2.5 border border-border rounded-xl text-xs font-bold focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none bg-surface" required>
+                    <option value="">Select Year</option>
+                    {academicYears.map((y) => (<option key={y.id} value={y.id}>{y.label || y.id}</option>))}
+                  </select>
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button type="submit" disabled={assignTeacher.isPending} className="flex-1 px-4 py-2.5 bg-brand-primary text-primary-foreground rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-primary/90 transition-all disabled:opacity-50">
+                    {assignTeacher.isPending ? 'Assigning…' : 'Assign'}
+                  </button>
+                  <button type="button" onClick={() => setShowAssignModal(false)} className="px-4 py-2.5 bg-muted/30 text-foreground rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-muted/20 transition-all">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

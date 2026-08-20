@@ -7,12 +7,12 @@ import {
   FileCheck, LifeBuoy, StickyNote, Zap, Lock, ArrowUpRight, MoreVertical,
   ThumbsUp, ThumbsDown, ExternalLink, Calendar, User, UserPlus, ChevronRight, X,
   Gauge, Settings2, Flag, Shield, Copy, Send, Loader2, Wifi, WifiOff, RefreshCw,
-  KeyRound, Archive, CircleCheck, ChevronDown
+  KeyRound, Archive, CircleCheck, ChevronDown, Pencil
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
-import { useTickets, useUnreadNotifications, useAnalyticsPulse as useAdminAnalyticsPulse, useArchiveStats as useAdminArchiveStats, useAllStudents, useStudentCount, useStudentBoarderStats, useStaffCount, useAllStaff, useApprovals, useResolveApproval, useSystemFreeze, useToggleSystemFreeze, useAllDepartments, useAllSubjects, useAllClasses, useCurriculumMatrix, useAcademicYear, useAcademicYears } from '../../lib/hooks';
+import { useTickets, useUnreadNotifications, useAnalyticsPulse as useAdminAnalyticsPulse, useArchiveStats as useAdminArchiveStats, useAllStudents, useStudentCount, useStudentBoarderStats, useStaffCount, useAllStaff, useApprovals, useResolveApproval, useSystemFreeze, useToggleSystemFreeze, useAllDepartments, useAllSubjects, useAllClasses, useCurriculumMatrix, useAcademicYear, useAcademicYears, useUpdateYear, useUpdateTerm } from '../../lib/hooks';
 import { getDepartmentColorHex } from '../../constants/departments';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -98,6 +98,8 @@ export function AdminHome() {
     academicYear: '',
     term: ''
   });
+  const [showYearEditModal, setShowYearEditModal] = React.useState(false);
+  const [yearEditForm, setYearEditForm] = React.useState({ label: '', startDate: '', endDate: '', semester1Start: '', semester1End: '', semester2Start: '', semester2End: '' });
   const [selectedTicket, setSelectedTicket] = React.useState(null);
   const [showQueueManager, setShowQueueManager] = React.useState(false);
   const [approvalMeta, setApprovalMeta] = React.useState({});
@@ -161,6 +163,61 @@ export function AdminHome() {
   });
 
   const isFreezeActive = systemFreezeQuery.data?.systemFrozen ?? false;
+
+  const updateYearMutation = useUpdateYear();
+  const updateTermMutation = useUpdateTerm();
+
+  const openYearEditModal = () => {
+    const semester1 = resolvedYear?.terms?.find(t => t.termNumber === 'SEMESTER_1');
+    const semester2 = resolvedYear?.terms?.find(t => t.termNumber === 'SEMESTER_2');
+    setYearEditForm({
+      label: resolvedYear?.label || '',
+      startDate: resolvedYear?.startDate ? resolvedYear.startDate.split('T')[0] : '',
+      endDate: resolvedYear?.endDate ? resolvedYear.endDate.split('T')[0] : '',
+      semester1Start: semester1?.startDate ? semester1.startDate.split('T')[0] : '',
+      semester1End: semester1?.endDate ? semester1.endDate.split('T')[0] : '',
+      semester2Start: semester2?.startDate ? semester2.startDate.split('T')[0] : '',
+      semester2End: semester2?.endDate ? semester2.endDate.split('T')[0] : '',
+    });
+    setShowYearEditModal(true);
+  };
+
+  const handleYearEditSave = async () => {
+    if (!resolvedYear?.id) return;
+    try {
+      const yearId = resolvedYear.id;
+      const semester1 = resolvedYear.terms?.find(t => t.termNumber === 'SEMESTER_1');
+      const semester2 = resolvedYear.terms?.find(t => t.termNumber === 'SEMESTER_2');
+
+      await updateYearMutation.mutateAsync({
+        id: yearId,
+        dto: {
+          label: yearEditForm.label.trim(),
+          startDate: yearEditForm.startDate || undefined,
+          endDate: yearEditForm.endDate || undefined,
+        },
+      });
+
+      if (semester1 && yearEditForm.semester1Start && yearEditForm.semester1End) {
+        await updateTermMutation.mutateAsync({
+          id: semester1.id,
+          dto: { startDate: yearEditForm.semester1Start, endDate: yearEditForm.semester1End },
+        });
+      }
+
+      if (semester2 && yearEditForm.semester2Start && yearEditForm.semester2End) {
+        await updateTermMutation.mutateAsync({
+          id: semester2.id,
+          dto: { startDate: yearEditForm.semester2Start, endDate: yearEditForm.semester2End },
+        });
+      }
+
+      setShowYearEditModal(false);
+      toast.success('Academic year updated');
+    } catch (err) {
+      toast.error(`Failed to update year: ${err?.message || 'Unknown error'}`);
+    }
+  };
 
   const formatYearLabel = (label) => {
     if (!label) return '';
@@ -561,31 +618,38 @@ export function AdminHome() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 relative shrink-0">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-success/10 text-success rounded-full border border-success/20">
-              <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", isFreezeActive ? "bg-destructive" : "bg-success")} />
-              <span className={cn("text-[9px] font-black uppercase tracking-wider", isFreezeActive ? "text-destructive" : "text-success")}>
-                {isFreezeActive ? 'Locked' : 'Live'}
-              </span>
+            <div className="flex items-center gap-2 relative shrink-0">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-success/10 text-success rounded-full border border-success/20">
+                <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", isFreezeActive ? "bg-destructive" : "bg-success")} />
+                <span className={cn("text-[9px] font-black uppercase tracking-wider", isFreezeActive ? "text-destructive" : "text-success")}>
+                  {isFreezeActive ? 'Locked' : 'Live'}
+                </span>
+              </div>
+              <button 
+                onClick={() => {
+                  if (activeYear?.label) {
+                    setConfigForm(prev => ({ ...prev, academicYear: activeYear.label }));
+                  }
+                  if (activeTerm?.termNumber) {
+                    setConfigForm(prev => ({ ...prev, term: formatTermLabel(activeTerm.termNumber) }));
+                  }
+                  setShowConfigModal(true);
+                }}
+                className="px-3 py-1.5 bg-brand-dark text-primary-foreground rounded-xl flex items-center gap-2 shadow-md hover:bg-brand-dark/90 transition-all cursor-pointer"
+              >
+                <Calendar size={12} className="text-text-secondary" />
+                <span className="text-[9px] font-black tracking-wider uppercase">{displayYearLabel || 'No Year'} Academic Year • {displayTermLabel || '—'}</span>
+                <div className="px-1.5 py-0.5 bg-brand-dark rounded text-[8px] font-black tracking-normal">{configForm.level}</div>
+                <Settings2 size={10} className="text-text-secondary ml-1" />
+              </button>
+              <button 
+                onClick={openYearEditModal}
+                className="p-1.5 bg-brand-dark text-primary-foreground rounded-lg shadow-md hover:bg-brand-dark/90 transition-all cursor-pointer"
+                title="Edit Academic Year / Semesters"
+              >
+                <Pencil size={10} className="text-text-secondary" />
+              </button>
             </div>
-            <button 
-              onClick={() => {
-                if (activeYear?.label) {
-                  setConfigForm(prev => ({ ...prev, academicYear: activeYear.label }));
-                }
-                if (activeTerm?.termNumber) {
-                  setConfigForm(prev => ({ ...prev, term: formatTermLabel(activeTerm.termNumber) }));
-                }
-                setShowConfigModal(true);
-              }}
-              className="px-3 py-1.5 bg-brand-dark text-primary-foreground rounded-xl flex items-center gap-2 shadow-md hover:bg-brand-dark/90 transition-all cursor-pointer"
-            >
-              <Calendar size={12} className="text-text-secondary" />
-              <span className="text-[9px] font-black tracking-wider uppercase">{displayYearLabel || 'No Year'} Academic Year • {displayTermLabel || '—'}</span>
-              <div className="px-1.5 py-0.5 bg-brand-dark rounded text-[8px] font-black tracking-normal">{configForm.level}</div>
-              <Settings2 size={10} className="text-text-secondary ml-1" />
-            </button>
-          </div>
         </header>
 
          {/* Main Workspace Grid Splits */}
@@ -1416,6 +1480,114 @@ export function AdminHome() {
           </div>
           );
         })()}
+      </AnimatePresence>
+
+      {/* Edit Academic Year Modal */}
+      <AnimatePresence>
+        {showYearEditModal && resolvedYear && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md" onClick={() => setShowYearEditModal(false)} />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-md bg-surface rounded-2xl shadow-2xl p-6">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h3 className="text-lg font-black italic font-display text-text-primary">Edit Academic Year</h3>
+                  <p className="text-[8px] font-black uppercase text-text-secondary tracking-wider mt-0.5">Update dates for the active academic year</p>
+                </div>
+                <button onClick={() => setShowYearEditModal(false)} className="p-1.5 text-text-secondary hover:text-text-primary transition-colors">
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1.5">Year Name</label>
+                  <input
+                    type="text"
+                    value={yearEditForm.label}
+                    onChange={(e) => setYearEditForm({ ...yearEditForm, label: e.target.value })}
+                    className="w-full px-3 py-2.5 bg-surface border border-border rounded-xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-brand-primary/10"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1.5">Start Date</label>
+                    <input
+                      type="date"
+                      value={yearEditForm.startDate}
+                      onChange={(e) => setYearEditForm({ ...yearEditForm, startDate: e.target.value })}
+                      className="w-full px-3 py-2.5 bg-surface border border-border rounded-xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-brand-primary/10"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1.5">End Date</label>
+                    <input
+                      type="date"
+                      value={yearEditForm.endDate}
+                      onChange={(e) => setYearEditForm({ ...yearEditForm, endDate: e.target.value })}
+                      className="w-full px-3 py-2.5 bg-surface border border-border rounded-xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-brand-primary/10"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-2">Semester Dates</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[9px] font-bold text-text-secondary/60 mb-1">Semester 1 Start</label>
+                      <input
+                        type="date"
+                        value={yearEditForm.semester1Start}
+                        onChange={(e) => setYearEditForm({ ...yearEditForm, semester1Start: e.target.value })}
+                        className="w-full px-3 py-2.5 bg-surface border border-border rounded-xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-brand-primary/10"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-bold text-text-secondary/60 mb-1">Semester 1 End</label>
+                      <input
+                        type="date"
+                        value={yearEditForm.semester1End}
+                        onChange={(e) => setYearEditForm({ ...yearEditForm, semester1End: e.target.value })}
+                        className="w-full px-3 py-2.5 bg-surface border border-border rounded-xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-brand-primary/10"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-bold text-text-secondary/60 mb-1">Semester 2 Start</label>
+                      <input
+                        type="date"
+                        value={yearEditForm.semester2Start}
+                        onChange={(e) => setYearEditForm({ ...yearEditForm, semester2Start: e.target.value })}
+                        className="w-full px-3 py-2.5 bg-surface border border-border rounded-xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-brand-primary/10"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-bold text-text-secondary/60 mb-1">Semester 2 End</label>
+                      <input
+                        type="date"
+                        value={yearEditForm.semester2End}
+                        onChange={(e) => setYearEditForm({ ...yearEditForm, semester2End: e.target.value })}
+                        className="w-full px-3 py-2.5 bg-surface border border-border rounded-xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-brand-primary/10"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setShowYearEditModal(false)}
+                    className="flex-1 px-4 py-2.5 bg-muted text-text-primary font-black rounded-xl border border-border hover:bg-muted/80 transition-all text-[10px] uppercase tracking-wider"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleYearEditSave}
+                    disabled={updateYearMutation.isPending || updateTermMutation.isPending}
+                    className="flex-1 px-4 py-2.5 bg-brand-primary text-primary-foreground font-black rounded-xl hover:bg-brand-primary/90 transition-all shadow-lg shadow-brand-primary/20 disabled:opacity-60 text-[10px] uppercase tracking-wider"
+                  >
+                    {updateYearMutation.isPending ? 'Saving…' : 'Save Changes'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
 
     </div>

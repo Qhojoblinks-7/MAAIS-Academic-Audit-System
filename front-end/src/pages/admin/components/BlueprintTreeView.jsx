@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../../lib/utils';
 import { School, Layers, Users, AlertTriangle, ChevronRight, ChevronDown, MoreVertical, Plus, X, TrendingUp, Settings2, Archive, UserPlus, Ruler, Home, Trash2, Loader2, Check, Pencil } from 'lucide-react';
 import { toast } from '../../../components/ui/toast.tsx';
-import { usePromoteLevel, useArchiveYear, useTransferStudents, useUpdateClassCapacity, useRebalanceHouses, useDissolveClass, useUpdateClass, useAllStudents, useCreateYear, useActivateYear, useGetAcademicYears, useCreateClass, useAllDepartments } from '../../../lib/hooks';
+import { usePromoteLevel, useArchiveYear, useTransferStudents, useUpdateClassCapacity, useRebalanceHouses, useDissolveClass, useUpdateClass, useAllStudents, useCreateYear, useActivateYear, useUpdateYear, useUpdateTerm, useGetAcademicYears, useCreateClass, useAllDepartments } from '../../../lib/hooks';
 import { ConfirmationDialog } from '../../../components/molecules/ConfirmationDialog';
 
 const HOUSES = ['Guggisberg', 'Aggrey', 'Nkrumah'];
@@ -50,9 +50,6 @@ export function BlueprintTreeView({
   const [renameClassroom, setRenameClassroom] = useState(null);
   const [renameValue, setRenameValue] = useState('');
 
-  const [editYear, setEditYear] = useState(null);
-  const [editYearForm, setEditYearForm] = useState({ label: '', startDate: '', endDate: '', semester1Start: '', semester1End: '', semester2Start: '', semester2End: '' });
-
   const [confirmDialog, setConfirmDialog] = useState({ open: false, title: '', message: '', action: null, variant: 'danger' });
 
   const qc = useQueryClient();
@@ -64,8 +61,6 @@ export function BlueprintTreeView({
   const dissolveClassMutation = useDissolveClass();
   const createYearMutation = useCreateYear();
   const activateYearMutation = useActivateYear();
-  const updateYearMutation = useUpdateYear();
-  const updateTermMutation = useUpdateTerm();
   const updateClassMutation = useUpdateClass();
   const yearsQuery = useGetAcademicYears();
   const createClassMutation = useCreateClass();
@@ -467,68 +462,6 @@ export function BlueprintTreeView({
     }
   };
 
-  const handleEditYear = async () => {
-    if (!editYear) return;
-    if (!editYearForm.label.trim()) {
-      toast.error('Year name is required');
-      return;
-    }
-    try {
-      const yearId = editYear.id;
-      const semester1 = editYear.terms?.find(t => t.termNumber === 'SEMESTER_1');
-      const semester2 = editYear.terms?.find(t => t.termNumber === 'SEMESTER_2');
-
-      await updateYearMutation.mutateAsync({
-        id: yearId,
-        dto: {
-          label: editYearForm.label.trim(),
-          startDate: editYearForm.startDate || undefined,
-          endDate: editYearForm.endDate || undefined,
-        },
-      });
-
-      if (semester1 && editYearForm.semester1Start && editYearForm.semester1End) {
-        await updateTermMutation.mutateAsync({
-          id: semester1.id,
-          dto: {
-            startDate: editYearForm.semester1Start,
-            endDate: editYearForm.semester1End,
-          },
-        });
-      }
-
-      if (semester2 && editYearForm.semester2Start && editYearForm.semester2End) {
-        await updateTermMutation.mutateAsync({
-          id: semester2.id,
-          dto: {
-            startDate: editYearForm.semester2Start,
-            endDate: editYearForm.semester2End,
-          },
-        });
-      }
-
-      setEditYear(null);
-      toast.success('Academic year updated');
-    } catch (err) {
-      toast.error(`Failed to update year: ${err?.message || 'Unknown error'}`);
-    }
-  };
-
-  const openEditYear = (year) => {
-    const semester1 = year.terms?.find(t => t.termNumber === 'SEMESTER_1');
-    const semester2 = year.terms?.find(t => t.termNumber === 'SEMESTER_2');
-    setEditYearForm({
-      label: year.label || '',
-      startDate: year.startDate ? year.startDate.split('T')[0] : '',
-      endDate: year.endDate ? year.endDate.split('T')[0] : '',
-      semester1Start: semester1?.startDate ? semester1.startDate.split('T')[0] : '',
-      semester1End: semester1?.endDate ? semester1.endDate.split('T')[0] : '',
-      semester2Start: semester2?.startDate ? semester2.startDate.split('T')[0] : '',
-      semester2End: semester2?.endDate ? semester2.endDate.split('T')[0] : '',
-    });
-    setEditYear(year);
-  };
-
   const handleAddClassroom = async () => {
     if (!classroomForm.name.trim()) {
       toast.error('Classroom name is required');
@@ -633,7 +566,6 @@ export function BlueprintTreeView({
                     </button>
                     {openKebabYearId === year.id && (
                       <div className="absolute right-0 top-12 w-56 bg-surface border border-border rounded-xl shadow-xl z-50 py-1">
-                        <button onClick={() => { openEditYear(year); setOpenKebabYearId(null); }} className="w-full text-left px-3 py-2.5 text-xs font-bold text-foreground/80 hover:bg-muted/50 flex items-center gap-2"><Pencil size={12} className="text-brand-primary" /> Edit Year / Semesters</button>
                         <button onClick={() => handleYearKebabAction(year, 'promotion')} className="w-full text-left px-3 py-2.5 text-xs font-bold text-foreground/80 hover:bg-muted/50 flex items-center gap-2"><TrendingUp size={12} className="text-success" /> Level Promotion / Rollover</button>
                         <button onClick={() => handleYearKebabAction(year, 'restructure')} className="w-full text-left px-3 py-2.5 text-xs font-bold text-foreground/80 hover:bg-muted/50 flex items-center gap-2"><Settings2 size={12} className="text-brand-primary" /> Program Restructuring</button>
                         <div className="h-px bg-muted/20 my-1" />
@@ -955,124 +887,6 @@ export function BlueprintTreeView({
                     </div>
                   </form>
                 </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {editYear && (
-          <div className="fixed inset-0 z-[600] flex items-center justify-center p-6">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setEditYear(null)}
-              className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md"
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-md bg-surface rounded-[2.5rem] shadow-2xl overflow-hidden"
-            >
-              <div className="p-10">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-black italic font-display text-foreground">Edit Academic Year</h3>
-                  <button onClick={() => setEditYear(null)} className="p-2 text-muted-foreground hover:text-foreground transition-all">
-                    <X size={24} />
-                  </button>
-                </div>
-                <form onSubmit={(e) => { e.preventDefault(); handleEditYear(); }} className="space-y-5">
-                  <div>
-                    <label className="block text-xs font-bold text-foreground/70 mb-2">Academic Year Name</label>
-                    <input
-                      type="text"
-                      value={editYearForm.label}
-                      onChange={(e) => setEditYearForm({ ...editYearForm, label: e.target.value })}
-                      className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent text-foreground outline-none transition-all"
-                      required
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold text-foreground/70 mb-2">Start Date</label>
-                      <input
-                        type="date"
-                        value={editYearForm.startDate}
-                        onChange={(e) => setEditYearForm({ ...editYearForm, startDate: e.target.value })}
-                        className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent text-foreground outline-none transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-foreground/70 mb-2">End Date</label>
-                      <input
-                        type="date"
-                        value={editYearForm.endDate}
-                        onChange={(e) => setEditYearForm({ ...editYearForm, endDate: e.target.value })}
-                        className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent text-foreground outline-none transition-all"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <label className="block text-xs font-bold text-foreground/70">Semester Dates</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[10px] font-bold text-foreground/50 mb-1">Semester 1 Start</label>
-                        <input
-                          type="date"
-                          value={editYearForm.semester1Start}
-                          onChange={(e) => setEditYearForm({ ...editYearForm, semester1Start: e.target.value })}
-                          className="w-full px-3 py-2 border border-border rounded-lg text-xs focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-foreground/50 mb-1">Semester 1 End</label>
-                        <input
-                          type="date"
-                          value={editYearForm.semester1End}
-                          onChange={(e) => setEditYearForm({ ...editYearForm, semester1End: e.target.value })}
-                          className="w-full px-3 py-2 border border-border rounded-lg text-xs focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-foreground/50 mb-1">Semester 2 Start</label>
-                        <input
-                          type="date"
-                          value={editYearForm.semester2Start}
-                          onChange={(e) => setEditYearForm({ ...editYearForm, semester2Start: e.target.value })}
-                          className="w-full px-3 py-2 border border-border rounded-lg text-xs focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-foreground/50 mb-1">Semester 2 End</label>
-                        <input
-                          type="date"
-                          value={editYearForm.semester2End}
-                          onChange={(e) => setEditYearForm({ ...editYearForm, semester2End: e.target.value })}
-                          className="w-full px-3 py-2 border border-border rounded-lg text-xs focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setEditYear(null)}
-                      className="flex-1 px-5 py-3 bg-muted/30 text-foreground font-black rounded-xl border border-border hover:bg-muted/50 transition-all"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={updateYearMutation.isPending || updateTermMutation.isPending}
-                      className="flex-1 px-5 py-3 bg-brand-primary text-primary-foreground font-black rounded-xl hover:bg-brand-primary/90 transition-all shadow-lg shadow-brand-primary/20 disabled:opacity-60"
-                    >
-                      {updateYearMutation.isPending ? 'Saving…' : 'Save Changes'}
-                    </button>
-                  </div>
-                </form>
-              </div>
             </motion.div>
           </div>
         )}
