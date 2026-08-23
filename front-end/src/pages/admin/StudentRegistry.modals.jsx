@@ -15,7 +15,6 @@ import {
 import { Badge } from '../../components/ui/badge';
 import { Card } from '../../components/ui/card';
 import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
 import {
   Lock, FileUp, CheckCircle, X, Users, TrendingUp
 } from 'lucide-react';

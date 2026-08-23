@@ -26,8 +26,6 @@ import {
 } from '@/components/ui/table';
 import { calculateWASSCEAggregate, calculateTermAggregate, aggregateToLetter, getAggregateRemark } from '@/lib/aggregateUtils';
 import { Button } from '@/components/ui/button';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
 
 function groupStudentsByClass(students) {
   const map = new Map();
@@ -287,7 +285,11 @@ export function BroadsheetGenerator() {
       doc.close();
 
       await new Promise((resolve) => setTimeout(resolve, 300));
-      const canvas = await html2canvas(doc.body, {
+      const [{ default: html2canvasLib }, { jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ]);
+      const canvas = await html2canvasLib(doc.body, {
         scale: 2,
         useCORS: true,
         logging: false,

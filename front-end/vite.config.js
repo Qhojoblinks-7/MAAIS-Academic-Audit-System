@@ -2,14 +2,24 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import compression from 'vite-plugin-compression2'
 import path from 'path'
 
 export default defineConfig(({ mode }) => ({
   plugins: [
     react({ fastRefresh: true }),
     tailwindcss(),
+    compression({
+      algorithm: 'gzip',
+      threshold: 1024,
+    }),
+    compression({
+      algorithm: 'brotliCompress',
+      threshold: 1024,
+      ext: '.br',
+    }),
     mode === 'production' && VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
         name: 'MAAIS Academic Audit System',
@@ -40,9 +50,10 @@ export default defineConfig(({ mode }) => ({
           },
         ],
       },
-      // Simplified Workbox config to avoid build hangs
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        navigateFallback: '/index.html',
+        disableDevLogs: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -66,6 +77,35 @@ export default defineConfig(({ mode }) => ({
               expiration: {
                 maxEntries: 10,
                 maxAgeSeconds: 60 * 60 * 24 * 365,
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/maais-backend-49i4\.onrender\.com\/api\/v1\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 30,
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+              networkTimeoutSeconds: 20,
+            },
+          },
+          {
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'images',
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
               },
               cacheableResponse: {
                 statuses: [0, 200],
@@ -106,9 +146,9 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    sourcemap: !mode || mode !== 'production',
-    chunkSizeWarningLimit: 500,
-    minify: 'terser',
+    sourcemap: mode === 'development',
+    chunkSizeWarningLimit: 1000,
+    minify: 'esbuild',
     cssMinify: true,
     rollupOptions: {
       treeshake: {
@@ -127,6 +167,12 @@ export default defineConfig(({ mode }) => ({
           if (id.includes('date-fns') || id.includes('clsx') || id.includes('tailwind-merge') || id.includes('class-variance')) {
             return 'utils';
           }
+          if (id.includes('@radix-ui') || id.includes('cmdk')) return 'ui-primitives';
+          if (id.includes('react-day-picker')) return 'date-picker';
+          if (id.includes('embla-carousel')) return 'carousel';
+          if (id.includes('lucide-react')) return 'icons';
+          if (id.includes('papaparse') || id.includes('xlsx')) return 'data-io';
+          if (id.includes('react-router')) return 'router';
           return 'vendor-utils';
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',

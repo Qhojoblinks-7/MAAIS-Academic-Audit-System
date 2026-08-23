@@ -1,17 +1,21 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import {
-  useAllStudents, useCreateStudent, useBatchImportStudents,
+  usePaginatedStudents, useStudentCount, useCreateStudent, useBatchImportStudents,
   usePromoteStudent, useBuildTranscript, useGenerateReportCard,
   useDeactivateUser, useUpdateStudentProfile, useAllClasses, useAllDepartments
 } from '../../lib/hooks';
 import { toast } from '../../components/ui/toast.tsx';
 import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
 
 export const useStudentRegistry = () => {
-  const studentsQuery = useAllStudents();
+  const {
+    data: studentPages,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = usePaginatedStudents();
+  const studentCountQuery = useStudentCount();
   const classesQuery = useAllClasses();
   const departmentsQuery = useAllDepartments();
   const createStudentMutation = useCreateStudent();
@@ -22,10 +26,14 @@ export const useStudentRegistry = () => {
   const deactivateUserMutation = useDeactivateUser();
   const updateStudentProfileMutation = useUpdateStudentProfile();
 
-  const students = studentsQuery.data || [];
+  const students = useMemo(() => {
+    const pages = studentPages?.pages || [];
+    return pages.flat();
+  }, [studentPages]);
+
   const classes = classesQuery.data || [];
   const departments = departmentsQuery.data || [];
-  const isLoading = studentsQuery.isLoading;
+  const totalStudentCount = studentCountQuery.data || students.length;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProgram, setSelectedProgram] = useState('All');
@@ -51,6 +59,22 @@ export const useStudentRegistry = () => {
   const [csspsError, setCsspsError] = useState('');
   const [isProcessingCssps, setIsProcessingCssps] = useState(false);
   const [importResults, setImportResults] = useState(null);
+
+  // Intersection Observer for infinite scroll
+  const loadMoreRef = useRef(null);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    const current = loadMoreRef.current;
+    if (current) observer.observe(current);
+    return () => { if (current) observer.unobserve(current); };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const programs = useMemo(() => {
     const deptNames = (departments || []).map(d => d.name);
@@ -227,7 +251,11 @@ export const useStudentRegistry = () => {
       doc.close();
 
       await new Promise((resolve) => setTimeout(resolve, 300));
-      const canvas = await html2canvas(doc.body, {
+      const [{ default: html2canvasLib }, { jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ]);
+      const canvas = await html2canvasLib(doc.body, {
         scale: 2,
         useCORS: true,
         logging: false,
@@ -348,7 +376,11 @@ export const useStudentRegistry = () => {
       doc.close();
 
       await new Promise((resolve) => setTimeout(resolve, 300));
-      const canvas = await html2canvas(doc.body, {
+      const [{ default: html2canvasLib2 }, { jsPDF: jsPDF2 }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ]);
+      const canvas = await html2canvasLib2(doc.body, {
         scale: 2,
         useCORS: true,
         logging: false,
@@ -357,7 +389,7 @@ export const useStudentRegistry = () => {
       document.body.removeChild(iframe);
 
       const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdf = new jsPDF2('p', 'mm', 'a4');
       const imgWidth = 210;
       const pageHeight = 297;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
@@ -482,14 +514,15 @@ export const useStudentRegistry = () => {
     return new Promise((resolve, reject) => {
       const isExcel = file.name.match(/\.xlsx?$/i);
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         try {
           const content = event.target.result;
           if (isExcel) {
-            const workbook = XLSX.read(content, { type: 'binary' });
+            const xlsx = await import('xlsx');
+            const workbook = xlsx.read(content, { type: 'binary' });
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+            const jsonData = xlsx.utils.sheet_to_json(worksheet, { defval: '' });
             resolve(jsonData);
           } else {
             Papa.parse(content, {
@@ -800,5 +833,10 @@ export const useStudentRegistry = () => {
     handleCssFileChange,
     handleCancelCsspsUpload,
     handleProcessCsspsUpload,
+    loadMoreRef,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    totalStudentCount,
   };
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import LogoImage from '../../assets/mando.png'; 
+import LogoImage from '../../assets/mando.webp'; 
 
 // --- Internal Components & Styling for Background ---
 const iconBackgroundData = [

@@ -24,8 +24,6 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { cn } from '../../lib/utils';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
 
 // Helper to calculate WAEC Grade
 const getWAECGrade = (score) => {
@@ -375,7 +373,11 @@ const handleExportTranscript = async () => {
     await new Promise(resolve => setTimeout(resolve, 450));
 
     const iframeBody = iframeDoc.body;
-    const canvas = await html2canvas(iframeBody, {
+    const [{ default: html2canvasLib }, { jsPDF }] = await Promise.all([
+      import('html2canvas'),
+      import('jspdf'),
+    ]);
+    const canvas = await html2canvasLib(iframeBody, {
       scale: 2.5, // Crisp anti-aliased output scaling
       useCORS: true,
       logging: false,

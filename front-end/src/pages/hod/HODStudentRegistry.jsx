@@ -1,15 +1,15 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Download, ChevronRight, TrendingUp, Trash2, X, Lock,
   FileText, FileUp, MoreVertical, GraduationCap, HeartPulse,
   Phone, MessageSquare, Activity, BarChart3, AlertCircle, Users,
   CheckCircle, Flag, Shield, ShieldCheck, AlertTriangle, UserPlus,
+  Loader2
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { useAllStudents, usePromoteStudent, useDeactivateUser, useUpdateStudentProfile, useCreateStudent, useBatchImportStudents, useAllClasses, useAllDepartments } from '../../lib/hooks';
+import { usePaginatedStudents, useStudentCount, usePromoteStudent, useDeactivateUser, useUpdateStudentProfile, useCreateStudent, useBatchImportStudents, useAllClasses, useAllDepartments } from '../../lib/hooks';
 import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
 import {
   ResponsiveContainer,
   XAxis, YAxis, Tooltip,
@@ -189,16 +189,46 @@ const StudentDossier = ({ student, onClose, onGenerateReport, onBuildTranscript 
 };
 
 export function HODStudentRegistry() {
-  const studentsQuery = useAllStudents();
+  // Infinite scroll pagination for students
+  const {
+    data: studentPages,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = usePaginatedStudents();
+
+  const studentCountQuery = useStudentCount();
   const classesQuery = useAllClasses();
   const departmentsQuery = useAllDepartments();
+
+  const students = React.useMemo(() => {
+    const pages = studentPages?.pages || [];
+    return pages.flat();
+  }, [studentPages]);
+
+  // Intersection Observer for infinite scroll
+  const loadMoreRef = useRef(null);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    const current = loadMoreRef.current;
+    if (current) observer.observe(current);
+    return () => { if (current) observer.unobserve(current); };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const classes = classesQuery.data || [];
+  const departments = departmentsQuery.data || [];
+
   const promoteStudentMutation = usePromoteStudent();
   const deactivateUserMutation = useDeactivateUser();
   const updateStudentProfileMutation = useUpdateStudentProfile();
-  const students = studentsQuery.data || [];
-  const classes = classesQuery.data || [];
-  const departments = departmentsQuery.data || [];
-  const isLoading = studentsQuery.isLoading;
 
   const programs = useMemo(() => {
     const deptNames = (departments || []).map(d => d.name);
@@ -342,11 +372,12 @@ export function HODStudentRegistry() {
     return results.data.map(normalizeCsspsRecord).filter(r => r.index_number || r.first_name || r.last_name || r.indexnumber || r.firstname || r.lastname);
   };
 
-  const parseXlsxContent = (content) => {
-    const workbook = XLSX.read(content, { type: 'binary' });
+  const parseXlsxContent = async (content) => {
+    const xlsx = await import('xlsx');
+    const workbook = xlsx.read(content, { type: 'binary' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+    const jsonData = xlsx.utils.sheet_to_json(worksheet, { defval: '' });
     return jsonData.map(row => {
       const normalized = {};
       Object.entries(row).forEach(([key, value]) => {
@@ -445,12 +476,12 @@ export function HODStudentRegistry() {
     setCsspsError('');
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const content = event.target.result;
         let records;
         if (file.name.match(/\.xlsx?$/i)) {
-          records = parseXlsxContent(content);
+          records = await parseXlsxContent(content);
         } else {
           records = parseCsvContent(content);
         }
@@ -635,7 +666,7 @@ export function HODStudentRegistry() {
             <h1 className="text-2xl font-black text-text-primary italic font-display tracking-tight leading-none">
               Student Enrolment
             </h1>
-            <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Learner Population Records : {isLoading ? '...' : `${students.length} Enrolled`}</p>
+            <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Learner Population Records : {isLoading ? '...' : `${studentCountQuery.data || students.length} Enrolled`}</p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" className="px-4 py-2 text-[10px] font-black uppercase tracking-widest" onClick={() => setIsBatchUploading(true)}>
@@ -732,6 +763,22 @@ export function HODStudentRegistry() {
             ))}
           </TableBody>
         </Table>
+
+        {/* Infinite scroll trigger */}
+        <div ref={loadMoreRef} className="py-4 flex justify-center">
+          {isFetchingNextPage && (
+            <div className="flex items-center gap-2 text-text-secondary">
+              <Loader2 size={16} className="animate-spin" />
+              <span className="text-xs font-bold">Loading more...</span>
+            </div>
+          )}
+          {!hasNextPage && students.length > 0 && (
+            <span className="text-xs font-bold text-text-secondary">
+              All {studentCountQuery.data || students.length} students loaded
+            </span>
+          )}
+        </div>
+
         {filteredStudents.length === 0 && (
           <div className="py-20 flex flex-col items-center justify-center text-center">
             <div className="w-16 h-16 bg-muted rounded-2xl border-2 border-dashed border-border flex items-center justify-center text-text-secondary mb-4 font-display italic text-2xl">?</div>

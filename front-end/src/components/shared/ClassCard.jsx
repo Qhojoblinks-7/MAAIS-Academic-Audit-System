@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Users, ChevronRight } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -28,7 +28,7 @@ export function ClassCard({ subject, className, status, progress, studentCount, 
           "text-xs font-black mt-1 uppercase tracking-widest text-left truncate opacity-90", 
           isComplete ? "text-background" : "text-muted-foreground"
         )}>
-          {className} • Grading Sheet
+          {className} � Grading Sheet
         </p>
       </div>
 

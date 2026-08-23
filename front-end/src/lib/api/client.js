@@ -131,27 +131,34 @@ async function fetchWithTimeout(url, init, timeoutMs) {
  */
 async function finalize(response) {
   const contentType = response.headers.get('content-type');
-  if (!contentType || !contentType.includes('application/json')) {
-    if (!response.ok) {
-      const text = await response.text();
-      const error = new Error(text || `HTTP ${response.status}`);
-      error.status = response.status;
-      throw error;
-    }
-    return {};
-  }
-
-  const data = await response.json();
+  const text = await response.text();
 
   if (!response.ok) {
-    const message = data?.message || data?.error || `HTTP ${response.status}`;
-    const error = new Error(message);
+    const message = text || `HTTP ${response.status}`;
+    let errorData = message;
+    try {
+      errorData = JSON.parse(text);
+    } catch {}
+    const error = new Error(errorData?.message || errorData?.error || message);
     error.status = response.status;
-    error.response = data;
+    error.response = errorData;
     throw error;
   }
 
-  return data;
+  if (!contentType || !contentType.includes('application/json')) {
+    // Try to parse as JSON anyway (NestJS sometimes returns primitives with text/html)
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text || {};
+    }
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text || {};
+  }
 }
 
 function handleSessionExpired() {

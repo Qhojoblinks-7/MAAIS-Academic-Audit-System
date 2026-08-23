@@ -13,7 +13,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { toast, Toaster } from '../../components/ui/toast.tsx';
 import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
 import {
   Table,
   TableHeader,
@@ -49,7 +48,7 @@ export const StudentRegistry = () => {
             <h1 className="text-2xl font-black text-text-primary italic font-display tracking-tight leading-none">
             Student Enrolment
             </h1>
-            <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Learner Population Records : {registry.isLoading ? '...' : `${registry.students.length} Enrolled`}</p>
+            <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Learner Population Records : {registry.isLoading ? '...' : `${registry.totalStudentCount} Enrolled`}</p>
           </div>
             <div className="flex items-center gap-3">
               <button
@@ -166,6 +165,9 @@ export const StudentRegistry = () => {
         executeSensitiveAction={registry.executeSensitiveAction}
         newStudent={registry.newStudent}
         setNewStudent={registry.setNewStudent}
+        loadMoreRef={registry.loadMoreRef}
+        isFetchingNextPage={registry.isFetchingNextPage}
+        totalStudentCount={registry.totalStudentCount}
       />
 
       <StudentRegistryModals

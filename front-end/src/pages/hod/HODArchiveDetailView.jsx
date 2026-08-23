@@ -13,8 +13,6 @@ import {
   Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
 import {
   AreaChart,
   Area,
@@ -234,7 +232,11 @@ export function HODArchiveDetailView({ student, onBack }) {
       iframeDoc.close();
 
       await new Promise((resolve) => setTimeout(resolve, 300));
-      const canvas = await html2canvas(iframeDoc.body, {
+      const [{ default: html2canvasLib }, { jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ]);
+      const canvas = await html2canvasLib(iframeDoc.body, {
         scale: 2,
         useCORS: true,
         logging: false,

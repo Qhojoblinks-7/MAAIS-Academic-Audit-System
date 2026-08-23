@@ -10,7 +10,7 @@ import {
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { cn } from '../../lib/utils';
-import { MoreVertical, GraduationCap, FileText, AlertTriangle, ShieldCheck, Trash2 } from 'lucide-react';
+import { MoreVertical, GraduationCap, FileText, AlertTriangle, ShieldCheck, Trash2, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import StudentDossier from './StudentDossier';
 
@@ -32,6 +32,9 @@ const StudentRegistryTable = ({
   executeSensitiveAction,
   newStudent,
   setNewStudent,
+  loadMoreRef,
+  isFetchingNextPage,
+  totalStudentCount,
 }) => {
   return (
     <>
@@ -104,6 +107,21 @@ const StudentRegistryTable = ({
             ))}
           </TableBody>
          </Table>
+
+        {/* Infinite scroll trigger */}
+        <div ref={loadMoreRef} className="py-4 flex justify-center">
+          {isFetchingNextPage && (
+            <div className="flex items-center gap-2 text-text-secondary">
+              <Loader2 size={16} className="animate-spin" />
+              <span className="text-xs font-bold">Loading more...</span>
+            </div>
+          )}
+          {!isFetchingNextPage && filteredStudents.length > 0 && filteredStudents.length >= (totalStudentCount || studentsLength) && (
+            <span className="text-xs font-bold text-text-secondary">
+              All {totalStudentCount || studentsLength} students loaded
+            </span>
+          )}
+        </div>
       </div>
       <AnimatePresence>
         {selectedStudent && (

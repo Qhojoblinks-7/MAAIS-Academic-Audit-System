@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EmptyState } from '../../components/molecules';
@@ -9,10 +9,9 @@ import {
   Gauge, Settings2, Flag, Shield, Copy, Send, Loader2, Wifi, WifiOff, RefreshCw,
   KeyRound, Archive, CircleCheck, ChevronDown, Pencil
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
-import { useTickets, useUnreadNotifications, useAnalyticsPulse as useAdminAnalyticsPulse, useArchiveStats as useAdminArchiveStats, useAllStudents, useStudentCount, useStudentBoarderStats, useStaffCount, useAllStaff, useApprovals, useResolveApproval, useSystemFreeze, useToggleSystemFreeze, useAllDepartments, useAllSubjects, useAllClasses, useCurriculumMatrix, useAcademicYear, useAcademicYears, useUpdateYear, useUpdateTerm } from '../../lib/hooks';
+import { useTickets, useUnreadNotifications, useAnalyticsPulse as useAdminAnalyticsPulse, useArchiveStats as useAdminArchiveStats, useAllStudents, useStudentCount, useStudentBoarderStats, useStaffCount, useAllStaff, useApprovals, useResolveApproval, useSystemFreeze, useToggleSystemFreeze, useAllDepartments, useAllSubjects, useAllClasses, useCurriculumMatrix, useAcademicYear, useAcademicYears, useUpdateYear, useUpdateTerm, useDashboardSummary } from '../../lib/hooks';
 import { getDepartmentColorHex } from '../../constants/departments';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -61,12 +60,19 @@ export function AdminHome() {
   const { user } = useRole();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const [Recharts, setRecharts] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    import('recharts').then((mod) => {
+      if (!cancelled) setRecharts(() => mod);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   const ticketsQuery = useTickets();
   const notificationsQuery = useUnreadNotifications();
-  const studentsQuery = useAllStudents();
   const studentCountQuery = useStudentCount();
-  const staffQuery = useAllStaff();
   const staffCountQuery = useStaffCount();
   const systemFreezeQuery = useSystemFreeze();
   const toggleSystemFreezeMutation = useToggleSystemFreeze();
@@ -252,8 +258,6 @@ export function AdminHome() {
   const tickets = ticketsQuery.data || [];
   const notifications = notificationsQuery.data || [];
   const analytics = analyticsQuery.data;
-  const students = studentsQuery.data || [];
-  const staff = staffQuery.data || [];
   const ticketsLoading = ticketsQuery.isLoading;
   const approvalsQuery = useApprovals({ status: 'pending' });
   const resolveApprovalMutation = useResolveApproval();
@@ -267,11 +271,11 @@ export function AdminHome() {
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
   const [activities, setActivities] = React.useState([]);
-  const [liveStudentCount, setLiveStudentCount] = React.useState(0);
-  const [liveStaffCount, setLiveStaffCount] = React.useState(0);
 
-  const totalStudents = liveStudentCount;
-  const staffCount = liveStaffCount;
+  const totalStudents = typeof studentCountQuery.data === 'number' ? studentCountQuery.data : 0;
+  const staffCount = typeof staffCountQuery.data === 'number' ? staffCountQuery.data : 0;
+  const unreadNotificationsCount = unreadCount;
+  const openTicketsCount = tickets.length;
 
   const boarderStatsQuery = useStudentBoarderStats();
   const boarderCount = typeof boarderStatsQuery.data?.boarders === 'number' ? boarderStatsQuery.data.boarders : 0;
@@ -294,61 +298,6 @@ export function AdminHome() {
       gradingProgress,
     });
   }, [totalStudents, staffCount, boarderCount, dayCount, unreadCount, avgScore, gradingProgress]);
-
-  React.useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    const base = import.meta.env.VITE_API_BASE_URL || '/api/v1';
-    const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
-    let cancelled = false;
-    const fetchKpis = async () => {
-      try {
-        const [studentsRes, staffRes, boardersRes] = await Promise.all([
-          fetch(`${base}/users/students/count`, { headers }),
-          fetch(`${base}/users/staff/count`, { headers }),
-          fetch(`${base}/users/students/boarder-stats`, { headers }),
-        ]);
-
-        const studentsText = await studentsRes.text();
-        const staffText = await staffRes.text();
-        const boardersText = await boardersRes.text();
-
-        if (!cancelled) {
-          if (studentsRes.ok) {
-            const parsed = parseInt(studentsText, 10);
-            if (!isNaN(parsed)) setLiveStudentCount(parsed);
-          }
-          if (staffRes.ok) {
-            const parsed = parseInt(staffText, 10);
-            if (!isNaN(parsed)) setLiveStaffCount(parsed);
-          }
-          if (boardersRes.ok) {
-            try {
-              const stats = JSON.parse(boardersText);
-              qc.setQueryData(['admin', 'students', 'boarder-stats'], stats);
-            } catch {
-              // ignore parse errors
-            }
-          }
-        }
-      } catch (e) {
-        console.error('[AdminHome KPI fetch error]', e);
-      }
-    };
-
-    fetchKpis();
-    const interval = setInterval(fetchKpis, 30000);
-    return () => { cancelled = true; clearInterval(interval); };
-  }, [selectedAcademicYearId, selectedTermId, selectedLevel]);
-
-  React.useEffect(() => {
-    console.log('[AdminHome] config changed ->', {
-      selectedAcademicYearId,
-      selectedTermId,
-      selectedLevel,
-      analyticsQuery: analyticsQuery.data,
-      archiveStatsQuery: archiveStatsQuery.data,
-    });
-  }, [selectedAcademicYearId, selectedTermId, selectedLevel]);
 
   React.useEffect(() => {
     if (analytics?.recentActivity) {
@@ -757,34 +706,40 @@ export function AdminHome() {
               </div>
 
               <div className="h-[180px] w-full text-xs">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                   <BarChart data={chartData} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 700 }} dy={5} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 700 }} />
-                    <Tooltip 
-                      cursor={{ fill: 'rgba(241, 245, 249, 0.4)' }}
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          return (
-                            <div className="bg-surface p-2 rounded-lg border border-border shadow-lg text-[10px]">
-                              <p className="font-black text-text-secondary uppercase tracking-wider mb-0.5">{payload[0].payload.name}</p>
-                               <p className="font-black text-text-primary text-sm">
-                                 {payload[0].value}%
-                               </p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                     <Bar dataKey="value" radius={[4, 4, 2, 2]} barSize={34}>
-                       {chartData.map((entry, index) => (
-                         <Cell key={`cell-${index}`} fill={entry.color} fillOpacity={0.85} />
-                       ))}
-                     </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                {Recharts ? (
+                  <Recharts.ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                    <Recharts.BarChart data={chartData} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
+                      <Recharts.CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <Recharts.XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 700 }} dy={5} />
+                      <Recharts.YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 700 }} />
+                      <Recharts.Tooltip 
+                        cursor={{ fill: 'rgba(241, 245, 249, 0.4)' }}
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="bg-surface p-2 rounded-lg border border-border shadow-lg text-[10px]">
+                                <p className="font-black text-text-secondary uppercase tracking-wider mb-0.5">{payload[0].payload.name}</p>
+                                 <p className="font-black text-text-primary text-sm">
+                                  {payload[0].value}%
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                       <Recharts.Bar dataKey="value" radius={[4, 4, 2, 2]} barSize={34}>
+                         {chartData.map((entry, index) => (
+                           <Recharts.Cell key={`cell-${index}`} fill={entry.color} fillOpacity={0.85} />
+                         ))}
+                       </Recharts.Bar>
+                    </Recharts.BarChart>
+                  </Recharts.ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="h-6 w-6 rounded-full border-2 border-border border-t-brand-primary animate-spin" />
+                  </div>
+                )}
               </div>
 
                <div className="grid grid-cols-5 gap-2 mt-4 pt-3 border-t border-border">

@@ -177,8 +177,8 @@ function normalizeObservationPayload(observation) {
   };
 }
 
-const DEFAULT_TIMEOUT = 15000;
-const BULK_TIMEOUT = 60000;
+const DEFAULT_TIMEOUT = 8000;
+const BULK_TIMEOUT = 30000;
 const MAX_RETRIES = 2;
 const RETRYABLE_STATUS = new Set([408, 429, 500, 502, 503, 504]);
 const pendingRequests = new Map();

@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { ChevronRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { teacherService } from "../../services";

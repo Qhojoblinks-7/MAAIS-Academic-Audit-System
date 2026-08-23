@@ -90,6 +90,7 @@ export const StudentProfile = l(() => import('../pages/student/StudentProfile'),
 export const GradingSheet = l(() => import('../pages/shared/GradingSheet'), 'GradingSheet');
 export const HOD_JourneyHistoryAudit = l(() => import('../pages/shared/HOD_JourneyHistoryAudit'), 'HOD_JourneyHistoryAudit');
 export const TeacherProfile = l(() => import('../pages/shared/TeacherProfile'), 'TeacherProfile');
+export const GradingRouteLoader = l(() => import('../pages/shared/GradingRouteLoader'), 'GradingRouteLoader');
 
 // ── Misc ────────────────────────────────────────────────────────────────────
 export const NotificationsPage = l(() => import('../pages/NotificationsPage'), 'NotificationsPage');

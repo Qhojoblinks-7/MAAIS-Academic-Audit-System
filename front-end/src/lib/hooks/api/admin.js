@@ -1,14 +1,42 @@
-﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+
+const PAGE_SIZE = 50;
+
+export function usePaginatedStaff() {
+  return useInfiniteQuery({
+    queryKey: ['admin', 'staff', 'paginated'],
+    queryFn: ({ pageParam = 0 }) => adminApi.getAllStaff(PAGE_SIZE, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (!Array.isArray(lastPage) || lastPage.length < PAGE_SIZE) return undefined;
+      return allPages.length * PAGE_SIZE;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function usePaginatedStudents() {
+  return useInfiniteQuery({
+    queryKey: ['admin', 'students', 'paginated'],
+    queryFn: ({ pageParam = 0 }) => adminApi.getAllStudents(PAGE_SIZE, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (!Array.isArray(lastPage) || lastPage.length < PAGE_SIZE) return undefined;
+      return allPages.length * PAGE_SIZE;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+}
 import { adminApi, api } from '../../../lib/api';
 import { getAuthToken } from '../../../services/auth';
 
-// â”€â”€ Users / Staff â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Users / Staff ────────────────────────────────────────────────────────────
 export function useAllStudents() {
   return useQuery({
     queryKey: ['admin', 'students'],
     queryFn: adminApi.getAllStudents,
     staleTime: 1000 * 60 * 2,
-    refetchOnMount: 'always',
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchInterval: 120000,
     refetchIntervalInBackground: false,
@@ -17,9 +45,12 @@ export function useAllStudents() {
 
 export function useStudentCount() {
   return useQuery({
-    queryKey: ['admin', 'students', 'count'],
+    queryKey: ['admin', 'students', 'count', 'v2'],
     queryFn: adminApi.getStudentCount,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
     refetchInterval: 30000,
     refetchIntervalInBackground: false,
   });
@@ -39,9 +70,14 @@ export function useStudentBoarderStats() {
 
 export function useStaffCount() {
   return useQuery({
-    queryKey: ['admin', 'staff', 'count'],
+    queryKey: ['admin', 'staff', 'count', 'v2'],
     queryFn: adminApi.getStaffCount,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    refetchInterval: 30000,
+    refetchIntervalInBackground: false,
   });
 }
 
@@ -124,6 +160,19 @@ export function useAllParents() {
   });
 }
 
+export function usePaginatedParents() {
+  return useInfiniteQuery({
+    queryKey: ['admin', 'parents', 'paginated'],
+    queryFn: ({ pageParam = 0 }) => adminApi.getAllParents(PAGE_SIZE, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (!Array.isArray(lastPage) || lastPage.length < PAGE_SIZE) return undefined;
+      return allPages.length * PAGE_SIZE;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
 export function useUpdateStudentProfile() {
   const qc = useQueryClient();
   return useMutation({
@@ -154,7 +203,7 @@ export function useResetStaffCredentials() {
   });
 }
 
-// â”€â”€ Academic Structure â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Academic Structure ───────────────────────────────────────────────────────
 export function useActiveYear(options = {}) {
   return useQuery({
     queryKey: ['admin', 'academic', 'activeYear'],
@@ -175,9 +224,12 @@ export function useAcademicYears() {
 
 export function useAllDepartments() {
   return useQuery({
-    queryKey: ['admin', 'academic', 'departments'],
+    queryKey: ['admin', 'academic', 'departments', 'v2'],
     queryFn: adminApi.getAllDepartments,
-    staleTime: 1000 * 60 * 10,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -397,7 +449,7 @@ export function useClassAssignments(classId, track) {
    });
 }
 
-// â”€â”€ Reports â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Reports ──────────────────────────────────────────────────────────────────
 export function useGenerateReportCard() {
   const qc = useQueryClient();
   return useMutation({
@@ -430,7 +482,7 @@ export function useVerifyDocument() {
   });
 }
 
-// â”€â”€ Archive / Vault â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Archive / Vault ──────────────────────────────────────────────────────────
 export function useArchiveStats() {
   return useQuery({
     queryKey: ['admin', 'archive', 'stats'],
@@ -458,7 +510,7 @@ export function useDatabaseHealth() {
   });
 }
 
-// â”€â”€ Communications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Communications ───────────────────────────────────────────────────────────
 export function useUnreadNotifications() {
   return useQuery({
     queryKey: ['admin', 'comms', 'unread'],
@@ -499,7 +551,7 @@ export function useCreateTicket() {
   });
 }
 
-// â”€â”€ Grading (Admin / HOD) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Grading (Admin / HOD) ────────────────────────────────────────────────────
 export function useUpsertGrade() {
   const qc = useQueryClient();
   return useMutation({
@@ -635,7 +687,7 @@ export function useAdminProfile() {
   });
 }
 
-// â”€â”€ Timetable â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Timetable ────────────────────────────────────────────────────────────────
 export function useTimetableEntries(params = {}) {
   return useQuery({
     queryKey: ['admin', 'timetable', params],
@@ -701,7 +753,7 @@ export function useFinalizeTimetable() {
   });
 }
 
-// â”€â”€ Time Slots â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Time Slots ──────────────────────────────────────────────────────────────
 export function useTimeSlots() {
   return useQuery({
     queryKey: ['admin', 'time-slots'],
@@ -742,7 +794,7 @@ export function useReorderTimeSlots() {
   });
 }
 
-// â”€â”€ Interventions & Behavior â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Interventions & Behavior ─────────────────────────────────────────────────
 export function useStudentInterventions(studentId) {
   return useQuery({
     queryKey: ['admin', 'interventions', studentId],
@@ -769,7 +821,7 @@ export function useCreateBehavior() {
   });
 }
 
-// â”€â”€ Approvals â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Approvals ─────────────────────────────────────────────────────────────────
 export function useApprovals(query = {}) {
   return useQuery({
     queryKey: ['admin', 'approvals', query],
@@ -811,7 +863,7 @@ export function useDeleteApproval() {
   });
 }
 
-// â”€â”€ Grading Rules â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Grading Rules ─────────────────────────────────────────────────────────────
 export function useGradingRules(termId) {
   return useQuery({
     queryKey: ['admin', 'grading', 'rules', termId],
@@ -845,7 +897,7 @@ export function useTermSummary(termId) {
   });
 }
 
-// â”€â”€ Report Generation (Admin) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Report Generation (Admin) ─────────────────────────────────────────────────
 export function useStudentsForReportGeneration(query) {
   return useQuery({
     queryKey: ['admin', 'reports', 'generation', 'students', query],
@@ -879,7 +931,7 @@ export function useSendReportNudge() {
   });
 }
 
-// â”€â”€ Admin Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Admin Settings ────────────────────────────────────────────────────────────
 export function useAdminSettings() {
   return useQuery({
     queryKey: ['admin', 'settings'],
@@ -946,7 +998,7 @@ export function useUnlockTerm() {
   });
 }
 
-// â”€â”€ Year Group Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Year Group Actions ───────────────────────────────────────────────────────
 export function usePromoteLevel() {
   const qc = useQueryClient();
   return useMutation({
@@ -970,7 +1022,7 @@ export function useArchiveYear() {
   });
 }
 
-// â”€â”€ Classroom Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Classroom Actions ───────────────────────────────────────────────────────
 export function useTransferStudents() {
   const qc = useQueryClient();
   return useMutation({
@@ -1013,7 +1065,7 @@ export function useDissolveClass() {
   });
 }
 
-// â”€â”€ Curriculum Mapping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Curriculum Mapping ───────────────────────────────────────────────────────────
 export function useDeployCurriculumMapping() {
   const qc = useQueryClient();
   return useMutation({
@@ -1089,5 +1141,15 @@ export function useClassesWithStudents() {
     queryKey: ['admin', 'classes', 'with-students'],
     queryFn: adminApi.getClassesWithStudents,
     staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useDashboardSummary() {
+  return useQuery({
+    queryKey: ['admin', 'dashboard', 'summary'],
+    queryFn: adminApi.getDashboardSummary,
+    staleTime: 1000 * 60 * 2,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 }

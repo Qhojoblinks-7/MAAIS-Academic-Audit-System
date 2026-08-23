@@ -8,14 +8,14 @@ export const adminApi = {
   createStudent: (dto) => api.post('/users/students', dto),
   batchImportStudents: (students) => api.post('/users/students/batch', { students }),
   createParent: (dto) => api.post('/users/parents', dto),
-  getAllParents: () => api.get('/users/parents'),
-  getAllStudents: () => api.get('/users/students'),
+  getAllParents: (take = 200, skip = 0) => api.get('/users/parents', { params: { take, skip } }),
+  getAllStudents: (take = 200, skip = 0) => api.get('/users/students', { params: { take, skip } }),
   getStudentCount: () => api.get('/users/students/count'),
   getStudentProfile: (id) => api.get(`/users/students/${id}`),
   getStudentBoarderStats: () => api.get('/users/students/boarder-stats'),
   updateStudentProfile: (id, body) => api.patch(`/users/students/${id}`, body),
   getStaffCount: () => api.get('/users/staff/count'),
-  getAllStaff: () => api.get('/users/staff'),
+  getAllStaff: (take = 200, skip = 0) => api.get('/users/staff', { params: { take, skip } }),
   deactivateUser: (id) => api.patch(`/users/${id}/deactivate`),
 
   // ── Academic Structure ─────────────────────────────────────────────────────
@@ -72,7 +72,10 @@ export const adminApi = {
    lockTerm: (id) => api.patch(`/archive/terms/${id}/lock`),
    getDatabaseHealth: () => api.get('/archive/health'),
 
-   archiveYear: (yearId, level) => api.post(`/archive/years/${yearId}/archive`, { level }),
+   // ── Dashboard Batch ────────────────────────────────────────────────────────
+   getDashboardSummary: () => api.get('/dashboard/summary'),
+
+    archiveYear: (yearId, level) => api.post(`/archive/years/${yearId}/archive`, { level }),
    transferStudents: ({ sourceClassId, targetClassId, studentIds }) =>
      api.post('/archive/classes/transfer', { sourceClassId, targetClassId, studentIds }),
    updateClassCapacity: (classId, capacity) =>

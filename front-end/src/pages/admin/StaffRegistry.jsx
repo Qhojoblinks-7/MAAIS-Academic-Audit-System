@@ -20,12 +20,12 @@ import {
   Eye,
   Pencil,
   Users,
-  Upload
+  Upload,
+  Loader2
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { toast, Toaster } from '../../components/ui/toast.tsx';
 import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
 import {
   Table,
   TableHeader,
@@ -39,7 +39,7 @@ import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
 import { Badge } from '../../components/ui/badge';
 import { getDepartmentColor } from '../../constants/departments';
-  import { useAllStaff, useCreateStaff, useDeactivateUser, useAllDepartments, useResetStaffCredentials, useBulkImportStaff, useUpdateStaff, useTransferTeacher } from '../../lib/hooks';
+import { usePaginatedStaff, useStaffCount, useCreateStaff, useDeactivateUser, useAllDepartments, useResetStaffCredentials, useBulkImportStaff, useUpdateStaff, useTransferTeacher } from '../../lib/hooks';
 
 export function StaffRegistry() {
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -86,8 +86,41 @@ export function StaffRegistry() {
     role: 'TEACHER',
   });
 
-  const staffQuery = useAllStaff();
+  // Infinite scroll pagination
+  const {
+    data: staffPages,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+    error,
+  } = usePaginatedStaff();
+
+  const staffQuery = { isLoading, isError, error };
+  const staff = React.useMemo(() => {
+    const pages = staffPages?.pages || [];
+    return pages.flat();
+  }, [staffPages]);
+
+  // Intersection Observer for infinite scroll
+  const loadMoreRef = React.useRef(null);
+  React.useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    const current = loadMoreRef.current;
+    if (current) observer.observe(current);
+    return () => { if (current) observer.unobserve(current); };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
   const departmentsQuery = useAllDepartments();
+  const staffCountQuery = useStaffCount();
   const createStaffMutation = useCreateStaff();
   const deactivateMutation = useDeactivateUser();
   const resetCredentialsMutation = useResetStaffCredentials();
@@ -95,10 +128,7 @@ export function StaffRegistry() {
   const updateStaffMutation = useUpdateStaff();
   const transferTeacherMutation = useTransferTeacher();
 
-  const staff = staffQuery.data || [];
   const departments = departmentsQuery.data || [];
-  const isLoading = staffQuery.isLoading;
-  const error = staffQuery.error;
 
   const toggleKebab = (e, id) => {
     e.stopPropagation();
@@ -355,13 +385,13 @@ export function StaffRegistry() {
     setBulkValidation([]);
     setBulkDetectedHeaders([]);
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const content = e.target.result;
         let parsed;
         let detectedHeaders = [];
         if (file.name.match(/\.xlsx?$/i)) {
-          const result = parseXlsxStaff(content);
+          const result = await parseXlsxStaff(content);
           parsed = result.data;
           detectedHeaders = result.detectedHeaders;
         } else {
@@ -482,11 +512,12 @@ export function StaffRegistry() {
     return { data, detectedHeaders };
   };
 
-  const parseXlsxStaff = (content) => {
-    const workbook = XLSX.read(content, { type: 'binary' });
+  const parseXlsxStaff = async (content) => {
+    const xlsx = await import('xlsx');
+    const workbook = xlsx.read(content, { type: 'binary' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+    const jsonData = xlsx.utils.sheet_to_json(worksheet, { defval: '' });
     const detectedHeaders = jsonData.length > 0 ? Object.keys(jsonData[0]) : [];
     const data = jsonData.map(row => {
       const obj = {};
@@ -557,7 +588,7 @@ export function StaffRegistry() {
           <h1 className="text-2xl font-black text-text-primary italic font-display tracking-tight leading-none mb-1">
             Staff Roster
           </h1>
-            <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Faculty &amp; Staff Records : {isLoading ? '...' : `${staff.length} Members`}</p>
+             <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Faculty &amp; Staff Records : {isLoading ? '...' : `${staffCountQuery.data || staff.length} Members`}</p>
         </div>
 
           <div className="flex items-center gap-3">
@@ -969,8 +1000,23 @@ export function StaffRegistry() {
                  </TableCell>
               </TableRow>
             ))}
-          </TableBody>
-        </Table>
+           </TableBody>
+         </Table>
+
+        {/* Infinite scroll trigger */}
+        <div ref={loadMoreRef} className="py-4 flex justify-center">
+          {isFetchingNextPage && (
+            <div className="flex items-center gap-2 text-text-secondary">
+              <Loader2 size={16} className="animate-spin" />
+              <span className="text-xs font-bold">Loading more...</span>
+            </div>
+          )}
+          {!hasNextPage && staff.length > 0 && (
+            <span className="text-xs font-bold text-text-secondary">
+              All {staff.length} staff loaded
+            </span>
+          )}
+        </div>
 
         {displayStaff.length === 0 && (
           <div className="py-32 flex flex-col items-center justify-center text-center">

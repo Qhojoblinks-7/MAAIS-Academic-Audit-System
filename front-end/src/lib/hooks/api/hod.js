@@ -220,7 +220,7 @@ export function useUnlockDepartmentMatrix() {
   });
 }
 
-export function useLockTerm() {
+export function useLockTermHOD() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (termId) => hodApi.lockTerm(termId),
@@ -232,7 +232,7 @@ export function useLockTerm() {
   });
 }
 
-export function useUnlockTerm() {
+export function useUnlockTermHOD() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (termId) => hodApi.unlockTerm(termId),

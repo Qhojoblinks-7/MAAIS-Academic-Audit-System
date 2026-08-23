@@ -7,12 +7,14 @@ import {
   useLockDepartmentMatrix,
   useUnlockDepartmentMatrix,
   useExportWAECCSV,
-  useLockTerm,
-  useUnlockTerm,
   useUpdateHODComment,
   useRejectGradeRevision,
   useApproveGradeRevision,
 } from '@/lib/hooks/api/hod';
+import {
+  useLockTerm,
+  useUnlockTerm,
+} from '@/lib/hooks';
 import { hodService } from '@/services/hodService';
 import { auditTrail } from '@/services/auditTrailService';
 import { eventBus } from '@/services/eventBus';

@@ -1,6 +1,6 @@
 const WS_RECONNECT_DELAY = 5000;
-const POLLING_INTERVAL_ONLINE = 30000;
-const POLLING_INTERVAL_OFFLINE = 120000;
+const POLLING_INTERVAL_ONLINE = 300000;
+const POLLING_INTERVAL_OFFLINE = 600000;
 const MAX_RECONNECT_DELAY = 60000;
 
 class DataSyncLayer {
@@ -74,15 +74,31 @@ class DataSyncLayer {
     if (this.pollingTimer) return;
     const interval = navigator.onLine ? POLLING_INTERVAL_ONLINE : POLLING_INTERVAL_OFFLINE;
     this.pollingTimer = setInterval(() => {
-      this.fetchUpdates().catch(() => {});
+      if (document.visibilityState === 'visible') {
+        this.fetchUpdates().catch(() => {});
+      }
     }, interval);
+    document.addEventListener('visibilitychange', this.handleVisibilityChange);
   }
+
+  handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      if (!this.pollingTimer && this.fallbackPolling) {
+        this.startPolling();
+      }
+    } else {
+      if (this.pollingTimer) {
+        this.stopPolling();
+      }
+    }
+  };
 
   stopPolling() {
     if (this.pollingTimer) {
       clearInterval(this.pollingTimer);
       this.pollingTimer = null;
     }
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
   }
 
   async fetchUpdates() {

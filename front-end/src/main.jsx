@@ -45,16 +45,18 @@ class ErrorBoundary extends Component {
  const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 3,
-      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30000),
+      retry: 1,
+      retryDelay: (attempt) => Math.min(1000 * attempt, 3000),
       refetchOnWindowFocus: false,
       refetchOnMount: false,
-      staleTime: 1000 * 60 * 5, // 5 minutes before revalidation
-      gcTime: 1000 * 60 * 10, // 10 minutes cache retention (prevents stale session data)
-      networkMode: 'offlineFirst', // Serve cache immediately; sync in background
+      refetchOnReconnect: true,
+      staleTime: 1000 * 60 * 5,
+      gcTime: 1000 * 60 * 10,
+      networkMode: 'offlineFirst',
     },
     mutations: {
-      retry: 2,
+      retry: 1,
+      retryDelay: 1000,
       networkMode: 'offlineFirst',
     },
   },

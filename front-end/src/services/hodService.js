@@ -3,7 +3,7 @@ import { calcRoman } from '../constants/grading';
 import Papa from 'papaparse';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
-const DEFAULT_TIMEOUT = 15000;
+const DEFAULT_TIMEOUT = 8000;
 const MAX_RETRIES = 2;
 const RETRYABLE_STATUS = new Set([408, 429, 500, 502, 503, 504]);
 

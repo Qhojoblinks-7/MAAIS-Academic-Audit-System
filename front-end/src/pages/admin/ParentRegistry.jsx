@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   Users, Search, Download, 
   ChevronRight, TrendingUp,
@@ -9,7 +9,8 @@ import {
   Phone, MessageSquare,
   BarChart3, Mail,
   Send, UserCheck,
-  CreditCard, Plus
+  CreditCard, Plus,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
@@ -38,7 +39,7 @@ import {
   SelectItem,
   SelectValue
 } from '../../components/ui/select';
-import { useAllParents, useCreateParent, useAllStudents } from '../../lib/hooks';
+import { usePaginatedParents, useCreateParent } from '../../lib/hooks';
 
 // --- Components ---
 
@@ -191,8 +192,38 @@ const ParentProfile = ({ parent, onClose }) => {
 };
 
 export const ParentRegistry = () => {
-  const { data: parents = [], isLoading, error } = useAllParents();
-  const { data: students = [] } = useAllStudents();
+  // Infinite scroll pagination for parents
+  const {
+    data: parentPages,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = usePaginatedParents();
+
+  const parents = React.useMemo(() => {
+    const pages = parentPages?.pages || [];
+    return pages.flat();
+  }, [parentPages]);
+
+  const totalParentCount = parents.length;
+
+  // Intersection Observer for infinite scroll
+  const loadMoreRef = useRef(null);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    const current = loadMoreRef.current;
+    if (current) observer.observe(current);
+    return () => { if (current) observer.unobserve(current); };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
   const createParentMutation = useCreateParent();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedParentId, setSelectedParentId] = useState(null);
@@ -360,9 +391,24 @@ export const ParentRegistry = () => {
                   </TableCell>
                 </TableRow>
               ))}
-            </TableBody>
-          </Table>
-        </div>
+             </TableBody>
+           </Table>
+
+          {/* Infinite scroll trigger */}
+          <div ref={loadMoreRef} className="py-4 flex justify-center">
+            {isFetchingNextPage && (
+              <div className="flex items-center gap-2 text-text-secondary">
+                <Loader2 size={16} className="animate-spin" />
+                <span className="text-xs font-bold">Loading more...</span>
+              </div>
+            )}
+            {!hasNextPage && parents.length > 0 && (
+              <span className="text-xs font-bold text-text-secondary">
+                All {parents.length} guardians loaded
+              </span>
+            )}
+          </div>
+         </div>
 
       {/* Side Profile Drawer */}
       <AnimatePresence>
