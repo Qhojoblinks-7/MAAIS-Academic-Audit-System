@@ -9,14 +9,14 @@ import { useAnalyticsPulse } from '../../../lib/hooks';
 import { commsApi } from '../../../lib/api/comms';
 
 const FORM_LEVELS = [
-  { value: 'FORM_1', label: 'Form 1', shortLabel: 'F1' },
-  { value: 'FORM_2', label: 'Form 2', shortLabel: 'F2' },
-  { value: 'FORM_3', label: 'Form 3', shortLabel: 'F3' },
+  { value: 'SHS 1', label: 'Form 1', shortLabel: 'F1' },
+  { value: 'SHS 2', label: 'Form 2', shortLabel: 'F2' },
+  { value: 'SHS 3', label: 'Form 3', shortLabel: 'F3' },
 ];
 
 export function DepartmentGradingSheet({ dept }) {
   const navigate = useNavigate();
-  const [activeForm, setActiveForm] = React.useState('FORM_1');
+  const [activeForm, setActiveForm] = React.useState('SHS 1');
 
   const deptQuery = useDepartment(dept?.id);
   const { data: activeYearData } = useActiveYear();
@@ -142,6 +142,11 @@ export function DepartmentGradingSheet({ dept }) {
           <div className="flex items-center justify-center py-12 gap-2 text-muted-foreground">
             <Loader2 size={18} className="animate-spin" />
             <span className="text-xs font-bold uppercase tracking-widest">Loading department data...</span>
+          </div>
+        ) : pulseLoading ? (
+          <div className="flex items-center justify-center py-12 gap-2 text-muted-foreground">
+            <Loader2 size={18} className="animate-spin" />
+            <span className="text-xs font-bold uppercase tracking-widest">Loading performance data...</span>
           </div>
         ) : rows.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">

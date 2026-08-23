@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRole } from '../../context/RoleContext';
-import { useActiveYear } from '../../lib/hooks';
+import { useActiveYear, useAllSubjects } from '../../lib/hooks';
 import { gradingService } from '../../services/gradingService';
 import { teacherService } from '../../services/teacherService';
 import { adminService } from '../../services/adminService';
@@ -15,9 +15,10 @@ function getCacheKey(...parts) {
   return parts.filter(Boolean).join('|');
 }
 
-export default function GradingRouteLoader() {
+export function GradingRouteLoader() {
   const { user } = useRole();
   const activeYearQuery = useActiveYear();
+  const { data: allSubjectsData } = useAllSubjects();
   const location = window.location;
   const searchParams = new URLSearchParams(location.search);
 
@@ -41,6 +42,7 @@ export default function GradingRouteLoader() {
   const activeTerm = activeYearQuery.data?.terms?.find(t => t.isActive);
   const isTermFinalized = activeTerm?.isLocked ?? false;
   const isAdmin = user?.role === 'ADMIN';
+  const allSubjects = allSubjectsData || [];
 
   useEffect(() => {
     if (!user?.id) return;
@@ -150,7 +152,7 @@ export default function GradingRouteLoader() {
             .filter((c) => c.id && (c.name || c.className))
             .map((c) => ({
               id: c.id,
-              subject: c.subject?.name || c.subject || '',
+              subject: '',
               className: c.name || c.className || '',
               department: c.department?.name || c.department || 'GENERAL',
               level: c.level || c.form || '',
@@ -206,7 +208,9 @@ export default function GradingRouteLoader() {
 
   useEffect(() => {
     if (!selectedClass) return;
-    const currentKey = getCacheKey(selectedClass.subject, selectedClass.className);
+    if (isAdmin && !selectedSubject) return;
+    const subjectName = isAdmin ? selectedSubject : selectedClass.subject;
+    const currentKey = getCacheKey(subjectName, selectedClass.className);
     const cachedKey = gradingData ? getCacheKey(gradingData.classId) : null;
     if (selectedClass.id === cachedKey) return;
     if (!classesLoaded) return;
@@ -216,7 +220,7 @@ export default function GradingRouteLoader() {
       if (!user?.id) return;
       try {
         const [gradingIds, subjectConfigResult] = await Promise.all([
-          fetchGradingIds(selectedClass.subject, selectedClass.className),
+          fetchGradingIds(subjectName, selectedClass.className),
           fetchSubjectConfig(),
         ]);
         if (cancelled) return;
@@ -264,13 +268,16 @@ export default function GradingRouteLoader() {
     return () => {
       cancelled = true;
     };
-  }, [selectedClass?.id, user?.id, fetchGradingIds, fetchSubjectConfig, classesLoaded]);
+  }, [selectedClass?.id, selectedSubject, isAdmin, user?.id, fetchGradingIds, fetchSubjectConfig, classesLoaded]);
 
   const uniqueSubjects = useMemo(() => {
     if (!Array.isArray(teacherClasses)) return [];
+    if (isAdmin) {
+      return allSubjects.map(s => s.name || s.code).filter(Boolean).sort();
+    }
     const subjects = [...new Set(teacherClasses.map(c => c.subject).filter(Boolean))];
     return subjects.sort();
-  }, [teacherClasses]);
+  }, [teacherClasses, allSubjects, isAdmin]);
 
   const uniqueLevels = useMemo(() => {
     if (!Array.isArray(teacherClasses)) return [];
@@ -281,7 +288,7 @@ export default function GradingRouteLoader() {
   const availableClasses = useMemo(() => {
     if (!Array.isArray(teacherClasses)) return [];
     let filtered = teacherClasses;
-    if (selectedSubject) {
+    if (selectedSubject && !isAdmin) {
       filtered = filtered.filter(c => c.subject === selectedSubject);
     }
     if (isAdmin && selectedLevel) {
@@ -298,11 +305,13 @@ export default function GradingRouteLoader() {
       setSelectedClass(null);
       return;
     }
-    const firstMatch = teacherClasses.find(c => c.subject === subject);
-    if (firstMatch) {
-      setSelectedClass(firstMatch);
+    if (!isAdmin) {
+      const firstMatch = teacherClasses.find(c => c.subject === subject);
+      if (firstMatch) {
+        setSelectedClass(firstMatch);
+      }
     }
-  }, [teacherClasses]);
+  }, [teacherClasses, isAdmin]);
 
   const handleLevelChange = useCallback((e) => {
     const level = e.target.value;
@@ -347,13 +356,13 @@ export default function GradingRouteLoader() {
   }
 
   if (error || !gradingData) {
-    if (isAdmin && !error && subjectParam) {
+    if (isAdmin && !error) {
       const emptyGradingData = { students: [], subjectConfig: {}, subjectId: null, classId: null, termId: null };
       const { students, subjectConfig } = emptyGradingData;
       const targetStudentId = getTargetStudentId || null;
       const DEFAULT_CLASS_INFO = {
-        id: selectedClass ? selectedClass.id : subjectParam,
-        subject: selectedSubject || subjectParam,
+        id: selectedClass ? selectedClass.id : (subjectParam || ''),
+        subject: selectedSubject || subjectParam || '',
         className: selectedClass ? selectedClass.className : '',
         programme: selectedClass ? (selectedClass.department || 'GENERAL') : 'GENERAL',
         studentCount: 0,

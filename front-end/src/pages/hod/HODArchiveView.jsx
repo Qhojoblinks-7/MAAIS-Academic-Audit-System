@@ -1,14 +1,14 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HODArchiveHeader } from '../../components/atoms/HODArchiveHeader';
 import { HODVaultView } from '../../components/organisms/HODVaultView';
 import { HODPromotionTerminal } from '../../components/organisms/HODPromotionTerminal';
 import { HODComplianceAudits } from '../../components/organisms/HODComplianceAudits';
 import { HODArchiveDetailView } from './HODArchiveDetailView';
-import { useArchivedDepartmentData } from '@/lib/hooks/api/hod';
 import { useComplianceCohortPerformance, useComplianceTimeline, usePromotionMetrics, useTriggerPromotion, useLockedTerms } from '@/lib/hooks/api/hod';
 import { useSearchVault } from '@/lib/hooks/api/archive';
 import { useBreadcrumb } from '../../context/BreadcrumbContext';
+import { hodService } from '../../services/hodService';
 
 function normalizeStudent(record, lockedTermIds = []) {
   if (!record) return null;
@@ -41,12 +41,67 @@ export function HODArchiveView() {
   const [selectedClass, setSelectedClass] = useState('ALL');
   const [selectedYear, setSelectedYear] = useState('ALL');
 
-  const {
-    data: archivedData = [],
-    isLoading: archiveLoading,
-    isFetching: archiveFetching,
-    refetch: refetchArchives,
-  } = useArchivedDepartmentData();
+  const PAGE_SIZE = 50;
+  const [archivedData, setArchivedData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalArchives, setTotalArchives] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [archiveLoading, setArchiveLoading] = useState(false);
+  const loadMoreRef = useRef(null);
+
+  const fetchArchivedData = useCallback(async (page = 1, append = false) => {
+    try {
+      setArchiveLoading(true);
+      if (page > 1) setIsFetchingMore(true);
+      const params = { page, limit: PAGE_SIZE };
+      if (selectedYear !== 'ALL') params.year = selectedYear;
+      const result = await hodService.getArchivedDepartmentData(params);
+      const data = result?.data || [];
+      const total = result?.total || data.length;
+      const pages = result?.pages || Math.ceil(total / PAGE_SIZE);
+
+      if (append) {
+        setArchivedData(prev => [...prev, ...data]);
+      } else {
+        setArchivedData(data);
+      }
+      setCurrentPage(page);
+      setTotalPages(pages);
+      setTotalArchives(total);
+      setHasMore(page < pages);
+    } catch (error) {
+      console.error('[HODArchiveView] failed to fetch archived data:', error);
+      if (!append) setArchivedData([]);
+      setHasMore(false);
+    } finally {
+      setArchiveLoading(false);
+      setIsFetchingMore(false);
+    }
+  }, [selectedYear]);
+
+  useEffect(() => {
+    fetchArchivedData(1, false);
+  }, [fetchArchivedData]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isFetchingMore && !archiveLoading) {
+          fetchArchivedData(currentPage + 1, true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    const current = loadMoreRef.current;
+    if (current) observer.observe(current);
+    return () => { if (current) observer.unobserve(current); };
+  }, [hasMore, isFetchingMore, archiveLoading, currentPage, fetchArchivedData]);
+
+  const refetchArchives = useCallback(() => {
+    return fetchArchivedData(1, false);
+  }, [fetchArchivedData]);
 
   const {
     data: complianceCohorts = [],
@@ -249,23 +304,26 @@ export function HODArchiveView() {
             </motion.div>
           ) : (
             <div className="flex-1 overflow-y-auto no-scrollbar">
-              {activeSubTab === 'VAULT' && (
-                <HODVaultView 
-                  students={students}
-                  filteredStudents={filteredStudents}
-                  onStudentSelect={handleStudentSelect}
-                  searchTerm={searchTerm}
-                  onSearchChange={setSearchTerm}
-                  selectedClass={selectedClass}
-                  onClassChange={setSelectedClass}
-                  selectedYear={selectedYear}
-                  onYearChange={setSelectedYear}
-                  totalAlumniCount={students.length}
-                  departmentAverage="N/A"
-                  verifiedSealsCount={lockedTerms.length}
-                  hasSealedTerms={lockedTerms.length > 0}
-                />
-              )}
+               {activeSubTab === 'VAULT' && (
+                 <HODVaultView 
+                   students={students}
+                   filteredStudents={filteredStudents}
+                   onStudentSelect={handleStudentSelect}
+                   searchTerm={searchTerm}
+                   onSearchChange={setSearchTerm}
+                   selectedClass={selectedClass}
+                   onClassChange={setSelectedClass}
+                   selectedYear={selectedYear}
+                   onYearChange={setSelectedYear}
+                   totalAlumniCount={students.length}
+                   departmentAverage="N/A"
+                   verifiedSealsCount={lockedTerms.length}
+                   hasSealedTerms={lockedTerms.length > 0}
+                   loadMoreRef={loadMoreRef}
+                   isFetchingMore={isFetchingMore}
+                   hasMore={hasMore}
+                 />
+               )}
 
               {activeSubTab === 'PROMOTION' && (
                 <HODPromotionTerminal 

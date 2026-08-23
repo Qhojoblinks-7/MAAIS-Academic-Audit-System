@@ -92,8 +92,14 @@ export const adminApi = {
   getUnreadNotifications: () => api.get('/comms/notifications/unread'),
   sendHODAction: (dto) => api.post('/comms/notifications/hod-action', dto),
   sendTeacherAction: (dto) => api.post('/comms/notifications/teacher-action', dto),
-  getAnalyticsPulse: (academicYearId) =>
-    api.get(`/comms/analytics/pulse?academicYearId=${academicYearId || ''}`),
+  getAnalyticsPulse: (academicYearId, termId, level) => {
+    const params = new URLSearchParams();
+    if (academicYearId) params.set('academicYearId', academicYearId);
+    if (termId) params.set('termId', termId);
+    if (level) params.set('level', level);
+    const qs = params.toString();
+    return api.get(`/comms/analytics/pulse${qs ? `?${qs}` : ''}`);
+  },
   createTicket: (dto) => api.post('/comms/tickets', dto),
   getMyTickets: () => api.get('/comms/tickets/my'),
   listTickets: (query) => api.get('/comms/tickets', { params: query }),

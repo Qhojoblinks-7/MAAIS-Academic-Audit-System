@@ -80,11 +80,11 @@ export function HODSettings() {
     }
   }, [hodSettings]);
 
-  // Initial registry ingestion loop
-  useEffect(() => {
-    if (typeof refreshSettings === 'function') refreshSettings();
-    if (typeof refreshActiveSessions === 'function') refreshActiveSessions();
-  }, []);
+   // Initial registry ingestion loop
+   useEffect(() => {
+     if (typeof refreshSettings === 'function') refreshSettings();
+     if (typeof refreshActiveSessions === 'function') refreshActiveSessions();
+   }, [refreshSettings, refreshActiveSessions]);
 
   const handleSaveSettings = async () => {
     setSaving(true);

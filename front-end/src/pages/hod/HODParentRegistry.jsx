@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, Search, Download, X, FileText, MoreVertical, GraduationCap,
   UserPlus, Phone, MessageSquare, BarChart3, Mail, Send, UserCheck,
-  CreditCard, Plus
+  CreditCard, Plus, RefreshCw
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import {
@@ -19,7 +19,8 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Select, SelectTrigger, SelectContent, SelectItem, SelectValue
 } from '../../components/ui/select';
-import { useAllParents, useCreateParent, useAllStudents } from '../../lib/hooks';
+import { useCreateParent, useAllStudents } from '../../lib/hooks';
+import { adminApi } from '../../lib/api/admin';
 import { EmptyState } from '../../components/molecules';
 
 const ParentProfile = ({ parent, onClose }) => {
@@ -140,7 +141,67 @@ const ParentProfile = ({ parent, onClose }) => {
 };
 
 export function HODParentRegistry() {
-  const { data: parents = [], isLoading, error } = useAllParents();
+  const PAGE_SIZE = 50;
+  const [parents, setParents] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalParents, setTotalParents] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const loadMoreRef = useRef(null);
+
+  const fetchParents = useCallback(async (page = 1, append = false) => {
+    try {
+      if (page === 1) {
+        setIsLoading(true);
+      } else {
+        setIsFetchingMore(true);
+      }
+      const result = await adminApi.getAllParents(PAGE_SIZE, (page - 1) * PAGE_SIZE);
+      const data = result?.data || [];
+      const total = result?.total || data.length;
+      const pages = result?.pages || Math.ceil(total / PAGE_SIZE);
+
+      if (append) {
+        setParents(prev => [...prev, ...data]);
+      } else {
+        setParents(data);
+      }
+      setCurrentPage(page);
+      setTotalPages(pages);
+      setTotalParents(total);
+      setHasMore(page < pages);
+    } catch (err) {
+      console.error('[HODParentRegistry] failed to fetch parents:', err);
+      setError(err);
+      if (!append) setParents([]);
+      setHasMore(false);
+    } finally {
+      setIsLoading(false);
+      setIsFetchingMore(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchParents(1, false);
+  }, [fetchParents]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isFetchingMore && !isLoading) {
+          fetchParents(currentPage + 1, true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    const current = loadMoreRef.current;
+    if (current) observer.observe(current);
+    return () => { if (current) observer.unobserve(current); };
+  }, [hasMore, isFetchingMore, isLoading, currentPage, fetchParents]);
+
   const { data: students = [] } = useAllStudents();
   const createParentMutation = useCreateParent();
   const [searchQuery, setSearchQuery] = useState('');
@@ -276,9 +337,21 @@ export function HODParentRegistry() {
                   </div>
                 </TableCell>
               </TableRow>
-            ))}
+             ))}
           </TableBody>
         </Table>
+        <div ref={loadMoreRef} className="py-4 flex justify-center">
+          {isFetchingMore && (
+            <div className="flex items-center gap-2 text-xs text-text-secondary">
+              <RefreshCw size={12} className="animate-spin" /> Loading more...
+            </div>
+          )}
+          {!hasMore && filteredParents.length > 0 && (
+            <span className="text-[10px] uppercase font-mono font-bold text-text-secondary tracking-wider">
+              All {totalParents} guardians loaded
+            </span>
+          )}
+        </div>
         {filteredParents.length === 0 && (
           <div className="py-20 flex flex-col items-center justify-center text-center">
             <div className="w-16 h-16 bg-muted rounded-2xl border-2 border-dashed border-border flex items-center justify-center text-text-secondary mb-4 font-display italic text-2xl">?</div>

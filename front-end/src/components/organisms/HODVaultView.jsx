@@ -1,14 +1,14 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Users, TrendingUp, ShieldCheck, Award, ShieldAlert } from 'lucide-react';
+import { Users, TrendingUp, ShieldCheck, Award, ShieldAlert, RefreshCw } from 'lucide-react';
 import { HODArchiveKPICard } from '../molecules/HODArchiveKPICard';
 import { HODArchiveFilterMatrix } from '../molecules/HODArchiveFilterMatrix';
 import { HODArchiveStudentRow } from '../molecules/HODArchiveStudentRow';
 import { EmptyState } from '../molecules/EmptyState';
 
-export function HODVaultView({ 
-  students = [], 
-  filteredStudents = [], 
+export function HODVaultView({
+  students = [],
+  filteredStudents = [],
   onStudentSelect,
   searchTerm,
   onSearchChange,
@@ -19,7 +19,10 @@ export function HODVaultView({
   totalAlumniCount,
   departmentAverage,
   verifiedSealsCount,
-  hasSealedTerms = false
+  hasSealedTerms = false,
+  loadMoreRef,
+  isFetchingMore,
+  hasMore,
 }) {
   
   // Memoized unique current class streams array
@@ -139,23 +142,35 @@ export function HODVaultView({
               <div className="text-right">Action</div>
             </div>
 
-            {/* Pure Grid Rows Container */}
-            <div className="divide-y divide-border">
-              {filteredStudents.length === 0 ? (
-                <div className="px-8 py-16">
-                  <EmptyState context="students" variant="compact" />
-                </div>
-              ) : (
-                filteredStudents.map(student => (
-                  <HODArchiveStudentRow 
-                    key={student.id} 
-                    student={student} 
-                    onClick={onStudentSelect}
-                    layoutClass={rowGridStructure} // Injected style synchronization token
-                  />
-                ))
-              )}
-            </div>
+             {/* Pure Grid Rows Container */}
+             <div className="divide-y divide-border">
+               {filteredStudents.length === 0 ? (
+                 <div className="px-8 py-16">
+                   <EmptyState context="students" variant="compact" />
+                 </div>
+               ) : (
+                 filteredStudents.map(student => (
+                   <HODArchiveStudentRow 
+                     key={student.id} 
+                     student={student} 
+                     onClick={onStudentSelect}
+                     layoutClass={rowGridStructure} // Injected style synchronization token
+                   />
+                 ))
+               )}
+               <div ref={loadMoreRef} className="py-4 flex justify-center">
+                 {isFetchingMore && (
+                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                     <RefreshCw size={12} className="animate-spin" /> Loading more...
+                   </div>
+                 )}
+                 {!hasMore && filteredStudents.length > 0 && (
+                   <span className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wider">
+                     All records loaded
+                   </span>
+                 )}
+               </div>
+             </div>
 
           </div>
         </div>

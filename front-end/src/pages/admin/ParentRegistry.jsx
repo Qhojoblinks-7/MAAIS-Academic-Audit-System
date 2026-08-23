@@ -203,7 +203,7 @@ export const ParentRegistry = () => {
 
   const parents = React.useMemo(() => {
     const pages = parentPages?.pages || [];
-    return pages.flat();
+    return pages.flat().filter(p => p && typeof p === 'object' && p.name);
   }, [parentPages]);
 
   const totalParentCount = parents.length;
@@ -247,9 +247,9 @@ export const ParentRegistry = () => {
 
   const filteredParents = useMemo(() => {
     return parents.filter(p => 
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.phone.includes(searchQuery) ||
-      p.wards.some(w => w.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.phone || '').includes(searchQuery) ||
+      (p.wards || []).some(w => (w.name || '').toLowerCase().includes(searchQuery.toLowerCase()))
     );
   }, [parents, searchQuery]);
 

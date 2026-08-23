@@ -162,8 +162,8 @@ export function useAllParents() {
 
 export function usePaginatedParents() {
   return useInfiniteQuery({
-    queryKey: ['admin', 'parents', 'paginated'],
-    queryFn: ({ pageParam = 0 }) => adminApi.getAllParents(PAGE_SIZE, pageParam),
+    queryKey: ['admin', 'parents', 'paginated', 'v2'],
+    queryFn: ({ pageParam = 0 }) => adminApi.getAllParents(PAGE_SIZE, pageParam).then((res) => res?.data ?? res),
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
       if (!Array.isArray(lastPage) || lastPage.length < PAGE_SIZE) return undefined;
@@ -519,10 +519,10 @@ export function useUnreadNotifications() {
   });
 }
 
-export function useAnalyticsPulse() {
+export function useAnalyticsPulse({ academicYearId, termId, level } = {}) {
   return useQuery({
-    queryKey: ['admin', 'comms', 'pulse'],
-    queryFn: () => adminApi.getAnalyticsPulse(),
+    queryKey: ['admin', 'comms', 'pulse', academicYearId, termId, level],
+    queryFn: () => adminApi.getAnalyticsPulse(academicYearId, termId, level),
     staleTime: 1000 * 60 * 5,
   });
 }

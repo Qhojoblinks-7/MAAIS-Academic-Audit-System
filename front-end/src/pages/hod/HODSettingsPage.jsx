@@ -114,11 +114,11 @@ export function HODSettingsPage() {
     }
   }, [hodSettings]);
 
-  // Handle baseline initial ingestion loops safely
-  useEffect(() => {
-    if (typeof refreshSettings === 'function') refreshSettings();
-    if (typeof refreshActiveSessions === 'function') refreshActiveSessions();
-  }, []);
+   // Handle baseline initial ingestion loops safely
+   useEffect(() => {
+     if (typeof refreshSettings === 'function') refreshSettings();
+     if (typeof refreshActiveSessions === 'function') refreshActiveSessions();
+   }, [refreshSettings, refreshActiveSessions]);
 
   useEffect(() => {
     const tabLabel = TABS.find(t => t.id === activeTab)?.label || activeTab;

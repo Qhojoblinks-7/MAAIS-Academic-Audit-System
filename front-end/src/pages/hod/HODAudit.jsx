@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { 
    RefreshCw, Search, Filter, ShieldCheck, History, 
    Bookmark, Trash2, ChevronDown, X 
@@ -120,12 +120,67 @@ const FilterSelect = ({ label, value, onChange, options, allLabel }) => (
 );
 
 export function HODAudit() {
-   const { auditLogs = [], isLoading, refreshAuditLogs, addHODComment } = useHOD();
+   const { auditLogs = [], setAuditLogs, isLoading, refreshAuditLogs, addHODComment } = useHOD();
    const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
 
+   const PAGE_SIZE = 50;
+   const [currentPage, setCurrentPage] = useState(1);
+   const [totalPages, setTotalPages] = useState(0);
+   const [totalLogs, setTotalLogs] = useState(0);
+   const [hasMore, setHasMore] = useState(true);
+   const [isFetchingMore, setIsFetchingMore] = useState(false);
+   const loadMoreRef = useRef(null);
+
+   const fetchAuditLogs = useCallback(async (page = 1, append = false) => {
+     try {
+       if (page === 1) {
+         setIsLoading(true);
+       } else {
+         setIsFetchingMore(true);
+       }
+       const result = await refreshAuditLogs({ page, limit: PAGE_SIZE });
+       const data = result?.data || [];
+       const total = result?.total || data.length;
+       const pages = result?.pages || Math.ceil(total / PAGE_SIZE);
+
+       if (append) {
+         setAuditLogs(prev => [...prev, ...data]);
+       } else {
+         setAuditLogs(data);
+       }
+       setCurrentPage(page);
+       setTotalPages(pages);
+       setTotalLogs(total);
+       setHasMore(page < pages);
+     } catch (error) {
+       console.error('[HODAudit] failed to load audit logs:', error);
+       if (!append) {
+         setAuditLogs([]);
+       }
+       setHasMore(false);
+     } finally {
+       setIsLoading(false);
+       setIsFetchingMore(false);
+     }
+   }, [refreshAuditLogs, setAuditLogs]);
+
    useEffect(() => {
-      refreshAuditLogs?.();
-   }, []);
+     fetchAuditLogs(1, false);
+   }, [fetchAuditLogs]);
+
+   useEffect(() => {
+     const observer = new IntersectionObserver(
+       (entries) => {
+         if (entries[0].isIntersecting && hasMore && !isFetchingMore && !isLoading) {
+           fetchAuditLogs(currentPage + 1, true);
+         }
+       },
+       { threshold: 0.1 }
+     );
+     const current = loadMoreRef.current;
+     if (current) observer.observe(current);
+     return () => { if (current) observer.unobserve(current); };
+   }, [hasMore, isFetchingMore, isLoading, currentPage, fetchAuditLogs]);
 
    const {
       filters, updateFilter, savedFilterName, setSavedFilterName,
@@ -163,10 +218,10 @@ export function HODAudit() {
                               className="w-full pl-9 h-9 text-xs font-medium bg-slate-50 border-slate-200 focus-visible:ring-indigo-500/10 placeholder:text-slate-400"
                            />
                         </div>
-                        <Button
-                           onClick={refreshAuditLogs}
-                           disabled={isLoading}
-                           variant="outline"
+                         <Button
+                            onClick={() => fetchAuditLogs(1, false)}
+                            disabled={isLoading}
+                            variant="outline"
                            size="sm"
                            className="text-xs font-bold border-slate-200 bg-white hover:bg-slate-50 text-slate-700 h-9 rounded-xl shadow-xs gap-2 px-3.5"
                         >
@@ -179,13 +234,25 @@ export function HODAudit() {
                      </div>
                   </div>
 
-                  <div className="overflow-hidden">
-                     <AuditLogTimeline
-                        logs={filteredLogs}
-                        onAddComment={handleAddComment}
-                     />
-                  </div>
-               </div>
+                   <div className="overflow-hidden">
+                      <AuditLogTimeline
+                         logs={filteredLogs}
+                         onAddComment={handleAddComment}
+                      />
+                   </div>
+                   <div ref={loadMoreRef} className="py-4 flex justify-center">
+                     {isFetchingMore && (
+                       <div className="flex items-center gap-2 text-xs text-slate-500">
+                         <RefreshCw size={12} className="animate-spin" /> Loading more...
+                       </div>
+                     )}
+                     {!hasMore && filteredLogs.length > 0 && (
+                       <span className="text-[10px] uppercase font-mono font-bold text-slate-400 tracking-wider">
+                         End of audit trail — {totalLogs} total records
+                       </span>
+                     )}
+                   </div>
+                </div>
             </div>
 
             <div className={cn(

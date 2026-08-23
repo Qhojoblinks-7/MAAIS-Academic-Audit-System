@@ -115,11 +115,13 @@ export function BroadsheetGenerator() {
     }
   }, [refetch, archivedStudents, activeTab]);
 
+  const hasArchivedStudents = archivedStudents.length > 0;
+
   useEffect(() => {
-    if (!isLoading && archivedStudents.length > 0) {
+    if (!isLoading && hasArchivedStudents) {
       generateBroadSheet();
     }
-  }, [isLoading, archivedStudents.length > 0, generateBroadSheet]);
+  }, [isLoading, hasArchivedStudents, generateBroadSheet]);
 
   const systemMetrics = useMemo(() => {
     if (!broadsheetData.length) return { totalStudents: 0, globalAvgGpa: '0.00', topClass: 'N/A' };

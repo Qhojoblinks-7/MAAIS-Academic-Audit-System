@@ -6,7 +6,7 @@ import { useRole } from '../../context/RoleContext';
 import { useUI } from '../../context/UIContext';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Percent, GraduationCap, Layers, AlertTriangle, CheckCircle2, Clock, RefreshCw } from 'lucide-react';
-import { teacherService } from '../../services';
+import { useTeacherClasses } from '../../lib/hooks/api/teacher';
 
 export function TeacherDashboard() {
   const { user } = useRole();
@@ -15,26 +15,13 @@ export function TeacherDashboard() {
 
   const [rolloverBannerVisible, setRolloverBannerVisible] = React.useState(false);
   const [rolloverChanges, setRolloverChanges] = React.useState([]);
-  const [teacherClasses, setTeacherClasses] = React.useState([]);
 
   const teacherId = user?.profileId || user?.id;
   const staffProfileId = user?.profileId;
   const ROLLOVER_STORAGE_KEY = `maais_rollover_subjects.${teacherId}`;
   const SESSION_SEEN_KEY = `maais_seen_rollover.${teacherId}`;
 
-  const fetchBackendClasses = async () => {
-    if (!staffProfileId) {
-      return [];
-    }
-    return teacherService.getClasses(staffProfileId);
-  };
-
-  React.useEffect(() => {
-    if (!teacherId) return;
-    fetchBackendClasses()
-      .then(setTeacherClasses)
-      .catch((err) => console.error('[TeacherDashboard] failed to load classes:', err));
-  }, [teacherId]);
+  const { data: teacherClasses = [], isLoading: classesLoading } = useTeacherClasses(teacherId);
 
   React.useEffect(() => {
     if (!teacherId || !teacherClasses || teacherClasses.length === 0) return;

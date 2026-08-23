@@ -177,7 +177,7 @@ function normalizeObservationPayload(observation) {
   };
 }
 
-const DEFAULT_TIMEOUT = 8000;
+const DEFAULT_TIMEOUT = 15000;
 const BULK_TIMEOUT = 30000;
 const MAX_RETRIES = 2;
 const RETRYABLE_STATUS = new Set([408, 429, 500, 502, 503, 504]);
@@ -277,7 +277,7 @@ function createRealService() {
       params.set('page', String(page));
       params.set('limit', String(limit));
       return request('GET', `/teacher/missing-observations?${params.toString()}`).then((r) => {
-        const result = r?.data ?? r ?? {};
+        const result = r ?? {};
         return (result && typeof result === 'object' && !Array.isArray(result) && Array.isArray(result.data))
           ? result
           : { data: [], total: 0, page, limit, pages: 0 };
@@ -288,7 +288,7 @@ function createRealService() {
       params.set('page', String(page));
       params.set('limit', String(limit));
       return request('GET', `/teacher/observations?${params.toString()}`).then((r) => {
-        const result = r?.data ?? r ?? {};
+        const result = r ?? {};
         return (result && typeof result === 'object' && !Array.isArray(result) && Array.isArray(result.data))
           ? result
           : { data: [], total: 0, page, limit, pages: 0 };
@@ -425,12 +425,20 @@ function createRealService() {
           }));
         });
     },
-    getStudents: (query = '') => {
-      console.log(`[TeacherService] getStudents called with query: ${query || ''}`);
-      return request('GET', `/teacher/students${query ? `?search=${encodeURIComponent(query)}` : ''}`, undefined, BULK_TIMEOUT)
-        .then((res) => {
-          const data = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
-          return data.map((s) => ({
+    getStudents: (query = '', page = 1, limit = 50) => {
+      const params = new URLSearchParams();
+      if (query) params.set('search', query);
+      params.set('page', String(page));
+      params.set('limit', String(limit));
+      return request('GET', `/teacher/students?${params.toString()}`, undefined, BULK_TIMEOUT).then((res) => {
+        const result = res ?? {};
+        return (result && typeof result === 'object' && !Array.isArray(result) && Array.isArray(result.data))
+          ? result
+          : { data: [], total: 0, page, limit, pages: 0 };
+      }).then((result) => {
+        const data = Array.isArray(result.data) ? result.data : [];
+        return {
+          data: data.map((s) => ({
             id: s.id,
             name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.indexNumber || s.id,
             email: s.user?.email || '',
@@ -443,8 +451,13 @@ function createRealService() {
             grades: s.grades || [],
             parentLinks: s.parentLinks || [],
             type: 'student',
-          }));
-        });
+          })),
+          total: result.total ?? 0,
+          page: result.page ?? page,
+          limit: result.limit ?? limit,
+          pages: result.pages ?? 0,
+        };
+      });
     },
   };
 }

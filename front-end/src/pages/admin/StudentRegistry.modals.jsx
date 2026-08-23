@@ -288,10 +288,41 @@ const StudentRegistryModals = ({ registry }) => {
                          <option value="">Select Class</option>
                          {classes.map(c => <option key={c.id} value={c.id}>{c.name} ({c.level})</option>)}
                        </select>
-                     </div>
+                      </div>
+                    </div>
+                   <div className="border-t border-border pt-4 mt-2">
+                     <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-3">Parent / Guardian (optional)</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Parent First Name</label>
+                        <input value={newStudent.parentFirstName} onChange={(e) => setNewStudent({...newStudent, parentFirstName: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold" placeholder="First name" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Parent Last Name</label>
+                        <input value={newStudent.parentLastName} onChange={(e) => setNewStudent({...newStudent, parentLastName: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold" placeholder="Last name" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mt-3">
+                      <div>
+                        <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Parent Phone</label>
+                        <input value={newStudent.parentPhone} onChange={(e) => setNewStudent({...newStudent, parentPhone: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold" placeholder="+233 24 000 0000" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Relationship</label>
+                        <select value={newStudent.parentRelationship} onChange={(e) => setNewStudent({...newStudent, parentRelationship: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold">
+                          <option value="Guardian">Guardian</option>
+                          <option value="Father">Father</option>
+                          <option value="Mother">Mother</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 block">Parent Email</label>
+                      <input value={newStudent.parentEmail} onChange={(e) => setNewStudent({...newStudent, parentEmail: e.target.value})} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-[12px] font-bold" placeholder="parent@example.com" />
+                    </div>
+                  </div>
                    </div>
-                 </div>
-                  <p className="text-[10px] text-text-secondary mt-4 mb-4">A temporary password will be generated and the student will be prompted to change it on first login.</p>
+                    <p className="text-[10px] text-text-secondary mt-4 mb-4">A temporary password will be generated and the student will be prompted to change it on first login.</p>
                  <div className="flex gap-4">
                    <button onClick={() => setShowCreateForm(false)} className="flex-1 py-4 bg-muted rounded-[2rem] text-[11px] font-black uppercase tracking-widest">Cancel</button>
                     <button onClick={handleCreateStudent} disabled={creatingStudent || !newStudent.firstName} className={cn("flex-1 py-4 rounded-[2rem] text-[11px] font-black uppercase tracking-widest", creatingStudent || !newStudent.firstName ? "bg-muted text-text-secondary cursor-not-allowed" : "bg-brand-primary text-primary-foreground")}>

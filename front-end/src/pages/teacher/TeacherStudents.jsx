@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, Search, RefreshCw, X, Mail, BookOpen,
-  UserCheck
+  UserCheck, Loader2
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useRole } from '../../context/RoleContext';
@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { LoadingSpinner } from '../../components/molecules';
+
+const PAGE_SIZE = 50;
 
 function StudentCard({ student, onClick }) {
   if (!student) return null;
@@ -170,30 +172,76 @@ export function TeacherStudents() {
   const { user } = useRole();
   const [students, setStudents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
 
-  const fetchStudents = async () => {
+  // Intersection Observer for infinite scroll
+  const loadMoreRef = useRef(null);
+
+  const fetchStudents = useCallback(async (page = 1, append = false) => {
     try {
-      const data = await teacherService.getStudents(searchQuery);
-      setStudents(Array.isArray(data) ? data : []);
+      if (page === 1) {
+        setIsLoading(true);
+      } else {
+        setIsFetchingMore(true);
+      }
+      console.log('[TeacherStudents] Fetching page', page, 'search:', searchQuery);
+      const result = await teacherService.getStudents(searchQuery, page, PAGE_SIZE);
+      console.log('[TeacherStudents] Result:', { total: result?.total, dataLen: result?.data?.length, page: result?.page, pages: result?.pages });
+      const data = result.data || [];
+      
+      if (append) {
+        setStudents(prev => [...prev, ...data]);
+      } else {
+        setStudents(data);
+      }
+      
+      setCurrentPage(result.page || page);
+      setTotalPages(result.pages || 0);
+      setTotalStudents(result.total || 0);
+      setHasMore((result.page || page) < (result.pages || 0));
     } catch (error) {
       console.error('[TeacherStudents] failed to load students:', error);
-      setStudents([]);
+      if (!append) {
+        setStudents([]);
+      }
+      setHasMore(false);
     } finally {
       setIsLoading(false);
+      setIsFetchingMore(false);
     }
-  };
+  }, [searchQuery]);
 
+  // Initial fetch and search
   useEffect(() => {
-    fetchStudents();
-  }, []);
+    fetchStudents(1, false);
+  }, [fetchStudents]);
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isFetchingMore && !isLoading) {
+          fetchStudents(currentPage + 1, true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    const current = loadMoreRef.current;
+    if (current) observer.observe(current);
+    return () => { if (current) observer.unobserve(current); };
+  }, [hasMore, isFetchingMore, isLoading, currentPage, fetchStudents]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await fetchStudents();
+      await fetchStudents(1, false);
     } catch (error) {
       console.error('[TeacherStudents] refresh failed:', error);
     } finally {
@@ -219,7 +267,7 @@ export function TeacherStudents() {
         <div className="flex flex-row items-center justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-lg font-bold text-slate-900 tracking-tight truncate">Student Directory</h1>
-            <p className="text-xs text-slate-500 font-medium mt-0.5 truncate">Students enrolled in your assigned classes</p>
+            <p className="text-xs text-slate-500 font-medium mt-0.5 truncate">{totalStudents > 0 ? `${totalStudents} Students` : 'Students enrolled in your assigned classes'}</p>
           </div>
           <Button
             onClick={handleRefresh}
@@ -280,6 +328,21 @@ export function TeacherStudents() {
             </p>
           </div>
         )}
+
+        {/* Infinite scroll trigger */}
+        <div ref={loadMoreRef} className="py-6 flex justify-center">
+          {isFetchingMore && (
+            <div className="flex items-center gap-2 text-slate-500">
+              <Loader2 size={16} className="animate-spin" />
+              <span className="text-xs font-bold">Loading more students...</span>
+            </div>
+          )}
+          {!hasMore && students.length > 0 && (
+            <span className="text-xs font-bold text-slate-400">
+              All {totalStudents} students loaded
+            </span>
+          )}
+        </div>
       </main>
 
       <StudentDetailPanel

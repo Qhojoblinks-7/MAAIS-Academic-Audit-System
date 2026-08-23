@@ -16,15 +16,17 @@ export function useHODDataRefresh({
   const isHodRef = useRef(isHod);
   useEffect(() => { isHodRef.current = isHod; }, [isHod]);
 
-  const refreshAuditLogs = useCallback(async () => {
+  const refreshAuditLogs = useCallback(async (params = {}) => {
     if (!isHodRef.current) return;
     setIsLoading(true);
     setError(null);
     try {
-      const data = await hodService.getAuditLogs();
-      setAuditLogs(Array.isArray(data) ? data : []);
+      const data = await hodService.getAuditLogs(params);
+      setAuditLogs(Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []));
+      return data;
     } catch (e) {
       setError(e?.message || 'Failed to refresh logs');
+      return null;
     } finally {
       setIsLoading(false);
     }
@@ -34,9 +36,11 @@ export function useHODDataRefresh({
     if (!isHodRef.current) return;
     try {
       const data = await hodService.getInterventionAlerts(filters);
-      setInterventionAlerts(Array.isArray(data) ? data : []);
+      setInterventionAlerts(Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []));
+      return data;
     } catch (e) {
       console.warn('[HODContext] intervention-alerts fetch failed:', e);
+      return null;
     }
   }, [setInterventionAlerts]);
 
@@ -98,15 +102,11 @@ export function useHODDataRefresh({
     }
   }, [setLockedTerms]);
 
-  const refreshArchivedClasses = useCallback(async () => {
+  const refreshArchivedClasses = useCallback(async (params = {}) => {
     if (!isHodRef.current) return [];
     try {
-      const data = await hodService.getArchivedDepartmentData({
-        year: undefined,
-        search: undefined,
-        status: undefined,
-      });
-      setArchivedClasses(Array.isArray(data) ? data : []);
+      const data = await hodService.getArchivedDepartmentData(params);
+      setArchivedClasses(Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []));
       return data;
     } catch (e) {
       console.warn('[HODContext] archived-classes fetch failed:', e);
@@ -182,13 +182,15 @@ export function useHODDataRefresh({
     return result;
   }, [setActiveSessions]);
 
-  const refreshSupportTickets = useCallback(async () => {
+  const refreshSupportTickets = useCallback(async (params = {}) => {
     if (!isHodRef.current) return;
     try {
-      const data = await hodService.getSupportTickets();
-      setSupportTickets(Array.isArray(data?.tickets ?? data) ? (data?.tickets ?? data) : []);
+      const data = await hodService.getSupportTickets(params);
+      setSupportTickets(Array.isArray(data?.tickets) ? data.tickets : (Array.isArray(data) ? data : []));
+      return data;
     } catch (e) {
       console.warn('[HODContext] support tickets fetch failed:', e);
+      return null;
     }
   }, [setSupportTickets]);
 

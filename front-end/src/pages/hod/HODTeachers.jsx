@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, Search, RefreshCw, Eye, Key, AlertTriangle, 
@@ -22,6 +22,7 @@ import {
   SelectValue
 } from '../../components/ui/select';
 import { useAssignTeacher, useAllSubjects, useAllClasses, useAcademicYears } from '../../lib/hooks';
+import { hodService } from '../../services/hodService';
 
 // ==========================================
 // COMPONENT: SLIDE-OVER DETAIL PROFILE PANEL
@@ -134,7 +135,7 @@ function TeacherProfileDetails({ teacher, onClose, onImpersonate, onResetPasswor
 export function HODTeachers() {
   const {
     departmentTeachers = [],
-    refreshDepartmentTeachers,
+    setDepartmentTeachers,
     resetTeacherPasswordAction,
     impersonateTeacherAction,
     viewAsTeacherId,
@@ -145,6 +146,14 @@ export function HODTeachers() {
   useEffect(() => {
     auditTrail.setUseHodApi(true);
   }, []);
+
+  const PAGE_SIZE = 20;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalTeachers, setTotalTeachers] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const loadMoreRef = useRef(null);
 
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -162,22 +171,68 @@ export function HODTeachers() {
   const { data: classes = [] } = useAllClasses();
   const { data: academicYears = [] } = useAcademicYears();
 
+  const fetchTeachers = useCallback(async (page = 1, append = false) => {
+    try {
+      if (page === 1) {
+        setIsLoading(true);
+      } else {
+        setIsFetchingMore(true);
+      }
+      const result = await hodService.getDepartmentTeachers({ search: searchQuery, page, limit: PAGE_SIZE });
+      const data = result.data || result || [];
+      const items = Array.isArray(data) ? data : (data.items || []);
+      const total = data.total || items.length;
+      const pages = data.pages || Math.ceil(total / PAGE_SIZE);
+
+      if (append) {
+        setDepartmentTeachers(prev => [...prev, ...items]);
+      } else {
+        setDepartmentTeachers(items);
+      }
+      setCurrentPage(page);
+      setTotalPages(pages);
+      setTotalTeachers(total);
+      setHasMore(page < pages);
+    } catch (error) {
+      console.error('[HODTeachers] failed to load teachers:', error);
+      if (!append) {
+        setDepartmentTeachers([]);
+      }
+      setHasMore(false);
+    } finally {
+      setIsLoading(false);
+      setIsFetchingMore(false);
+    }
+  }, [searchQuery]);
+
+  useEffect(() => {
+    fetchTeachers(1, false);
+  }, [fetchTeachers]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isFetchingMore && !isLoading) {
+          fetchTeachers(currentPage + 1, true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    const current = loadMoreRef.current;
+    if (current) observer.observe(current);
+    return () => { if (current) observer.unobserve(current); };
+  }, [hasMore, isFetchingMore, isLoading, currentPage, fetchTeachers]);
+
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      if (typeof refreshDepartmentTeachers === 'function') {
-        await refreshDepartmentTeachers();
-      }
+      await fetchTeachers(1, false);
     } catch (error) {
       console.error("Failed synchronizing department teachers matrix:", error);
     } finally {
       setRefreshing(false);
     }
   };
-
-  useEffect(() => {
-    refreshDepartmentTeachers();
-  }, [refreshDepartmentTeachers]);
 
   const filteredTeachers = useMemo(() => {
     const list = Array.isArray(departmentTeachers) ? departmentTeachers : [];
@@ -407,6 +462,18 @@ export function HODTeachers() {
                 </div>
               </Card>
             ))}
+           <div ref={loadMoreRef} className="py-4 flex justify-center">
+             {isFetchingMore && (
+               <div className="flex items-center gap-2 text-xs text-slate-500">
+                 <RefreshCw size={12} className="animate-spin" /> Loading more...
+               </div>
+             )}
+             {!hasMore && filteredTeachers.length > 0 && (
+               <span className="text-[10px] uppercase font-mono font-bold text-slate-400 tracking-wider">
+                 End of directory — {totalTeachers} total
+               </span>
+             )}
+           </div>
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-slate-200/80 p-20 text-center shadow-3xs flex flex-col items-center justify-center">

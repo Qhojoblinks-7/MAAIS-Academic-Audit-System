@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { NotificationBell } from '../../components/shared/NotificationBell';
 import { useTeacherSubjectConfig, useActiveYear } from '../../lib/hooks';
+import { useTeacherClasses, useTeacherGradingStatusMeta, useTeacherGradingStudents } from '../../lib/hooks/api/teacher';
 import { SUBJECT_CONFIG } from '../../constants/subjectConfig';
 import { formatFormNumber } from '../../lib/types';
 
@@ -19,14 +20,66 @@ export function TeacherGradingView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClassFilter, setSelectedClassFilter] = useState('');
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState('');
-  const [gradingClasses, setGradingClasses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [selectedClass, setSelectedClass] = useState(null);
   const [selectedSubject, setSelectedSubject] = useState('');
-  const [gradingStudents, setGradingStudents] = useState([]);
-  const [statusMeta, setStatusMeta] = useState({});
-  const [dynamicSubjectConfig, setDynamicSubjectConfig] = useState({});
+
+  const subjectParam = selectedClass?.subject || selectedSubject;
+  const classNameParam = selectedClass?.className || '';
+  const gradingStudentsQuery = useTeacherGradingStudents(subjectParam, classNameParam);
+  const gradingStudents = gradingStudentsQuery.data || [];
+
+  const teacherId = user?.profileId || user?.id;
+
+  const classesQuery = useTeacherClasses(teacherId);
+  const metaQuery = useTeacherGradingStatusMeta();
+  const subjectConfigQuery = useTeacherSubjectConfig();
+
+  const isLoading = classesQuery.isLoading || metaQuery.isLoading || subjectConfigQuery.isLoading;
+
+  const gradingClasses = classesQuery.data || [];
+  const meta = metaQuery.data || {};
+  const subjectConfig = subjectConfigQuery.data || [];
+
+  const configMap = useMemo(() => {
+    const map = {};
+    if (Array.isArray(subjectConfig)) {
+      subjectConfig.forEach((s) => {
+        if (!map[s.name]) {
+          map[s.name] = {
+            sections: s.type === 'CORE' ? ['Sec A (40)', 'Sec B (60)'] : ['Practical (40)', 'Theory (60)'],
+            maxRaw: 100,
+            sectionCount: 2,
+            hasPractical: s.type === 'ELECTIVE',
+            practicalMarks: 0,
+            sbaLabel: 'SBA (30%)',
+            examLabel: 'Exam (70%)',
+          };
+        }
+      });
+    }
+    return map;
+  }, [subjectConfig]);
+
+  const statusMeta = useMemo(() => {
+    const map = {};
+    const statusColors = (meta?.colors) || {
+      COMPLETE: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      'IN PROGRESS': 'bg-blue-50 text-blue-700 border-blue-200',
+      'NOT STARTED': 'bg-amber-50 text-amber-700 border-amber-200',
+    };
+    const statusDots = {
+      COMPLETE: 'bg-emerald-500',
+      'IN PROGRESS': 'bg-blue-500',
+      'NOT STARTED': 'bg-amber-500',
+    };
+    ['COMPLETE', 'IN PROGRESS', 'NOT STARTED'].forEach((s) => {
+      const color = statusColors[s] || 'bg-muted text-muted-foreground border-border';
+      map[s] = { badge: color, dot: statusDots[s] || 'bg-muted' };
+    });
+    return map;
+  }, [meta]);
+
+  const dynamicSubjectConfig = configMap;
 
   const activeYearQuery = useActiveYear();
   const activeTerm = activeYearQuery.data?.terms?.find(t => t.isActive);
@@ -38,65 +91,6 @@ export function TeacherGradingView() {
     }, 180000);
     return () => clearInterval(interval);
   }, [activeYearQuery]);
-
-  useEffect(() => {
-    const fetchClasses = async () => {
-      if (!user?.id) {
-        setLoading(false);
-        return;
-      }
-      try {
-         const classes = await teacherService.getClasses(user.profileId || user.id);
-         const meta = await teacherService.getGradingStatusMeta();
-         const subjectConfig = await teacherService.getSubjectConfig().catch(() => []);
-
-        const configMap = {};
-        if (Array.isArray(subjectConfig)) {
-          subjectConfig.forEach((s) => {
-            if (!configMap[s.name]) {
-              configMap[s.name] = {
-                sections: s.type === 'CORE' ? ['Sec A (40)', 'Sec B (60)'] : ['Practical (40)', 'Theory (60)'],
-                maxRaw: 100,
-                sectionCount: 2,
-                hasPractical: s.type === 'ELECTIVE',
-                practicalMarks: 0,
-                sbaLabel: 'SBA (30%)',
-                examLabel: 'Exam (70%)',
-              };
-            }
-          });
-        }
-
-        const statusMetaMap = {};
-        const statusColors = (meta?.colors) || {
-          COMPLETE: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-          'IN PROGRESS': 'bg-blue-50 text-blue-700 border-blue-200',
-          'NOT STARTED': 'bg-amber-50 text-amber-700 border-amber-200',
-        };
-        const statusDots = {
-          COMPLETE: 'bg-emerald-500',
-          'IN PROGRESS': 'bg-blue-500',
-          'NOT STARTED': 'bg-amber-500',
-        };
-        ['COMPLETE', 'IN PROGRESS', 'NOT STARTED'].forEach((s) => {
-          const color = statusColors[s] || 'bg-muted text-muted-foreground border-border';
-          statusMetaMap[s] = { badge: color, dot: statusDots[s] || 'bg-muted' };
-        });
-
-        setGradingClasses(classes || []);
-        setStatusMeta(statusMetaMap);
-        console.log('[TeacherGradingView] Dynamic subject configs loaded:', Object.keys(configMap).length, configMap);
-      } catch (err) {
-        setError('Failed to load grading data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchClasses();
-  }, [user?.id, user?.profileId]);
-
-  const subjectConfig = useMemo(() => ({ ...SUBJECT_CONFIG, ...dynamicSubjectConfig }), [dynamicSubjectConfig]);
 
   const uniqueClasses = useMemo(() => {
     if (!Array.isArray(gradingClasses)) return [];
@@ -151,43 +145,34 @@ export function TeacherGradingView() {
   ];
 
   /* ── Class selection: no route change, just state ── */
-  const fetchGradingStudents = useCallback(async (subject, className) => {
-    const students = await teacherService.getGradingStudents(subject || '', className || '');
-    setGradingStudents(students || []);
-  }, []);
-
   const handleSelectClass = useCallback(async (cls) => {
     if (!cls) {
       setSelectedClass(null);
-      setGradingStudents([]);
+      setSelectedSubject('');
       return;
     }
     setSelectedClass(cls);
     setSelectedSubject(cls.subject);
-    await fetchGradingStudents(cls.subject, cls.className);
-  }, [fetchGradingStudents]);
+  }, []);
 
   const handleSubjectChange = useCallback(async (e) => {
     const subject = e.target.value;
     setSelectedSubject(subject);
     if (!subject) {
       setSelectedClass(null);
-      setGradingStudents([]);
       return;
     }
     const firstMatch = gradingClasses.find(c => c.subject === subject);
     if (firstMatch) {
-      await fetchGradingStudents(firstMatch.subject, firstMatch.className);
       setSelectedClass(firstMatch);
     }
-  }, [gradingClasses, fetchGradingStudents]);
+  }, [gradingClasses]);
 
   const handleClassChange = useCallback(async (e) => {
     const classId = e.target.value;
     const cls = gradingClasses.find(c => c.id === classId);
     if (!cls) {
       setSelectedClass(null);
-      setGradingStudents([]);
       return;
     }
     await handleSelectClass(cls);
@@ -196,18 +181,17 @@ export function TeacherGradingView() {
   useEffect(() => {
     if (!selectedClass) return;
     const interval = setInterval(async () => {
-      const students = await teacherService.getGradingStudents(selectedClass.subject, selectedClass.className);
-      setGradingStudents(students || []);
+      await gradingStudentsQuery.refetch();
     }, 120000);
     return () => clearInterval(interval);
-  }, [selectedClass]);
+  }, [selectedClass, gradingStudentsQuery]);
 
   const handleCloseSheet = useCallback(() => {
     setSelectedClass(null);
     setGradingStudents([]);
   }, []);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex-1 overflow-y-auto bg-background p-6 md:p-8 lg:p-10">
         <div className="max-w-7xl mx-auto flex flex-col items-center justify-center py-24">
@@ -217,11 +201,12 @@ export function TeacherGradingView() {
     );
   }
 
-  if (error) {
+  if (classesQuery.isError || metaQuery.isError || subjectConfigQuery.isError) {
+    const errorMessage = classesQuery.error?.message || metaQuery.error?.message || subjectConfigQuery.error?.message || 'Failed to load grading data';
     return (
       <div className="flex-1 overflow-y-auto bg-background p-6 md:p-8 lg:p-10">
         <div className="max-w-7xl mx-auto flex flex-col items-center justify-center py-24">
-          <p className="text-sm text-destructive">{error}</p>
+          <p className="text-sm text-destructive">{errorMessage}</p>
         </div>
       </div>
     );

@@ -171,12 +171,12 @@ export function HODSupportPage() {
   const [escalateReason, setEscalateReason] = useState('');
   const [subTab, setSubTab] = useState('tickets');
 
-  useEffect(() => {
-    refreshSupportTickets();
-    refreshSystemHealth();
-    refreshEscalatedIssues();
-    refreshContactChannels();
-  }, []);
+   useEffect(() => {
+     refreshSupportTickets();
+     refreshSystemHealth();
+     refreshEscalatedIssues();
+     refreshContactChannels();
+   }, [refreshSupportTickets, refreshSystemHealth, refreshEscalatedIssues, refreshContactChannels]);
 
   const filteredTickets = useMemo(() => {
     let list = supportTickets;
