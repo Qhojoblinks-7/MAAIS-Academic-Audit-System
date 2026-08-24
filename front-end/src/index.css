@@ -3,8 +3,8 @@
  * Framework: Tailwind CSS v4.0 + Radix UI / shadcn/ui Animation Ecosystem
  */
 
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Great+Vibes&family=Montserrat:wght@400;500;600&display=swap');
+@import "tailwindcss";
 
 /* ==========================================================================
    CSS CUSTOM PROPERTY REGISTRATIONS (@property)

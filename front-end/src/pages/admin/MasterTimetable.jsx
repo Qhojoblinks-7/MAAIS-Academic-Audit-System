@@ -94,10 +94,10 @@ export const MasterTimetable = ({ initialClassId = '' }) => {
   const selectedClass = classOptions.find((c) => c.id === selectedClassId) || classOptions[0];
   const selectedClassName = selectedClass?.label || selectedClassLabel;
 
-  const timetableQuery = useTimetableEntries({ classId: selectedClassId, track: activeTrack });
+  const timetableQuery = useTimetableEntries(useMemo(() => ({ classId: selectedClassId }), [selectedClassId]));
   const timetableEntries = timetableQuery.data || [];
 
-  const assignmentsQuery = useClassAssignments(selectedClassId, activeTrack);
+  const assignmentsQuery = useClassAssignments(selectedClassId);
   const assignments = assignmentsQuery.data || [];
 
   const createMutation = useCreateTimetableEntry();

@@ -25,6 +25,101 @@ import { toast, Toaster } from '../../components/ui/toast.tsx';
 import { useAdminAuditLogs } from '../../lib/hooks/api/admin';
 import { useNavigate } from 'react-router-dom';
 
+const parseUserAgent = (userAgent) => {
+  if (!userAgent || userAgent === 'Internal') return { browser: 'Internal System', os: 'System Process', device: 'Server' };
+  
+  let browser = 'Unknown Browser';
+  let os = 'Unknown OS';
+  let device = 'Desktop';
+
+  // Detect browser
+  if (userAgent.includes('Firefox/')) browser = 'Firefox';
+  else if (userAgent.includes('Edg/')) browser = 'Edge';
+  else if (userAgent.includes('Chrome/')) browser = 'Chrome';
+  else if (userAgent.includes('Safari/') && !userAgent.includes('Chrome')) browser = 'Safari';
+  else if (userAgent.includes('Opera/') || userAgent.includes('OPR/')) browser = 'Opera';
+
+  // Detect OS
+  if (userAgent.includes('Windows NT 10.0')) os = 'Windows 10/11';
+  else if (userAgent.includes('Windows NT 6.3')) os = 'Windows 8.1';
+  else if (userAgent.includes('Windows NT 6.2')) os = 'Windows 8';
+  else if (userAgent.includes('Windows NT 6.1')) os = 'Windows 7';
+  else if (userAgent.includes('Mac OS X')) os = 'macOS';
+  else if (userAgent.includes('Linux') && !userAgent.includes('Android')) os = 'Linux';
+  else if (userAgent.includes('Android')) os = 'Android';
+  else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) os = 'iOS';
+
+  // Detect device type
+  if (userAgent.includes('Mobile')) device = 'Mobile Phone';
+  else if (userAgent.includes('Tablet') || userAgent.includes('iPad')) device = 'Tablet';
+
+  return { browser, os, device };
+};
+
+const getUserDisplayName = (log) => {
+  if (log.userName) return log.userName;
+  if (log.userEmail) {
+    const namePart = log.userEmail.split('@')[0];
+    return namePart.charAt(0).toUpperCase() + namePart.slice(1);
+  }
+  return 'System';
+};
+
+const getHumanReadableAction = (log) => {
+  const payload = log.metadata || {};
+  const action = log.action || '';
+  
+  switch (action) {
+    case 'CREATE':
+      return payload.studentName 
+        ? `Added new ${log.entity || 'record'} for ${payload.studentName}`
+        : `Created new ${log.entity || 'record'}`;
+    case 'UPDATE':
+      if (payload.oldValue && payload.newValue) {
+        return `Changed from "${payload.oldValue}" to "${payload.newValue}"`;
+      }
+      if (payload.fieldChanged) {
+        return `Updated ${payload.fieldChanged}`;
+      }
+      return `Modified ${log.entity || 'record'}`;
+    case 'DELETE':
+      return `Removed ${log.entity || 'record'}${payload.studentName ? ` for ${payload.studentName}` : ''}`;
+    case 'LOCK':
+      return `Locked ${log.entity || 'record'} to prevent changes`;
+    case 'UNLOCK':
+      return `Unlocked ${log.entity || 'record'} to allow changes`;
+    case 'UNFREEZE':
+      return `Unfrozen department: ${payload.departmentName || 'Unknown'}`;
+    case 'FREEZE':
+      return `Frozen department: ${payload.departmentName || 'Unknown'}`;
+    case 'GRADE_CORRECTION':
+      return `Corrected grade from ${payload.oldValue || '?'} to ${payload.newValue || '?'}`;
+    case 'PROMOTE':
+      return `Promoted student${payload.studentName ? ` ${payload.studentName}` : ''}`;
+    default:
+      return payload.reason || payload.action || `${action} operation`;
+  }
+};
+
+const formatMetadata = (log) => {
+  const payload = log.metadata || {};
+  const readable = [];
+  
+  if (payload.studentName) readable.push(`Student: ${payload.studentName}`);
+  if (payload.teacherName) readable.push(`Teacher: ${payload.teacherName}`);
+  if (payload.subjectName) readable.push(`Subject: ${payload.subjectName}`);
+  if (payload.departmentName) readable.push(`Department: ${payload.departmentName}`);
+  if (payload.reason) readable.push(`Reason: ${payload.reason}`);
+  if (payload.oldValue && payload.newValue) {
+    readable.push(`Changed: ${payload.oldValue} → ${payload.newValue}`);
+  }
+  if (payload.fromDepartmentName && payload.toDepartmentName) {
+    readable.push(`Transfer: ${payload.fromDepartmentName} → ${payload.toDepartmentName}`);
+  }
+  
+  return readable.length > 0 ? readable : ['No additional details available'];
+};
+
 const getSeverityStyle = (severity) => {
   switch (severity) {
     case 'CRITICAL': return 'bg-destructive/10 text-destructive border-destructive/20';
@@ -85,22 +180,27 @@ export const ExtendedLogsView = () => {
     if (auditLogsQuery.data?.logs) {
       return auditLogsQuery.data.logs.map((log) => {
         const payload = log.payload || {};
+        const userAgentInfo = parseUserAgent(log.userAgent);
         return {
           id: log.id,
           timestamp: log.createdAt || new Date().toISOString(),
           action: log.action || 'UPDATE',
           studentName: payload.studentName || payload.teacherName || payload.staffName || payload.departmentName || 'System',
-          subject: log.entity || 'N/A',
-          oldValue: payload.oldGrade || payload.fromDepartmentName || '',
-          newValue: payload.newGrade || payload.toDepartmentName || '',
+          subject: payload.subjectName || log.entity || 'N/A',
+          oldValue: payload.oldGrade || payload.oldValue || payload.fromDepartmentName || '',
+          newValue: payload.newGrade || payload.newValue || payload.toDepartmentName || '',
           justification: payload.reason || payload.action || '',
           userId: log.userEmail || log.userId,
+          userName: payload.userName || payload.actorName || null,
           userRole: log.userRole,
-          ipAddress: log.ipAddress || 'System',
+          ipAddress: log.ipAddress || 'Internal',
           userAgent: log.userAgent || 'Internal',
+          userAgentParsed: userAgentInfo,
           severity: log.action === 'DELETE' ? 'ERROR' : log.action === 'CREATE' ? 'INFO' : 'WARNING',
           category: log.action === 'CREATE' || log.action === 'UPDATE' || log.action === 'LOCK' || log.action === 'UNLOCK' || log.action === 'GRADE_CORRECTION' || log.action === 'PROMOTE' ? 'ACADEMIC' : 'SYSTEM',
           metadata: payload,
+          humanReadableAction: getHumanReadableAction({ action: log.action, entity: log.entity, metadata: payload }),
+          formattedMetadata: formatMetadata({ metadata: payload }),
         };
       });
     }
@@ -297,23 +397,24 @@ export const ExtendedLogsView = () => {
                         </div>
                       </div>
 
-                      {/* 3. Event Narrative */}
-                      <div className="col-span-4 pr-2">
-                        <p className="text-[13px] font-bold text-text-primary tracking-tight leading-snug lg:leading-none">
-                          {log.studentName} - {log.subject}
-                        </p>
-                      </div>
+                       {/* 3. Event Narrative */}
+                       <div className="col-span-4 pr-2">
+                         <p className="text-[13px] font-bold text-text-primary tracking-tight leading-snug lg:leading-none">
+                           {log.humanReadableAction}
+                         </p>
+                         <p className="text-[10px] font-bold text-text-secondary mt-0.5">{log.studentName}</p>
+                       </div>
 
-                      {/* 4. Actor & Expand Arrow Container */}
-                      <div className="col-span-2 flex items-center justify-between mt-1 lg:mt-0 pt-3 lg:pt-0 border-t border-border lg:border-none">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-6 h-6 bg-muted rounded-lg flex items-center justify-center shrink-0">
-                            <User size={12} className="text-text-secondary" />
-                          </div>
-                          <span className="text-[11px] font-black text-text-secondary truncate max-w-[180px] lg:max-w-[120px]">
-                            {log.userId}
-                          </span>
-                        </div>
+                       {/* 4. Actor & Expand Arrow Container */}
+                       <div className="col-span-2 flex items-center justify-between mt-1 lg:mt-0 pt-3 lg:pt-0 border-t border-border lg:border-none">
+                         <div className="flex items-center gap-2 min-w-0">
+                           <div className="w-6 h-6 bg-muted rounded-lg flex items-center justify-center shrink-0">
+                             <User size={12} className="text-text-secondary" />
+                           </div>
+                           <span className="text-[11px] font-black text-text-secondary truncate max-w-[180px] lg:max-w-[120px]">
+                             {getUserDisplayName(log)}
+                           </span>
+                         </div>
                         
                         <div className="pl-2">
                           {expandedLogId === log.id ? (
@@ -337,44 +438,52 @@ export const ExtendedLogsView = () => {
                         >
                           <div className="p-6 lg:p-8 border-t border-border grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
                             
-                            {/* Column 1: Source Identification */}
-                            <div className="space-y-3">
-                              <h4 className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Source Identification</h4>
-                              <div className="space-y-2 bg-surface p-4 rounded-2xl border border-border shadow-2xl shadow-brand-dark/40">
-                                <div className="flex items-center justify-between text-[11px] border-b border-dashed border-border pb-2">
-                                  <span className="font-bold text-text-secondary">IP Address</span>
-                                  <span className="font-black text-text-primary font-mono">{log.ipAddress}</span>
-                                </div>
-                                <div className="flex items-center justify-between text-[11px] border-b border-dashed border-border pb-2">
-                                  <span className="font-bold text-text-secondary">Identity ID</span>
-                                  <span className="font-black text-text-primary font-mono">{log.id}</span>
-                                </div>
-                                <div className="flex items-center justify-between text-[11px] pt-1">
-                                  <span className="font-bold text-text-secondary">Authentication</span>
-                                  <span className="px-2 py-0.5 bg-brand-primary/10 text-brand-primary rounded text-[9px] font-black tracking-widest border border-brand-primary">VERIFIED</span>
-                                </div>
-                              </div>
-                            </div>
+                             {/* Column 1: Source Identification */}
+                             <div className="space-y-3">
+                               <h4 className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Source Identification</h4>
+                               <div className="space-y-2 bg-surface p-4 rounded-2xl border border-border shadow-2xl shadow-brand-dark/40">
+                                 <div className="flex items-center justify-between text-[11px] border-b border-dashed border-border pb-2">
+                                   <span className="font-bold text-text-secondary">User</span>
+                                   <span className="font-black text-text-primary">{getUserDisplayName(log)}</span>
+                                 </div>
+                                 <div className="flex items-center justify-between text-[11px] border-b border-dashed border-border pb-2">
+                                   <span className="font-bold text-text-secondary">Email</span>
+                                   <span className="font-black text-text-primary font-mono text-[10px]">{log.userId}</span>
+                                 </div>
+                                 <div className="flex items-center justify-between text-[11px] border-b border-dashed border-border pb-2">
+                                   <span className="font-bold text-text-secondary">IP Address</span>
+                                   <span className="font-black text-text-primary font-mono">{log.ipAddress}</span>
+                                 </div>
+                                 <div className="flex items-center justify-between text-[11px] pt-1">
+                                   <span className="font-bold text-text-secondary">Authentication</span>
+                                   <span className="px-2 py-0.5 bg-brand-primary/10 text-brand-primary rounded text-[9px] font-black tracking-widest border border-brand-primary">VERIFIED</span>
+                                 </div>
+                               </div>
+                             </div>
 
-                            {/* Column 2: Proxy Context */}
-                            <div className="space-y-3">
-                              <h4 className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Hardware/Software Context</h4>
-                              <div className="p-4 bg-surface border border-border rounded-2xl h-[94px] flex items-start gap-3 shadow-2xl shadow-brand-dark/40">
-                                <Globe size={16} className="text-text-secondary mt-0.5 shrink-0" />
-                                <div className="min-w-0">
-                                  <p className="text-[11px] font-black text-text-primary leading-tight">User Agent Proxy</p>
-                                  <p className="text-[10px] font-bold text-text-secondary mt-1.5 leading-relaxed break-all font-mono line-clamp-2">{log.userAgent}</p>
-                                </div>
-                              </div>
-                            </div>
+                             {/* Column 2: Hardware/Software Context */}
+                             <div className="space-y-3">
+                               <h4 className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Hardware/Software Context</h4>
+                               <div className="p-4 bg-surface border border-border rounded-2xl h-[94px] flex items-start gap-3 shadow-2xl shadow-brand-dark/40">
+                                 <Globe size={16} className="text-text-secondary mt-0.5 shrink-0" />
+                                 <div className="min-w-0">
+                                   <p className="text-[11px] font-black text-text-primary leading-tight">{log.userAgentParsed.browser} on {log.userAgentParsed.os}</p>
+                                   <p className="text-[10px] font-bold text-text-secondary mt-1.5 leading-relaxed">{log.userAgentParsed.device}</p>
+                                 </div>
+                               </div>
+                             </div>
 
-                            {/* Column 3: Code Payload Payload */}
-                            <div className="space-y-3 md:col-span-2 lg:col-span-1">
-                              <h4 className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Event Meta-Payload</h4>
-                               <div className="bg-brand-dark text-brand-primary p-4 rounded-[1.25rem] font-mono text-[10px] overflow-x-auto shadow-xl max-h-[94px] scrollbar-hide">
-                                <pre className="whitespace-pre-wrap">{JSON.stringify(log.metadata, null, 2)}</pre>
-                              </div>
-                            </div>
+                             {/* Column 3: Event Details */}
+                             <div className="space-y-3 md:col-span-2 lg:col-span-1">
+                               <h4 className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Event Details</h4>
+                               <div className="bg-surface border border-border text-text-primary p-4 rounded-[1.25rem] text-[10px] overflow-x-auto shadow-xl max-h-[94px] scrollbar-hide">
+                                 <ul className="space-y-1">
+                                   {log.formattedMetadata.map((line, idx) => (
+                                     <li key={idx} className="leading-relaxed">{line}</li>
+                                   ))}
+                                 </ul>
+                               </div>
+                             </div>
 
                             {/* Action Row */}
                             <div className="md:col-span-2 lg:col-span-3 flex flex-col sm:flex-row justify-end gap-2.5 pt-2 border-t border-border">
