@@ -4,6 +4,7 @@
  */
 
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Great+Vibes&family=Montserrat:wght@400;500;600&display=swap');
 
 /* ==========================================================================
    CSS CUSTOM PROPERTY REGISTRATIONS (@property)
@@ -72,6 +73,9 @@
 
   /* 2. Responsive, Fluid Typography Mappings (Screen Size Aware) */
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Cinzel", serif;
+  --font-script: "Great Vibes", cursive;
+  --font-body: "Montserrat", sans-serif;
   
   --text-xs: clamp(0.7rem, 0.65rem + 0.25vw, 0.75rem);       /* ~11px - 12px | Table Headers & Metadata */
   --text-sm: clamp(0.815rem, 0.78rem + 0.3vw, 0.875rem);     /* ~13px - 14px | Table Content, Links & Inputs */
@@ -185,13 +189,13 @@
   --popover-foreground: hsl(156 42% 10%);
   
   /* Primary Identity System (Forest Green & Gold/Yellow Archetypes) */
-  --brand-primary: hsl(156 42% 18%);     /* Core Forest Green (#1A3F2F) */
+  --brand-primary: hsl(156 45% 32%);     /* Core Forest Green (#1A3F2F) */
   --brand-secondary: hsl(38 92% 56%);    /* Vibrant Academic Yellow/Gold (#F3A623) */
-  --brand-dark: hsl(156 45% 12%);        /* Sidebar / High-contrast layout anchor */
+  --brand-dark: hsl(156 45% 22%);        /* Sidebar / High-contrast layout anchor */
   --brand-charcoal: hsl(0 0% 13%);       /* Charcoal Black (#222222) */
 
   /* Standard shadcn semantic slots mapping directly to system layers */
-  --primary: hsl(156 42% 18%);
+  --primary: hsl(156 45% 32%);
   --primary-foreground: hsl(0 0% 100%);
   
   --secondary: hsl(38 92% 56%);
@@ -200,11 +204,11 @@
   --muted: hsl(140 10% 93%);
   --muted-foreground: hsl(156 14% 44%);
   
-  --accent: hsl(156 42% 18%);
+  --accent: hsl(156 45% 32%);
   --accent-foreground: hsl(0 0% 100%);
   
   /* Micro feedback mappings */
-  --success: hsl(142 72% 29%);           /* Structural operational success */
+  --success: hsl(142 76% 45%);           /* Structural operational success */
   --warning: hsl(38 92% 50%);            /* Notice states / Fees partials */
   --danger: hsl(0 72% 51%);              /* Missing / Inactive / Attendance failures */
   --destructive: hsl(0 72% 51%);
@@ -213,7 +217,7 @@
   /* Spatial mechanics */
   --border: hsl(140 14% 88%);
   --input: hsl(140 14% 88%);
-  --ring: hsl(156 42% 18%);
+  --ring: hsl(156 45% 32%);
   --radius: 0.5rem;                      /* Tight clean radius optimized for complex tables */
   
   /* Department Semantic Color Tokens */

@@ -66,10 +66,10 @@ const GradeSheetRow = React.memo(function GradeSheetRow({
     cursorClass
   );
 
-  const inputBaseClass = `w-16 px-1 py-1 text-center text-xs rounded border transition-all ${
+  const inputBaseClass = `w-16 px-1 py-1 text-center text-sm rounded transition-all ${
     isLocked
-      ? 'bg-muted text-muted-foreground cursor-not-allowed border-border'
-      : 'bg-transparent text-text-primary border-transparent focus:border-border focus:bg-surface focus:outline-none focus:ring-2 focus:ring-muted'
+      ? 'bg-muted text-muted-foreground cursor-not-allowed'
+      : 'bg-transparent text-text-primary focus:bg-surface focus:outline-none focus:ring-2 focus:ring-muted'
   }`;
 
   const handleStudentClick = () => {
@@ -99,7 +99,7 @@ const GradeSheetRow = React.memo(function GradeSheetRow({
       onClick={handleStudentClick}
     >
       {/* Student ID / Index Column */}
-      <TableCell className="px-4 py-3.5 text-xs font-semibold text-text-secondary border-r border-border">
+      <TableCell className="px-4 py-3.5 text-sm font-semibold text-text-secondary border-r border-border">
         <div className="flex items-center gap-2">
           {isAuditMissing && (
             <span className="w-1.5 h-1.5 bg-danger rounded-full animate-pulse" aria-hidden="true" />
@@ -167,7 +167,7 @@ const GradeSheetRow = React.memo(function GradeSheetRow({
           })}
 
           {/* Cumulative Section Component Raw Total Weight */}
-          <TableCell className="px-4 py-3.5 text-xs font-bold text-text-primary border-r border-border text-center bg-muted/40 w-24">
+          <TableCell className="px-4 py-3.5 text-sm font-bold text-text-primary border-r border-border text-center bg-muted/40 w-24">
             {rowTotal}
           </TableCell>
         </>
@@ -175,27 +175,27 @@ const GradeSheetRow = React.memo(function GradeSheetRow({
 
       {/* Aggregated Final Base Exam Summary Input */}
       <TableCell className="px-4 py-2 border-r border-border text-center w-36">
-        <input
-          type="number"
-          value={student.exam ?? ''}
-          disabled={isLocked}
-          readOnly={isLocked}
-          onBlur={handleExamBlur}
-          onChange={handleExamChange}
-          className={`w-16 px-1 py-1 text-center text-xs font-bold rounded border transition-all ${
-            isLocked
-              ? 'bg-muted text-muted-foreground cursor-not-allowed border-border'
-              : 'bg-transparent text-text-primary border-transparent focus:border-border focus:bg-surface focus:outline-none focus:ring-2 focus:ring-muted'
-          }`}
-        />
+          <input
+            type="number"
+            value={student.exam ?? ''}
+            disabled={isLocked}
+            readOnly={isLocked}
+            onBlur={handleExamBlur}
+            onChange={handleExamChange}
+            className={`w-16 px-1 py-1 text-center text-sm font-bold rounded transition-all ${
+              isLocked
+                ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                : 'bg-transparent text-text-primary focus:bg-surface focus:outline-none focus:ring-2 focus:ring-muted'
+            }`}
+          />
       </TableCell>
 
       {/* Calculated Structural Metrics Outlets */}
-      <TableCell className="px-4 py-3.5 text-xs font-bold text-text-primary border-r border-border text-center w-20 bg-muted/20">
+      <TableCell className="px-4 py-3.5 text-sm font-bold text-text-primary border-r border-border text-center w-20 bg-muted/20">
         {student.final}
       </TableCell>
 
-      <TableCell className="px-4 py-3.5 text-xs font-bold text-success border-r border-border text-center w-20 bg-success/10">
+      <TableCell className="px-4 py-3.5 text-sm font-bold text-success border-r border-border text-center w-20 bg-success/10">
         {student.grade}
       </TableCell>
 

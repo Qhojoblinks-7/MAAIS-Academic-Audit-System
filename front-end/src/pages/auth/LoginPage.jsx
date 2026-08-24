@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useRole } from '../../context/RoleContext';
-import { Shield, Eye, EyeOff, BookOpen, Users, BarChart3 } from 'lucide-react';
+import { Shield, Eye, EyeOff } from 'lucide-react';
 import { useUI } from '../../context/UIContext';
 import { setAuthToken } from '../../services/auth';
 
@@ -87,96 +87,78 @@ export function LoginPage() {
 
   return (
     <div className="flex h-screen bg-background font-sans antialiased">
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-brand-primary via-brand-primary to-brand-primary relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] opacity-30" />
-        <div className="relative z-10 flex flex-col justify-between p-12 text-white">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
-                <Shield size={28} className="text-white" />
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center h-full" style={{ background: 'linear-gradient(135deg, #022c22 0%, #0f766e 25%, #14b8a6 50%, #22c55e 75%, #bbf7d0 100%)' }}>
+        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, #a7f3d0 0%, transparent 50%), radial-gradient(circle at 80% 20%, #5eead4 0%, transparent 40%), radial-gradient(circle at 60% 80%, #38bdf8 0%, transparent 45%)' }}></div>
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
+        
+        <div className="absolute top-20 left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-20 w-80 h-80 bg-white/5 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/3 w-48 h-48 bg-white/5 rounded-full blur-2xl"></div>
+        
+        <div className="relative z-10 flex flex-col items-center justify-center p-12 text-white w-full">
+          <div className="flex flex-col items-center gap-12 w-full max-w-2xl">
+            <div className="flex items-center justify-center gap-4">
+              <div className="w-16 h-16 bg-white/20 rounded-3xl flex items-center justify-center backdrop-blur-md border border-white/20 shadow-lg">
+                <Shield size={32} className="text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-black tracking-tight">MAAIS</h1>
-                <p className="text-white/70 text-sm font-medium">Academic Audit System</p>
+                <h1 className="font-black tracking-tight text-white" style={{ fontSize: 'clamp(1.75rem, 1.2rem + 2vw, 3rem)' }}>MAAIS</h1>
+                <p className="text-white/80 font-medium" style={{ fontSize: 'clamp(0.875rem, 0.7rem + 0.4vw, 1.125rem)' }}>Academic Audit System</p>
               </div>
             </div>
+
+            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-10 border border-white/20 shadow-2xl max-w-lg w-full text-center">
+              <div className="flex flex-col items-center gap-8">
+                <div className="text-center w-full">
+                  <p className="text-white leading-relaxed italic" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.25rem, 0.9rem + 1vw, 2rem)' }}>
+                    Ndaamba Kunyimdzi Ntsi
+                  </p>
+                  <p className="text-white/70 mt-3" style={{ fontFamily: 'var(--font-body)', fontSize: 'clamp(0.875rem, 0.7rem + 0.4vw, 1.125rem)' }}>
+                    Together we build excellence
+                  </p>
+                </div>
+
+                <div className="w-full h-px bg-white/20"></div>
+
+                <p className="text-center w-full" style={{ fontFamily: 'var(--font-script)', fontSize: 'clamp(1.5rem, 1rem + 1.5vw, 2.5rem)' }}>
+                  Any good thing you have, show it now, Tomorrow may be too late!!!
+                </p>
+              </div>
+            </div>
+
+            <p className="text-white/60 text-center w-full" style={{ fontFamily: 'var(--font-body)', fontSize: 'clamp(0.75rem, 0.55rem + 0.35vw, 0.875rem)' }}>© 2026 MAAIS. All rights reserved.</p>
           </div>
-
-          <div className="space-y-8">
-            <div>
-              <h2 className="text-4xl font-black leading-tight mb-4">
-                Streamline academic<br />
-                excellence with<br />
-                precision.
-              </h2>
-              <p className="text-white/80 text-lg leading-relaxed max-w-md">
-                Comprehensive audit, grading, and performance management for modern educational institutions.
-              </p>
-            </div>
-
-            <div className="flex gap-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                  <BookOpen size={20} className="text-white" />
-                </div>
-                <div>
-                  <p className="font-bold text-sm">Academic Records</p>
-                  <p className="text-white/60 text-xs">Complete audit trail</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                  <Users size={20} className="text-white" />
-                </div>
-                <div>
-                  <p className="font-bold text-sm">Multi-Role Access</p>
-                  <p className="text-white/60 text-xs">Admin, HOD, Staff, Student</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                  <BarChart3 size={20} className="text-white" />
-                </div>
-                <div>
-                  <p className="font-bold text-sm">Analytics</p>
-                  <p className="text-white/60 text-xs">Real-time insights</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <p className="text-white/50 text-xs">© 2025 MAAIS. All rights reserved.</p>
         </div>
       </div>
 
       <div className="flex-1 flex items-center justify-center bg-surface p-4 sm:p-8">
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
-            <div className="w-10 h-10 bg-brand-primary rounded-xl flex items-center justify-center text-white font-black text-lg">
+            <div className="w-10 h-10 bg-brand-primary rounded-xl flex items-center justify-center text-white font-black" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.25rem, 1rem + 1vw, 1.75rem)' }}>
               M
             </div>
             <div>
-              <h1 className="text-xl font-black text-text-primary tracking-tight">MAAIS</h1>
-              <p className="text-text-secondary text-xs font-medium">Academic Audit System</p>
+              <h1 className="font-black text-text-primary tracking-tight" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.25rem, 1rem + 1vw, 1.75rem)' }}>MAAIS</h1>
+              <p className="text-text-secondary font-medium" style={{ fontFamily: 'var(--font-body)', fontSize: 'clamp(0.75rem, 0.6rem + 0.35vw, 0.9rem)' }}>Academic Audit System</p>
             </div>
           </div>
 
           <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
             <div className="p-8">
               <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold text-text-primary mb-2">Welcome Back</h2>
-                <p className="text-text-secondary text-sm">Sign in to access your dashboard</p>
+                <h2 className="font-bold text-text-primary mb-2" style={{ fontFamily: 'var(--font-body)', fontSize: 'clamp(1.5rem, 1rem + 1vw, 2rem)' }}>Welcome back!</h2>
+                <p className="text-text-secondary" style={{ fontFamily: 'var(--font-body)', fontSize: 'clamp(0.875rem, 0.7rem + 0.4vw, 1.125rem)' }}>Let's continue building excellence</p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 {error && (
-                  <div className="bg-danger/10 border border-danger/20 rounded-xl p-3 text-sm text-danger font-medium">
+                  <div className="bg-danger/10 border border-danger/20 rounded-xl p-3 text-sm text-danger font-medium" style={{ fontFamily: 'var(--font-body)' }}>
                     {error}
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2" style={{ fontFamily: 'var(--font-body)' }}>
                     Email
                   </label>
                   <input
@@ -187,11 +169,12 @@ export function LoginPage() {
                     placeholder="Enter your email"
                     required
                     autoComplete="username"
+                    style={{ fontFamily: 'var(--font-body)' }}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2" style={{ fontFamily: 'var(--font-body)' }}>
                     Password
                   </label>
                   <div className="relative">
@@ -203,6 +186,7 @@ export function LoginPage() {
                       placeholder="Enter your password"
                       required
                       autoComplete="current-password"
+                      style={{ fontFamily: 'var(--font-body)' }}
                     />
                     <button
                       type="button"
@@ -219,6 +203,7 @@ export function LoginPage() {
                   type="submit"
                   disabled={loading}
                   className="w-full py-3.5 bg-brand-primary text-white font-bold rounded-xl hover:bg-brand-primary/90 focus:outline-none focus:ring-2 focus:ring-brand-primary/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-brand-primary/20 text-sm uppercase tracking-wider"
+                  style={{ fontFamily: 'var(--font-body)' }}
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -235,10 +220,10 @@ export function LoginPage() {
               </form>
 
               <div className="mt-6 pt-6 border-t border-border space-y-3">
-                <p className="text-[11px] text-text-secondary text-center">
+                <p className="text-[11px] text-text-secondary text-center" style={{ fontFamily: 'var(--font-body)' }}>
                   Need an account? Contact your administrator
                 </p>
-                <p className="text-[11px] text-text-secondary text-center">
+                <p className="text-[11px] text-text-secondary text-center" style={{ fontFamily: 'var(--font-body)' }}>
                   Forgot password?{' '}
                   <button
                     type="button"

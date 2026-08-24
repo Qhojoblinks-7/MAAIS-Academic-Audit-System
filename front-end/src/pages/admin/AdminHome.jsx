@@ -705,54 +705,38 @@ export function AdminHome() {
                 </div>
               </div>
 
-              <div className="h-[180px] w-full text-xs">
-                {Recharts ? (
-                  <Recharts.ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                    <Recharts.BarChart data={chartData} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
-                      <Recharts.CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                      <Recharts.XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 700 }} dy={5} />
-                      <Recharts.YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 700 }} />
-                      <Recharts.Tooltip 
-                        cursor={{ fill: 'rgba(241, 245, 249, 0.4)' }}
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            return (
-                              <div className="bg-surface p-2 rounded-lg border border-border shadow-lg text-[10px]">
-                                <p className="font-black text-text-secondary uppercase tracking-wider mb-0.5">{payload[0].payload.name}</p>
-                                 <p className="font-black text-text-primary text-sm">
-                                  {payload[0].value}%
-                                </p>
-                              </div>
-                            );
-                          }
-                          return null;
-                        }}
-                      />
-                       <Recharts.Bar dataKey="value" radius={[4, 4, 2, 2]} barSize={34}>
-                         {chartData.map((entry, index) => (
-                           <Recharts.Cell key={`cell-${index}`} fill={entry.color} fillOpacity={0.85} />
-                         ))}
-                       </Recharts.Bar>
-                    </Recharts.BarChart>
-                  </Recharts.ResponsiveContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="h-6 w-6 rounded-full border-2 border-border border-t-brand-primary animate-spin" />
-                  </div>
-                )}
-              </div>
-
-               <div className="grid grid-cols-5 gap-2 mt-4 pt-3 border-t border-border">
-                 {chartData.map((dept, i) => (
-                  <div key={i} className="space-y-0.5">
-                    <p className="text-[8px] font-black text-text-secondary uppercase tracking-wider truncate">{dept.name}</p>
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs font-black text-text-primary font-mono">{dept.value}%</span>
-                      {dept.value > 80 && <ArrowUpRight size={10} className="text-success shrink-0" />}
-                    </div>
-                  </div>
-                ))}
-              </div>
+               <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {chartData.map((dept, i) => {
+                    const maxVal = 100;
+                    const heightPercent = Math.max((dept.value / maxVal) * 100, 8);
+                    return (
+                      <div key={i} className="flex flex-col items-center gap-1.5">
+                        <span className="text-xs font-black text-text-primary font-mono">{dept.value}%</span>
+                        <div className="w-full flex justify-center">
+                          <div 
+                            className="w-full max-w-[36px] rounded-md transition-all duration-500 hover:opacity-80"
+                            style={{ 
+                              height: '120px',
+                              background: `linear-gradient(to top, ${dept.color}dd, ${dept.color}88)`,
+                              position: 'relative',
+                              overflow: 'hidden'
+                            }}
+                          >
+                            <div 
+                              className="absolute bottom-0 left-0 right-0 rounded-md transition-all duration-700"
+                              style={{ 
+                                height: `${heightPercent}%`,
+                                background: dept.color,
+                                opacity: 0.9
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <p className="text-[8px] font-black text-text-secondary uppercase tracking-wider text-center leading-tight">{dept.name}</p>
+                      </div>
+                    );
+                  })}
+                </div>
             </section>
 
               {/* Activity Feed */}

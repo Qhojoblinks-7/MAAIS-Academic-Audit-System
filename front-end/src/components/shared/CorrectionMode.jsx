@@ -88,7 +88,7 @@ export function CorrectionMarkInput({ student, isTarget, tempMark, originalMark,
           }
         }}
         onChange={(e) => onMarkChange(student.id, 'secB', e.target.value)} 
-        className="w-16 bg-transparent text-center text-xs font-bold focus:outline-none focus:ring-1 focus:ring-success rounded-md" 
+        className="w-16 bg-transparent text-center text-sm font-bold focus:outline-none focus:ring-1 focus:ring-success rounded-md" 
       />
     );
   }
