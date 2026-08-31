@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   Clock, Share2, Save, X,
-  CheckCircle2, AlertTriangle, Trash2, Plus, Users, BarChart3
+  CheckCircle2, AlertTriangle, Trash2, Plus, Users, BarChart3, Layers, GripVertical
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '../../lib/utils';
