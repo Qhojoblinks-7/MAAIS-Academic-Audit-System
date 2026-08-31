@@ -1,8 +1,7 @@
 # MAAIS — Mando Academic Audit & Intervention System
 
 **Mando Senior High Technical School (Mando SHTS)**
-Academic management platform built for Ghana SHS. Replaces fragmented spreadsheets and paper records with a unified, audit-ready system for grade entry, report generation, promotion cycles, and stakeholder communication.
-
+MAAIS is a high-fidelity academic management ecosystem designed to automate and secure the academic lifecycle of Mando SHTS. It transitions the school from fragmented data silos to a unified, audit-ready platform for student performance tracking, official reporting, and stakeholder communication.
 ---
 
 ## Table of Contents
